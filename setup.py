@@ -17,7 +17,7 @@ metadata = dict(name = 'rem3d',
                 download_url = 'https://github.com/pmoulik/rem3d/archive/v0.0.1-prealpha.1.tar.gz',
     			keywords = ['modeling', 'earth'];
                 classifiers=[
-                'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+                'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                 'Programming Language :: Python :: 2.7',
                 'Programming Language :: Python :: 3.4'],
                 )
