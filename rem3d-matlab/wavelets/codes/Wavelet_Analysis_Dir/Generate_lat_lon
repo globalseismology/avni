@@ -1,0 +1,20 @@
+%%Generate arbitary group of lat/lon points on the cubed sphere. 
+
+%99846 lines per depth.
+% 99846 = 6 * (129)^2
+% 98304 = 6 * (2^(2*7))
+%
+
+% readGNmodel expects 6 * N * N depths. 
+% N = 2^lfin + 1
+% lfin = 7 => N = 129 and it all works out. 
+
+lfin = 7
+
+[x,y,z]=cube2sphere(lfin,alfa,bita,gama);
+
+for in=1:6
+   % waitbar(in/6,h,sprintf('Starting face %i/%i',in,6)) 
+   % Transform these to longitude and latitude
+   [phi,piminth,r]=cart2sph(x(:,:,in),y(:,:,in),z(:,:,in));
+   lon=phi(:)*180/pi; lat=piminth(:)*180/pi;
