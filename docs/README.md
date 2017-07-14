@@ -36,7 +36,7 @@ These instructions will get you a copy of the project up and running on your loc
 ## Start Here
 
 To begin, the user may want to look at these examples to begin to understand
-what tools are available in BurnMan and how values are calculated. Below is a
+what tools are available in REM3D and how values are calculated. Below is a
 suggested order of examples that begin by introducing each of the user inputs
 possible as well as each of the helpers involved with each example.
 
