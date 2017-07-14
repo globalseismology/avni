@@ -33,20 +33,6 @@ These instructions will get you a copy of the project up and running on your loc
 2. Install REM3D module using pip by opening a terminal window and entering
 `sudo pip install rem3d` 
 
-### Additional installation for developers
-
-REM3D developers may want to install the following softwares and extensions to facilitate proper code usage and documentation.
-* sphinx
-* numpydoc (sphinx extension)
-* sphinxcontrib.bibtex (sphinx extension)
-* sphinxcontrib.matlab (sphinx extension)
-
-To install these, please enter the following in a terminal:
-```
-sudo pip install sphinx numpydoc
-sudo pip install sphinxcontrib-bibtex sphinxcontrib-matlabdomain
-```
-
 ## Start Here
 
 To begin, the user may want to look at these examples to begin to understand
@@ -71,11 +57,25 @@ Here are some specific features and pitfalls on Python:
 
 Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
 
-## Versioning
+### Contributor Guide
+
+REM3D developers may want to install the following softwares and extensions to facilitate proper code usage and documentation.
+* sphinx
+* numpydoc (sphinx extension)
+* sphinxcontrib.bibtex (sphinx extension)
+* sphinxcontrib.matlab (sphinx extension)
+
+To install these, please enter the following in a terminal:
+```
+sudo pip install sphinx numpydoc
+sudo pip install sphinxcontrib-bibtex sphinxcontrib-matlabdomain
+```
+
+### Versioning
 
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/pmoulik/rem3d/tags). 
 
-## Authors
+### Authors
 
 * **Pritwiraj Moulik** - *Primary administrator* - [github](https://github.com/pmoulik)
 * **Ved Lekic** - *Co-administrator* - [github](https://github.com/vedlekic)
