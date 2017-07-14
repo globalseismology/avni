@@ -9,7 +9,7 @@ metadata = dict(name = 'rem3d',
                 description='a modeling and analysis toolkit for reference Earth datasets and tomographic models.',
                 url='http://www.rem3d.org',
     		author = 'Pritwiraj Moulik',
-                author_email='moulik.umd@gmail.com',
+                author_email='moulik@ldeo.columbia.edu',
                 license='GPL',
                 long_description='REM3D is a Python library for reference Earth datasets and tomographic models.',
     			packages = ['rem3d'],
@@ -21,8 +21,6 @@ metadata = dict(name = 'rem3d',
                 'Programming Language :: Python :: 3.4'],
                 )
 
-
-'earth-science','earth-observation','earthquake','earth','earthquake-data','geology','geophysics','geophysical-inversions','seismology','seismic-inversion','seismic-waves','seismic-tomography','mineral','geochemistry','geodesy','physics','modeling','modeling-tool','model','geodynamics'
 # Try to use setuptools in order to check dependencies.
 # if the system does not have setuptools, fall back on
 # distutils.
