@@ -1,3 +1,5 @@
+function varargout=cube2sphere(lfin,alfa,bita,gama,eo,sc)
+
 %%Generate arbitary group of repeating lat/lon points on the cubed sphere. 
 
 %99846 lines per depth.
@@ -7,9 +9,9 @@
 
 %FIXED: NOTE: KEEP EO default set to 1. We have an odd number of points!?
 
-% readGNmodel expects 6 * N * N depths. 
+% readGNmodel expects 6 * N * N points at a depth? 
 % N = 2^lfin + 1: N is the resolution parameter.
-% lfin = 7 => N = 129 and it all works out. 
+% lfin = 7 => N = 129 and it all works out, equating 99846...
 
 lfin = 7;
 
@@ -17,7 +19,7 @@ lfin = 7;
 megalon = [];
 megalat = [];
 
-% Each run takes care of one face on the cubed sphere. 
+% Each run takes care of one chunk on the cubed sphere. 
 
 for in=1:6
    
