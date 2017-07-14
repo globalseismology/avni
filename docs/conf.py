@@ -25,6 +25,13 @@ import rem3d.version
 #sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
+
+# In order for the Sphinx MATLAB domain to auto-document MATLAB source code, 
+# set the config value of matlab_src_dir to the absolute path instead of adding 
+# them to sys.path. Currently only one MATLAB path can be specified, but all 
+# subfolders in that tree will be searched.
+matlab_src_dir = '../rem3d-matlab'
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -47,7 +54,7 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
-    'sphinxcontrib.matlabdomain',
+    'sphinxcontrib.matlab',
 ]
 
 numpydoc_show_class_members = False
