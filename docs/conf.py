@@ -62,10 +62,17 @@ numpydoc_show_class_members = False
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+# Add the Markdown parser to the source_parsers configuration 
+# variable in your Sphinx configuration file:
+# http://www.sphinx-doc.org/en/stable/markdown.html
+source_parsers = {
+   '.md': 'recommonmark.parser.CommonMarkParser',
+}
+
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
