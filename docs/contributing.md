@@ -21,12 +21,11 @@ sudo pip install sphinxcontrib-bibtex sphinxcontrib-matlabdomain
 sudo pip install recommonmark
 ```
 
-
-Contributors should always work in the 'devel' branch. To clone that directory, type the following in a terminal.
+Contributors and core developers should always work in the `devel` branch. To clone that directory, type the following in a terminal using your Github username and password.
 ```
 git clone -b devel https://username:password@github.com/pmoulik/rem3d.git
 ```
-Pull requests to the protected 'master' branch from the 'devel' branch will be attempted at regular intervals. More detailed guidelines are available in the [Git for REM3D](git_for_REM3D.md) webpage.
+Pull requests to the protected `master` branch from the `devel` branch will be attempted at regular intervals. More detailed guidelines are available in the [Git for REM3D](git_for_REM3D.md) webpage.
 
 Please document code in the standard format (e.g. with three """Comments """ in python routines) so that sphinx can auto build documentation in the ./doc folder. To make a local copy of the documentation, run ./doc/make_docs.sh on the command line. More detailed guidelines are available in the [best practices](best_practices.md) webpage.
 
