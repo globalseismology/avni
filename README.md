@@ -33,21 +33,18 @@ These instructions will get you a copy of the project up and running on your loc
 2. Install REM3D module using pip by opening a terminal window and entering
 `sudo pip install rem3d` 
 
-### Additional Matlab and Fortran installation
+### Matlab and Fortran installation (optional)
 
-If you want to use REM3D's Matlab and Fortran routines, you will need to do the following additional steps. 
+If you want to use REM3D's Matlab and Fortran routines, you will need to do the following additional steps. This assumes that you have a free account at <https://github.com>
 
-1. Open a free account at <https://github.com>. 
-2. Create an account on our [Web site](https://maurya.umd.edu/login/register) and request access rights from [here](https://maurya.umd.edu/join-us/github).
-3. Please accept the invitation through e-mail. Clone REM3D git repository from the terminal `git clone https://username:password@github.com/pmoulik/rem3d.git`. This will create a directory that contains a folder call **rem3d**.
-4. Open Matlab `matlab -nodisplay` from the same directory that contains **rem3d** and then add it to the path `addpath(genpath('/home/user/Github/rem3d/rem3d-matlab']))`.
+1. Create an account on our [Web site](https://maurya.umd.edu/login/register) and request access rights from [here](https://maurya.umd.edu/join-us/github).
+2. Please accept the invitation through e-mail. Clone REM3D git repository from the terminal `git clone https://username:password@github.com/pmoulik/rem3d.git`. This will create a directory that contains a folder call `rem3d`.
+3. Open Matlab `matlab -nodisplay` from the same directory that contains `rem3d` and then add it to the path `addpath(genpath('/home/user/Github/rem3d/rem3d-matlab']))`.
 
 ## Start Here
 
 To begin, the user may want to look at these examples to begin to understand
-what tools are available in REM3D and how values are calculated. Below is a
-suggested order of examples that begin by introducing each of the user inputs
-possible as well as each of the helpers involved with each example.
+what tools are available in REM3D and how values are calculated. Such examples are available in the [examples](examples) folder.
 
 ## About scripting in Python
 
@@ -64,7 +61,6 @@ Here are some specific features and pitfalls on Python:
 ## Contributing
 
 Please read [contributing.md](docs/contributing.md) for details on our code of conduct, and the process for submitting pull requests to us.
-
 
 ### Versioning
 
