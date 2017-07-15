@@ -55,23 +55,28 @@ bad
 ~~~
 
 **comment, comment, comment your functions using Doxygen convention:**
-good
-~~~python
-!> Build the restriction matrix for the aggregation 
-!! method.
-!! @param aggr information about the aggregates
-!! @todo Handle special case
-subroutine intrestbuild(A,aggr,Restrict,A_ghost)
-  implicit none
-  Type(spmtx), intent(in) :: a !< our fine level matrix
-  Type(aggrs), intent(in) :: aggr
-  Type(spmtx), intent(out) :: restrict !< Our restriction matrix
-  !...
-end subroutine
-~~~
 
 good
 ~~~python
+"""@package docstring
+Documentation for this module.
+More details.
+"""
+def func():
+    """Documentation for a function.
+    More details.
+    """
+    pass
+class PyClass:
+    """Documentation for a class.
+    More details.
+    """
+   
+    def __init__(self):
+        """The constructor."""
+        self._memVar = 0;
+        pass
+~~~
 
 
 Matlab formatting
