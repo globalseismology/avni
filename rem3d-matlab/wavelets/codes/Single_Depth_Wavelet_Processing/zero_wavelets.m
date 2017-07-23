@@ -1,6 +1,7 @@
 function [ truncated_wavelets ] = zero_wavelets(vw,indices,waveletbasis,N,Jmin,Jmax )
 % Takes a binary array of indices and an array of wavelets, same dimensions
 % Zeros the wavelet in the wavelet array if the corresponding index is 0. 
+% Basically, keeps the wavelets indicated within the indices array!
 
 defval('N',7);
 defval('Jmin',4);

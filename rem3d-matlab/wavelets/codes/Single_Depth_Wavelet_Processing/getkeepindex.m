@@ -1,8 +1,8 @@
-function [ indicesout ] = getkeepindex(vw,N,Jup,J_Interest,latmin,latmax,lomin,lomax,thresholdpercentile,eo)
+function [ indicesout ] = getkeepindex(vw,N,Jup,J_Interest,latmin,latmax,lomin,lomax,bufferedge,thresholdpercentile,eo)
 % Given a desired method of thresholding, we separate out the wavelet
 % indices on the cubed sphere that correspond to a desired range- this range may be 
 % spatially constrained or constrained by a desired scale range, or percentile 
-
+% bufferedge takes that many number of wavelets along the edges 
 % Significant information from Frederik Simons' Loris5 codes. 
 
 % - Anant Hariharan
@@ -15,6 +15,7 @@ defval('latmin',-90);
 defval('latmax',90);
 defval('lomin',-180);
 defval('lomax',180);
+defval('bufferedge',2);
 defval('thresholdpercentile',100);
 defval('eo',0);
 

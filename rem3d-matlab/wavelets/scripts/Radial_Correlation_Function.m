@@ -42,15 +42,15 @@ for i = 1:length(Depths)
 end
 
 %%%%%%%%%%%%%%%% Begin repeated inversions and 
-if exist('All_Scales_Reconstruct4.mat', 'file') == 2
+if 1
 for i = 1:length(Depths)
     fname1 = [folder_interest '/' 'loris5_GN_' DepthsStrings{i} '_' num2str(N) '_' num2str(Jmax) '_' Basis '_1_1.mat'];
     results1 = load(fname1);
     vw1 = results1.vw;
     
-    vw1_scale4indicesonly = getkeepindex(vw1,N,Jmax,4);
-    vw1_scale43indicesonly = getkeepindex(vw1,N,Jmax,[4 3]);
-    vw1_scale432indicesonly = getkeepindex(vw1,N,Jmax,[4 3 2]);
+    vw1_scale4indicesonly = getkeepindex(vw1,N,Jmax,[4]);
+    vw1_scale43indicesonly = getkeepindex(vw1,N,Jmax,[3]);
+    vw1_scale432indicesonly = getkeepindex(vw1,N,Jmax,[2]);
     
     vw1_scale4waveletsonly = zero_wavelets(vw1,vw1_scale4indicesonly);
     vw1_scale43waveletsonly = zero_wavelets(vw1,vw1_scale43indicesonly);
@@ -99,15 +99,17 @@ i
 end
 
 
-save('All_Scales_Reconstruct4.mat','All_Reconstruct_Scale4')
-save('All_Scales_Reconstruct43.mat','All_Reconstruct_Scale43')
-save('All_Scales_Reconstruct432.mat','All_Reconstruct_Scale432')
+% save('All_Scales_Reconstruct4.mat','All_Reconstruct_Scale4')
+% save('All_Scales_Reconstruct43.mat','All_Reconstruct_Scale43')
+% save('All_Scales_Reconstruct432.mat','All_Reconstruct_Scale432')
 
 else
-    load('All_Scales_Reconstruct4.mat')
-    load('All_Scales_Reconstruct43.mat')
-    load('All_Scales_Reconstruct432.mat')
+%     load('All_Scales_Reconstruct4.mat')
+%     load('All_Scales_Reconstruct43.mat')
+%     load('All_Scales_Reconstruct432.mat')
 end    
+
+
 %%% Actually calculate the correlation coefficients and put them in the
 %%% radial correlation functions. 
 
@@ -149,7 +151,7 @@ contourf(Corr_Matrix_Scale4)
 title('Correlation: Scale 4 Reconstruction')
 subplot(1,3,2)
 contourf(Corr_Matrix_Scale43)
-title('Correlation: Scale 4,3 Reconstruction')
+title('Correlation: Scale 3 Reconstruction')
 subplot(1,3,3)
 contourf(Corr_Matrix_Scale432)
-title('Correlation: Scale 4,3,2 Reconstruction')
+title('Correlation: Scale 2 Reconstruction')
