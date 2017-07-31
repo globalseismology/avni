@@ -6,7 +6,7 @@ setenv('IFILES','/home/moulik/Software/fjsimons-MMASS-v1.0.1/DATA')
 %loris1 % Done
 %loris2 % Done
 %loris3 % Done
-loris4 % Needs c
+loris4 % Needs IFILES/EARTHMODELS/MONTELLI/GNdepths
 %loris5 % Needs IFILES/EARTHMODELS/MONTELLI/GNdepths
 %loris6 % Needs /u/fjsimons/MyPapers/2011/GJI-2011/cdf42examplesafrica.mat
 %loris7 % Needs IFILES/EARTHMODELS/MONTELLI/GNdepths

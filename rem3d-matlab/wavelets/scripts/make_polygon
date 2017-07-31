@@ -1,0 +1,9 @@
+%%Generically, make a polygon. 
+
+%%% Find indices that would describe a donut anomaly. 
+
+%%%Make Circle Polygon. 
+Rad_1 = 5;
+
+
+Rad_2 = 3;
