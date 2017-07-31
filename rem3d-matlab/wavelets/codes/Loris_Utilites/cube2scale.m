@@ -33,7 +33,7 @@ function varargout=cube2scale(N,levels,mr,meth)
 % 
 % Last modified by fjsimons-at-alum.mit.edu, 03/18/2013
 
-defval('N',4)
+defval('N',7)
 defval('mr',1)
 defval('levels',[3 3])
 

@@ -6,9 +6,9 @@
 
 %Anant Hariharan
 face = 3;
-Desired_Index_dim1 = [64 64 64 64 65 66 67 67 67 67 66 65];
-Desired_Index_dim2 = [64 65 66 67 67 67 67 66 65 64 64 64];
-Desired_Coefficient = [1 1 1 1 1 1 1 1 1 1 1 1];
+Desired_Index_dim1 = [1];
+Desired_Index_dim2 = [1];
+Desired_Coefficient = [1];
 
 N = 7;
 Jmax = 4;
@@ -54,6 +54,11 @@ face = 3;
 Desired_Index_dim1 = [64 64 64 64 65 66 67 67 67 67 66 65];
 Desired_Index_dim2 = [64 65 66 67 67 67 67 66 65 64 64 64];
 Desired_Coefficient = [1 1 1 1 1 1 1 1 1 1 1 1];
+
+%%%Line
+Desired_Index_dim1 = [64:84];
+Desired_Index_dim2 = [64*ones(21,1)];
+Desired_Coefficient = [ones(21,1)];
 N = 7;
 Jmax = 4;
 [vwlev,vwlevs] = cube2scale(N,[Jmax Jmax],1);
@@ -65,15 +70,19 @@ end
 vws = angularD4WT(TransformMe,[Jmax Jmax],[1 1],'forward',1);
 
 figure
-subplot(1,2,1)
+subplot(1,3,1)
 
 h=imagefnan([1 1],[2^N 2^N],vws(:,:,face));
 title('wavelet coefficients describing anomaly')
 
-subplot(1,2,2)
+subplot(1,3,2)
 
 h=imagefnan([1 1],[2^N 2^N],TransformMe(:,:,face));
 title('synthetic velocity anomaly')
 
+LineBack = angularD4WT(vws,[Jmax Jmax],[1 1],'inverse',1);
 
+subplot(1,3,3)
 
+h=imagefnan([1 1],[2^N 2^N],LineBack(:,:,face));
+title('return')

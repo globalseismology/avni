@@ -1,4 +1,4 @@
-function [x,y,z,megalon,megalat] = Generate_lat_lon_CubedSphere(lfin,eo,write)
+function [x,y,z,megalon,megalat] = Generate_lat_lon_CubedSphere(lfin,eo,write,alfa,bita,gama)
 
 %Generate arbitary group of repeating lat/lon points on the cubed sphere
 %using Frederik Simons' subroutines
@@ -11,7 +11,9 @@ function [x,y,z,megalon,megalat] = Generate_lat_lon_CubedSphere(lfin,eo,write)
 % 98304 = 6 * (2^(2*7)) X: DON'T BE FOOLED BY THIS- UNRELATED!
 %
 
-%FIXED: NOTE: KEEP EO default set to 1. We have an odd number of points!?
+% FIXED: NOTE: KEEP EO default set to 1, when generating wavelet file a la
+% PRI5W
+% We have an odd number of points!?
 
 % readGNmodel expects 6 * N * N depths. 
 % N = 2^lfin + 1: N is the resolution parameter.
@@ -22,8 +24,11 @@ function [x,y,z,megalon,megalat] = Generate_lat_lon_CubedSphere(lfin,eo,write)
 defval('lfin',7);
 defval('eo',1);
 defval('write',0);
+defval('alfa',[]);
+defval('bita',[]);
+defval('gama',[]);
 
-[x,y,z]=cube2sphere(lfin,[],[],[],eo);
+[x,y,z]=cube2sphere(lfin,alfa,bita,gama,eo);
 megalon = [];
 megalat = [];
 

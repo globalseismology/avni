@@ -7,7 +7,7 @@ defval('L',ceil(2^(N+1)))
 defval('precon',[1 1]*0)
 defval('iface',3)
 defval('colmap','kelicol')
-
+setenv('IFILES','/home/moulik/Software/fjsimons-MMASS-v1.0.1/DATA')
 % Color map saturation as percentiles
 colperc=[5 95];
 % For SPIE change it
@@ -45,7 +45,7 @@ vw_minusscale2 = zero_wavelets(vw,indices_minusscale2);
 reconstructed_topo = angularD4WT(vw_minusscale2,[J J],precon,'inverse',1);
 
 dax=prctile(reconstructed_topo(:),colperc);
-h=imagefnan([1 1],[2^N 2^N],reconstructed_topo,colmap,dax,[],[],0);
+h=imagefnan([1 1],[2^N 2^N],v(:,:,iface),colmap,dax,[],[],0);
 hold on
 % Plot the wavelet grid
   f=fridplotw(N,J);

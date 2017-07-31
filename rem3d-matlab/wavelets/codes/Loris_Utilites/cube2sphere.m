@@ -41,7 +41,7 @@ defval('lfin',7)
 defval('alfa',[]);
 defval('bita',[]);
 defval('gama',[]);
-defval('eo',1);
+defval('eo',0);
 defval('sc',0);
 
 if ~isstr(lfin)

@@ -2,7 +2,7 @@ function [ Wavelength ] = Wavelength_ScaleAtDepth( N,depth,Scale,wname )
 % Calculate the wavelength of an equivalent wavelet.
 % Do this given the resolution parameter,and a given depth(km) within the Earth.  
 % Note that for Daubechies 4, wname = 'db4'
-% Calculates wavelength in meters.
+% Calculates wavelength in km.
 
 % Anant Hariharan
 
@@ -17,5 +17,6 @@ Length_Dimension = sqrt(BoxArea); %This corresponds to the difference between tw
 Linear_Wavenumber =scal2frq(Scale,wname,Length_Dimension);
 
 Wavelength = 1/Linear_Wavenumber;
+Wavelength = Wavelength/1000;
 end
 
