@@ -14,7 +14,7 @@ metadata = dict(name = 'rem3d',
                 long_description='REM3D is a Python library for reference Earth datasets and tomographic models.',
     			packages = ['rem3d'],
                 package_data={'rem3d': ['data/input_*/*']},
-    		keywords = ['modeling', 'earth'],
+    		keywords = ['earth-science','earth-observation','earthquake','earth','earthquake-data','geology','geophysics','geophysical-inversions','seismology','seismic-inversion','seismic-waves','seismic-tomography','mineral','geochemistry','geodesy','physics','modeling','modeling-tool','model','geodynamics'],
                 classifiers=[
                 'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                 'Programming Language :: Python :: 2.7',
