@@ -36,12 +36,14 @@ switch tipe
  case 'Daubechies'
   % If you were wrong, and gave two numbers, only takes the first
   nvm=nvm(1);
-  load(fullfile(getenv('IFILES'),'WAVELETS','Daubechies'));
+  load('Daubechies');
   h0=eval(sprintf('Daubechies.p%i',nvm));
   f0=fliplr(h0);
   [P,U,Kp,Ku]=deal([]);
  case 'CDF'
-  load(fullfile(getenv('IFILES'),'WAVELETS','CDF'));
+  %load(fullfile(getenv('IFILES'),'WAVELETS','CDF'));
+  load('CDF');
+
   h0=eval(sprintf('CDF.H0{%i,%i}',nvm(1),nvm(2)));
   f0=eval(sprintf('CDF.F0{%i,%i}',nvm(1),nvm(2)));
   if length(CDF.P)>=nvm(1) & length(CDF.U)>=nvm(2)
@@ -53,7 +55,8 @@ switch tipe
     [P,U,Kp,Ku]=deal([]);
   end
  case 'CDFI'
-  load(fullfile(getenv('IFILES'),'WAVELETS','CDF'));
+  %load(fullfile(getenv('IFILES'),'WAVELETS','CDF'));
+  load('CDFI');
   h0=eval(sprintf('CDF.H0{%i,%i}',nvm(1),nvm(2)));
   f0=eval(sprintf('CDF.F0{%i,%i}',nvm(1),nvm(2)));
   load(fullfile(getenv('IFILES'),'WAVELETS','CDFI'));

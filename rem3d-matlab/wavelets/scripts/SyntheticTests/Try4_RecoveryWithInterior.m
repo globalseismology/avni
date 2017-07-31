@@ -1,53 +1,67 @@
-%Reconstruction Tests!
-%%%How accurately can we reconstruct a rectangle?
+
+Solid_Rectangle = 0;
+Line_Rectangle = 0;
+Line = 1;
+
+
+
+if Line == 1
+Desired_Index_dim1 = [64:84];
+Desired_Index_dim2 = [64*ones(21,1)];
+end
+
+
+
+
 
 %Make the Rectangle!
-
+%[ xpts,ypts ] = Get_Interior_PolygonPts_on_CubedSphere( N,xbounds,ybounds )
 face = 3;
+if Line_Rectangle == 1
 Desired_Index_dim2 = [64 64 64 64 64 64 64 65 66 67 68 69 70 71 72 73 74 75 76 77 77 77 77 77 77 77 76 75 74 73 72 71 70 69 68 67 66 65];
 Desired_Index_dim1 = [64 65 66 67 68 69 70 70 70 70 70 70 70 70 70 70 70 70 70 70 69 68 67 66 65 64 64 64 64 64 64 64 64 64 64 64 64 64];
-Desired_Coefficient = ones(38,1);
+end
 
-N = 7;
-Jmax = 4;
+Desired_Coefficient = ones(2^25,1);
+
+N = 9;
+Jmax = 6;
+
+if Solid_Rectangle ==1
+[ Desired_Index_dim1,Desired_Index_dim2 ] = Get_Interior_PolygonPts_on_CubedSphere( N,[64 64 70 70],[64 77 77 64] );
+end
+
 [vwlev,vwlevs] = cube2scale(N,[Jmax Jmax],1);
 TransformMe = zeros(2^N,2^N,6);
 for i = 1:length(Desired_Index_dim1)
-    disp(i)
+    %disp(i)
     TransformMe(Desired_Index_dim1(i),Desired_Index_dim2(i),face) = Desired_Coefficient(i);
 end
 
 vws = angularD4WT(TransformMe,[Jmax Jmax],[1 1],'forward',1);
-% 
-% figure
-% subplot(1,2,1)
-% 
-% h=imagefnan([1 1],[2^N 2^N],vws(:,:,face));
-% title('wavelet coefficients describing anomaly')
-% 
-% subplot(1,2,2)
-% 
-% h=imagefnan([1 1],[2^N 2^N],TransformMe(:,:,face));
-% title('synthetic velocity anomaly')
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Make half a rectangle
-Indices_Less_Thanx71 = find(Desired_Index_dim2<71)
-Desired_Index_dim2_halved = Desired_Index_dim2(Indices_Less_Thanx71)
-Desired_Index_dim1_halved = Desired_Index_dim1(Indices_Less_Thanx71)
+
+
+
+
+[ xpts,ypts ] = Get_Interior_PolygonPts_on_CubedSphere( N,[64 64 74 74],[64 64 64 64] );
+
 TransformMe2 = zeros(2^N,2^N,6);
 
-for i = 1:length(Desired_Index_dim1_halved)
+for i = 1:length(xpts)
     disp(i)
-    TransformMe2(Desired_Index_dim1_halved(i),Desired_Index_dim2_halved(i),face) = Desired_Coefficient(i);
+    TransformMe2(xpts(i),ypts(i),face) = Desired_Coefficient(i);
 end
 
+
+
+
 %Detect Wavelets where we want them to be. 
-[ wavelet_locs ] = get_wavelet_pos( Desired_Index_dim1_halved,Desired_Index_dim2_halved,N,Jmax,face,0,0)
+[ wavelet_locs ] = get_wavelet_pos( xpts,ypts,N,Jmax,face,0,0);
 
 %Now zero out wavelets at those locations. 
-[ half_rectangle_wavelets ] = zero_wavelets(vws,wavelet_locs,'db4',7,1,4 )
+[ half_rectangle_wavelets ] = zero_wavelets(vws,wavelet_locs,'db4',N,1,Jmax );
 
 %Reconstruct model using those wavelets
 [half_rectangle_maybe] = angularD4WT(half_rectangle_wavelets,[Jmax Jmax],[1 1],'inverse',1);

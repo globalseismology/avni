@@ -1,6 +1,7 @@
 % Create a MATLAB interpolant object from a set of epix files. 
 % Ved Lekic for Anant Hariharan, July 5th, 2017
 % 
+% Last edited by Anant Hariharan, 7-27-2017
 
 clear; close all; 
 
@@ -27,6 +28,9 @@ for j = 1:length(lista)
     mdl(indx,2) = a.data(:,1); 
     mdl(indx,3) = dep; 
     mdl(indx,4) = a.data(:,4); 
+    
+    % display progress
+    100*j/length(lista)
 end
 
 % Now, conver from spherical coordinates to X,Y,Z (cartesian)
@@ -35,25 +39,6 @@ end
 V = scatteredInterpolant(x(:),y(:),z(:),mdl(:,4),'natural');
 clear mdl; 
 save(ime,'V'); 
-
-%%
-% Now, load in the values at which we want to interpolate
-PRI = importdata('PRI5w'); 
-
-% Now, convert from lon, lat, r to x, y, z
-[x,y,z] = sph2cart(pi/180*PRI.data(:,1),pi/180*PRI.data(:,2),PRI.data(:,3)); 
-%
-vp_vals = zeros(1,length(x)); vs_vals = zeros(size(vp_vals)); 
-
-step_size = 10000; 
-%
-for j = 1:step_size:length(x)-step_size+1
-if(mod(j,step_size)==1), display(['Working on ' num2str(j) 'st point...']); end; 
-v_vals(j:j+step_size-1) = V(x(j:j+step_size-1),y(j:j+step_size-1),z(j:j+step_size-1)); 
-end 
-%
-save([epix_dir '_model_at_PRI_locations'],'v_vals'); 
-
 
 
 
