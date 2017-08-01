@@ -2,8 +2,8 @@
 
 %GridFile
 %%ALL YOU NEED!
-N = 7;
-Jmax = 4;
+N = 8;
+Jmax = 5;
 eo = 0;
 config = 1;
 %%
@@ -15,13 +15,15 @@ end
 %%
 [vwlev,vwlevs]=cube2scale(N,[Jmax Jmax],1);
 
-Name = ['/home/anant/mydbs/Grid_Database/Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_eo' num2str(eo) '_EulerConfig1.mat'];
-Interpolant = 'ME16_Vp_Matlab_Interpolant.mat';
+Name = ['/home/anant/mydbs/Grid_Database/Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];
+
+ModelName = 'ME16_Vp'; 
+Interpolant = [ModelName '_Matlab_Interpolant.mat']
+%Interpolant = 'ME16_Vp_Matlab_Interpolant.mat';
 Grid = load(Name);
 LoadMe = load(Interpolant);
 V = LoadMe.V;
-ModelName = 'ME16_Vp'; 
-Depths = [0 100 200];
+Depths = [100 500 2750];
 r = 6371 - Depths;
 Wavelets = [];
 z = [];
@@ -38,7 +40,8 @@ for i = 1:length(r)
  lat = [lat; Grid.lat];
  ScaleArr = [ScaleArr TempScaleArr];
 end
- z = z'   
+ z = z';
+ z_arr = z;
 
 
 %%%% Make it better
@@ -76,18 +79,18 @@ Out_Struc.MetaEulerNames{1} = 'alfa';
 Out_Struc.MetaEulerNames{2} = 'bita';
 Out_Struc.MetaEulerNames{3} = 'gama';
 Out_Struc.model = v_vals;
-Out_Struc.depth = z;
+Out_Struc.depth = z_arr;
 %%%%%
 
 for i = 1:length(r)
-    Incr_v = Out_Struc.v(1+(i-1)*6*2^(2*N):(i)*6*2^(2*N));
+    Incr_v = Out_Struc.model(1+(i-1)*6*2^(2*N):(i)*6*2^(2*N));
     Csph_v = reshape(Incr_v,[2^N 2^N 6]);
-    Wv_Coeffs = angularD4WT(Csph_v,[Jmax Jmax],[1 1],'inverse',1);
+    Wv_Coeffs = angularD4WT(Csph_v,[Jmax Jmax],[1 1],'forward',1);
     Wavelets = [Wavelets; Wv_Coeffs(:)];
 end
 Wavelets = Wavelets';
 Out_Struc.wvcoeffs = Wavelets;
-FileName = [ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config)];
+FileName = [ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
 
 save(FileName,'-struct','Out_Struc');
 

@@ -35,7 +35,7 @@ for in=1:6
    
 end
 
-[vwlev,vwlevs]=cube2scale(N(iii),[Jmax(iii) Jmax(iii)],1);
+[vwlev,vwlevs]=cube2scale(N(iii),[Jmax(iii)+1 Jmax(iii)+1],1);
 
 Face_Interval = length(megalon)/6;
 
@@ -70,11 +70,7 @@ Out_Struc.MetaEulerNames{1} = 'alfa';
 Out_Struc.MetaEulerNames{2} = 'bita';
 Out_Struc.MetaEulerNames{3} = 'gama';
 
-
 FileName = ['Grid_' 'N' num2str(N(iii)) '_Jmax' num2str(Jmax(iii)) '_EulerConfig' num2str(config)];
-
-%save(FileName,'Out_Struc.lat','Out_Struc.lon','Out_Struc.face','Out_Struc.ScaleIndex','Out_Struc.MetaN','Out_Struc.MetaJmax','Out_Struc.Metaeo','Out_Struc.MetaEulerVals','Out_Struc.MetaEulerNames');
-
 
 save(FileName,'-struct','Out_Struc');
 
