@@ -2,8 +2,8 @@
 
 %GridFile
 %%ALL YOU NEED!
-N = 8;
-Jmax = 5;
+N = 7;
+Jmax = 4;
 eo = 0;
 config = 1;
 %%
@@ -23,7 +23,39 @@ Interpolant = [ModelName '_Matlab_Interpolant.mat']
 Grid = load(Name);
 LoadMe = load(Interpolant);
 V = LoadMe.V;
-Depths = [100 500 2750];
+
+
+Depths = [  25
+   100
+   200
+   300
+   400
+   500
+   600
+   700
+   800
+   900
+  1000
+  1100
+  1200
+  1300
+  1400
+  1500
+  1600
+  1700
+  1800
+  1900
+  2000
+  2100
+  2200
+  2300
+  2400
+  2500
+  2600
+  2700
+  2800
+  2890];
+
 r = 6371 - Depths;
 Wavelets = [];
 z = [];
@@ -55,7 +87,7 @@ end
     step_size = 10000; 
     %
     for j = 1:step_size:length(x)-step_size+1
-    j
+    100*j/(length(x)-step_size+1)
     if(mod(j,step_size)==1), display(['Working on ' num2str(j) 'st point...']); end; 
     v_vals(j:j+step_size-1) = V(x(j:j+step_size-1),y(j:j+step_size-1),z(j:j+step_size-1)); 
     end 
