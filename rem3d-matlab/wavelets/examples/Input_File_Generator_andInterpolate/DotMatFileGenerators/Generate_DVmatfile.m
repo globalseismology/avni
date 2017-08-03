@@ -2,8 +2,8 @@
 
 %GridFile
 %%ALL YOU NEED!
-N = 7;
-Jmax = 4;
+N = 9;
+Jmax = 6;
 eo = 0;
 config = 1;
 %%
@@ -17,12 +17,44 @@ end
 
 Name = ['/home/anant/mydbs/Grid_Database/Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];
 
-ModelName = 'ME16_Vp'; 
+ModelName = 'MIT_P08'; 
 Interpolant = [ModelName '_Matlab_Interpolant.mat']
 %Interpolant = 'ME16_Vp_Matlab_Interpolant.mat';
 Grid = load(Name);
 LoadMe = load(Interpolant);
 V = LoadMe.V;
+
+
+% Depths = [  25
+%    100
+%    200
+%    300
+%    400
+%    500
+%    600
+%    700
+%    800
+%    900
+%   1000
+%   1100
+%   1200
+%   1300
+%   1400
+%   1500
+%   1600
+%   1700
+%   1800
+%   1900
+%   2000
+%   2100
+%   2200
+%   2300
+%   2400
+%   2500
+%   2600
+%   2700
+%   2800
+%   2890];
 
 
 Depths = [  25
@@ -35,26 +67,26 @@ Depths = [  25
    700
    800
    900
-  1000
-  1100
-  1200
-  1300
-  1400
-  1500
-  1600
-  1700
-  1800
-  1900
-  2000
-  2100
-  2200
-  2300
-  2400
-  2500
-  2600
-  2700
-  2800
-  2890];
+   1000
+   1100
+   1200
+   1300
+   1400
+   1500
+   1600
+   1700
+   1800
+   1900
+   2000
+   2100
+   2200
+   2300
+   2400
+   2500
+   2600
+   2700
+   2800];
+
 
 r = 6371 - Depths;
 Wavelets = [];
@@ -94,6 +126,7 @@ end
 
     %duct tape fix. 
     for j = length(v_vals):length(x)
+        100*j/length(x)
         v_vals(j) = V(x(j),y(j),z(j));
     end
     
