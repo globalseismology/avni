@@ -1,4 +1,4 @@
-function [x,y,z,megalon,megalat] = Generate_lat_lon_CubedSphere(lfin,eo,write,alfa,bita,gama)
+function [x,y,z,megalon,megalat] = Generate_lat_lon_CubedSphere(lfin,eo,write,alfa,bita,gama,sc)
 
 %Generate arbitary group of repeating lat/lon points on the cubed sphere
 %using Frederik Simons' subroutines
@@ -27,8 +27,9 @@ defval('write',0);
 defval('alfa',[]);
 defval('bita',[]);
 defval('gama',[]);
+defval('sc',0);
 
-[x,y,z]=cube2sphere(lfin,alfa,bita,gama,eo);
+[x,y,z]=cube2sphere(lfin,alfa,bita,gama,eo,sc);
 megalon = [];
 megalat = [];
 

@@ -5,20 +5,26 @@ clear all
 eo = 0;
 N = [7 8 9];
 Jmax = [4 5 6];
-config = 1;
+config = 1; %Which euler angle config do you want to use?
+SuperChunkMe = 1 %Output a superchunk grid?
 
 if config ==1
 alfa = 0.2089-0.175;
 bita= 0.9205+0.25;
 gama= 1.2409-0.05;
 end
+
+
 for iii = 1:length(N)
 
 lfin = N(iii);
 
 
-
+if SuperChunkMe == 1
+[x,y,z]=cube2sphere(lfin,alfa,bita,gama,eo,SuperChunkMe);    
+else    
 [x,y,z]=cube2sphere(lfin,alfa,bita,gama,eo);
+end
 megalon = [];
 megalat = [];
 
@@ -70,8 +76,11 @@ Out_Struc.MetaEulerNames{1} = 'alfa';
 Out_Struc.MetaEulerNames{2} = 'bita';
 Out_Struc.MetaEulerNames{3} = 'gama';
 
+if SuperChunkMe == 1
+FileName = ['SC_Grid_' 'N' num2str(N(iii)) '_Jmax' num2str(Jmax(iii)) '_EulerConfig' num2str(config)];
+else
 FileName = ['Grid_' 'N' num2str(N(iii)) '_Jmax' num2str(Jmax(iii)) '_EulerConfig' num2str(config)];
-
+end
 save(FileName,'-struct','Out_Struc');
 
 
