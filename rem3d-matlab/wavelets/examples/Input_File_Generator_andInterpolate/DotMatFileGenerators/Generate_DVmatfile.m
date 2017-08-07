@@ -2,10 +2,11 @@
 
 %GridFile
 %%ALL YOU NEED!
-N = 9;
-Jmax = 6;
+N = 7;
+Jmax = 4;
 eo = 0;
 config = 1;
+SuperChunkMe = 1; %Output a superchunk grid?
 %%
 if config ==1
 alfa = 0.2089-0.175;
@@ -13,11 +14,15 @@ bita= 0.9205+0.25;
 gama= 1.2409-0.05;
 end
 %%
-[vwlev,vwlevs]=cube2scale(N,[Jmax Jmax],1);
+[vwlev,vwlevs]=cube2scale(N,[Jmax+1 Jmax+1],1);
 
-Name = ['/home/anant/mydbs/Grid_Database/Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];
+if SuperChunkMe == 1
+Name = ['/home/anant/mydbs/Grid_Database/SC_Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];
+else
+Name = ['/home/anant/mydbs/Grid_Database/Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];    
+end
 
-ModelName = 'MIT_P08'; 
+ModelName = 'ME16_Vp'; 
 Interpolant = [ModelName '_Matlab_Interpolant.mat']
 %Interpolant = 'ME16_Vp_Matlab_Interpolant.mat';
 Grid = load(Name);
@@ -102,7 +107,7 @@ for i = 1:length(r)
  z = [z Depth_arr];
  lon = [lon; Grid.lon];
  lat = [lat; Grid.lat];
- ScaleArr = [ScaleArr TempScaleArr];
+ ScaleArr = [ScaleArr; TempScaleArr];
 end
  z = z';
  z_arr = z;
@@ -145,6 +150,9 @@ Out_Struc.MetaEulerNames{2} = 'bita';
 Out_Struc.MetaEulerNames{3} = 'gama';
 Out_Struc.model = v_vals;
 Out_Struc.depth = z_arr;
+Out_Struc.ScaleIndex = ScaleArr;
+Out_Struc.lat = lat;
+Out_Struc.lon = lon;
 %%%%%
 
 for i = 1:length(r)
@@ -155,7 +163,12 @@ for i = 1:length(r)
 end
 Wavelets = Wavelets';
 Out_Struc.wvcoeffs = Wavelets;
+
+if SuperChunkMe == 1
+FileName = ['SC_' ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
+else
 FileName = [ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
+end
 
 save(FileName,'-struct','Out_Struc');
 
