@@ -77,9 +77,9 @@ Out_Struc.MetaEulerNames{2} = 'bita';
 Out_Struc.MetaEulerNames{3} = 'gama';
 
 if SuperChunkMe == 1
-FileName = ['SC_Grid_' 'N' num2str(N(iii)) '_Jmax' num2str(Jmax(iii)) '_EulerConfig' num2str(config)];
+FileName = ['/home/anant/Software/rem3d/rem3d/files/' 'SC_Grid_' 'N' num2str(N(iii)) '_Jmax' num2str(Jmax(iii)) '_EulerConfig' num2str(config)];
 else
-FileName = ['Grid_' 'N' num2str(N(iii)) '_Jmax' num2str(Jmax(iii)) '_EulerConfig' num2str(config)];
+FileName = ['/home/anant/Software/rem3d/rem3d/files/' 'Csph_Grid_' 'N' num2str(N(iii)) '_Jmax' num2str(Jmax(iii)) '_EulerConfig' num2str(config)];
 end
 save(FileName,'-struct','Out_Struc');
 
