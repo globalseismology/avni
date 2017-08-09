@@ -5,9 +5,9 @@ N = 7
 Jmax = 4;
 eo = 1;
 face = 1;
-inv = 0;
+inv = 1;
 SC = 0;
-
+precon  = [0 0];
 %Things get weird because of parfor: can only create variables within the
 %for loops, forcing us to re-initialize the pts variable every loop :(
 
@@ -26,19 +26,12 @@ for i = 1:2^N
         pts(i,j,face) = 1;
         % Make the results of inversion a sparse matrix. Invert a single
         % point, defined by i,j. 
-        if SC == 1;  %Turn off preconditioning if we use the superchunks implementation.
-        if inv == 1
-        dv_map = sparse((angularD4WT(pts(:,:,face),[Jmax Jmax],[0 0],'forward',1)));
-        elseif inv == 0
-        dv_map = sparse((angularD4WT(pts(:,:,face),[Jmax Jmax],[0 0],'inverse',1)));
-        end
-        else
-        if inv == 1
-        dv_map = sparse((angularD4WT(pts(:,:,face),[Jmax Jmax],[1 1],'forward',1)));
-        elseif inv == 0
-        dv_map = sparse((angularD4WT(pts(:,:,face),[Jmax Jmax],[1 1],'inverse',1)));
-        end
-        end
+            if inv == 1
+            dv_map = sparse((angularD4WT(pts(:,:,face),[Jmax Jmax],precon,'forward',1)));
+            elseif inv == 0
+            dv_map = sparse((angularD4WT(pts(:,:,face),[Jmax Jmax],precon,'inverse',1)));
+            end
+        
         %Put each one in the cell array.
         mat_array{1,j} =dv_map;
         
@@ -70,11 +63,14 @@ Out_Struc(1).MetaForwardBackward = 'Mmaps';
 end   
 Container.Me = Out_Struc;
 
-if SC == 1
-save(['SC_' Out_Struc.MetaForwardBackward '.N' num2str(N) '.J' num2str(Jmax) '.D4.mat'],'-struct','Container')    
-else
-save([Out_Struc.MetaForwardBackward '.N' num2str(N) '.J' num2str(Jmax) '.D4.mat'],'-struct','Container')
-end
+
+    if precon == [0 0]
+        save(['/home/anant/Software/rem3d/rem3d/files/' 'Precoff_' Out_Struc.MetaForwardBackward '.N' num2str(N) '.J' num2str(Jmax) '.D4.mat'],'-struct','Container')    
+    elseif precon == [1 1]
+        save(['/home/anant/Software/rem3d/rem3d/files/' 'Precon_' Out_Struc.MetaForwardBackward '.N' num2str(N) '.J' num2str(Jmax) '.D4.mat'],'-struct','Container')   
+    end
+
+
 
 
 %%%%%%%Reformat the array to make it easier to work with if necessary, but

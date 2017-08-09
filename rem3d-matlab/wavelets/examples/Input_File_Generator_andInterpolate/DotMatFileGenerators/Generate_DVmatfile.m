@@ -1,12 +1,12 @@
 %Generate DV .mat file. 
-
+clear all
 %GridFile
 %%ALL YOU NEED!
 N = 7;
 Jmax = 4;
 eo = 0;
 config = 1;
-SuperChunkMe = 1; %Output a superchunk grid?
+SuperChunkMe = 0; %Output a superchunk grid?
 %%
 if config ==1
 alfa = 0.2089-0.175;
@@ -22,7 +22,7 @@ else
 Name = ['/home/anant/mydbs/Grid_Database/Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];    
 end
 
-ModelName = 'ME16_Vp'; 
+ModelName = 'MIT_P08'; 
 Interpolant = [ModelName '_Matlab_Interpolant.mat']
 %Interpolant = 'ME16_Vp_Matlab_Interpolant.mat';
 Grid = load(Name);
@@ -165,9 +165,9 @@ Wavelets = Wavelets';
 Out_Struc.wvcoeffs = Wavelets;
 
 if SuperChunkMe == 1
-FileName = ['SC_' ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
+FileName = ['/home/anant/Software/rem3d/rem3d/files/' 'SC_' ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
 else
-FileName = [ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
+FileName = ['/home/anant/Software/rem3d/rem3d/files/' 'Csph_' ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
 end
 
 save(FileName,'-struct','Out_Struc');
