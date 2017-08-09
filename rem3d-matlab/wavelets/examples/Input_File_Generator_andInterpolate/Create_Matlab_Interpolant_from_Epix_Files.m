@@ -6,10 +6,10 @@
 clear; close all; 
 
 % Directory with epix files (first column in Lat, second is Lon)
-epix_dir = 'ME16_Vp_epix'; 
+epix_dir = 'MIT_P08_epix'; 
 
 % Name of interpolant to save
-ime = 'ME16_Vp_Matlab_Interpolant'; 
+ime = 'MIT_P08_Matlab_Interpolant'; 
 
 % Work happens below here!
 lista = dir([epix_dir '/*.epix']); 
