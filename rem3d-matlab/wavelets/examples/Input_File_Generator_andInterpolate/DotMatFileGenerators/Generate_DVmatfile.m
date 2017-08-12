@@ -22,7 +22,7 @@ else
 Name = ['/home/anant/mydbs/Grid_Database/Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];    
 end
 
-ModelName = 'MIT_P08'; 
+ModelName = 'ME16_Vp'; 
 Interpolant = [ModelName '_Matlab_Interpolant.mat']
 %Interpolant = 'ME16_Vp_Matlab_Interpolant.mat';
 Grid = load(Name);

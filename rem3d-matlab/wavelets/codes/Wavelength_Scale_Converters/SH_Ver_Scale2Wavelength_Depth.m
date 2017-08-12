@@ -1,4 +1,4 @@
-function [ maxdeg,WavelengthKm] = Scale2Wavelength_Depth( N,Scale,Jmax,depkm )
+function [ maxdeg,WavelengthKm] = SH_Ver_Scale2Wavelength_Depth( N,Scale,Jmax,depkm )
 % Calculate the dominant wavelength and degree of an equivalent wavelet by interpolating on
 % grid, converting to SH deg, then using the Jean Relation
 % (see treatise on geophysics, page 155) to get dominant wavelength.
@@ -20,7 +20,7 @@ vws = angularD4WT(Transform_Me,[Jmax Jmax],[1 1],'inverse',1);
 vd(isnan(vd))=0;
 % Figure out the dominant deg.
 [sdl,l]=plm2spec(xyz2plm_hardfix(vd));
-semilogy(l,sdl)
+%semilogy(l,sdl)
 [a,maxdeg]=max(sdl);
 
 %%%Now, use the Jean Relation to get actual cartesian wavelength from degree.

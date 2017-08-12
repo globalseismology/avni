@@ -1,4 +1,4 @@
-function [ maxdeg,WavelengthKm] = Scale2Wavelength_Depth( N,Scale,Jmax,depkm )
+function [ maxdeg,WavelengthKm] = SH_Ver_Scale2Wavelength_Depth( N,Scale,Jmax,depkm )
 % Calculate the dominant wavelength and degree of an equivalent wavelet by interpolating on
 % grid, converting to SH deg, then using the Jean Relation
 % (see treatise on geophysics, page 155) to get dominant wavelength.
