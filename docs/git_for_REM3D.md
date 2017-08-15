@@ -84,12 +84,16 @@ One-time configuration for each repository
 
 -   Clone the repository on your machine
 
-        $ git clone geodynamics/rem
+        $ git clone -b devel https://username:password@github.com/pmoulik/rem3d.git
 
 -   Checkout the `devel` branch
 
-        $ cd REM3D3d
+        $ cd rem3d
         $ git checkout -b devel origin/devel
+
+-   Confirm that you are on the `devel` branch (* next to the name)
+
+        $ git branch
 
 -   Call our configuration script (replace "your_github_name" with your GitHub name, i.e., with your login on the GitHub Web site)
 
