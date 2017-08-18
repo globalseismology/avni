@@ -300,8 +300,8 @@ def Read_GridMat_Files(Database_Path,N,Jmax,EulerConfig,ModelName,Sphere_Param):
     ####Read the .mat files.
     Grids = sio.loadmat(Database_Path + GridName)
     ####
-    lat = TestGrids['lat']
-    lon = TestGrids['lon']
+    lat = Grids['lat']
+    lon = Grids['lon']
     return(GridName,Grids,lat,lon)
 
 def Read_Bases_Mat_Files(Database_Path,N,Jmax,WaveletBasisFn,Preconditioning):
