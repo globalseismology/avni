@@ -25,7 +25,7 @@ list_lengths = [];
 parfor j = 1:length(CurrScaleIndices)
             TransformMe = zeros(2^N,2^N);
             TransformMe(CurrScaleIndices(j)) = 1;
-            recoverMe = angularD4WT(TransformMe,[Jmax Jmax],[1 1],'inverse',1);
+            recoverMe = angularD6WT(TransformMe,[Jmax Jmax],[1 1],'inverse',1);
             length_indices = find(recoverMe ~= 0);
             length_square = sqrt(length(length_indices));
             list_lengths = [list_lengths length_square];

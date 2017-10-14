@@ -206,10 +206,11 @@ def Read_Mat_Files(Database_Path,N,Jmax,WaveletBasisFn,eo,EulerConfig,ModelName,
     return DVBasisName, WaveletCoeffBasisName, GridName, VeloName, WaveletBasis, WaveletCoeffBasis, Grids, ModelFile,Vvals,wvcoeffs,Depth_List 
 
 
-def Get_Model_RMS_With_Depth(Scale_List,ModelFile):
+def Get_Model_RMS_With_Depth(Scale_List,ModelFile,GridName,Database_Path,DVBasisName,N):
     """ Returns a vector consisting of the RMS of a model, expanded at a given scale length across all
     depths contained in the model. 
     """
+    #Note the old function definition was def Get_Model_RMS_With_Depth(Scale_List,ModelFile):    
     Depths = ModelFile['depth']
     Depth_List = np.unique(Depths)
     Depth_List = np.flip(Depth_List,0)
