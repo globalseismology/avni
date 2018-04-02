@@ -1,6 +1,7 @@
 %%Work with a Map of Wv Coeffs, test results from African topography. 
 Choice_1 =0;
 ORIG = 'Direct'
+addpath(genpath('/home/anant/Software/rem3d/rem3d-matlab/wavelets'))
 setenv('IFILES','/home/moulik/Software/fjsimons-MMASS-v1.0.1/DATA')
 colperc = [5 95];
 Get_Edgy = 0;
@@ -33,7 +34,7 @@ end
 
 African_Cubed_Chunk = v(:,:,face);
 vw=angularD6WT(v,[Jmax Jmax],[1 1],'forward',1);
-Reconstruct_Africa_Direct = angularD6WT(vw,[J J],[1 1],'inverse',1);
+Reconstruct_Africa_Direct = angularD4WT(vw,[J J],[1 1],'inverse',1);
 
 
 dax=prctile(African_Cubed_Chunk(:),colperc);
@@ -108,12 +109,12 @@ title('Locations of wavelets formed by identifying wavelet maps corresponding to
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
-Orig_Wavelet_Transform = angularD6WT(African_Cubed_Chunk,[Jmax Jmax],[1 1],'forward',1);
+Orig_Wavelet_Transform = angularD4WT(African_Cubed_Chunk,[Jmax Jmax],[1 1],'forward',1);
 Wavelet_locs = find(Wavelet_Builder ~= 0);
 The_Big_One = zeros(2^N,2^N);
 The_Big_One(Wavelet_locs) = Orig_Wavelet_Transform(Wavelet_locs);
 subplot(3,3,5)
-GiveItBackYouMonster = angularD6WT(The_Big_One,[Jmax Jmax],[1 1],'inverse',1);
+GiveItBackYouMonster = angularD4WT(The_Big_One,[Jmax Jmax],[1 1],'inverse',1);
 hhhhh=imagefnan([1 1],[2^N 2^N],GiveItBackYouMonster,colmap,dax,[],[],0);
 
 subplot(3,3,6)

@@ -2,11 +2,11 @@
 clear all
 %GridFile
 %%ALL YOU NEED!
-N = 7;
-Jmax = 4;
+N = 8;
+Jmax = 5;
 eo = 0;
 config = 1;
-SuperChunkMe = 1; %Output a superchunk grid?
+SuperChunkMe = 0; %Output a superchunk grid?
 %%
 if config ==1
 alfa = 0.2089-0.175;
@@ -17,13 +17,13 @@ end
 [vwlev,vwlevs]=cube2scale(N,[Jmax+1 Jmax+1],1);
 
 if SuperChunkMe == 1
-Name = ['/home/anant/mydbs/Grid_Database/SC_Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];
+Name = ['/Users/Anant/Desktop/Education/Research/IRIS_Research/UMD_GlobalTomo/Thresholding_Implementation/SC_Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];
 else
-Name = ['/home/anant/mydbs/Grid_Database/Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];    
+Name = ['/Users/Anant/Desktop/Education/Research/IRIS_Research/UMD_GlobalTomo/Thresholding_Implementation/Csph_Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];
 end
 
-ModelName = 'US-SL-2014'; 
-Interpolant = [ModelName '_Matlab_Interpolant.mat']
+ModelName = 'THBUS'; 
+Interpolant = [ModelName '_Matlab_Interpolant.mat'];
 %Interpolant = 'ME16_Vp_Matlab_Interpolant.mat';
 Grid = load(Name);
 LoadMe = load(Interpolant);
@@ -61,40 +61,40 @@ V = LoadMe.V;
 %   2800
 %   2890];
 
+%MIT
+% Depths = [  25
+%    100
+%    200
+%    300
+%    400
+%    500
+%    600
+%    700
+%    800
+%    900
+%    1000
+%    1100
+%    1200
+%    1300
+%    1400
+%    1500
+%    1600
+%    1700
+%    1800
+%    1900
+%    2000
+%    2100
+%    2200
+%    2300
+%    2400
+%    2500
+%    2600
+%    2700
+%    2800];
 
-Depths = [  25
-   100
-   200
-   300
-   400
-   500
-   600
-   700
-   800
-   900
-   1000
-   1100
-   1200
-   1300
-   1400
-   1500
-   1600
-   1700
-   1800
-   1900
-   2000
-   2100
-   2200
-   2300
-   2400
-   2500
-   2600
-   2700
-   2800];
 
-%Schmandt model
-
-Depths = [  100
+%Schmandt and Lin, and others??
+Depths = [100
    200
    300
    400
@@ -107,12 +107,14 @@ Depths = [  100
    1100
    1200];
 
+
+
 r = 6371 - Depths;
 Wavelets = [];
 z = [];
 lon = [];
 lat = [];
-ScaleArr = []
+ScaleArr = [];
 for i = 1:length(r)
  TempScaleArr = vwlevs(:);
  latlength = 6*2^(2*N);
@@ -179,9 +181,9 @@ Wavelets = Wavelets';
 Out_Struc.wvcoeffs = Wavelets;
 
 if SuperChunkMe == 1
-FileName = ['/home/anant/Software/rem3d/rem3d/files/' 'SC_' ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
+FileName = ['/Users/Anant/Desktop/Education/Research/IRIS_Research/UMD_GlobalTomo/models/' 'SC_' ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
 else
-FileName = ['/home/anant/Software/rem3d/rem3d/files/' 'Csph_' ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
+FileName = ['/Users/Anant/Desktop/Education/Research/IRIS_Research/UMD_GlobalTomo/models/' 'Csph_' ModelName '.N' num2str(N) '.Jmax' num2str(Jmax) '.EulerConfig' num2str(config) '.mat'];
 end
 
 save(FileName,'-struct','Out_Struc');

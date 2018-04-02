@@ -4,15 +4,6 @@
 %by scratch with this. Just be aware of where the scales are meant to be on
 %the cubed sphere. 
 
-
-
-
-
-
-
-
-
-
 %Anant Hariharan
 face = 3;
 Desired_Index_dim1 = [1];
