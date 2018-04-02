@@ -91,29 +91,29 @@ hhhhh=imagefnan([1 1],[2^N 2^N],Maybe_Res,colmap,dax,[],[],0);
 %%%%%%
 % Wvoneone_Map = full(Wv_Coeffs_Map(1).map{1});
 % plotoncube(Wvoneone_Map,'2D')
-
-
-Orig_Wavelet_Transform = angularD4WT(African_Cubed_Chunk,[Jmax Jmax],[1 1],'forward',1);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Wavelet_locs = find(Wavelet_Builder ~= 0);
-The_Big_One = zeros(2^N,2^N);
-The_Big_One(Wavelet_locs) = Orig_Wavelet_Transform(Wavelet_locs);
-subplot(3,3,6)
-GiveItBackYouMonster = angularD4WT(The_Big_One,[Jmax Jmax],[1 1],'inverse',1);
-hhhhh=imagefnan([1 1],[2^N 2^N],GiveItBackYouMonster,colmap,dax,[],[],0);
-
-subplot(3,3,7)
-resid = GiveItBackYouMonster - Structure_of_Interest(:,:,face);
-contourf(resid)
-hold on
-plot([xbound(1) xbound(2) xbound(2) xbound(1) xbound(1)],[ybound(1) ybound(1) ybound(2) ybound(2) ybound(1)],'r')
-colorbar
-caxis([-5000 1])
-
-subplot(3,3,8)    
-Residual_Ver2 = Maybe_Res -Structure_of_Interest(:,:,face)
-contourf(Residual_Ver2)
-hold on
-plot([xbound(1) xbound(2) xbound(2) xbound(1) xbound(1)],[ybound(1) ybound(1) ybound(2) ybound(2) ybound(1)],'r')
-colorbar
-caxis([-5000 1])
+% 
+% 
+% Orig_Wavelet_Transform = angularD4WT(African_Cubed_Chunk,[Jmax Jmax],[1 1],'forward',1);
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Wavelet_locs = find(Wavelet_Builder ~= 0);
+% The_Big_One = zeros(2^N,2^N);
+% The_Big_One(Wavelet_locs) = Orig_Wavelet_Transform(Wavelet_locs);
+% subplot(3,3,6)
+% GiveItBackYouMonster = angularD4WT(The_Big_One,[Jmax Jmax],[1 1],'inverse',1);
+% hhhhh=imagefnan([1 1],[2^N 2^N],GiveItBackYouMonster,colmap,dax,[],[],0);
+% 
+% subplot(3,3,7)
+% resid = GiveItBackYouMonster - Structure_of_Interest(:,:,face);
+% contourf(resid)
+% hold on
+% plot([xbound(1) xbound(2) xbound(2) xbound(1) xbound(1)],[ybound(1) ybound(1) ybound(2) ybound(2) ybound(1)],'r')
+% colorbar
+% caxis([-5000 1])
+% 
+% subplot(3,3,8)    
+% Residual_Ver2 = Maybe_Res -Structure_of_Interest(:,:,face)
+% contourf(Residual_Ver2)
+% hold on
+% plot([xbound(1) xbound(2) xbound(2) xbound(1) xbound(1)],[ybound(1) ybound(1) ybound(2) ybound(2) ybound(1)],'r')
+% colorbar
+% caxis([-5000 1])
