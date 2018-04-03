@@ -6,7 +6,7 @@ N = 7;
 Jmax = 4;
 eo = 0;
 config = 1;
-SuperChunkMe = 0; %Output a superchunk grid?
+SuperChunkMe = 1; %Output a superchunk grid?
 %%
 if config ==1
 alfa = 0.2089-0.175;
@@ -22,7 +22,7 @@ else
 Name = ['/home/anant/mydbs/Grid_Database/Grid_N' num2str(N) '_Jmax' num2str(Jmax) '_EulerConfig1.mat'];    
 end
 
-ModelName = 'ME16_Vp'; 
+ModelName = 'US-SL-2014'; 
 Interpolant = [ModelName '_Matlab_Interpolant.mat']
 %Interpolant = 'ME16_Vp_Matlab_Interpolant.mat';
 Grid = load(Name);
@@ -92,6 +92,20 @@ Depths = [  25
    2700
    2800];
 
+%Schmandt model
+
+Depths = [  100
+   200
+   300
+   400
+   500
+   600
+   700
+   800
+   900
+   1000
+   1100
+   1200];
 
 r = 6371 - Depths;
 Wavelets = [];

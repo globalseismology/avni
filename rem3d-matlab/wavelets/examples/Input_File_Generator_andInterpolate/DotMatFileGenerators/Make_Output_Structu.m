@@ -1,13 +1,13 @@
 %%%%
 
 %Make a map of dv or inverse anomalies. 
-N = 7 
-Jmax = 4;
+N = 8 
+Jmax = 5;
 eo = 1;
 face = 1;
 inv = 1;
 SC = 0;
-precon  = [0 0];
+precon  = [1 1];
 %Things get weird because of parfor: can only create variables within the
 %for loops, forcing us to re-initialize the pts variable every loop :(
 
