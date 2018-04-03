@@ -1,7 +1,7 @@
-Primal_Test = 1;
+Primal_Test = 0;
 N = 7;
 J = 4;
-[vwlev,vwlevs]=cube2scale(N,[5 5],1)
+[vwlev,vwlevs]=cube2scale(N,[5 5],1);
 All_Scale4Indices = find(vwlev == 4);
 %%%%%%%%%%%%%%%%Reconstruct Face Entirely
 
@@ -9,7 +9,7 @@ All_Scale4Indices = find(vwlev == 4);
 
 if Primal_Test ==1
 N = 7
-Indices = 2^(2*N)
+Indices = 2^(2*N);
 Out_Map = 0;
 for i = 1:length(All_Scale4Indices)
     %WvCoeff = ModelFile.wvcoeffs(i);
@@ -23,7 +23,7 @@ plotoncube(Out_Map,'2D')
 else
 
 ModelFile = load('ME16_Vp.N7.Jmax4.EulerConfig1.mat');
-WaveletBasis = load('/home/anant/Software/rem3d/rem3d/files/DVmaps.N7.J4.D4.mat');
+WaveletBasis = load('/home/anant/Software/rem3d/rem3d/files/SC_Mmaps.N7.J4.D4.mat');
 GridFile = load('/home/anant/Software/rem3d/rem3d-matlab/wavelets/examples/Input_File_Generator_andInterpolate/DotMatFileGenerators/Grid_Database/Grid_N7_Jmax4_EulerConfig1.mat');
 
 
@@ -47,7 +47,7 @@ for i = 1:length(Indices_Interest)
 end
 
 
-contourf(Face1Map)
+h = imagefnan(Face1Map)
 colorbar
 
 end
