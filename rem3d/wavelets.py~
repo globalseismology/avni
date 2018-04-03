@@ -206,11 +206,10 @@ def Read_Mat_Files(Database_Path,N,Jmax,WaveletBasisFn,eo,EulerConfig,ModelName,
     return DVBasisName, WaveletCoeffBasisName, GridName, VeloName, WaveletBasis, WaveletCoeffBasis, Grids, ModelFile,Vvals,wvcoeffs,Depth_List 
 
 
-def Get_Model_RMS_With_Depth(Scale_List,ModelFile,GridName,Database_Path,DVBasisName,N):
+def Get_Model_RMS_With_Depth(Scale_List,ModelFile):
     """ Returns a vector consisting of the RMS of a model, expanded at a given scale length across all
     depths contained in the model. 
     """
-    #Note the old function definition was def Get_Model_RMS_With_Depth(Scale_List,ModelFile):    
     Depths = ModelFile['depth']
     Depth_List = np.unique(Depths)
     Depth_List = np.flip(Depth_List,0)
@@ -288,87 +287,4 @@ def Plot_Map (All_map,ax,input_title,WaveletBasis,Grids,colormaxinput):
         meridians = np.arange(0.,360.,90.)
         m.drawmeridians(meridians,labels=[False,False,False,True])
     return ax
-
-#####Sub-Sub Reading Subroutines
-def Read_GridMat_Files(Database_Path,N,Jmax,EulerConfig,ModelName,Sphere_Param):
-    """ Reads maps of Grids, which contain describe a point's lat, lon, face, etc.
-    """
-    ####More Setup for File Names
-    ##Naming Conventions
-
-    GridName= Sphere_Param + '_'+'Grid_N' + str(N) + '_Jmax' + str(Jmax) + \
-                  '_EulerConfig' + str(EulerConfig) + '.mat'
-    ####Read the .mat files.
-    Grids = sio.loadmat(Database_Path + GridName)
-    ####
-    lat = Grids['lat']
-    lon = Grids['lon']
-    return(GridName,Grids,lat,lon)
-
-def Read_Bases_Mat_Files(Database_Path,N,Jmax,WaveletBasisFn,Preconditioning):
-    """ Reads basis maps for wavelets and wavelet coefficients. 
-    """
-    ##Naming Conventions
-
-    DVBasisName = Preconditioning + '_Mmaps.'+ 'N' + str(N) + '.J' + str(Jmax) + '.' + WaveletBasisFn + '.mat'
-    WaveletCoeffBasisName =  Preconditioning+'_WCoeffs.' + 'N'+str(N) + '.J' + str(Jmax) + '.' + \
-                                WaveletBasisFn + '.mat'
-    ####Read the .mat files.
-    WaveletBasis = sio.loadmat(Database_Path + DVBasisName)
-    WaveletCoeffBasis = sio.loadmat(Database_Path + WaveletCoeffBasisName)
-    ####
-    #Declare some variables
- 
-
-    return(DVBasisName,WaveletCoeffBasisName,WaveletBasis,WaveletCoeffBasis)
-
-
-def Read_Model(Database_Path,N,Jmax,EulerConfig,ModelName,Sphere_Param):
-    """
-    Reads an interpolated tomographic model generated using REM3D-MATLAB, outputs
-    wavelet coeffs, interpolated depths, velocity anomalies. 
-    """
-    ##Naming Conventions
-    VeloName = Sphere_Param + '_' + ModelName + '.N' + str(N) + '.Jmax' + str(Jmax) +  \
-                  '.EulerConfig' + str(EulerConfig) + '.mat'
-
-    ####Read the .mat files.
-    WaveletBasis = sio.loadmat(Database_Path + DVBasisName)
-    WaveletCoeffBasis = sio.loadmat(Database_Path + WaveletCoeffBasisName)
-    ####
-    #Declare some variables
-    ModelFile = sio.loadmat(Database_Path + VeloName)
-
-    
-    #Declare some variables
-    Vvals = ModelFile['model']
-    wvcoeffs = ModelFile['wvcoeffs']
-    Depths = ModelFile['depth']
-    Depth_List = np.unique(Depths)
-    Depth_List = np.flip(Depth_List,0)
-
-    return(Vvals,wvcoeffs,Depths,Depth_List,ModelFile,VeloName)
-
-
-def Read_Mat_Files_Ver2 (Database_Path,N,Jmax,WaveletBasisFn,eo,EulerConfig,ModelName,Sphere_Param,Preconditioning):
-    """ This takes in a set of parameters that specify the .mat files in the rem3d/files/ folder, and reads in 
-    the relevant files using these parameters. Then outputs the files and some relevant variables from them. 
-    This function is thus essential to do anything!
-    
-    #####EXAMPLES of parameter names! Pretty much just copy/paste from here, easiest.
-    
-    #    Database_Path = '/home/anant/Software/rem3d/rem3d/files/'
-    #    N = 7
-    #    Jmax = 4
-    #    WaveletBasisFn = 'D4'
-    #    eo =0
-    #    EulerConfig = 1
-    #    ModelName = 'MIT_P08'
-    #    Sphere_Param = 'SC'
-    #    Preconditioning = 'Precon'  #Precoff or Precon
-    """
-    (GridName,Grids,lat,lon) = Read_GridMat_Files(Database_Path,N,Jmax,EulerConfig,ModelName,Sphere_Param)
-    (DVBasisName,WaveletCoeffBasisName,WaveletBasis,WaveletCoeffBasis) = Read_Bases_Mat_Files(Database_Path,N,Jmax,WaveletBasisFn,Preconditioning)
-    (Vvals,wvcoeffs,Depths,Depth_List,ModelFile,VeloName) = Read_Model(Database_Path,N,Jmax,EulerConfig,ModelName,Sphere_Param)
-    return(DVBasisName,WaveletCoeffBasisName,GridName,VeloName,WaveletBasis,WaveletCoeffBasis,Grids,ModelFile,Vvals,wvcoeffs,Depth_List)
 
