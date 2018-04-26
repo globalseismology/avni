@@ -16,8 +16,68 @@ import pdb    #for the debugger pdb.set_trace()
 from math import pi
 import matplotlib.pyplot as plt
 import fortranformat as ff #reading/writing fortran formatted text
+import requests
+import platform
+from datetime import datetime
+
+####################### IMPORT REM3D LIBRARIES  #######################################
+
+from . import constants
 
 #######################################################################################
+
+def creation_date(path_to_file):
+    """
+    Try to get the date that a file was created, falling back to when it was
+    last modified if that isn't possible.
+    Modified from 
+    See http://stackoverflow.com/a/39501288/1709587 for explanation.
+    to use datetime
+    """
+    if platform.system() == 'Windows':
+        return datetime.fromtimestamp(os.path.getctime(path_to_file))
+    else:
+        stat = os.stat(path_to_file)
+        try:
+            return datetime.fromtimestamp(stat.st_birthtime)
+        except AttributeError:
+            # We're probably on Linux. No easy way to get creation dates here,
+            # so we'll settle for when its content was last modified.
+            return datetime.fromtimestamp(stat.st_mtime)
+            
+def update_file(file):
+    """
+    Does the url contain a downloadable resource that is newer
+    """
+    url = constants.downloadpage + '/'+file
+    h = requests.head(url, allow_redirects=True)
+    if h.status_code == 404:
+        print "Warning: Unknown status code ("+str(h.status_code)+"( while quering "+file
+        download = False
+    elif h.status_code == 200:
+        header = h.headers
+        lmd = header.get('Last-Modified')  # Check when the file was modified
+        server_data = datetime.strptime(lmd, '%a, %d %b %Y %H:%M:%S %Z')
+        if os.path.isfile(constants.localfolder+'/'+file): # if a local file already exists
+            local_data = creation_date(constants.localfolder+'/'+file)
+            if (server_data-local_data).total_seconds() > 0: download = True # Download if server has newer file. 
+        else:
+            download = True
+    else:
+        print "Warning: Unknown status code ("+str(h.status_code)+"( while quering "+file
+        download = False
+        
+    if download:
+        print ".... Downloading "+file+" from "+url
+        r = requests.get(url, allow_redirects=True)
+        open(constants.localfolder+'/'+file, 'wb').write(r.content)
+    return 
+    
+##################################   Surface waves #######################################
+
+def readREM3DSWformat(file):
+    """Reads the REM3D format for analysis and plotting"""
+
 
 
 def readREM3DSWformat(file):

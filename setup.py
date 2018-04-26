@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import re
+import os
 
 versionstuff = dict(
     re.findall("(.+) = '(.+)'\n", open('rem3d/version.py').read()))
@@ -13,7 +14,8 @@ metadata = dict(name = 'rem3d',
                 license='GPL',
                 long_description='REM3D is a Python library for reference Earth datasets and tomographic models.',
     			packages = ['rem3d'],
-                package_data={'rem3d': ['data/input_*/*']},
+                package_dir={'rem3d': 'rem3d'},
+                package_data={'rem3d': ['file/*']},
     		keywords = ['earth-science','earth-observation','earthquake','earth','earthquake-data','geology','geophysics','geophysical-inversions','seismology','seismic-inversion','seismic-waves','seismic-tomography','mineral','geochemistry','geodesy','physics','modeling','modeling-tool','model','geodynamics'],
                 classifiers=[
                 'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
@@ -32,3 +34,16 @@ except ImportError:
 
 
 setup(**metadata)
+
+
+##### Write the installation directory to configuration file
+import ConfigParser
+Config = ConfigParser.ConfigParser()
+Config.read('rem3d/files/install.cfg')
+
+cwd = os.getcwd()
+Config.set('metadata','installdir',cwd)
+    
+# Writing our configuration file to 'example.cfg'
+with open('rem3d/files/install.cfg', 'wb') as configfile:
+    Config.write(configfile)

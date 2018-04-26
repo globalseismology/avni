@@ -1,7 +1,12 @@
 from __future__ import absolute_import
 import scipy.constants
+import ConfigParser
+Config = ConfigParser.ConfigParser()
+Config.read('files/install.cfg')
 
 """
-molar gas constant (R) in J mol^-1 K^-1
+download files
 """
 downloadpage = 'https://maurya.umd.edu/files'
+localfolder = 'files'
+installdir = Config.get('metadata','installdir')
