@@ -1,0 +1,14 @@
+Minimal working example of bokeh server web app that relies soley on subdirectories
+
+To serve:
+
+cd rem3d/applets/
+bokeh serve self_contained_station_plot
+
+To view over ssh:
+
+locally (replace user with your name):
+ssh -p 41557 -NfL localhost:5006:localhost:5006 chavlin@maurya.umd.edu
+
+then locally, open broswer to
+http://localhost:5006/test_applet
