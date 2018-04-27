@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Configuration file for local installation
+rem3d/files/install.cfg
+
 # C extensions
 *.so
 

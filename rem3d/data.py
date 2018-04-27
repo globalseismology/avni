@@ -49,6 +49,7 @@ def update_file(file):
     """
     Does the url contain a downloadable resource that is newer
     """
+    localfile=constants.installdir+'/rem3d/'+constants.localfiles+'/'+file
     url = constants.downloadpage + '/'+file
     h = requests.head(url, allow_redirects=True)
     if h.status_code == 404:
@@ -58,8 +59,8 @@ def update_file(file):
         header = h.headers
         lmd = header.get('Last-Modified')  # Check when the file was modified
         server_data = datetime.strptime(lmd, '%a, %d %b %Y %H:%M:%S %Z')
-        if os.path.isfile(constants.localfolder+'/'+file): # if a local file already exists
-            local_data = creation_date(constants.localfolder+'/'+file)
+        if os.path.isfile(localfile): # if a local file already exists
+            local_data = creation_date(localfile)
             if (server_data-local_data).total_seconds() > 0: download = True # Download if server has newer file. 
         else:
             download = True
@@ -70,15 +71,10 @@ def update_file(file):
     if download:
         print ".... Downloading "+file+" from "+url
         r = requests.get(url, allow_redirects=True)
-        open(constants.localfolder+'/'+file, 'wb').write(r.content)
+        open(localfile, 'wb').write(r.content)
     return 
     
 ##################################   Surface waves #######################################
-
-def readREM3DSWformat(file):
-    """Reads the REM3D format for analysis and plotting"""
-
-
 
 def readREM3DSWformat(file):
     """Reads the REM3D format for analysis and plotting"""
