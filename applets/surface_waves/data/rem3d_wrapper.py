@@ -29,6 +29,8 @@ class data_fetch(object):
             self.MetaData[data_id]=(comments,reference,shortref,file_name)
             # append an id flag
             SWdata=nprec.append_fields(SWdata,'data_id',np.array([data_id for _ in range(len(SWdata))]),usemask=False)
+            # for now, to speed things up, trim this data
+            SWdata=SWdata[0:500]
             # SWdata=np.insert(SWdata, 0, data_id, axis=1)
             if self.DataInitialized:
                 self.Data=np.concatenate((self.Data,SWdata),axis=0)
@@ -37,7 +39,7 @@ class data_fetch(object):
                 self.DataInitialized=True
         return
 
-    def buildMapData(self):        
+    def buildMapData(self):
         if self.AppletType=='SurfaceWaves':
             self.MapData=np.unique(self.Data[['stat','stlat','stlon','data_id']])
         return
