@@ -53,7 +53,7 @@ def update_file(file):
     url = constants.downloadpage + '/'+file
     h = requests.head(url, allow_redirects=True)
     if h.status_code == 404:
-        print "Warning: Unknown status code ("+str(h.status_code)+"( while quering "+file
+        print "Warning: Unknown status code ("+str(h.status_code)+") while quering "+file
         download = False
     elif h.status_code == 200:
         header = h.headers
@@ -65,7 +65,7 @@ def update_file(file):
         else:
             download = True
     else:
-        print "Warning: Unknown status code ("+str(h.status_code)+"( while quering "+file
+        print "Warning: Unknown status code ("+str(h.status_code)+") while quering "+file
         download = False
         
     if download:
