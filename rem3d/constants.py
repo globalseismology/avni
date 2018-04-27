@@ -5,6 +5,11 @@ import pdb    #for the debugger pdb.set_trace()
 import pkgutil
 import StringIO
 
+####################### IMPORT REM3D LIBRARIES  #######################################
+
+from . import tools
+#######################################################################################
+
 """
 download files
 """
@@ -14,8 +19,4 @@ localfiles = 'files'
 """
 Installation directory
 """
-string = pkgutil.get_data('rem3d',localfiles+'/install.cfg')
-buf = StringIO.StringIO(string)
-Config = ConfigParser.ConfigParser()
-Config.readfp(buf)
-installdir = Config.get('metadata','installdir')
+installdir = tools.get_installdir('install.cfg')
