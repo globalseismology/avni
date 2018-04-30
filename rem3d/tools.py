@@ -3,7 +3,34 @@ import scipy.constants
 import ConfigParser
 import pdb    #for the debugger pdb.set_trace()
 import pkgutil
-import StringIO
+import os
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import constants
 #######################################################################################
+
+def get_installdir():
+    """
+    Get the installation directory for the rem3d module
+    """
+    loader=pkgutil.find_loader('rem3d')
+    if loader is None:
+        print "Warning: installation directory not found for rem3d. Using current directory "
+        installdir = '.'
+    else:
+        installdir = os.path.dirname(loader.get_filename())
+        if not os.access(installdir, os.W_OK):
+            print "Warning: Cannot I/O to rem3d directory due to permissions. Use current directory. "
+            installdir = '.'
+    return installdir
+    
+def get_filedir(makedir=True):
+    """
+    Get the local files directory. Make a new directory if doesn't exist (makedir==True)
+    """
+    installdir = get_installdir()
+    filedir = installdir+'/'+constants.localfilefolder
+    if makedir: 
+        if not os.path.exists(filedir):
+            os.makedirs(filedir)        
+    return filedir
+

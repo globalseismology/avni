@@ -22,6 +22,7 @@ from datetime import datetime
 ####################### IMPORT REM3D LIBRARIES  #######################################
 
 from . import constants
+from . import tools
 
 #######################################################################################
 
@@ -44,11 +45,11 @@ def creation_date(path_to_file):
             # so we'll settle for when its content was last modified.
             return datetime.fromtimestamp(stat.st_mtime)
             
-def update_file(file):
+def update_file(installdir,file):
     """
     Does the url contain a downloadable resource that is newer
     """
-    localfile=constants.installdir+'/rem3d/'+constants.localfiles+'/'+file
+    localfile = tools.get_filedir()+'/'+file
     url = constants.downloadpage + '/'+file
     h = requests.head(url, allow_redirects=True)
     if h.status_code == 404:
