@@ -8,7 +8,7 @@ import os
 from . import constants
 #######################################################################################
 
-def get_installdir():
+def get_installdir(checkwrite=True):
     """
     Get the installation directory for the rem3d module
     """
@@ -18,18 +18,19 @@ def get_installdir():
         installdir = '.'
     else:
         installdir = os.path.dirname(loader.get_filename())
-        if not os.access(installdir, os.W_OK):
-            print "Warning: Cannot I/O to rem3d directory due to permissions. Use current directory. "
-            installdir = '.'
+        if checkwrite:
+            if not os.access(installdir, os.W_OK):
+                print "Warning: Cannot I/O to rem3d directory due to permissions. Use current directory. "
+                installdir = '.'
     return installdir
     
-def get_filedir(makedir=True):
+def get_filedir(checkwrite=True,makedir=True):
     """
     Get the local files directory. Make a new directory if doesn't exist (makedir==True)
     """
-    installdir = get_installdir()
+    installdir = get_installdir(checkwrite=checkwrite)
     filedir = installdir+'/'+constants.localfilefolder
-    if makedir: 
+    if checkwrite and makedir: 
         if not os.path.exists(filedir):
             os.makedirs(filedir)        
     return filedir
