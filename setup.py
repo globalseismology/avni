@@ -15,7 +15,7 @@ metadata = dict(name = 'rem3d',
                 long_description='REM3D is a Python library for reference Earth datasets and tomographic models.',
     			packages = ['rem3d'],
                 package_dir={'rem3d': 'rem3d'},
-                package_data={'rem3d': ['files/install.cfg']},
+                package_data={'rem3d': ['files/*']},
                 include_package_data=True,
     		keywords = ['earth-science','earth-observation','earthquake','earth','earthquake-data','geology','geophysics','geophysical-inversions','seismology','seismic-inversion','seismic-waves','seismic-tomography','mineral','geochemistry','geodesy','physics','modeling','modeling-tool','model','geodynamics'],
                 classifiers=[
@@ -35,16 +35,3 @@ except ImportError:
 
 
 setup(**metadata)
-
-
-##### Write the installation directory to configuration file
-import ConfigParser
-Config = ConfigParser.ConfigParser()
-
-cwd = os.getcwd()
-Config.add_section('metadata')
-Config.set('metadata','installdir',cwd)
-    
-# Writing our configuration file to 'example.cfg'
-with open('rem3d/files/install.cfg', 'wb') as configfile:
-    Config.write(configfile)

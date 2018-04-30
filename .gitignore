@@ -3,8 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Configuration file for local installation
-rem3d/files/install.cfg
+# All data files downloaded from remote REM3D server
+rem3d/files/*
 
 # C extensions
 *.so

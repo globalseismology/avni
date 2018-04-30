@@ -14,7 +14,6 @@ from subprocess import call #for calling unix commands
 from datetime import date  #to give a timestamp to output and compare times
 import pdb    #for the debugger pdb.set_trace()
 from math import pi
-import matplotlib.pyplot as plt
 import fortranformat as ff #reading/writing fortran formatted text
 import requests
 import platform
