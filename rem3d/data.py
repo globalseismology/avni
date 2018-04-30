@@ -49,7 +49,7 @@ def update_file(installdir,file):
     """
     Does the url contain a downloadable resource that is newer
     """
-    localfile = tools.get_filedir()+'/'+file
+    localfile = tools.get_filedir(checkwrite=True)+'/'+file
     url = constants.downloadpage + '/'+file
     h = requests.head(url, allow_redirects=True)
     if h.status_code == 404:

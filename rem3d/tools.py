@@ -10,7 +10,7 @@ from . import constants
 
 def get_installdir(checkwrite=True):
     """
-    Get the installation directory for the rem3d module
+    Get the installation directory for the rem3d module. checkwrite checks for write access to the files.
     """
     loader=pkgutil.find_loader('rem3d')
     if loader is None:
