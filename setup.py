@@ -29,7 +29,7 @@ metadata = dict(name = 'rem3d',
 # distutils.
 try:
     from setuptools import setup
-    metadata['install_requires'] = ['numpy', 'matplotlib', 'scipy']
+    metadata['install_requires'] = ['numpy', 'matplotlib', 'scipy','fortranformat']
 except ImportError:
     from distutils.core import setup
 
