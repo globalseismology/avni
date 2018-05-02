@@ -15,6 +15,7 @@ def get_installdir(checkwrite=True,checkenv=True):
     checkenv checks if the directory is specified as an environment variable.
     """
     installdir='not_set'
+    ierror=0
     if checkenv: 
         if os.environ.get('REM3Ddir') is not None: 
             installdir=os.environ.get('REM3Ddir')
