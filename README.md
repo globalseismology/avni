@@ -31,7 +31,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 1. Install the [Anaconda Python Distribution](https://www.continuum.io/downloads). We recommend the 64-bit Python 2.7 version. 
 2. Install REM3D module using pip by opening a terminal window and entering
-`sudo pip install rem3d` 
+`pip install rem3d --user`.  If you are a developer, clone the appropriate branch of the Github repository and enter 'pip install -e . --user'. This lets you to keep working on files inside the Github folder without recompiling the codes.
 
 ### Matlab and Fortran installation (optional)
 
