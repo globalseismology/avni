@@ -97,3 +97,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+#matlab
+*.mat
+*.epix
+*.csph
+*.m~
+*.eps
+*.pdf
