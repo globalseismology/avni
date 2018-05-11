@@ -17,11 +17,11 @@ def main():
         help='Upper bound for color scale saturation level (percent)')
 	parser.add_argument('-l', '--lower_bound', type=float, default=-1.0,
         help='Lower bound for color scale saturation level (percent)')
-	parser.add_argument('-i', '--elev_interval', type=float, default=150,
+	parser.add_argument('-i', '--elev_interval', type=float, default=50,
         help='Number of elevation points for transect plots')
 	parser.add_argument('-e', '--elev_exxagerate', type=float, default=0,
         help='Elevation exxageration for transect plots')
-	parser.add_argument('-d', '--dbs_path', type=str, default='~/Dropbox/Projects/REM3D_UMD/dbs',
+	parser.add_argument('-d', '--dbs_path', type=str, default='~/dbs',
 		help='Database path containing files like hotspots.pkl')
 	parser.add_argument('-b', '--base_path', type=str, default='.',
 		help='Base path containing FILE')   
@@ -60,3 +60,5 @@ def main():
 		
 	return
 
+if __name__== "__main__":
+	main()
