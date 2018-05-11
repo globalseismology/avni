@@ -18,3 +18,6 @@ from . import models
 # plotting library
 from . import plots
 
+# geographic libraries
+from . import geolib
+

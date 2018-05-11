@@ -9,6 +9,21 @@ import sys
 from . import constants
 #######################################################################################
 
+def get_fullpath(path):
+    """Provides the full path by replacing . and ~ in path."""
+    # Get the current directory    
+    if path[0]=='.': path = os.path.dirname(os.path.abspath(__file__))+path[1:]   
+    # If the path starts with tilde, replace with home directory
+    if path[0]=='~': path=os.path.expanduser("~")+path[1:]
+    return path
+    
+def listfolders(path):
+    """
+    Return a list of directories in a path
+    """
+    dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+    return dirs
+    
 def get_installdir(checkwrite=True,checkenv=True):
     """
     Get the installation directory for the rem3d module. checkwrite checks for write access to the files.
@@ -48,4 +63,27 @@ def get_filedir(checkwrite=True,makedir=True):
         if not os.path.exists(filedir):
             os.makedirs(filedir)        
     return filedir
+    
+def writejson(nparray,filename,encoding='utf-8'):
+    """Writes a json file from a numpy array"""
+    
+    listarray = nparray.tolist() # nested lists with same data, indices
+    json.dump(listarray, codecs.open(filename, 'w', encoding=encoding), separators=(',', ':'), sort_keys=True, indent=4) ### this saves the array in .json format
+    return
+
+def readjson(filename,encoding='utf-8'):
+    """Reading from a filename to a numpy array"""
+        
+    obj_text = codecs.open(filename, 'r', encoding=encoding).read()
+    listarray = json.loads(obj_text)
+    nparray = np.array(listarray)
+    return nparray    
+
+    
+def uniquenumpyrow(a):
+    """Gets the unique rows from a numpy array and the indices. e.g. to get unique lat-lon values"""
+    b = np.ascontiguousarray(a).view(np.dtype((np.void, a.dtype.itemsize * a.shape[1])))
+    _, idx = np.unique(b, return_index=True)
+    unique_a = a[idx]
+    return unique_a,idx
 
