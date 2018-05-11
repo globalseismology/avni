@@ -19,5 +19,5 @@ from . import models
 from . import plots
 
 # geographic libraries
-from . import geolib
+from . import geotools
 
