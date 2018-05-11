@@ -14,7 +14,6 @@ import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap
 import multiprocessing
 import cartopy.crs as ccrs
-import codecs,json #printing output
 from joblib import Parallel, delayed
 import pdb	#for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
@@ -120,7 +119,7 @@ def customcolorpalette(name='bk',cptfolder='~/CPT',colorlist=None,colormax=2.,mi
 		
 	if colorlist is None: sys.exit("No colorlist found")
 	custom_cmap = make_colormap(colorlist,name)
-	register_cmap(name=custom_cmap.name, cmap=custom_cmap)
+	cmx.register_cmap(name=custom_cmap.name, cmap=custom_cmap)
 	palette=custom_cmap.name
 	
 	if ifgraytest==1:
