@@ -10,7 +10,7 @@ from . import constants
 from . import data
 =======
 # central user tools
-from . import globalsh
+from . import harmonics
 from . import wavelets
 
 >>>>>>> 65894d111adc23025f253641570cb0bea743ead7
