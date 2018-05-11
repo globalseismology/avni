@@ -5,6 +5,8 @@ import pdb    #for the debugger pdb.set_trace()
 import pkgutil
 import os
 import sys
+import codecs,json #printing output
+import numpy as np
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import constants
 #######################################################################################
