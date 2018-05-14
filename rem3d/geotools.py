@@ -18,7 +18,7 @@ import time
 import progressbar
 
 ############################### PLOTTING ROUTINES ################################		
-from geolib import delazgc # geolib library from NSW
+from .geolib import delazgc # geolib library from NSW
 ###############################
 
 def atand(x):
