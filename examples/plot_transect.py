@@ -6,7 +6,7 @@ import sys,os
 import argparse #parsing arguments
 
 ################################ IMPORT REM3D MODULES   #####################################
-from geolib import delazgc # geolib library from NSW
+from rem3d.geolib import delazgc # geolib library from NSW
 from rem3d.plots import plot1section
 #########################################################
 def main():
