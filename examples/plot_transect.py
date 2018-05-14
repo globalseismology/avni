@@ -6,13 +6,15 @@ import sys,os
 import argparse #parsing arguments
 
 ################################ IMPORT REM3D MODULES   #####################################
-from rem3d.geolib import delazgc # geolib library from NSW
+from rem3d.geolib import ddelazgc # geolib library from NSW
 from rem3d.plots import plot1section
 #########################################################
 def main():
 	parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
-	parser.add_argument("file", type=str,
-		help='Map file in .epix or 3D model file in .npz format')
+	parser.add_argument('-m', '--file', type=str, default='S362ANI+M_kmps.nc',
+		help='Model file')
+	parser.add_argument('-p', '--parameter', type=str, default='vs',
+		help='Parameter of interest')
 	parser.add_argument('-u', '--upper_bound', type=float, default=1.0,
         help='Upper bound for color scale saturation level (percent)')
 	parser.add_argument('-l', '--lower_bound', type=float, default=-1.0,
@@ -47,16 +49,16 @@ def main():
 
 	# N. Chile	
 	lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
-	delta,azep,azst = delazgc(lat1,lng1,lat2,lng2)
-	plot1section(lat1,lng1,azep,delta,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{P} / V_{P}$'+' (%)',vexaggerate=50,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval)
+	delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
+	plot1section(lat1,lng1,azep,delta,filename=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{P} / V_{P}$'+' (%)',vexaggerate=50,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps')
 
 	###### Example of a 180 degree transect without topography
 	lat1 = 0.;lng1 = 0.;azimuth = -30.;gcdelta = 180.
-	plot1section(lat1,lng1,azimuth,gcdelta,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{P} / V_{P}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval)
+	plot1section(lat1,lng1,azimuth,gcdelta,filename=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{P} / V_{P}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval)
 
 	###### Example of a 360 degree transect without topography
 	lat1 = 0.;lng1 = 0.;azimuth = -45.;gcdelta = 360.
-	plot1section(lat1,lng1,azimuth,gcdelta,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{P} / V_{P}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval)
+	plot1section(lat1,lng1,azimuth,gcdelta,filename=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{P} / V_{P}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval)
 		
 	return
 
