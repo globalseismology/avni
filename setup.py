@@ -3,7 +3,7 @@ import re
 import os
 import sys
 import subprocess
-
+import glob
 
 # import numpy
 #---------------------------------------------------------------
@@ -18,7 +18,6 @@ if int(npv[0]) != 1:
 if int(npv[1]) < 7:
     raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
 
-import numpy.distutils.core
 import numpy.distutils.fcompiler
 
 # get F90 environment variable
@@ -79,50 +78,9 @@ else:
 # setup fortran 90 extension
 #---------------------------------------------------------------------------
 
-f90_fnames = [
-    'types.f90',
-    'utils.f90',
-    'zhang_jin.f90',
-    'zhang_jin_f.f90',
-    'slatec.f90',
-    'special_functions.f90',
-    'legendre_polynomial.f90',
-    'm_mrgrnk.f90',
-    'physical_constants.f90',
-    'geometry.f90',
-    'hui_gnedin_97.f90',
-    'hm12.f90',
-    'chem_cool_rates.f90',
-    'ion_solver.f90',
-    'verner_96.f90',
-    'photo_xsections.f90',
-    'spectra.f90',
-    'source_point.f90',
-    'source_plane.f90',
-    'source_background.f90',
-    'sphere_base.f90',
-    'sphere_stromgren.f90',
-    'sphere_bgnd.f90',
-    'slab_base.f90',
-    'slab_plane.f90',
-    'slab_bgnd.f90',
-    ]
-
-
-
-f90_paths = []
-for fname in f90_fnames:
-    f90_paths.append( 'rem3d/f2py/' + fname )
-
-
-
-
-extf = numpy.distutils.core.Extension(
-    name = 'rem3d-f90',
-    sources = f90_paths,
-    extra_f90_compile_args = f90_flags,
-    extra_link_args = omp_lib,
-    )
+f90_dir='rem3d/f2py'
+packagelist=['rem3d']
+for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
 
 
 # write short description
@@ -143,42 +101,51 @@ with open('README.md') as file:
 versionstuff = dict(
     re.findall("(.+) = '(.+)'\n", open('rem3d/version.py').read()))
 
+
+# Tried to use setuptools in order to check dependencies.
+# if the system does not have setuptools, fall back on
+# distutils.
+# Can only use numpy distutils with distutils as fortran codes 
+# are not compiles otherwise
+
+
+# Build the f2py fortran extension
+# --------------------------------
+from os.path import join
+from numpy.distutils.core import Extension
+from numpy.distutils.core import setup
+ 
+extf = [Extension(name='rem3d.'+module,
+                sources = [join(f90_dir,module,f) for f in os.listdir(join(f90_dir,module)) if f.endswith('.f')],
+                extra_f90_compile_args = f90_flags,
+                extra_link_args = omp_lib)
+            for module in os.listdir(f90_dir)]
+
+
 metadata = dict(name = 'rem3d',
                 version=versionstuff['version'],
                 description=description,
-    			long_description = long_description,
+                long_description = long_description,
                 url='http://www.rem3d.org',
-    			author = 'Pritwiraj Moulik',
+                author = 'Pritwiraj Moulik',
                 author_email='pritwiraj.moulik@gmail.com',
                 license='GPL',
-                long_description='REM3D is a Python library for reference Earth datasets and tomographic models.',
-    			packages = ['rem3d'],
-                package_data={'rem3d': ['*.f90','data/input_*/*']},
-                ext_modules = [extf],
-    			keywords = ['earth-science','earth-observation','earthquake',
-    			'earth','earthquake-data','geology','geophysics',
-    			'geophysical-inversions','seismology','seismic-inversion',
-    			'seismic-waves','seismic-tomography','mineral',
-    			'geochemistry','geodesy','physics','modeling','modeling-tool',
-    			'model','geodynamics'],
+                packages = packagelist,
+                ext_modules = extf,
+                keywords = ['earth-science','earth-observation','earthquake',
+                'earth','earthquake-data','geology','geophysics',
+                'geophysical-inversions','seismology','seismic-inversion',
+                'seismic-waves','seismic-tomography','mineral',
+                'geochemistry','geodesy','physics','modeling','modeling-tool',
+                'model','geodynamics'],
                 classifiers=[
                 'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
-        		'Programming Language :: Fortran',
+                'Programming Language :: Fortran',
                 'Programming Language :: Python',
                 'Intended Audience :: Science/Research',
-        		'Topic :: Education',
-        		'Natural Language :: English',
-				],
+                'Topic :: Education',
+                'Natural Language :: English',
+                ],
                 )
-
-# Try to use setuptools in order to check dependencies.
-# if the system does not have setuptools, fall back on
-# distutils.
-try:
-    from setuptools import setup
-    metadata['install_requires'] = ['numpy', 'matplotlib', 'scipy']
-except ImportError:
-    from distutils.core import setup
-
-
 setup(**metadata)
+
