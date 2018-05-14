@@ -1,0 +1,14 @@
+Minimal working example of bokeh server web app that imports rem3d
+
+To serve:
+
+cd rem3d/applets/
+bokeh serve rem3d_test
+
+To view over ssh:
+
+locally (replace user with your name):
+ssh -p port_number -NfL localhost:5006:localhost:5006 user@server.location
+
+then locally, open broswer to
+http://localhost:5006/test_applet

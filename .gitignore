@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# All data files downloaded from remote REM3D server
+rem3d/files/*
+
 # C extensions
 *.so
 
