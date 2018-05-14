@@ -148,4 +148,3 @@ metadata = dict(name = 'rem3d',
                 ],
                 )
 setup(**metadata)
-
