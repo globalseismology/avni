@@ -11,7 +11,7 @@ from .version import version as __version__
 # data: data analyses library
 # models: models library
 # plots: plotting library
-# geotools: geographic libraries
+# mapping: geographic libraries
 # 
 # f2py libraries:
 # geolib: geographic library
