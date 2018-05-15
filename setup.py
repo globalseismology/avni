@@ -46,10 +46,6 @@ elif F90 == "gfortran":
                  "-shared", "-ffixed-line-length-none"]
     omp_lib = ["-lgomp"]
 
-elif F90 in ["pgfortran", "pgf90", "pgf95"]:
-    f90_flags = ["-mp"]
-    omp_lib = [""]
-
 else:
     l1 = "F90 = " + F90 + ". \n"
     l2 = "Environment variable F90 not recognized.  \n"
@@ -107,8 +103,7 @@ versionstuff = dict(
 # distutils.
 # Can only use numpy distutils with distutils as fortran codes 
 # are not compiles otherwise
-
-
+#
 # Build the f2py fortran extension
 # --------------------------------
 from os.path import join
