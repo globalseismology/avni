@@ -33,7 +33,7 @@ from matplotlib import gridspec # Relative size of subplots
 from numba import jit
 
 ####################       IMPORT OWN MODULES     ######################################
-from . import geotools
+from . import mapping
 from . import tools
 ########################  	GENERIC   ################################################   	    		    
 	    		    
@@ -216,28 +216,28 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
 	"""plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
 	
 	# Calculate intermediate points	
-	lat2,lon2=geotools.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*111325.)
+	lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*111325.)
 	interval=gcdelta*111325./(numdegticks-1) # interval in km
-	coords=np.array(geotools.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*111325.,interval))
+	coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*111325.,interval))
 
 	# Center lat lon based on azimuth
 	if gcdelta > 350.:
-		lat_0,lon_0=geotools.getDestinationLatLong(lat1,lon1,azimuth,45.*111325.)
+		lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,45.*111325.)
 	elif gcdelta >= 180. and gcdelta <= 350.:
-		lat_0,lon_0=geotools.getDestinationLatLong(lat1,lon1,azimuth,90.*111325.)
+		lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*111325.)
 	else:
-		lat_0,lon_0=geotools.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*111325.)
+		lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*111325.)
 		
 	# Choose what to do based on projection
 	if projection=='ortho':
 		m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l')
 	else:
 		# center left lat/lon, then left crnr
-		latcenleft,loncenleft=geotools.getDestinationLatLong(lat_0,lon_0,-90.,width*111325./2.)
-		llcrnrlat,llcrnrlon=geotools.getDestinationLatLong(latcenleft,loncenleft,180.,height*111325./2.)
+		latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*111325./2.)
+		llcrnrlat,llcrnrlon=mapping.getDestinationLatLong(latcenleft,loncenleft,180.,height*111325./2.)
 		# center right lat/lon, then left crnr
-		latcenright,loncenright=geotools.getDestinationLatLong(lat_0,lon_0,90.,width*111325./2.)
-		urcrnrlat,urcrnrlon=geotools.getDestinationLatLong(latcenright,loncenright,0.,height*111325./2.)
+		latcenright,loncenright=mapping.getDestinationLatLong(lat_0,lon_0,90.,width*111325./2.)
+		urcrnrlat,urcrnrlon=mapping.getDestinationLatLong(latcenright,loncenright,0.,height*111325./2.)
 
 		m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l',llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat, urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
 		# draw parallels and meridians.
@@ -262,9 +262,9 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
 	if gcdelta < 180.:
 		m.drawgreatcircle(lon1, lat1, lon2, lat2,color='k',linewidth=3.)
 	elif gcdelta == 180.:
-		latextent1,lonextent1=geotools.getDestinationLatLong(lat1,lon1,azimuth,1.*111325.)
-		latextent2,lonextent2=geotools.getDestinationLatLong(lat1,lon1,azimuth,178.*111325.)
-# 		latextent2,lonextent2=geotools.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*111325.)
+		latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*111325.)
+		latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*111325.)
+# 		latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*111325.)
 		lonextent,latextent=m([lonextent1,lonextent2],[latextent1,latextent2])
 		m.plot(lonextent,latextent,color='k',linewidth=3.)
 	return m
@@ -284,9 +284,9 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd',d
 	
 	if recalculate:	
 		# Calculate intermediate points			
-		lat2,lng2=geotools.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
+		lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
 		interval=gcdelta*111325./(numeval-1) # interval in km
-		coords=np.array(geotools.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
+		coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
 		
 		if(len(coords) != numeval):
 			print "Error: The number of intermediate points is not accurate. Decrease it?"
@@ -322,9 +322,9 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd',d
 		rlatlon=np.column_stack((np.ravel(grid_z), np.ravel(grid_y), np.ravel(grid_x)))
 
 		t0 = time.time()
-		gridpoints=geotools.spher2cart(rlatlon)
+		gridpoints=mapping.spher2cart(rlatlon)
 		evalpoints=np.column_stack((6371.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
-		coordstack=geotools.spher2cart(evalpoints)
+		coordstack=mapping.spher2cart(evalpoints)
 		checkifnear=np.zeros_like(gridpoints[:,0],dtype=bool) # array for checking if the point is near to any point in the path (coordstack)
 	
 		print "....Getting the topography transect from "+dbs_path+'/'+filename
@@ -567,10 +567,10 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,parameter='vs',radii=[3480.,6346.
 	
 	if recalculate:	
 		# Calculate intermediate points			
-		lat2,lng2=geotools.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
+		lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
 		interval=gcdelta*111325./(numeval-1) # interval in km
 		radevalarr=np.linspace(radii[0],radii[1],numeval) #radius arr in km
-		coords=np.array(geotools.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
+		coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
 		
 		if(len(coords) != numeval):
 			print "Error: The number of intermediate points is not accurate. Decrease it?"
@@ -595,13 +595,13 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,parameter='vs',radii=[3480.,6346.
 		rlatlon=np.column_stack((np.ravel(grid_z), np.ravel(grid_y), np.ravel(grid_x)))
 
 		t0 = time.time()
-		gridpoints=geotools.spher2cart(rlatlon)
+		gridpoints=mapping.spher2cart(rlatlon)
 		evalpoints=np.column_stack((radevalarr[0]*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
 		for radius in radevalarr[1:]:
 			pointstemp=np.column_stack((radius*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
 			evalpoints=np.row_stack((evalpoints,pointstemp))	
 
-		coordstack=geotools.spher2cart(evalpoints)
+		coordstack=mapping.spher2cart(evalpoints)
 		checkifnear=np.zeros_like(gridpoints[:,0],dtype=bool) # array for checking if the point is near to any point in the path (coordstack)
 	
 		
@@ -641,7 +641,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,model=None,vmin=None,vmax=None,dbs_pa
 	fig.patch.set_facecolor('white')
 	
 	# Specify theta such that it is symmetric
-	lat2,lng2=geotools.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
+	lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
 	if gcdelta==180. or gcdelta==360.:
 		theta=[0.,gcdelta]
 	else:
