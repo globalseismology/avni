@@ -46,6 +46,14 @@ elif F90 == "gfortran":
                  "-mtune=native"]
     omp_lib = ["-lgomp"]
 
+elif F90 == "f90":
+    f90_flags = ["-fopenmp", "-fPIC", "-O3", "-library=sunperf","-xopenmp"]
+    omp_lib = [""]
+    
+elif F90 in ["pgfortran", "pgf90", "pgf95"]:
+    f90_flags = ["-mp"]
+    omp_lib = [""]
+
 else:
     l1 = "F90 = " + F90 + ". \n"
     l2 = "Environment variable F90 not recognized.  \n"
@@ -141,4 +149,5 @@ metadata = dict(name = 'rem3d',
                 'Natural Language :: English',
                 ],
                 )
+
 setup(**metadata)
