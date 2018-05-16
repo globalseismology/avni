@@ -78,7 +78,22 @@ def update_file(installdir,file):
 
     return
 
+def get_info_datafile(filename,extension='.interp.REM3D.hit'):
+    "Read the information from a file name while excluding file extension"
+    typestr = filename.split('/')[-1].split(extension)[0]
+    group, overtone, wavetype, period =typestr.split('.')
+    return group, overtone, wavetype, period 
+    
+    
 ##################################   Surface waves #######################################
+
+def read_SWhitcount(hitfile):
+    """Read the the surface wave hit count file from sw_hitcount. The hit counts are normalized by area
+     i.e. the values in the pixels with smallest ares are upweighted. """
+    hit_array = np.genfromtxt(tools.get_fullpath(hitfile),dtype = None,names = ['lat','lon','val'],comments = "#")
+    # grid spacing assuming a even grid
+    grid_spacing = max(abs(hit_array['lat'][1]-hit_array['lat'][0]),abs(hit_array['lon'][1]-hit_array['lon'][0]))
+    return hit_array,grid_spacing
 
 def readREM3DSWformat(file,use_pandas=True):
     """Reads the REM3D format for analysis and plotting"""

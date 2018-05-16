@@ -84,11 +84,11 @@ def readjson(filename,encoding='utf-8'):
     return nparray    
 
 def uniquenumpyrow(a):
-	"""Gets the unique rows from a numpy array and the indices. e.g. to get unique lat-lon values"""
-	b = np.ascontiguousarray(a).view(np.dtype((np.void, a.dtype.itemsize * a.shape[1])))
-	_, idx = np.unique(b, return_index=True)
-	unique_a = a[idx]
-	return unique_a,idx
+    """Gets the unique rows from a numpy array and the indices. e.g. to get unique lat-lon values"""
+    b = np.ascontiguousarray(a).view(np.dtype((np.void, a.dtype.itemsize * a.shape[1])))
+    _, idx = np.unique(b, return_index=True)
+    unique_a = a[idx]
+    return unique_a,idx
 
 def getcommonSWcatalogs(SWdata1,SWdata2,shortref1='SW1',shortref2='SW2',decimals=2,write_common=False):
     """Get common path data for scatter plot of two SW catlog data. Lat/lon are rounded to decimal points."""
