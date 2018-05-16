@@ -61,7 +61,7 @@ def get_filedir(checkwrite=True,makedir=True):
     """
     Get the local files directory. Make a new directory if doesn't exist (makedir==True)
     """
-    installdir = get_installdir(checkwrite=checkwrite)
+    installdir,ierror = get_installdir(checkwrite=checkwrite)
     filedir = installdir+'/'+constants.localfilefolder
     if checkwrite and makedir: 
         if not os.path.exists(filedir):
