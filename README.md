@@ -30,6 +30,10 @@ These instructions will get you a copy of the project up and running on your loc
 ### Basic Installation
 
 1. Install the [Anaconda Python Distribution](https://www.continuum.io/downloads). We recommend the 64-bit Python 2.7 version. 
+2. Install some mapping toolboxes (Cartopy, Basemap and its data) with the following options to add topography at all resolutions:
+`conda install -c scitools/label/archive cartopy`
+`conda install -c anaconda basemap`
+`conda install -c conda-forge basemap-data-hires`
 2. Install REM3D module using pip by opening a terminal window and entering
 `pip install rem3d --user`.  If you are a developer, clone the appropriate branch of the Github repository and enter 'pip install -e . --user'. This lets you to keep working on files inside the Github folder without recompiling the codes.
 
