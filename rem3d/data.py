@@ -78,7 +78,7 @@ def update_file(installdir,file):
 
     return
 
-def get_info_datafile(filename,extension='.interp.REM3D.hit'):
+def get_info_datafile(filename,extension='.interp.'):
     "Read the information from a file name while excluding file extension"
     typestr = filename.split('/')[-1].split(extension)[0]
     group, overtone, wavetype, period =typestr.split('.')
@@ -92,7 +92,7 @@ def read_SWhitcount(hitfile):
      i.e. the values in the pixels with smallest ares are upweighted. """
     hit_array = np.genfromtxt(tools.get_fullpath(hitfile),dtype = None,names = ['lat','lon','val'],comments = "#")
     # grid spacing assuming a even grid
-    grid_spacing = max(abs(hit_array['lat'][1]-hit_array['lat'][0]),abs(hit_array['lon'][1]-hit_array['lon'][0]))
+    grid_spacing = min(max(np.ediff1d(hit_array['lat'])),max(np.ediff1d(hit_array['lon'])))
     return hit_array,grid_spacing
 
 def readREM3DSWformat(file,use_pandas=True):

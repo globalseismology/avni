@@ -401,7 +401,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='b
     numlon=len(np.unique(valarray['lon']))
     numlat=len(np.unique(valarray['lat']))
     # grid spacing assuming a even grid
-    grid_spacing = max(abs(valarray['lat'][1]-valarray['lat'][0]),abs(valarray['lon'][1]-valarray['lon'][0]))
+    grid_spacing = min(max(np.ediff1d(valarray['lat'])),max(np.ediff1d(valarray['lon'])))
     lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
     lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
     X,Y=np.meshgrid(lon,lat)
@@ -790,10 +790,9 @@ def plot1hitmap(hitfile,dbs_path='.',projection='robin',lat_0=0,lon_0=150,colorc
     colorcontour = colorcontour[:idx+1]
     if maxhit > 1500: colorcontour=np.logspace(0,np.log10(maxhit),8).astype(int);maxhit=int(maxhit)
     #hit_array['val']=np.log10(hit_array['val'])
-    grid_spacing = max(abs(hit_array['lat'][1]-hit_array['lat'][0]),abs(hit_array['lon'][1]-hit_array['lon'][0]))
     if(grid_spacing.is_integer()): grid_spacing=int(grid_spacing)
     colorlabel="# "+"$Rays$"+" "+"$(%s$"%grid_spacing+"$^\circ bins)$" 
-    group, overtone, wavetype, period = data.get_info_datafile(hitfile,extension='.interp.REM3D.hit')
+    group, overtone, wavetype, period = data.get_info_datafile(hitfile,extension='.interp.')
     if projection=='ortho':
         globalmap(ax,hit_array,0.,maxhit,dbs_path,colorlabel=colorlabel,colorcontour=colorcontour,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
     else:
