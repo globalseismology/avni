@@ -48,7 +48,7 @@ def creation_date(path_to_file):
             # so we'll settle for when its content was last modified.
             return datetime.fromtimestamp(stat.st_mtime)
 
-def update_file(installdir,file):
+def update_file(file):
     """
     Does the url contain a downloadable resource that is newer
     """
