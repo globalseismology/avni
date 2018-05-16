@@ -1,18 +1,13 @@
-      subroutine sw_hitcount(npath,eplat,eplon,stlat,stlon,isize,xminla,xmaxla,xminlo,xmaxlo,hitlat,hitlon,hitcount)
-Cf2py intent(inout) eplat,eplon,stlat,stlon,mxpath,mxcell,npath,xminla,xmaxla,xminlo,xmaxlo
+      subroutine sw_hitcount(npath,eplat,eplon,stlat,stlon,xsize,
+     #      xminla,xmaxla,xminlo,xmaxlo,hitlat,hitlon,hitcount)
+Cf2py intent(inout) npath,eplat,eplon,stlat,stlon,xsize,xminla,xmaxla,xminlo,xmaxlo
 Cf2py intent(out) hitlat,hitlon,hitcount
 c
       integer npath
-      real, dimension(:), allocatable :: eplat,eplon,stlat,stlon
-c
-      character*80 pathfile
-      character*80 hitfil
-      character*80 getunx
-      character*256 c256
-      logical header
-c
-      logical exists
-      logical eof
+      real*4 eplat(npath)
+      real*4 eplon(npath)
+      real*4 stlat(npath)
+      real*4 stlon(npath)
 c
 c --- segments of the ray paths
 c
@@ -24,9 +19,9 @@ c
 c
 c --- cells
 c
-      integer isize,icell
+      integer icell
       real*4 xsize
-      integer mxcell,ncell,nlazone
+      integer mxcell,ncell
       parameter(mxcell=100000)
       integer icount(mxcell)
       integer ihit(mxcell)
@@ -34,24 +29,25 @@ c
       real*4 xlalo(mxcell),xlahi(mxcell),xlami(mxcell)
       real*4 xlolo(mxcell),xlohi(mxcell),xlomi(mxcell)
       real*4 arealatzone,totarea,area,twopi,areamax
-      real*4 xminla,xmaxla,xminlo,xmaxlo,xlat,xlon,value
+      real*4 xminla,xmaxla,xminlo,xmaxlo,xlat,xlon
       parameter (twopi=6.2831853)
       integer ila,ilo,mxla,mxlo
-      parameter(mxla=180)
-      parameter(mxlo=360)
       integer xlen,ylen
-      integer icellarr(mxla,mxlo)      
-      real, dimension(:,:), allocatable :: hitcount,hitlat,hitlon   !<-  c is allocatable, rank  
-c
-      integer ipath,luo,luin
+      real,dimension(:,:),allocatable,intent(inout)::hitcount   !<-  c is allocatable, rank  
+      real,dimension(:,:),allocatable,intent(inout)::hitlat,hitlon   !<-  c is allocatable, rank  
+      integer, dimension(:,:), allocatable :: icellarr
+      integer ipath
 c ----------------------------------------
 c
 c --- define blocks(cells) 
 c
+      mxla=int(180./xsize)
+      mxlo=int(360./xsize)
+      allocate(icellarr(mxla,mxlo)) 
       ncell=0
-      nlazone=180/isize
+c      nlazone=180/isize
       totarea=0
-      xsize=float(isize)
+c      xsize=float(isize)
 
 c --- find centers of the cells
 
@@ -72,15 +68,13 @@ c --- find centers of the cells
       write(6,"('number of cells= ',i8)")ncell
 
 c--- allocate arrays
-      xlen=int((xmaxlo-xminlo)/float(isize))
-      ylen=int((xmaxla-xminla)/float(isize))
+c      xlen=int((xmaxlo-xminlo)/float(isize))
+c      ylen=int((xmaxla-xminla)/float(isize))
+      xlen=int((xmaxlo-xminlo)/xsize)
+      ylen=int((xmaxla-xminla)/xsize)
       allocate(hitcount(xlen,ylen))
       allocate(hitcount(xlen,ylen))
       allocate(hitcount(xlen,ylen))
-      allocate(eplat(npath))
-      allocate(eplon(npath))
-      allocate(stlat(npath))
-      allocate(stlon(npath))
 c --- areas      
 
       totarea=0.0       
@@ -111,10 +105,10 @@ C---- does not work with 1 degree pixel-ignores equator and mixes up IDT and gre
         do icell=1,ncell
              seglat=xlami(icell)
              seglon=xlomi(icell) 
-          ila=int(1+((90.-seglat)/isize))
+          ila=int(1+((90.-seglat)/xsize))
           !if (ila.eq.91) ila=90
           if (ila.eq.mxla+1) ila=mxla
-          ilo=int(1+((180.+seglon)/isize))
+          ilo=int(1+((180.+seglon)/xsize))
           if (ilo.eq.mxlo+1) ilo=mxlo
           !if (ilo.eq.181) ilo=1
           icellarr(ila,ilo)=icell
@@ -150,17 +144,20 @@ c
           if(seglon.gt.180.0) seglon=seglon-360.
           if(seglon.lt.-180.0) seglon=seglon+360.
 C---- does not work with 1 degree pixel-ignores equator and mixes up IDT and greenwich meridien
-          ila=int(1+((90.-seglat)/isize))
+          ila=int(1+((90.-seglat)/xsize))
           !if (ila.eq.91) ila=90
           if (ila.eq.mxla+1) ila=mxla
-          ilo=int(1+((180.+seglon)/isize))
+          ilo=int(1+((180.+seglon)/xsize))
           if (ilo.eq.mxlo+1) ilo=mxlo
           !if (ilo.eq.181) ilo=1
 
-        if(ila.lt.1.or.ila.gt.mxla) stop 'ila'
+        if(ila.lt.1.or.ila.gt.mxla) then
+           ierror = 2
+           return
+        endif
         if(ilo.lt.1.or.ilo.gt.mxlo) then
-              print*,seglat,seglon,mxla,mxlo,ila,ilo,ipath,isize
-              stop 'ilo'
+           ierror=3
+           return
         endif
           icell=icellarr(ila,ilo)
         ihit(icell)=ihit(icell)+1
@@ -171,34 +168,25 @@ C---- does not work with 1 degree pixel-ignores equator and mixes up IDT and gre
         endif
        enddo
 c
-        if(mod(ipath,5000).eq.0) write(6,"('.... Proceesed ipath: ',i12,' out of ',i12)") ipath,npath
+        if(mod(ipath,5000).eq.0) print*,'.... Processed ipath: ',ipath
       enddo ! --- ipath
 c
 c --- write out hitcounts for the minor arc paths
 c
-c      write(6,"('writing ...')")
-c      lstr=lnblnk(pathfile)
-c      hitfil=pathfile(1:lstr)//'.hit'
-c      write(6,"('writing to: ',a)") hitfil(1:lnblnk(hitfil))
-c      open(luo,file=hitfil(1:lnblnk(hitfil)))
       do icell=1,ncell
-c        if(icount(icell).gt.0) then
           xlat=xlami(icell)
           xlon=xlomi(icell)
           if(xlon.lt.0.0) xlon=xlon+360.0
-          ila=int(1+((90.-xlat)/isize))
+          ila=int(1+((90.-xlat)/xsize))
           !if (ila.eq.91) ila=90
           if (ila.eq.mxla+1) ila=mxla
-          ilo=int(1+((180.+xlon)/isize))
+          ilo=int(1+((180.+xlon)/xsize))
           if (ilo.eq.mxlo+1) ilo=mxlo
           !if (ilo.eq.181) ilo=1
           icellarr(ila,ilo)=icell
           hitlat(ila,ilo)=xlat
           hitlon(ila,ilo)=xlon      
           hitcount(ila,ilo)=float(icount(icell))*areamax/areaarr(icell)
-      
-c      write(luo,*)xlat,xlon,value
-c      endif
       enddo
 c      close(luo)
        return
