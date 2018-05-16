@@ -12,6 +12,12 @@ downloadpage = 'https://maurya.umd.edu/files'
 localfilefolder = 'files'
 
 """
+Mapping constants
+"""
+geoco=0.993277    #correction for geographic-geocentric conversion
+
+
+"""
 Color scales
 """
 colorscale = {'rainbow1': {'name': 'rainbow_bgyrm_35-85_c69_n256','description': \

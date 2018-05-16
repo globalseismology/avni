@@ -19,6 +19,7 @@ import progressbar
 
 ############################### PLOTTING ROUTINES ################################        
 from .geolib import delazgc # geolib library from NSW
+from . import constants
 ###############################
 
 def atand(x):
@@ -49,8 +50,7 @@ def midpoint(lat1, lon1, lat2, lon2):
 
 def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
     """Get the distance and azimuths from positions in geographic coordinates"""
-    
-    geoco=0.993277    
+    geoco = constants.geoco
     if isinstance(eplat,list): # if the input is a list loop 
         delta=[];azep=[];azst=[]
         # Standard checks on number of cores
