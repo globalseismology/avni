@@ -2,6 +2,7 @@
      #      xminla,xmaxla,xminlo,xmaxlo,hitlat,hitlon,hitcount)
 Cf2py intent(inout) npath,eplat,eplon,stlat,stlon,xsize,xminla,xmaxla,xminlo,xmaxlo
 Cf2py intent(out) hitlat,hitlon,hitcount
+Cf2py depend(xminla,xmaxla,xminlo,xmaxlo) hitlat,hitlon,hitcount
 c
       integer npath
       real*4 eplat(npath)
@@ -29,12 +30,18 @@ c
       real*4 xlalo(mxcell),xlahi(mxcell),xlami(mxcell)
       real*4 xlolo(mxcell),xlohi(mxcell),xlomi(mxcell)
       real*4 arealatzone,totarea,area,twopi,areamax
-      real*4 xminla,xmaxla,xminlo,xmaxlo,xlat,xlon
+      real*4 xminla,xmaxla,xminlo,xmaxlo
+      real*4 xlat,xlon
       parameter (twopi=6.2831853)
       integer ila,ilo,mxla,mxlo
       integer xlen,ylen
-      real,dimension(:,:),allocatable,intent(inout)::hitcount   !<-  c is allocatable, rank  
-      real,dimension(:,:),allocatable,intent(inout)::hitlat,hitlon   !<-  c is allocatable, rank  
+      real,dimension(:,:)::
+     #      hitcount(int((xmaxlo-xminlo)/xsize),
+     #      int((xmaxla-xminla)/xsize)),   !<-  c is allocatable, rank  
+     #      hitlat(int((xmaxlo-xminlo)/xsize),
+     #      int((xmaxla-xminla)/xsize)),   !<-  c is allocatable, rank  
+     #      hitlon(int((xmaxlo-xminlo)/xsize),
+     #      int((xmaxla-xminla)/xsize))   !<-  c is allocatable, rank  
       integer, dimension(:,:), allocatable :: icellarr
       integer ipath
 c ----------------------------------------
@@ -72,9 +79,7 @@ c      xlen=int((xmaxlo-xminlo)/float(isize))
 c      ylen=int((xmaxla-xminla)/float(isize))
       xlen=int((xmaxlo-xminlo)/xsize)
       ylen=int((xmaxla-xminla)/xsize)
-      allocate(hitcount(xlen,ylen))
-      allocate(hitcount(xlen,ylen))
-      allocate(hitcount(xlen,ylen))
+
 c --- areas      
 
       totarea=0.0       
@@ -82,7 +87,10 @@ c --- areas
       do icell=1,ncell
         xlat=xlami(icell)
         xlon=xlomi(icell)
-        arealatzone=sind(xlat+xsize/2.0)-sind(xlat-xsize/2.0)
+c----   sind does not work with gfortran
+c        arealatzone=sind(xlat+xsize/2.0)-sind(xlat-xsize/2.0)
+        arealatzone=sin((xlat+xsize/2.0)*twopi/360.)-
+     #      sin((xlat-xsize/2.0)*twopi/360.)
            area=twopi*arealatzone*xsize/360.0
         if(area.gt.areamax) areamax=area
         areaarr(icell)=area
@@ -124,9 +132,9 @@ c --- check if cells are sampled by the rays
 
       do ipath=1,npath
 c
-        elat=atand(geoco*tand(eplat(ipath)))
+        elat=atan(geoco*tan(eplat(ipath)*twopi/360.))
         elon=eplon(ipath)
-        slat=atand(geoco*tand(stlat(ipath)))
+        slat=atan(geoco*tan(stlat(ipath)*twopi/360.))
         slon=stlon(ipath)
         call delazgc(elat,elon,slat,slon,delta,azatep,az2)
 c
