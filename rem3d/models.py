@@ -18,6 +18,9 @@ import fortranformat as ff #reading/writing fortran formatted text
 
 #####################
 
+def read_model():
+    return model
+
 def readepixfile(filename):
     """Read .epix file format."""
 
