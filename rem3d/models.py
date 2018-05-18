@@ -19,15 +19,15 @@ import fortranformat as ff #reading/writing fortran formatted text
 #####################
 
 def readepixfile(filename):
-	"""Read .epix file format."""
+    """Read .epix file format."""
 
-	currentdir=os.getcwd()
-	try: 
-		f = open(filename, 'r')
-	except IOError:
-		print "File ("+filename+") does not exist in the current directory - "+currentdir
-		sys.exit(2)
-			
-	epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['lat','lon','pixsize','val'])
+    currentdir=os.getcwd()
+    try: 
+        f = open(filename, 'r')
+    except IOError:
+        print "File ("+filename+") does not exist in the current directory - "+currentdir
+        sys.exit(2)
+            
+    epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['lat','lon','pixsize','val'])
 
-	return epixarr
+    return epixarr

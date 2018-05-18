@@ -42,6 +42,7 @@ if F90 == "ifort":
     omp_lib = ["-liomp5"]
 
 elif F90 == "gfortran":
+<<<<<<< HEAD
     f90_flags = ["-fopenmp", "-fPIC", "-O3", "-fbounds-check",
                  "-ffixed-line-length-none"]
     omp_lib = ["-lgomp"]
@@ -54,6 +55,12 @@ elif F90 in ["pgfortran", "pgf90", "pgf95"]:
     f90_flags = ["-mp"]
     omp_lib = [""]
 
+=======
+    f90_flags = ["-fopenmp", "-fPIC", "-O2",
+                 "-shared", "-ffixed-line-length-none"]
+    omp_lib = ["-lgomp"]
+
+>>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
 else:
     l1 = "F90 = " + F90 + ". \n"
     l2 = "Environment variable F90 not recognized.  \n"
@@ -111,6 +118,10 @@ versionstuff = dict(
 # distutils.
 # Can only use numpy distutils with distutils as fortran codes 
 # are not compiles otherwise
+<<<<<<< HEAD
+=======
+#
+>>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
 # Build the f2py fortran extension
 # --------------------------------
 from os.path import join

@@ -7,6 +7,8 @@ import os
 import sys
 import codecs,json #printing output
 import numpy as np
+import scipy.interpolate as spint
+import scipy.spatial.qhull as qhull
 import pandas as pd
 from math import ceil
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -89,6 +91,29 @@ def uniquenumpyrow(a):
     _, idx = np.unique(b, return_index=True)
     unique_a = a[idx]
     return unique_a,idx
+<<<<<<< HEAD
+=======
+    
+def interp_weights(xyz, uvw):
+    """
+    Gets the interpolation weights for a grid
+    https://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids
+    """
+    tri = qhull.Delaunay(xyz)
+    simplex = tri.find_simplex(uvw)
+    vertices = np.take(tri.simplices, simplex, axis=0)
+    temp = np.take(tri.transform, simplex, axis=0)
+    delta = uvw - temp[:, d]
+    bary = np.einsum('njk,nk->nj', temp[:, :d, :], delta)
+    return vertices, np.hstack((bary, 1 - bary.sum(axis=1, keepdims=True)))
+
+def interpolate(values, vtx, wts):
+    """
+    Makes the interpolation weights for a previous grid weights
+    https://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids
+    """
+    return np.einsum('nj,nj->n', np.take(values, vtx), wts)
+>>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
 
 def getcommonSWcatalogs(SWdata1,SWdata2,shortref1='SW1',shortref2='SW2',decimals=2,write_common=False):
     """Get common path data for scatter plot of two SW catlog data. Lat/lon are rounded to decimal points."""
@@ -216,7 +241,7 @@ def compareSWStudiesPandas(SW_StatEpPairs,deg_bin_width=2):
     grpd['bin_center']=(bins[0:-1]+bins[1:])/2
 
     return SW_StatEpPairs,grpd
-
+  
 def roundSWData(SWdf,deg=2):
     # deg: degree decimal to round to (e.g., 1 = 0.1 degree bin), could be input
     round_dict={'stlat':deg,'stlon':deg,'eplat':deg,'eplon':deg}
