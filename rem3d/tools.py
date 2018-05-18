@@ -63,7 +63,7 @@ def get_filedir(checkwrite=True,makedir=True):
     """
     Get the local files directory. Make a new directory if doesn't exist (makedir==True)
     """
-    installdir = get_installdir(checkwrite=checkwrite)
+    installdir,ierror = get_installdir(checkwrite=checkwrite)
     filedir = installdir+'/'+constants.localfilefolder
     if checkwrite and makedir: 
         if not os.path.exists(filedir):
@@ -91,6 +91,8 @@ def uniquenumpyrow(a):
     _, idx = np.unique(b, return_index=True)
     unique_a = a[idx]
     return unique_a,idx
+<<<<<<< HEAD
+=======
     
 def interp_weights(xyz, uvw):
     """
@@ -111,6 +113,7 @@ def interpolate(values, vtx, wts):
     https://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids
     """
     return np.einsum('nj,nj->n', np.take(values, vtx), wts)
+>>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
 
 def getcommonSWcatalogs(SWdata1,SWdata2,shortref1='SW1',shortref2='SW2',decimals=2,write_common=False):
     """Get common path data for scatter plot of two SW catlog data. Lat/lon are rounded to decimal points."""

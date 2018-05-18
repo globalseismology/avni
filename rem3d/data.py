@@ -48,7 +48,7 @@ def creation_date(path_to_file):
             # so we'll settle for when its content was last modified.
             return datetime.fromtimestamp(stat.st_mtime)
 
-def update_file(installdir,file):
+def update_file(file):
     """
     Does the url contain a downloadable resource that is newer
     """
@@ -78,7 +78,22 @@ def update_file(installdir,file):
 
     return
 
+def get_info_datafile(filename,extension='.interp.'):
+    "Read the information from a file name while excluding file extension"
+    typestr = filename.split('/')[-1].split(extension)[0]
+    group, overtone, wavetype, period =typestr.split('.')
+    return group, overtone, wavetype, period 
+    
+    
 ##################################   Surface waves #######################################
+
+def read_SWhitcount(hitfile):
+    """Read the the surface wave hit count file from sw_hitcount. The hit counts are normalized by area
+     i.e. the values in the pixels with smallest ares are upweighted. """
+    hit_array = np.genfromtxt(tools.get_fullpath(hitfile),dtype = None,names = ['lat','lon','val'],comments = "#")
+    # grid spacing assuming a even grid
+    grid_spacing = min(max(np.ediff1d(hit_array['lat'])),max(np.ediff1d(hit_array['lon'])))
+    return hit_array,grid_spacing
 
 def readREM3DSWformat(file,use_pandas=True):
     """Reads the REM3D format for analysis and plotting"""
