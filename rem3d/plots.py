@@ -12,6 +12,8 @@ import matplotlib.cm as cmx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap, shiftgrid
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
+                               AutoMinorLocator)
 import multiprocessing
 import cartopy.crs as ccrs
 from joblib import Parallel, delayed
@@ -375,7 +377,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd',d
         data.close() #close netcdf file
     return evalpoints,grid_z1
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='bk',colorcontour=20,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='bk',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
     """plots a 2-D cross-section of a 3D model on axis ax. kwargs are arguments for Basemap. color* are for the colormap used.
     colorcontour"""
 
@@ -443,7 +445,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='b
     im = m.imshow(s, cmap=cpalette.name, clip_path=clip_path, vmin=vmin, vmax=vmax, norm=norm)
 #    # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
-    plot_plates(m, dbs_path=dbs_path, color='w', linewidth=1.5)
+    plot_plates(m, dbs_path=dbs_path, color='lightgray', linewidth=1.5)
     if hotspots: plot_hotspots(m, dbs_path=dbs_path, s=30, color='m', edgecolor='k')
 
 # add a colorbar
@@ -675,6 +677,122 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,parameter='vs',radii=[3480.,6346.
         data.close() #close netcdf file
     return evalpoints,grid_z1
     
+def plot1cards(filename,figuresize=[7,12],height_ratios=[2, 2, 1],outfile='.png'):
+    """ Plot the cards array in a PREM like plot"""
+    
+    cardsarr=models.readcards(filename)
+    depthkmarr = 6371.-cardsarr['radius']/1000.
+    pdb.set_trace()
+    fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
+    gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios) 
+    fig.patch.set_facecolor('white')
+    ax01=plt.subplot(gs[0])
+    ax01.plot(depthkmarr,cardsarr['rho']/1000.,'k')
+    ax01.plot(depthkmarr,cardsarr['vsv']/1000.,'b')
+    ax01.plot(depthkmarr,cardsarr['vsh']/1000.,'b:')
+    ax01.plot(depthkmarr,cardsarr['vpv']/1000.,'r')
+    ax01.plot(depthkmarr,cardsarr['vph']/1000.,'r:')
+    mantle=np.where( depthkmarr < 2891.)
+    ax01.plot(depthkmarr[mantle],cardsarr['eta'][mantle],'g')
+    ax01.set_xlim([0., 6371.])
+    ax01.set_ylim([0, 14])
+    
+    majorLocator = MultipleLocator(2)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(1)
+    ax01.yaxis.set_major_locator(majorLocator)
+    ax01.yaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax01.yaxis.set_minor_locator(minorLocator)
+    
+    majorLocator = MultipleLocator(2000)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(1000)
+    ax01.xaxis.set_major_locator(majorLocator)
+    ax01.xaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax01.xaxis.set_minor_locator(minorLocator)
+    ax01.set_ylabel('Velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
+    
+    for para,color,xloc,yloc in [("$\eta$",'g',1500.,2.),("$V_S$",'b',1500.,7.8),("$V_P$",'r',1500.,13.5),("$\\rho$",'k',1500.,4.5),("$V_P$",'r',4000.,9.2),("$\\rho$",'k',4000.,12.5),("$V_S$",'b',5500.,4.5)]:
+        ax01.annotate(para,color=color,
+            xy=(3, 1), xycoords='data',
+            xytext=(xloc/6371., yloc/14.), textcoords='axes fraction',
+            horizontalalignment='left', verticalalignment='top')
+
+
+    ax11=plt.subplot(gs[1])
+    top1000km=np.where( depthkmarr < 1000.)
+    ax11.plot(depthkmarr[top1000km],cardsarr['rho'][top1000km]/1000.,'k')
+    ax11.plot(depthkmarr[top1000km],cardsarr['vsv'][top1000km]/1000.,'b')
+    ax11.plot(depthkmarr[top1000km],cardsarr['vsh'][top1000km]/1000.,'b:')
+    ax12 = ax11.twinx()
+    ax12.plot(depthkmarr[top1000km],cardsarr['vpv'][top1000km]/1000.,'r')
+    ax12.plot(depthkmarr[top1000km],cardsarr['vph'][top1000km]/1000.,'r:')
+    ax11.plot(depthkmarr[top1000km],cardsarr['eta'][top1000km],'g')
+    ax11.set_xlim([0., 1000.])
+    ax11.set_ylim([0, 7])
+    ax12.set_xlim([0., 1000.])
+    ax12.set_ylim([-2, 12])    
+    ax11.set_ylabel('Shear velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
+    ax12.set_ylabel('Compressional velocity (km/sec)')
+    for para,color,xloc,yloc in [("$\eta$",'g',150.,1.),("$V_{S}$",'b',150.,4.3),("$V_{P}$",'r',120.,5.5),("$\\rho$",'k',150.,3.8)]:
+        ax11.annotate(para,color=color,
+            xy=(3, 1), xycoords='data',
+            xytext=(xloc/1000., yloc/7.), textcoords='axes fraction',
+            horizontalalignment='left', verticalalignment='top')
+    ax12.set_yticks(np.arange(6, 14, step=2))
+    majorLocator = MultipleLocator(200)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(100)
+    ax11.xaxis.set_major_locator(majorLocator)
+    ax11.xaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax11.xaxis.set_minor_locator(minorLocator)
+
+    
+    ax21=plt.subplot(gs[2], sharex=ax11)
+    anisoVs=(cardsarr['vsh']-cardsarr['vsv'])*200./(cardsarr['vsh']+cardsarr['vsv'])
+    anisoVp=(cardsarr['vph']-cardsarr['vpv'])*200./(cardsarr['vph']+cardsarr['vpv'])
+    ax21.plot(depthkmarr[top1000km],anisoVs[top1000km],'b')
+    ax21.plot(depthkmarr[top1000km],anisoVp[top1000km],'r')
+    ax21.set_ylim([0, 4])    
+    majorLocator = MultipleLocator(1)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(0.5)
+    ax21.yaxis.set_major_locator(majorLocator)
+    ax21.yaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax21.yaxis.set_minor_locator(minorLocator)
+    for para,color,xloc,yloc in [('Q'+'$_{\mu}$','k',400.,2.5),("$a_{S}$",'b',150.,3.7),("$a_{P}$",'r',100.,1.8)]:
+        ax21.annotate(para,color=color,
+            xy=(3, 1), xycoords='data',
+            xytext=(xloc/1000., yloc/4.), textcoords='axes fraction',
+            horizontalalignment='left', verticalalignment='top')
+
+
+    ax22 = ax21.twinx()
+    ax22.plot(depthkmarr[top1000km],cardsarr['qmu'][top1000km],'k')
+    ax21.set_xlabel('Depth (km)')
+    ax21.set_ylabel("$V_P$"+' or '+"$V_S$"+' anisotropy (%)')
+    ax22.set_ylabel('Shear attenuation Q'+'$_{\mu}$')
+    ax22.set_ylim([0, 400])    
+    majorLocator = MultipleLocator(100)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(50)
+    ax22.yaxis.set_major_locator(majorLocator)
+    ax22.yaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax22.yaxis.set_minor_locator(minorLocator)
+    plt.savefig(filename+outfile)
+    majorLocator = MultipleLocator(200)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(100)
+    ax22.xaxis.set_major_locator(majorLocator)
+    ax22.xaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax22.xaxis.set_minor_locator(minorLocator)
+    return
 
 def plot1section(lat1,lng1,azimuth,gcdelta,model=None,vmin=None,vmax=None,dbs_path='.', colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=200,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],outfile=None):
     """Plot one section through the Earth through a pair of points.""" 
