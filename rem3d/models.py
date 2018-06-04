@@ -56,6 +56,8 @@ class reference1D(object):
         self.__nlayers__ = None
 	self.data = None
 	self.metdata = None
+	self.name = None
+	self.radius_max = None
 
     def read(self,path_to_model,fmt='card'):
 
@@ -69,8 +71,10 @@ class reference1D(object):
 	self.__nlayers__ = len(modelarr['radius'])
 
 	#Do voigt averaging here?
-	vs = np.zeros(len(modelarr['radius']))
+	#vp = voigt_average(modelarr['vph'],modelarr['vpv'])
+	#vs = voigt_average(modelarr['vsh'],modelarr['vsv'])
 	vp = np.zeros(len(modelarr['radius']))
+	vs = np.zeros(len(modelarr['radius']))
 
 	self.data = np.empty(self.__nlayers__,dtype=Model1D_Attr)
 	self.data['radius'] = modelarr['radius']
@@ -84,3 +88,66 @@ class reference1D(object):
 	self.data['eta'] = modelarr['eta']
 	self.data['vp'] = vp
 	self.data['vs'] = vs
+        self.radius_max = np.max(self.data['radius'])
+
+    def to_TauPmodel(self,model_name,fmt='tvel'):
+        '''
+        Writes a model file that is compatible with TauP.
+	file format options 'tvel' and 'nd'.
+
+	Note: TauP can't handle zero shear velocity in the ocean layer...
+	      To work around this, zero values an ocean layer will be written 
+	      as 1e-4.
+        '''
+
+	f = open(model_name+'.tvel','w')
+	f.write('{} - P\n'.format(model_name))
+	f.write('{} - S\n'.format(model_name))
+
+        for i in range(0,len(self.data)):
+	    f.write('{:2.4f}   {:2.4f}   {:2.4f}    {:2.4f}\n'.format(
+	    (self.radius_max - self.data['radius'][::-1][i]) / 1000.0,
+	    self.data['vp'][::-1][i] / 1000.0,
+	    self.data['vs'][::-1][i] / 1000.0,
+            self.data['rho'][::-1][i] / 1000.0))
+	    
+	f.close()
+
+    def to_axisem(self,model_name,anelastic=True,anisotropic=True):
+        '''
+	Write 1D model to be used as an external model in axisem
+        '''
+	f = open(model_name+'.bm','w')
+	n_discon = 1
+
+	if anelastic:
+	    f.write('ANELASTIC     T\n')
+	else:
+	    f.write('ANELASTIC     F\n')
+
+	if anisotropic:
+	    f.write('ANISOTROPIC     T\n')
+	else:
+	    f.write('ANISOTROPIC     F\n')
+
+	f.write('UNITS      m\n')
+
+	if anisotropic:
+	   f.write('COLUMNS   radius    rho    vpv    vsv    qka    qmu    vph    vsh    eta\n')
+
+	   for i in range(0,len(self.data)):
+	       f.write('{}    {}    {}    {}    {}    {}    {}    {}    {}\n'.format(
+	       self.data['radius'][::-1][i],
+	       self.data['rho'][::-1][i],
+	       self.data['vpv'][::-1][i],
+	       self.data['vsv'][::-1][i],
+	       self.data['Qkappa'][::-1][i],
+	       self.data['Qmu'][::-1][i],
+	       self.data['vph'][::-1][i],
+	       self.data['vsh'][::-1][i],
+	       self.data['eta'][::-1][i]) )
+
+	       if i < len(self.data)-1 and self.data['radius'][::-1][i] == self.data['radius'][::-1][i+1]:
+	           depth_here = (self.radius_max - self.data['radius'][::-1][i]) / 1000.0 
+	           f.write('#    Discontinuity {}, depth {:6.2f} km\n'.format(n_discon,depth_here))
+		   n_discon += 1
