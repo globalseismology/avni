@@ -100,12 +100,12 @@ def getcolorlist(cptfile):
             colorlist.append(tups)    
     return colorlist
     
-def customcolorpalette(name='bk',cptfolder='~/CPT',colorlist=None,colormax=2.,middlelimit=0.5,ifgraytest=0):
+def customcolorpalette(name='rem3d',cptfolder='~/CPT',colorlist=None,colormax=2.,middlelimit=0.5,ifgraytest=0):
     """Used to return preset color palettes from cptfolder. ifgraytest test how the figure looks in gray scale. (-colormax,colormax) are the limits of the colorbar. zerolimit is the limit to which the middle color (e.g. grey) will extend on either side of colorttmax mid. """
     c = mcolors.ColorConverter().to_rgb    
     if name=='r_lgrey_b':
         colorlist=[c('blue'), c('lightgray'), (2.*colormax-2.*middlelimit)/(4.*colormax), c('lightgray'),c('lightgray'), (2.*colormax+2.*middlelimit)/(4.*colormax), c('lightgray'),c('red'), 1., c('red')]
-    elif name=='bk':
+    elif name=='rem3d':
         cptfolder=tools.get_fullpath(cptfolder)
         if os.path.isfile(cptfolder+'/bk1_0.cpt_'):
             colorlist=getcolorlist(cptfolder+'/bk1_0.cpt_')
@@ -377,7 +377,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd',d
         data.close() #close netcdf file
     return evalpoints,grid_z1
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='bk',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
     """plots a 2-D cross-section of a 3D model on axis ax. kwargs are arguments for Basemap. color* are for the colormap used.
     colorcontour"""
 
@@ -445,7 +445,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='b
     im = m.imshow(s, cmap=cpalette.name, clip_path=clip_path, vmin=vmin, vmax=vmax, norm=norm)
 #    # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
-    plot_plates(m, dbs_path=dbs_path, color='lightgray', linewidth=1.5)
+    plot_plates(m, dbs_path=dbs_path, color='w', linewidth=1.5)
     if hotspots: plot_hotspots(m, dbs_path=dbs_path, s=30, color='m', edgecolor='k')
 
 # add a colorbar
@@ -794,7 +794,7 @@ def plot1cards(filename,figuresize=[7,12],height_ratios=[2, 2, 1],outfile='.png'
     ax22.xaxis.set_minor_locator(minorLocator)
     return
 
-def plot1section(lat1,lng1,azimuth,gcdelta,model=None,vmin=None,vmax=None,dbs_path='.', colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=200,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],outfile=None):
+def plot1section(lat1,lng1,azimuth,gcdelta,model=None,vmin=None,vmax=None,dbs_path='.', colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=200,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],outfile=None):
     """Plot one section through the Earth through a pair of points.""" 
     
     fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
