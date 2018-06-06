@@ -22,7 +22,6 @@ import pdb    #for the debugger pdb.set_trace()
 from netCDF4 import Dataset as netcdf #reading netcdf files
 import scipy.interpolate as spint
 import scipy.spatial.qhull as qhull
-import itertools
 import time
 import progressbar
 # For polar sectionplot
@@ -32,7 +31,6 @@ import mpl_toolkits.axisartist.angle_helper as angle_helper
 from matplotlib.projections import PolarAxes
 from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
 from matplotlib import gridspec # Relative size of subplots
-from numba import jit
 
 ####################       IMPORT OWN MODULES     ######################################
 from . import mapping
