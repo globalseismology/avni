@@ -6,7 +6,7 @@ contain them.
 
 #####################  IMPORT STANDARD MODULES   ######################################   
 
-import os
+import os,sys
 import numpy as np #for numerical analysis
 
 #####################
@@ -25,11 +25,11 @@ def readepixfile(filename):
     currentdir=os.getcwd()
     try: 
         f = open(filename, 'r')
+        epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['lat','lon','pixsize','val'])
+        ierror=0
     except IOError:
         print "File ("+filename+") does not exist in the current directory - "+currentdir
-        sys.exit(2)
-            
-    epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['lat','lon','pixsize','val'])
-
-    return epixarr
+        ierror=0
+    
+    return ierror,epixarr
     
