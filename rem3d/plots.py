@@ -261,46 +261,6 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
 
     return m    
 
-def plot1globalmap(latlonval,vmin,vmax,dbs_path='.',colorpalette='rem3d',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
-    """
-    Plot one global map and write it to a file or display on screen.
-    
-    Parameters
-    ----------
-    
-    latlonval : a named numpy array containing latitudes (lat), longitudes (lon) 
-                and values (val). Can be initialized from three numpy arrays lat, lon and val
-                $ data = np.vstack((lat,lon,val)).transpose()
-                $ dt = {'names':['lat', 'lon', 'val'], 'formats':[np.float, np.float, np.float]}
-                $ latlonval = np.zeros(len(data), dtype=dt)
-                $ latlonval['lat'] = data[:,0]; latlonval['lon'] = data[:,1]; latlonval['val'] = data[:,2]
-    
-    vmin, vmax : minimum and maximum value of the color scale
-    
-    dbs_path : database path containing hotpot locations, coastlines etc.
-    
-    colorpalette : matploblib color scales or the REM3D one (default)
-    
-    projection : map projection for the global plot
-    
-    colorlabel : label to use for the colorbar
-    
-    lat_0, lon_0 : center latitude and longitude for the plot
-    
-    outformat : format of the output file 
-    
-    ifshow : display the plot to the user if True
-    """ 
-    fig=plt.figure() 
-    ax=fig.add_subplot(1,1,1)
-    if projection=='ortho':
-        globalmap(ax,latlonval,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
-    else:
-        globalmap(ax,latlonval,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
-    if ifshow: plt.show()
-    fig.savefig('globalmap'+outformat,dpi=300)
-    return 
-
     
     
     
