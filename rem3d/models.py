@@ -12,7 +12,15 @@ import numpy as np #for numerical analysis
 #####################
 
 def readepixfile(filename):
-    """Read .epix file format."""
+    """Read .epix file format from a file. 
+    
+    Parameters
+    ----------
+    
+    filename : Name of the file containing four columns
+              (latitude, longitude, pixel_size, value)
+    
+    """
 
     currentdir=os.getcwd()
     try: 

@@ -81,10 +81,3 @@ def readjson(filename,encoding='utf-8'):
     listarray = json.loads(obj_text)
     nparray = np.array(listarray)
     return nparray    
-
-def uniquenumpyrow(a):
-    """Gets the unique rows from a numpy array and the indices. e.g. to get unique lat-lon values"""
-    b = np.ascontiguousarray(a).view(np.dtype((np.void, a.dtype.itemsize * a.shape[1])))
-    _, idx = np.unique(b, return_index=True)
-    unique_a = a[idx]
-    return unique_a,idx

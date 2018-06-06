@@ -27,23 +27,34 @@ def creation_date(path_to_file):
     Modified from
     See http://stackoverflow.com/a/39501288/1709587 for explanation.
     to use datetime
+    
+    Parameters
+    ----------
+
+    path_to_file : full path to a file 
+    
+    Return
+    ----------
+    
+    datetime stamp in UTC as REM3D server stores datetime in UTC
+
     """
     if platform.system() == 'Windows':
-        return datetime.fromtimestamp(os.path.getctime(path_to_file))
+        return datetime.utcfromtimestamp(os.path.getctime(path_to_file))
     else:
         stat = os.stat(path_to_file)
         try:
-            return datetime.fromtimestamp(stat.st_birthtime)
+            return datetime.utcfromtimestamp(stat.st_birthtime)
         except AttributeError:
             # We're probably on Linux. No easy way to get creation dates here,
             # so we'll settle for when its content was last modified.
-            return datetime.fromtimestamp(stat.st_mtime)
+            return datetime.utcfromtimestamp(stat.st_mtime)
 
 def update_file(file):
     """
-    Does the url contain a downloadable resource that is newer
+    If the REM3D url contain a downloadable resource that is newer, download it locally.
     """
-    localfile = tools.get_filedir(checkwrite=True)+'/'+file
+    localfile = tools.get_filedir(checkwrite=True,makedir=True)+'/'+file
     url = constants.downloadpage + '/'+file
     h = requests.head(url, allow_redirects=True)
     download=False
@@ -63,7 +74,7 @@ def update_file(file):
         print "Warning: Unknown status code ("+str(h.status_code)+") while quering "+file
         download = False
     if download:
-        print ".... Downloading "+file+" from "+url
+        print ".... Downloading "+file+" from "+url+" to "+localfile
         r = requests.get(url, allow_redirects=True)
         open(localfile, 'wb').write(r.content)
 

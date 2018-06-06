@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-"""This module contains the various subroutines used for plotting
-Usage import """
+"""
+This module contains the various subroutines used for plotting
+Usage import
+"""
 #####################  IMPORT STANDARD MODULES   ######################################   
 
 from __future__ import division
 from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin, modf
 import sys,os
-import argparse #parsing arguments
 import numpy as np #for numerical analysis
 import matplotlib.cm as cmx
 import matplotlib.pyplot as plt
@@ -14,133 +15,27 @@ import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap, shiftgrid
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
-import multiprocessing
-import cartopy.crs as ccrs
-from joblib import Parallel, delayed
-import pdb    #for the debugger pdb.set_trace()
-# from scipy.io import netcdf_file as netcdf #reading netcdf files
-from netCDF4 import Dataset as netcdf #reading netcdf files
-import scipy.interpolate as spint
-import scipy.spatial.qhull as qhull
-import time
-import progressbar
-# For polar sectionplot
-from matplotlib.transforms import Affine2D
-import mpl_toolkits.axisartist.floating_axes as floating_axes
-import mpl_toolkits.axisartist.angle_helper as angle_helper
-from matplotlib.projections import PolarAxes
-from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
-from matplotlib import gridspec # Relative size of subplots
 
 ####################       IMPORT OWN MODULES     ######################################
-from . import mapping
 from . import tools
 from . import data
 from . import models
 from . import constants
 ########################      GENERIC   ################################################                       
                     
-def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm'):
-    """gets the value of color for a given palette"""
-    jet = cm = get_cmap(palette) 
-    cNorm  = mcolors.Normalize(vmin=xmin, vmax=xmax)
-    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=palette)
-    colorVal = scalarMap.to_rgba(val)
-    return colorVal
-    
-def grayify_cmap(cmap):
-    """Return a grayscale version of the colormap"""
-    cmap = cm = get_cmap(cmap)
-    colors = cmap(np.arange(cmap.N))
-    
-    # convert RGBA to perceived greyscale luminance
-    # cf. http://alienryderflex.com/hsp.html
-    RGB_weight = [0.299, 0.587, 0.114]
-    luminance = np.sqrt(np.dot(colors[:, :3] ** 2, RGB_weight))
-    colors[:, :3] = luminance[:, np.newaxis]
-    
-    return cmap.from_list(cmap.name + "_gray", colors, cmap.N)
-
-def make_colormap(seq,name='CustomMap'):
-    """Return a LinearSegmentedColormap
-    seq: a sequence of floats and RGB-tuples. The floats should be increasing
-    and in the interval (0,1).
-    """
-    seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
-    cdict = {'red': [], 'green': [], 'blue': []}
-    for i, item in enumerate(seq):
-        if isinstance(item, float):
-            r1, g1, b1 = seq[i - 1]
-            r2, g2, b2 = seq[i + 1]
-            cdict['red'].append([item, r1, r2])
-            cdict['green'].append([item, g1, g2])
-            cdict['blue'].append([item, b1, b2])
-    return mcolors.LinearSegmentedColormap(name, cdict)
-
-def getcolorlist(cptfile):
-    """Get a tuple for colorlist from a cptfile"""
-    currentdir=os.getcwd()
-    try: 
-        f = open(cptfile, 'r')
-    except IOError:
-        print "File ("+cptfile+") does not exist in the current directory - "+currentdir
-        sys.exit(2)
-    cptarr=np.genfromtxt(cptfile, dtype=None,comments="#")
-    colorlist=[]
-    for irow in np.arange(len(cptarr)): 
-        tups=cptarr[irow][1]/255.,cptarr[irow][2]/255.,cptarr[irow][3]/255.
-        val=(cptarr[irow][4]-cptarr[0][4])/(cptarr[len(cptarr)-1][0]-cptarr[0][4])
-        if irow==1:
-            colorlist.append(tups)
-        elif irow > 1 and irow < len(cptarr)-1:
-            colorlist.append(tups)    
-            colorlist.append(val)    
-            colorlist.append(tups)    
-    return colorlist
-    
-def customcolorpalette(name='rem3d',cptfolder='~/CPT',colorlist=None,colormax=2.,middlelimit=0.5,ifgraytest=0):
-    """Used to return preset color palettes from cptfolder. ifgraytest test how the figure looks in gray scale. (-colormax,colormax) are the limits of the colorbar. zerolimit is the limit to which the middle color (e.g. grey) will extend on either side of colorttmax mid. """
-    c = mcolors.ColorConverter().to_rgb    
-    if name=='r_lgrey_b':
-        colorlist=[c('blue'), c('lightgray'), (2.*colormax-2.*middlelimit)/(4.*colormax), c('lightgray'),c('lightgray'), (2.*colormax+2.*middlelimit)/(4.*colormax), c('lightgray'),c('red'), 1., c('red')]
-    elif name=='rem3d':
-        cptfolder=tools.get_fullpath(cptfolder)
-        if os.path.isfile(cptfolder+'/bk1_0.cpt_'):
-            colorlist=getcolorlist(cptfolder+'/bk1_0.cpt_')
-        else:
-            print "Error: Could not find file "+cptfolder+'/bk1_0.cpt_'    
-            pdb.set_trace()
-            sys.exit(2)
-    elif name=='hit1':
-        cptfolder=tools.get_fullpath(cptfolder)
-        if os.path.isfile(cptfolder+'/hit1.cpt_'):
-            colorlist=getcolorlist(cptfolder+'/hit1.cpt_')
-        else:
-            print "Error: Could not find file "+cptfolder+'/hit1.cpt_'    
-            pdb.set_trace()
-            sys.exit(2)
-    elif name=='yuguinv':
-        cptfolder=tools.get_fullpath(cptfolder)
-        if os.path.isfile(cptfolder+'/yu1_2inv.new.cpt_'):
-            colorlist=getcolorlist(cptfolder+'/yu1_2inv.new.cpt_')
-        else:
-            print "Error: Could not find file "+cptfolder+'/yu1_2inv.new.cpt_'
-            pdb.set_trace()
-            sys.exit(2)
-        
-    if colorlist is None: sys.exit("No colorlist found")
-    custom_cmap = make_colormap(colorlist,name)
-    cmx.register_cmap(name=custom_cmap.name, cmap=custom_cmap)
-    palette=custom_cmap.name
-    
-    if ifgraytest==1:
-        palette=grayify_cmap(palette)
-        
-    return custom_cmap    
-
 def standardcolorpalette(name='rem3d',RGBoption='rem3d',reverse=True):
     """
     Get a custom REM3D color palette from constants.py
+    
+    Parameters
+    ----------
+    
+    name : color palette name that will be used elsewhere
+    
+    RGBoption : option for values of RGB from constants
+    
+    reverse: if the colors need to be reversed from those provided.
+    
     """
     if reverse:
         RGBlist=constants.colorscale[RGBoption]['RGB'][::-1]
@@ -154,12 +49,34 @@ def standardcolorpalette(name='rem3d',RGBoption='rem3d',reverse=True):
 ############################### PLOTTING ROUTINES ################################        
 
 def plot_hotspots(m, dbs_path = '.', lon360 = False, **kwargs):
-    """Reads hotspots.pkl from dbs_path and plots on to map index m lon360 is False if the no lon above 180 is permitted. **kwargs denotes the arguments, if any, for scatter."""
+    """
+    Reads hotspots.pkl from dbs_path and plots on to map index m 
 
-    # Earlier was in pickle format, cross-platform compatibility required json
+    Earlier, the data was in pickle format, cross-platform compatibility required json
     # hotspots = pickle.load(open('%s/hotspots.pkl' % (dbs_path), 'rb'))
     # tools.writejson(hotspots,'%s/hotspots.json' % (dbs_path))
-    hotspots = tools.readjson('%s/hotspots.json' % (dbs_path))
+    
+    Parameters
+    ----------
+    
+    m : figure axis handle
+    
+    dbs_path: path specified by user where hotspots.json is located. If not found,
+              defaults to downloading the file from the  REM3D server.
+              
+    lon360 : is False if the no longitude above 180 is permitted and is wrapped around. 
+    
+    kwargs : denotes the arguments, if any, for scatter
+               
+    """
+    
+    try:
+        hotspots = tools.readjson('%s/hotspots.json' % (dbs_path))
+    except IOError: #Download to default directory
+        filedir = tools.get_filedir(checkwrite=True,makedir=True)
+        data.update_file('hotspots.json')
+        hotspots = tools.readjson('%s/hotspots.json' % (filedir))
+       
     if lon360:
         hotspots[:,0] = (hotspots[:,0] + 360) % 360.0
     x, y = m(hotspots[:,0], hotspots[:,1])
@@ -170,14 +87,39 @@ def plot_hotspots(m, dbs_path = '.', lon360 = False, **kwargs):
     return    
 
 def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transform', 'trench'],**kwargs):
-    """Reads hotspots.pkl from base_path and plots on to map index m lon360 is False if the no lon above 180 is permitted. **kwargs denotes the arguments, if any, for scatter."""
+    """
+    Plots different types of tectonic plates
+    
+    Parameters
+    ----------
+    
+    m : figure axis handle
+    
+    dbs_path : path specified by user where hotspots.json is located. If not found,
+              defaults to downloading the file from the  REM3D server.
+              
+    boundtypes : plate boundary types that will be plotted. Default are ridge, transform
+                 and trench 
+    
+    lon360 : is False if the no longitude above 180 is permitted and is wrapped around. 
+    
+    kwargs : denotes the arguments, if any, for scatter
+    
+    """
     
     # Earlier was in pickle format, cross-platform compatibility required json
     # ridge,ridgeloc=pickle.load(open('%s/ridge.pkl' % (dbs_path),'rb'))
     # tools.writejson(np.array([ridge,ridgeloc.tolist()]),'%s/ridge.json' % (dbs_path))
     for bound in boundtypes:
         #name, segs = pickle.load(open('%s/%s.pkl' % (dbs_path,bound), 'rb'))
-        name, segs = tools.readjson('%s/%s.json' % (dbs_path,bound))
+        
+        try:
+            name, segs = tools.readjson('%s/%s.json' % (dbs_path,bound))
+        except IOError: #Download to default directory
+            filedir = tools.get_filedir(checkwrite=True,makedir=True)
+            data.update_file('%s.json' % (bound))
+            name, segs = tools.readjson('%s/%s.json' % (filedir,bound))
+        
         segs=np.array(segs)
         ind_nan, = np.nonzero(np.isnan(segs[:,0]))
         segs[ind_nan,0] = 0
@@ -267,10 +209,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
     try:
         cpalette = plt.get_cmap(colorpalette)
     except ValueError:
-        try:
-            cpalette=standardcolorpalette(RGBoption=colorpalette)
-        except KeyError:
-            cpalette=customcolorpalette(colorpalette)
+        cpalette=standardcolorpalette(RGBoption=colorpalette)
     
     # define the 10 bins and normalize
     if isinstance(colorcontour,np.ndarray) or isinstance(colorcontour,list): # A list of boundaries for color bar
@@ -295,7 +234,6 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
 #    # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
     plot_plates(m, dbs_path=dbs_path, color='w', linewidth=1.5)
-    if hotspots: plot_hotspots(m, dbs_path=dbs_path, s=30, color='m', edgecolor='k')
 
 #   Add a colorbar
     if colorlabel is not None:
@@ -319,6 +257,8 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
 #         plt.setp(cbarytks, visible=False)
         
     m.drawmapboundary(linewidth=1.5)    
+    if hotspots: plot_hotspots(m, dbs_path=dbs_path, s=30, color='m', edgecolor='k')
+
     return m    
 
 def plot1globalmap(latlonval,vmin,vmax,dbs_path='.',colorpalette='rem3d',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
@@ -353,13 +293,12 @@ def plot1globalmap(latlonval,vmin,vmax,dbs_path='.',colorpalette='rem3d',project
     """ 
     fig=plt.figure() 
     ax=fig.add_subplot(1,1,1)
-    epixarr=models.readepixfile(filename)
     if projection=='ortho':
-        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
+        globalmap(ax,latlonval,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
     else:
-        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
+        globalmap(ax,latlonval,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
     if ifshow: plt.show()
-    fig.savefig(filename+outformat,dpi=300)
+    fig.savefig('globalmap'+outformat,dpi=300)
     return 
 
     
