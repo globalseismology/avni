@@ -14,7 +14,9 @@ from . import constants
 #######################################################################################
 
 def get_fullpath(path):
-    """Provides the full path by replacing . and ~ in path."""
+    """
+    Provides the full path by replacing . and ~ in path.
+    """
     # Get the current directory    
     if path[0]=='.': path = os.path.dirname(os.path.abspath(__file__))+path[1:]   
     # If the path starts with tilde, replace with home directory

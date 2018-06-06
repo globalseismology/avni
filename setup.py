@@ -49,10 +49,6 @@ elif F90 == "gfortran":
 elif F90 == "f90":
     f90_flags = ["-fopenmp", "-fPIC", "-O3", "-library=sunperf","-xopenmp"]
     omp_lib = [""]
-    
-elif F90 in ["pgfortran", "pgf90", "pgf95"]:
-    f90_flags = ["-mp"]
-    omp_lib = [""]
 
 else:
     l1 = "F90 = " + F90 + ". \n"
