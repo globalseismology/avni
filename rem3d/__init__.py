@@ -11,10 +11,6 @@ from .version import version as __version__
 # data: data analyses library
 # models: models library
 # plots: plotting library
-# mapping: geographic libraries
-# 
-# f2py libraries:
-# geolib: geographic library
 
 __path__ = pkgutil.extend_path(__path__, __name__)
 for importer, modname, ispkg in pkgutil.walk_packages(path=__path__, prefix=__name__+'.'):
