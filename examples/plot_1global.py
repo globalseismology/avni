@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""This module contains the various subroutines used for plotting
-Usage import """
+"""This module contains an example of plotting a map using rem3d codes"""
 
 import sys,os
 import argparse #parsing arguments
