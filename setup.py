@@ -28,9 +28,11 @@ description = 'a modeling and analysis toolkit for reference Earth ' + \
 
 # puts the contents of the README file in the variable long_description
 #--------------------------------------------------------------------------
-with open('README.md') as file:
-    long_description = '\n\n ' + file.read()
-
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except(IOError, ImportError):
+    long_description = open('README.md').read()
 
 # call setup
 #--------------------------------------------------------------------------
@@ -54,12 +56,14 @@ metadata = dict(name = 'rem3d',
                 version=versionstuff['version'],
                 description=description,
                 long_description = long_description,
+                long_description_content_type='text/markdown',
                 url='http://www.rem3d.org',
                 author = 'Pritwiraj Moulik',
                 author_email='pritwiraj.moulik@gmail.com',
                 license='GPL',
                 packages = ['rem3d'],
                 install_requires=['requests'],
+                data_files=[('', ['README.md'])],
                 keywords = ['earth-science','earth-observation','earthquake',
                 'earth','earthquake-data','geology','geophysics',
                 'geophysical-inversions','seismology','seismic-inversion',
