@@ -3,8 +3,17 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# All data files downloaded from remote REM3D server
+rem3d/files/*
+
+# distutil
+MANIFEST
+
 # C extensions
 *.so
+
+# json temporary files
+*.json
 
 # Distribution / packaging
 .Python
@@ -97,3 +106,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+#matlab
+*.mat
+*.epix
+*.csph
+*.m~
+*.eps
+*.pdf
