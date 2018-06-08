@@ -194,7 +194,18 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
     numlon=len(np.unique(valarray['lon']))
     numlat=len(np.unique(valarray['lat']))
     # grid spacing assuming a even grid
-    grid_spacing = min(max(np.ediff1d(valarray['lat'])),max(np.ediff1d(valarray['lon'])))
+    # Get the unique lat and lon spacing, avoiding repeated lat/lon
+    spacing_lat = np.ediff1d(np.sort(valarray['lat']))
+    spacing_lat =np.unique(spacing_lat[spacing_lat != 0])
+    spacing_lon = np.ediff1d(np.sort(valarray['lon']))
+    spacing_lon =np.unique(spacing_lon[spacing_lon != 0])
+    # Check if an unique grid spacing exists for both lat and lon
+    if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon): 
+        print "Error: spacing for latitude and longitude should be the same throughout"
+        sys.exit(2) 
+    else: 
+        grid_spacing = spacing_lat
+    # Create a grid
     lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
     lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
     X,Y=np.meshgrid(lon,lat)
