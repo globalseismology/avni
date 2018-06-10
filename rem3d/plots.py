@@ -15,7 +15,6 @@ from mpl_toolkits.basemap import Basemap, shiftgrid
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
 import multiprocessing
-import cartopy.crs as ccrs
 from joblib import Parallel, delayed
 import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
@@ -200,13 +199,15 @@ def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transfo
 def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=True,**kwargs):
     """plots great-circle paths from lon lat arrays. Uses cartopy."""
     if kwargs:
-        m.plot([stlon,eplon],[stlat,eplat], transform=ccrs.Geodetic(), **kwargs)
-        m.scatter(stlon, stlat, transform=ccrs.Geodetic(), marker='^',edgecolors='k', **kwargs)
-        m.scatter(eplon, eplat, transform=ccrs.Geodetic(), marker='o',edgecolors='k', **kwargs)
+        for x,y,z,w in np.vstack((stlon,stlat,eqlon,eqlat)).transpose():
+            m.drawgreatcircle(x,y,z,w, **kwargs)
+        x, y = m(stlon, stlat); m.scatter(x, y, marker='^', **kwargs)
+        x, y = m(eplon, eplat); m.scatter(x, y, marker='o', **kwargs)
     else:
-        m.plot([lon1,lon2],[lat1,lat2], transform=ccrs.Geodetic())
-        m.scatter(stlon, stlat, transform=ccrs.Geodetic(), marker='^', edgecolors='k')
-        m.scatter(eplon, eplat, transform=ccrs.Geodetic(), marker='o', edgecolors='k')
+        for x,y,z,w in np.vstack((stlon,stlat,eqlon,eqlat)).transpose():
+            m.drawgreatcircle(x,y,z,w)
+        x, y = m(stlon, stlat); m.scatter(x, y, marker='^', edgecolors='k')
+        x, y = m(eplon, eplat); m.scatter(x, y, marker='o', edgecolors='k')
     m.coastlines(color='gray')
     if ifglobal: m.set_global()    # set global extent
     return m
