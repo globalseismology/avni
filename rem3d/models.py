@@ -28,8 +28,7 @@ def readepixfile(filename):
         epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['lat','lon','pixsize','val'])
         ierror=0
     except IOError:
-        print "File ("+filename+") does not exist in the current directory - "+currentdir
-        ierror=0
+        sys.exit("File ("+filename+") does not exist in the current directory - "+currentdir)
     
     return ierror,epixarr
     

@@ -15,12 +15,14 @@ import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap, shiftgrid
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
-
+import pdb
+from scipy.interpolate import griddata
 ####################       IMPORT OWN MODULES     ######################################
 from . import tools
 from . import data
 from . import models
 from . import constants
+from . import mapping
 ########################      GENERIC   ################################################                       
                     
 def standardcolorpalette(name='rem3d',RGBoption='rem3d',reverse=True):
@@ -138,7 +140,7 @@ def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transfo
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='rem3d',colorcontour=20,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
     
@@ -168,7 +170,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
     lat_0, lon_0 : center latitude and longitude for the plot
     
     outformat : format of the output file 
-    
+        
     kwargs : optional arguments for Basemap 
     """ 
 
@@ -188,40 +190,11 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
     meridians = np.arange(-180.,180.,grid[1])
     m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth,fontsize=14)
 
-    # plot the model
-    for ii in np.arange(len(valarray['lon'])): 
-        if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
-    numlon=len(np.unique(valarray['lon']))
-    numlat=len(np.unique(valarray['lat']))
-    # grid spacing assuming a even grid
-    # Get the unique lat and lon spacing, avoiding repeated lat/lon
-    spacing_lat = np.ediff1d(np.sort(valarray['lat']))
-    spacing_lat =np.unique(spacing_lat[spacing_lat != 0])
-    spacing_lon = np.ediff1d(np.sort(valarray['lon']))
-    spacing_lon =np.unique(spacing_lon[spacing_lon != 0])
-    # Check if an unique grid spacing exists for both lat and lon
-    if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon): 
-        print "Error: spacing for latitude and longitude should be the same throughout"
-        sys.exit(2) 
-    else: 
-        grid_spacing = spacing_lat
-    # Create a grid
-    lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
-    lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
-    X,Y=np.meshgrid(lon,lat)
-    val = np.empty_like(X)
-    val[:] = np.nan;
-    for i in xrange(0, valarray['lat'].size):
-        ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
-        ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
-        val[ilat,ilon] = valarray['val'][i]
-    s = m.transform_scalar(val,lon,lat, 1000, 500)
     # Get the color map
     try:
         cpalette = plt.get_cmap(colorpalette)
     except ValueError:
         cpalette=standardcolorpalette(RGBoption=colorpalette)
-    
     # define the 10 bins and normalize
     if isinstance(colorcontour,np.ndarray) or isinstance(colorcontour,list): # A list of boundaries for color bar
         if isinstance(colorcontour,list): 
@@ -241,8 +214,58 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
         print "Error: Undefined colorcontour, should be a numpy array, list or integer "
         sys.exit(2)        
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
-    im = m.imshow(s, cmap=cpalette.name, clip_path=clip_path, vmin=vmin, vmax=vmax, norm=norm)
-#    # add plates and hotspots
+    
+    # plot the model
+    for ii in np.arange(len(valarray['lon'])): 
+        if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
+    numlon=len(np.unique(valarray['lon']))
+    numlat=len(np.unique(valarray['lat']))
+    # grid spacing assuming a even grid
+    # Get the unique lat and lon spacing, avoiding repeated lat/lon
+    spacing_lat = np.ediff1d(np.sort(valarray['lat']))
+    spacing_lat = np.unique(spacing_lat[spacing_lat != 0])
+    spacing_lon = np.ediff1d(np.sort(valarray['lon']))
+    spacing_lon = np.unique(spacing_lon[spacing_lon != 0])
+    # Check if an unique grid spacing exists for both lat and lon
+    if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon): 
+        print "Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation"
+        # compute native map projection coordinates of lat/lon grid.
+        x, y = m(valarray['lon'], valarray['lat'])
+        rlatlon = np.vstack([np.ones(len(valarray['lon'])),valarray['lat'],valarray['lon']]).transpose()
+        xyz = mapping.spher2cart(rlatlon)
+        
+        # Create a grid
+        grid_spacing = 1.
+        lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
+        lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
+        lons,lats=np.meshgrid(lon,lat)
+        
+        # evaluate in cartesian
+        rlatlon = np.vstack([np.ones_like(lons.flatten()),lats.flatten(),lons.flatten()]).transpose()
+        xyz_new = mapping.spher2cart(rlatlon)
+        
+        #lons, lats = m.makegrid(1000, 500) # get lat/lons of ny by nx evenly space grid.
+        #xi, yi = m(lons, lats) # compute map proj coordinates.
+        # grid the data.
+        val = griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)    
+        s = m.transform_scalar(val,lon,lat, 1000, 500)
+        im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+        #im = m.contourf(xi, yi,zi,colorcontour+1, cmap=cpalette.name, vmin=vmin, vmax=vmax)
+    else: 
+        grid_spacing = spacing_lat
+        # Create a grid
+        lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
+        lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
+        X,Y=np.meshgrid(lon,lat)
+        val = np.empty_like(X)
+        val[:] = np.nan;
+        for i in xrange(0, valarray['lat'].size):
+            ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
+            ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
+            val[ilat,ilon] = valarray['val'][i]
+        s = m.transform_scalar(val,lon,lat, 1000, 500)
+        im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+    # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
     plot_plates(m, dbs_path=dbs_path, color='w', linewidth=1.5)
 
