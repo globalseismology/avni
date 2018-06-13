@@ -46,7 +46,16 @@ def standardcolorpalette(name='rem3d',RGBoption='rem3d',reverse=True):
     custom_cmap = mcolors.LinearSegmentedColormap.from_list(name, RGBlist,N=len(RGBlist))
     cmx.register_cmap(name=custom_cmap.name, cmap=custom_cmap)
     return custom_cmap    
-
+    
+def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm',colorcontour=20):
+    """gets the value of color for a given palette"""
+    jet = cm = cmx.get_cmap(palette) 
+    #cNorm  = mcolors.Normalize(vmin=xmin, vmax=xmax)
+    bounds = np.linspace(xmin,xmax,colorcontour+1)
+    cNorm = mcolors.BoundaryNorm(bounds,cm.N)
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=palette)
+    colorVal = scalarMap.to_rgba(val)
+    return colorVal
                 
 ############################### PLOTTING ROUTINES ################################        
 
@@ -140,7 +149,7 @@ def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transfo
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='rem3d',colorcontour=20,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=20,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
     
@@ -163,9 +172,11 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
     colorcontour :  the number of contours for colors in the plot. Maximum is 520 and odd values
                     are preferred so that mid value is at white/yellow or other neutral colors.
     
+    colorticks : Label and draw the ticks in the colorbar if True (default)
+    
     projection : map projection for the global plot
     
-    colorlabel : label to use for the colorbar
+    colorlabel : label to use for the colorbar. If None, no colorbar is plotted.
     
     lat_0, lon_0 : center latitude and longitude for the plot
     
@@ -279,16 +290,21 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
         # Remove colorbar container frame
 #         cbar.outline.set_visible(False)
         # Fontsize for colorbar ticklabels
-        cbar.ax.tick_params(labelsize=14)
-        # Customize colorbar tick labels
-        cbar.set_ticks(mytks)
-        mytkslabels = [str(int(a)) if (a).is_integer() else str(a) for a in mytks]
-        cbar.ax.set_yticklabels(mytkslabels)
+        if colorticks:
+            cbar.ax.tick_params(labelsize=14)
+            # Customize colorbar tick labels
+            cbar.set_ticks(mytks)
+            mytkslabels = [str(int(a)) if (a).is_integer() else str(a) for a in mytks]
+            cbar.ax.set_yticklabels(mytkslabels)
+        else:   
+            # Remove color bar tick lines, while keeping the tick labels
+            cbarytks = plt.getp(cbar.ax.axes, 'yticklines')
+            plt.setp(cbarytks, visible=False)
+            cbarytks = plt.getp(cbar.ax.axes, 'yticklabels')
+            plt.setp(cbarytks, visible=False)
         # Colorbar label, customize fontsize and distance to colorbar
         cbar.set_label(colorlabel,rotation=90, fontsize=16, labelpad=5)
-        # Remove color bar tick lines, while keeping the tick labels
-#         cbarytks = plt.getp(cbar.ax.axes, 'yticklines')
-#         plt.setp(cbarytks, visible=False)
+
         
     m.drawmapboundary(linewidth=1.5)    
     if hotspots: plot_hotspots(m, dbs_path=dbs_path, s=30, color='m', edgecolor='k')
