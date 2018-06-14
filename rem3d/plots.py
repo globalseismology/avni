@@ -24,6 +24,37 @@ from . import models
 from . import constants
 from . import mapping
 ########################      GENERIC   ################################################                       
+
+def updatefont(ax=None,fontsize=15,fontname='sans-serif'): 
+    """
+    Updates the font type and sizes globally or for a particular axis handle
+    
+    Parameters
+    ----------
+    
+    ax :  figure axis handle
+    
+    fontsize,fontname : font parameters
+    
+    Return:
+    ----------
+    
+    ax : updated axis handle if ax is not None
+    
+    """
+    if ax is None:
+        plt.rcParams["font.family"] = fontname
+        plt.rcParams["font.size"] = fontsize
+    else:
+        for item in (ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(fontsize)
+            item.set_fontname(fontname)
+        for item in ([ax.xaxis.label, ax.yaxis.label]):
+            item.set_fontsize(fontsize+2)
+            item.set_fontname(fontname)
+        ax.title.set_fontsize(fontsize+3)
+        ax.title.set_fontname(fontname)
+    return ax if ax is not None else None
                     
 def standardcolorpalette(name='rem3d',RGBoption='rem3d',reverse=True):
     """
@@ -197,9 +228,9 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
     # meridians on bottom and left
     parallels = np.arange(-90.,90.,grid[0])
     # labels = [left,right,top,bottom]
-    m.drawparallels(parallels,labels=[True,False,False,False],linewidth=gridwidth,fontsize=14)
+    m.drawparallels(parallels,labels=[True,False,False,False],linewidth=gridwidth)
     meridians = np.arange(-180.,180.,grid[1])
-    m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth,fontsize=14)
+    m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth)
 
     # Get the color map
     try:
@@ -216,13 +247,13 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         mytks = np.append(bounds[bounds.nonzero()],np.ceil(vmax))
         bounds = np.append(bounds,np.ceil(vmax))
         spacing='uniform'
-    elif isinstance(colorcontour,int): # Number of intervals for color bar
+    elif isinstance(colorcontour,(int, long)): # Number of intervals for color bar
         bounds = np.linspace(vmin,vmax,colorcontour+1)
         mytks = np.arange(vmin,vmax+(vmax-vmin)/4.,(vmax-vmin)/4.)
         mytkslabel = [str(a) for a in mytks]
         spacing='proportional'
     else:
-        print "Error: Undefined colorcontour, should be a numpy array, list or integer "
+        print "Error: Undefined colorcontour in globalmap; should be a numpy array, list or integer "
         sys.exit(2)        
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
     
@@ -255,13 +286,11 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         rlatlon = np.vstack([np.ones_like(lons.flatten()),lats.flatten(),lons.flatten()]).transpose()
         xyz_new = mapping.spher2cart(rlatlon)
         
-        #lons, lats = m.makegrid(1000, 500) # get lat/lons of ny by nx evenly space grid.
-        #xi, yi = m(lons, lats) # compute map proj coordinates.
         # grid the data.
         val = griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)    
         s = m.transform_scalar(val,lon,lat, 1000, 500)
         im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
-        #im = m.contourf(xi, yi,zi,colorcontour+1, cmap=cpalette.name, vmin=vmin, vmax=vmax)
+        #im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True)
     else: 
         grid_spacing = spacing_lat
         # Create a grid
@@ -303,7 +332,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
             cbarytks = plt.getp(cbar.ax.axes, 'yticklabels')
             plt.setp(cbarytks, visible=False)
         # Colorbar label, customize fontsize and distance to colorbar
-        cbar.set_label(colorlabel,rotation=90, fontsize=16, labelpad=5)
+        cbar.set_label(colorlabel,rotation=90, labelpad=5)
 
         
     m.drawmapboundary(linewidth=1.5)    
