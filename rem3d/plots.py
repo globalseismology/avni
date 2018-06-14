@@ -17,11 +17,11 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
 import pdb
 from scipy.interpolate import griddata
-####################       IMPORT OWN MODULES     ######################################
-from . import tools
-from . import data
+####################       IMPORT OWN MODULES     ######################################from . import models
 from . import models
 from . import constants
+from . import tools
+from . import data
 from . import mapping
 ########################      GENERIC   ################################################                       
 
