@@ -10,6 +10,16 @@ from math import ceil
 from . import constants
 #######################################################################################
 
+def firstnonspaceindex(string):
+    """
+    Gets the first non space index of a string
+    """
+    ifst=0
+    ilst=len(string.rstrip('\n'))
+    while string[ifst:ifst+1] == ' ' and ifst < ilst: ifst=ifst+1 
+    if ilst-ifst <= 0: sys.exit("error reading model")
+    return ifst,ilst
+
 def get_fullpath(path):
     """
     Provides the full path by replacing . and ~ in path.

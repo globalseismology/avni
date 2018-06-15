@@ -18,7 +18,6 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
 import pdb
 from scipy.interpolate import griddata
 ####################       IMPORT OWN MODULES     ######################################from . import models
-from . import models
 from . import constants
 from . import tools
 from . import data
@@ -339,7 +338,6 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
     if hotspots: plot_hotspots(m, dbs_path=dbs_path, s=30, color='m', edgecolor='k')
 
     return m    
-
     
     
     
