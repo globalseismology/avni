@@ -18,8 +18,6 @@ if int(npv[0]) != 1:
 if int(npv[1]) < 7:
     raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
 
-import numpy.distutils.fcompiler
-
 # write short description
 #--------------------------------------------------------------------------
 description = 'a modeling and analysis toolkit for reference Earth ' + \
