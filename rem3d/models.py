@@ -32,7 +32,7 @@ import re
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import tools   
 from . import plots                
-#####################
+#######################################################################################
 def readepixfile(filename):
     """Read .epix file format from a file.
 
@@ -188,45 +188,6 @@ class model3d(object):
         self.type = 'rem3d'
         
         return 
-
-    def getradialattributes(self,parserfile='constants.ini'):
-        """
-        Reads configuration file and get the basis attributes like knot depth for each 
-        parameter in modelarray list of coefficients. parser is the output from 
-        parser = ConfigObj(config) where config is the configuration *.ini file.
-        """    
-        if (not os.path.isfile(parserfile)): raise IOError("Configuration file ("+parserfile+") does not exist")
- 
-        # Read configuration file to a configuration parser. This is to make this available on the fly
-        parser = ConfigObj(parserfile)
-        
-        # Read the kernel set from the model3d dictionary 
-        kerstr=self.metadata['kerstr']
-    
-        # Read the basis
-        temp = parser['Kernel_Set'][kerstr]['radial_knots']; radial_knots = []
-        for ii in range(len(temp)): 
-            temp2 = [float(i) for i in temp[ii].split(',')]
-            radial_knots.append(temp2)
-    
-        # Clustering configuration
-        radial_type = parser['Kernel_Set'][kerstr]['radial_type']
-
-        # Loop over all kernel basis
-        knot_depth=[]
-        for ii in range(len(self.metadata['ihorpar'])): 
-            ifound=0
-            for jj in range(len(radial_type)):
-                if re.search(radial_type[jj],self.metadata['desckern'][ii]):
-                    index = int(self.metadata['desckern'][ii].split(',')[-1]) - 1
-                    knot_depth.append(radial_knots[jj][index]); ifound=1
-            if ifound != 1: 
-                print("Warning: Did not find radial kernel knot depth in getradialattributes for "+self.metadata['desckern'][ii]+". Setting to NaN to denote ignorance in clustering")
-                knot_depth.append(np.nan)
-        self.metadata['knot_depth']=np.array(knot_depth)
-        return 
-
-
 
     def coeff2modelarr(self):
         """
