@@ -10,6 +10,7 @@ from .version import version as __version__
 # tools: generic tools library
 # data: data analyses library
 # models: models library
+# mapping: mapping library
 # plots: plotting library
 
 __path__ = pkgutil.extend_path(__path__, __name__)
