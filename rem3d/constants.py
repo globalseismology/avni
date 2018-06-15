@@ -12,6 +12,11 @@ downloadpage = 'https://maurya.umd.edu/files'
 localfilefolder = 'files'
 
 """
+configuration files
+"""
+configfolder = 'config'
+
+"""
 Mapping constants
 """
 geoco=0.993277    #correction for geographic-geocentric conversion

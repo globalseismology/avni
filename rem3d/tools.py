@@ -73,7 +73,19 @@ def get_filedir(checkwrite=True,makedir=True):
         if not os.path.exists(filedir):
             os.makedirs(filedir)        
     return filedir
-    
+
+def get_configdir(checkwrite=True,makedir=True):
+    """
+    Get the directory containing configuration files. 
+    Make a new directory if doesn't exist (makedir==True)
+    """
+    installdir = get_installdir(checkwrite=checkwrite)
+    get_configdir = installdir+'/'+constants.configfolder
+    if checkwrite and makedir: 
+        if not os.path.exists(get_configdir):
+            os.makedirs(get_configdir)        
+    return get_configdir
+        
 def writejson(nparray,filename,encoding='utf-8'):
     """Writes a json file from a numpy array"""
     
