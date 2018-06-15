@@ -15,7 +15,6 @@ import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap, shiftgrid
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
-import pdb
 from scipy.interpolate import griddata
 ####################       IMPORT OWN MODULES     ######################################
 from . import tools
