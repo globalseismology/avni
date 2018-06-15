@@ -28,6 +28,7 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
 from scipy import sparse
 from configobj import ConfigObj
 import re
+from copy import copy, deepcopy
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import tools   
@@ -62,6 +63,8 @@ class model3d(object):
 
     def __init__(self):
         self.metadata = {}
+        self.ensemble = {}
+        self.ensemble['realization_0'] = {}
         self.name = None
         self.type = None
         self.refmodel = None
@@ -69,10 +72,25 @@ class model3d(object):
 
     def __str__(self):
         if self.name is not None:
-            output = "%s is a three-dimensional model of %s type and %s as the reference model" % (self.name, self.type,self.refmodel)
+            output = "%s is a three-dimensional model ensemble with %s realizations of %s type and %s as the reference model" % (self.name,len(self.ensemble), self.type,self.refmodel)
         else:
             output = "No three-dimensional model has been read into this model3d instance yet"
         return output
+        
+    def __copy__(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        return result
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result
+        
 
     def read3dmodelfile(self,modelfile,maxkern=300,maxcoeff=6000):
         """
@@ -172,36 +190,48 @@ class model3d(object):
     
     
         # Write to a dictionary
-        model3d = {}
-        model3d['refmodel']=refmodel; model3d['kerstr']=kerstr; model3d['nmodkern']=nmodkern
-        model3d['desckern']=desckern; model3d['nhorpar']=nhorpar; model3d['hsplfile']=hsplfile
-        model3d['typehpar']=typehpar; model3d['ityphpar']=ityphpar; model3d['lmaxhor']=lmaxhor
-        model3d['ixlspl']=ixlspl; model3d['xlaspl']=xlaspl; model3d['xlospl']=xlospl
-        model3d['xraspl']=xraspl; model3d['ihorpar']=ihorpar; model3d['ivarkern']=ivarkern
-        model3d['numvar']=numvar; model3d['varstr']=varstr; model3d['coef']=coef
-        model3d['ncoefhor']=ncoefhor
+        metadata = {};ensemble = {};realization={}
+        metadata['kerstr']=kerstr; metadata['nmodkern']=nmodkern
+        metadata['desckern']=desckern; metadata['nhorpar']=nhorpar; metadata['hsplfile']=hsplfile
+        metadata['typehpar']=typehpar; metadata['ityphpar']=ityphpar; metadata['lmaxhor']=lmaxhor
+        metadata['ixlspl']=ixlspl; metadata['xlaspl']=xlaspl; metadata['xlospl']=xlospl
+        metadata['xraspl']=xraspl; metadata['ihorpar']=ihorpar; metadata['ivarkern']=ivarkern
+        metadata['numvar']=numvar; metadata['varstr']=varstr
+        metadata['ncoefhor']=ncoefhor
+
+        realization['coef'] = sparse.csr_matrix(coef); 
+        realization['name'] = model3d
+        ensemble['realization_0'] = realization
         
         # store the relevant values in self
-        self.metadata = model3d
+        self.metadata = metadata
         self.refmodel = refmodel
+        self.ensemble = ensemble
         self.name = ntpath.basename(modelfile)
         self.description = "Read from "+modelfile
         self.type = 'rem3d'
         
         return 
 
-    def coeff2modelarr(self):
+    def coeff2modelarr(self,realization=0):
         """
         Convert the coeffiecient matrix from the file to a sparse model array
+        realization is the index of the set of coefficients in an ensemble. Default is 0
+        as there is only one set of coefficients when read from a model file.
         """
         if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
+        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        
+        coefficients = self.ensemble['realization_'+str(realization)]['coef'].toarray()
         # Loop over all kernel basis
         for ii in range(len(self.metadata['ihorpar'])): 
             if ii == 0: # first radial kernel
                 ncoef = self.metadata['ncoefhor'][self.metadata['ihorpar'][ii]-1] # number of coefficients for this radial kernel
-                modelarr=self.metadata['coef'][ii,:ncoef]
+                modelarr=coefficients[ii,:ncoef]
+                #modelarr=self.metadata['coef'][ii,:ncoef]
             else:
-                modelarr=np.append(modelarr,self.metadata['coef'][ii,:ncoef])  
+                modelarr=np.append(modelarr,coefficients[ii,:ncoef]) 
+                #modelarr=np.append(modelarr,self.metadata['coef'][ii,:ncoef])  
         modelarr = sparse.csr_matrix(modelarr) # Convert to sparse matrix
         modelarr = modelarr.T # take the transpose to make dot products easy 
         return modelarr
@@ -212,6 +242,7 @@ class model3d(object):
         parameter in modelarray list of coefficients. parser is the output from 
         parser = ConfigObj(config) where config is the configuration *.ini file.
         """    
+        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
         
         # Read configuration file to a configuration parser. This is to make this available on the fly
         filepath = tools.get_configdir(checkwrite=True) + '/'+parserfile
@@ -249,6 +280,8 @@ class model3d(object):
         Reads Projection matrix created by plot_3dmod_pm. 
         lateral_basis can be M362 or pixel1
         """    
+        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+
         #read all the bytes to indata
         outfile=self.name+'.'+lateral_basis+'.proj.bin.npz'
         infile=self.name+'.'+lateral_basis+'.proj.bin'
@@ -327,11 +360,13 @@ class model3d(object):
         projection['model']=model; projection['param']=lateral_basis         
         return projection
 
-    def getprojtimesmodel(self,projection,variable,depth):
+    def getprojtimesmodel(self,projection,variable,depth,realization=0):
         """
         Projection matrix multiplied by model ensemble. Choses the nearest depth available for the projection.
         """    
-        modelarr = self.coeff2modelarr()
+        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+
+        modelarr = self.coeff2modelarr(realization=realization)
         # Select appropriate arrays from projection matrix, read from file
         projarr = projection['projarr']; refstrarr = projection['refstrarr']; deptharr = projection['deptharr']  
     
@@ -354,6 +389,7 @@ class model3d(object):
         model3d : The model object from read3dmodelfile
     
         """
+        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
     
         ifindspline=np.where(self.metadata['typehpar']=='SPHERICAL SPLINES')[0]
         for ifind in ifindspline:
