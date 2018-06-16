@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap, shiftgrid
 import multiprocessing
-import cartopy.crs as ccrs
 from joblib import Parallel, delayed
 import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
@@ -30,17 +29,13 @@ import mpl_toolkits.axisartist.angle_helper as angle_helper
 from matplotlib.projections import PolarAxes
 from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
 from matplotlib import gridspec # Relative size of subplots
-from numba import jit
 
 ####################       IMPORT OWN MODULES     ######################################
 from . import mapping
 from . import tools
-<<<<<<< HEAD
 from . import data
 from . import models
 from . import constants
-=======
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
 ########################      GENERIC   ################################################                       
                     
 def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm'):
@@ -114,7 +109,6 @@ def customcolorpalette(name='bk',cptfolder='~/CPT',colorlist=None,colormax=2.,mi
             print "Error: Could not find file "+cptfolder+'/bk1_0.cpt_'    
             pdb.set_trace()
             sys.exit(2)
-<<<<<<< HEAD
     elif name=='hit1':
         cptfolder=tools.get_fullpath(cptfolder)
         if os.path.isfile(cptfolder+'/hit1.cpt_'):
@@ -123,8 +117,6 @@ def customcolorpalette(name='bk',cptfolder='~/CPT',colorlist=None,colormax=2.,mi
             print "Error: Could not find file "+cptfolder+'/hit1.cpt_'    
             pdb.set_trace()
             sys.exit(2)
-=======
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
     elif name=='yuguinv':
         cptfolder=tools.get_fullpath(cptfolder)
         if os.path.isfile(cptfolder+'/yu1_2inv.new.cpt_'):
@@ -143,7 +135,6 @@ def customcolorpalette(name='bk',cptfolder='~/CPT',colorlist=None,colormax=2.,mi
         palette=grayify_cmap(palette)
         
     return custom_cmap    
-<<<<<<< HEAD
 
 def standardcolorpalette(name='rem3d',RGBoption='rainbow2',reverse=True):
     """
@@ -157,8 +148,6 @@ def standardcolorpalette(name='rem3d',RGBoption='rainbow2',reverse=True):
     cmx.register_cmap(name=custom_cmap.name, cmap=custom_cmap)
     return custom_cmap    
 
-=======
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
                 
 ############################### PLOTTING ROUTINES ################################        
 
@@ -205,21 +194,22 @@ def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transfo
             m.plot(x, y, '-')
     return
 
-
 def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=True,**kwargs):
-    """plots great-circle paths from lon lat arrays. Uses cartopy."""
+    """plots great-circle paths from lon lat arrays."""
     if kwargs:
-        m.plot([stlon,eplon],[stlat,eplat], transform=ccrs.Geodetic(), **kwargs)
-        m.scatter(stlon, stlat, transform=ccrs.Geodetic(), marker='^',edgecolors='k', **kwargs)
-        m.scatter(eplon, eplat, transform=ccrs.Geodetic(), marker='o',edgecolors='k', **kwargs)
+        for x,y,z,w in np.vstack((stlon,stlat,eqlon,eqlat)).transpose():
+            m.drawgreatcircle(x,y,z,w, **kwargs)
+        x, y = m(stlon, stlat); m.scatter(x, y, marker='^', **kwargs)
+        x, y = m(eplon, eplat); m.scatter(x, y, marker='o', **kwargs)
     else:
-        m.plot([lon1,lon2],[lat1,lat2], transform=ccrs.Geodetic())
-        m.scatter(stlon, stlat, transform=ccrs.Geodetic(), marker='^', edgecolors='k')
-        m.scatter(eplon, eplat, transform=ccrs.Geodetic(), marker='o', edgecolors='k')
+        for x,y,z,w in np.vstack((stlon,stlat,eqlon,eqlat)).transpose():
+            m.drawgreatcircle(x,y,z,w)
+        x, y = m(stlon, stlat); m.scatter(x, y, marker='^', edgecolors='k')
+        x, y = m(eplon, eplat); m.scatter(x, y, marker='o', edgecolors='k')
     m.coastlines(color='gray')
     if ifglobal: m.set_global()    # set global extent
     return m
-
+    
 
 def backgroundmap(ax,dbs_path='.',platescolor='r', **kwargs):
     """plots a background map of a 3D model on axis ax. kwargs are arguments for Basemap"""
@@ -228,11 +218,7 @@ def backgroundmap(ax,dbs_path='.',platescolor='r', **kwargs):
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
     else:
-<<<<<<< HEAD
         m = Basemap(ax=ax,projection='robin', lat_0=0, lon_0=150, resolution='l')
-=======
-        m = Basemap(ax=ax,projection='hammer', lat_0=0, lon_0=150, resolution='l')
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
     
     clip_path = m.drawmapboundary()
     # draw coastlines.
@@ -305,108 +291,17 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
         lonextent,latextent=m([lonextent1,lonextent2],[latextent1,latextent2])
         m.plot(lonextent,latextent,color='k',linewidth=3.)
     return m
-<<<<<<< HEAD
 
-
-def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path='.',plottopo=False,numeval=50,downsampleetopo1=True,distnearthreshold=5.,outfile='transect_topo.json'):
-    """Get the topography transect.dbs_path should have filename. numeval is number of evaluations of topo/bathymetry along the transect. downsampleetopo1 if true samples every 3 points to get 0.5 deg before interpolation. distnearthreshold is the threshold for nearest points to consider for interpolation in km. """
-    
-    recalculate=True
-    if os.path.isfile(outfile):
-        [lat1_t,lng1_t,azimuth_t,gcdelta_t,filename_t,dbs_path_t,plottopo_t,numeval_t,downsampleetopo1_t,distnearthreshold_t],evalpoints_t,grid_z1_t=tools.readjson(outfile)
-        dbs_path=tools.get_fullpath(dbs_path)
-        if lat1_t==lat1 and lng1_t==lng1 and azimuth_t==azimuth and gcdelta_t==gcdelta and str(filename_t)==filename and str(dbs_path_t)==dbs_path and plottopo_t==plottopo and numeval_t==numeval and downsampleetopo1_t==downsampleetopo1 and distnearthreshold_t==distnearthreshold:
-            evalpoints=evalpoints_t
-            grid_z1=grid_z1_t
-            recalculate=False
-    
-    if recalculate:    
-        # Calculate intermediate points            
-        lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
-        interval=gcdelta*111325./(numeval-1) # interval in km
-        coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
-        
-        if(len(coords) != numeval):
-            print "Error: The number of intermediate points is not accurate. Decrease it?"
-            pdb.set_trace()
-            sys.exit(2)
-    
-        # Read the topography file
-        dbs_path=tools.get_fullpath(dbs_path)
-        if os.path.isfile(dbs_path+'/'+filename):
-            data = netcdf(dbs_path+'/'+filename,'r')
-        else:
-            print "Error: Could not find file "+dbs_path+'/'+filename    
-            pdb.set_trace()
-            sys.exit(2)
-    
-        # Create the arrays for interpolation
-        radarr=np.array([6371.])
-        if downsampleetopo1: 
-            sampling=3
-        else:
-            sampling=1    
-        lonarr=data.variables['lon'][::][0::sampling] #sample every 3 points to get 0.5 deg
-        latarr=data.variables['lat'][::][0::sampling] #sample every 3 points to get 0.5 deg
-        grid_y, grid_z, grid_x=np.meshgrid(latarr,radarr,lonarr)
-    #     grid_x, grid_y = np.meshgrid(data.variables['lon'][::],data.variables['lat'][::])    
-        values=data.variables['z'][::][0::sampling,0::sampling] #sample every 3 points to get 0.5 deg    
-        if plottopo:
-            fig=plt.figure() 
-            ax=fig.add_subplot(1,1,1)
-            ax.pcolormesh(grid_x,grid_y,values,cmap='coolwarm')
-            plt.show()
-        #Evaluate the topography at the points
-        rlatlon=np.column_stack((np.ravel(grid_z), np.ravel(grid_y), np.ravel(grid_x)))
-
-        t0 = time.time()
-        gridpoints=mapping.spher2cart(rlatlon)
-        evalpoints=np.column_stack((6371.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
-        coordstack=mapping.spher2cart(evalpoints)
-        checkifnear=np.zeros_like(gridpoints[:,0],dtype=bool) # array for checking if the point is near to any point in the path (coordstack)
-    
-        print "....Getting the topography transect from "+dbs_path+'/'+filename
-        bar = progressbar.ProgressBar(maxval=len(coordstack), \
-        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-        bar.start()
-        for ii in np.arange(len(coordstack)):
-            dist=np.sqrt( np.power(gridpoints[:,0]-coordstack[ii,0],2) + np.power(gridpoints[:,1]-coordstack[ii,1],2) + np.power(gridpoints[:,2]-coordstack[ii,2],2) )
-            checkifneartemp=dist<distnearthreshold
-            checkifnear=np.logical_or(checkifnear,checkifneartemp)
-            if len(np.where(checkifneartemp==True)[0]) == 0: 
-                print "Error: No points found with the given distnearthreshold in atleast 1 point. Increase the bound? "
-                sys.exit(2)
-            bar.update(ii+1)    
-        bar.finish()
-    
-        indexselect=np.where(checkifnear==True)[0]    
-        valuesselect=np.ravel(values)[indexselect]    
-        print("--- Chose %s points with distances < %s km for interpolation ---" % (len(valuesselect),  distnearthreshold))
-        grid_z1 = spint.griddata(gridpoints[indexselect], valuesselect, coordstack, method='nearest')
-    
-        writearr=np.array([[lat1,lng1,azimuth,gcdelta,filename,dbs_path,plottopo,numeval,downsampleetopo1,distnearthreshold],evalpoints.tolist(),grid_z1.tolist()])
-        tools.writejson(writearr,outfile)
-        data.close() #close netcdf file
-    return evalpoints,grid_z1
 
 def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='bk',colorcontour=20,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
     """plots a 2-D cross-section of a 3D model on axis ax. kwargs are arguments for Basemap. color* are for the colormap used.
     colorcontour"""
-=======
-
-def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='bk',colorcontour=20,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
-    """plots a 2-D cross-section of a 3D model on axis ax. kwargs are arguments for Basemap. color* are for the colormap used."""
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
-
+    
     # set up map
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
     else:
-<<<<<<< HEAD
         m = Basemap(ax=ax,projection='robin', lat_0=0, lon_0=150, resolution='c')
-=======
-        m = Basemap(ax=ax,projection='hammer', lat_0=0, lon_0=150, resolution='c')
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
     clip_path = m.drawmapboundary()
     m.drawcoastlines(linewidth=1.5)
     # draw parallels and meridians.
@@ -423,7 +318,6 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='b
         if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
     numlon=len(np.unique(valarray['lon']))
     numlat=len(np.unique(valarray['lat']))
-<<<<<<< HEAD
     # grid spacing assuming a even grid
     grid_spacing = min(max(np.ediff1d(valarray['lat'])),max(np.ediff1d(valarray['lon'])))
     lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
@@ -458,31 +352,10 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='b
     elif isinstance(colorcontour,int): # Number of intervals for color bar
         bounds = np.linspace(vmin,vmax,colorcontour+1)
         mytks = np.arange(vmin,vmax+(vmax-vmin)/4.,(vmax-vmin)/4.)
-        mytkslabel = [str(a) for a in mytks]
         spacing='proportional'
     else:
         print "Error: Undefined colorcontour, should be a numpy array, list or integer "
         sys.exit(2)        
-=======
-    lontemp = np.transpose(valarray['lon'].reshape((numlon,numlat)))
-    lonsort = np.argsort(lontemp) # Sort the longitude for transform_scalar
-    lon = np.sort(lontemp) # Sort the longitude for transform_scalar
-    lattemp = np.transpose(valarray['lat'].reshape((numlon,numlat)))
-    valtemp = np.transpose(valarray['val'].reshape((numlon,numlat)))
-    val=np.zeros_like(valtemp);lat=np.zeros_like(lattemp)
-    for ii in np.arange(numlat):
-        for jj in np.arange(numlon):
-            val[ii,jj]=valtemp[ii,lonsort[ii,jj]]
-            lat[ii,jj]=lattemp[ii,lonsort[ii,jj]]
-    s = m.transform_scalar(val,lon[0,:], lat[:,0], 1000, 500)
-    # Get the color map
-#     c = mcolors.ColorConverter().to_rgb
-#     colorlist=[c('red'), c('violet'), 0.33, c('violet'), c('blue'), 0.66, c('blue')]
-#     cpalette=customcolorpalette('custom',colorlist)
-    cpalette=customcolorpalette(colorpalette)
-    # define the 10 bins and normalize
-    bounds = np.linspace(vmin,vmax,colorcontour+1)
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
     im = m.imshow(s, cmap=cpalette.name, clip_path=clip_path, vmin=vmin, vmax=vmax, norm=norm)
 #    # add plates and hotspots
@@ -495,26 +368,16 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='b
 #         cb = plt.colorbar(im,orientation='vertical',fraction=0.05,pad=0.05)
 #         cb.set_label(colorlabel)
         # Set colorbar, aspect ratio
-<<<<<<< HEAD
         cbar = plt.colorbar(im, alpha=0.05, aspect=12, shrink=0.5,norm=norm, spacing=spacing, ticks=bounds, boundaries=bounds,extendrect=True)
-=======
-        cbar = plt.colorbar(im, alpha=0.05, aspect=12, shrink=0.4,norm=norm, spacing='proportional', ticks=bounds, boundaries=bounds,extendrect=True)
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
         cbar.solids.set_edgecolor("face")
         # Remove colorbar container frame
 #         cbar.outline.set_visible(False)
         # Fontsize for colorbar ticklabels
         cbar.ax.tick_params(labelsize=14)
         # Customize colorbar tick labels
-<<<<<<< HEAD
         cbar.set_ticks(mytks)
         mytkslabels = [str(int(a)) if (a).is_integer() else str(a) for a in mytks]
         cbar.ax.set_yticklabels(mytkslabels)
-=======
-        mytks = np.arange(vmin,vmax+(vmax-vmin)/4.,(vmax-vmin)/4.)
-        cbar.set_ticks(mytks)
-        cbar.ax.set_yticklabels([str(a) for a in mytks])
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
         # Colorbar label, customize fontsize and distance to colorbar
         cbar.set_label(colorlabel,rotation=90, fontsize=16, labelpad=5)
         # Remove color bar tick lines, while keeping the tick labels
@@ -523,10 +386,6 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='b
         
     m.drawmapboundary(linewidth=1.5)    
     return m
-<<<<<<< HEAD
-
-=======
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
 
 def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,4371.,4871.,5371.,5871.,6346.6],r_labels = ['CMB',' ','2000',' ','1000',' ','Moho'],fontsize=12):
     """Setup the polar axis for section plot. numdegticks is the number of grids in theta. rect is the 3-digit number for axis on a plot. (theta, radius) are array for the range."""
@@ -636,8 +495,6 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
         aux_ax.plot(theta_arr, disc*np.ones(len(theta_arr)), 'k', linewidth=1,zorder=9)
     
     return ax1, aux_ax
-<<<<<<< HEAD
-=======
 
 def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path='.',plottopo=False,numeval=50,downsampleetopo1=True,distnearthreshold=5.,outfile='transect_topo.json'):
     """Get the topography transect.dbs_path should have filename. numeval is number of evaluations of topo/bathymetry along the transect. downsampleetopo1 if true samples every 3 points to get 0.5 deg before interpolation. distnearthreshold is the threshold for nearest points to consider for interpolation in km. """
@@ -719,7 +576,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd',d
         tools.writejson(writearr,outfile)
         data.close() #close netcdf file
     return evalpoints,grid_z1
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
+
     
 def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     """Plot a section on the axis ax. """        
@@ -741,11 +598,7 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     return ax
     
 
-<<<<<<< HEAD
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,parameter='vs',radii=[3480.,6346.6],filename='S362ANI+M_kmps.nc',dbs_path='.',numeval=200,distnearthreshold=1000.,outfile='transect_model3D.json'):
-=======
 def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',parameter='vs',radii=[3480.,6346.6],dbs_path='.',numeval=200,distnearthreshold=500.,outfile='transect_model3D.json'):
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
     """Get the topography transect.dbs_path should have filename. numeval is number of evaluations of topo/bathymetry along the transect. downsampleetopo1 if true samples every 3 points to get 0.5 deg before interpolation. distnearthreshold is the threshold for nearest points to consider for interpolation in km. """
     
     recalculate=True
@@ -765,12 +618,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',para
         coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
         
         if(len(coords) != numeval):
-            print "Error: The number of intermediate points is not accurate. Decrease it?"
-<<<<<<< HEAD
-=======
-            pdb.set_trace()
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
-            sys.exit(2)
+            raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
         
         # Read the topography file
         dbs_path=tools.get_fullpath(dbs_path)
@@ -778,10 +626,6 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',para
             data = netcdf(dbs_path+'/'+filename,'r')
         else:
             print "Error: Could not find file "+dbs_path+'/'+filename    
-<<<<<<< HEAD
-=======
-            pdb.set_trace()
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
             sys.exit(2)
         # Create the arrays for interpolation
         radarr=6371.-data.variables['depth'][::]    
@@ -803,7 +647,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',para
         checkifnear=np.zeros_like(gridpoints[:,0],dtype=bool) # array for checking if the point is near to any point in the path (coordstack)
     
         
-        print "....Getting the 3D-model transect from "+dbs_path+'/'+filename
+        print("....Getting the 3D-model transect from "+dbs_path+'/'+filename)
         bar = progressbar.ProgressBar(maxval=len(coordstack), \
         widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
         bar.start()
@@ -812,8 +656,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',para
             checkifneartemp=dist<distnearthreshold
             checkifnear=np.logical_or(checkifnear,checkifneartemp)
             if len(np.where(checkifneartemp==True)[0]) == 0: 
-                print "Error: No points found with the given distnearthreshold in atleast 1 point. Increase the bound? "
-                sys.exit(2)
+                raise ValueError("Error: No points found with the given distnearthreshold in atleast 1 point. Increase the bound? ")
             bar.update(ii+1)    
         bar.finish()
     
@@ -829,11 +672,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',para
     return evalpoints,grid_z1
     
 
-<<<<<<< HEAD
-def plot1section(lat1,lng1,azimuth,gcdelta,model=None,vmin=None,vmax=None,dbs_path='.', colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=200,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],outfile=None):
-=======
 def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',parameter='vs',vmin=None,vmax=None,dbs_path='.', colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],outfile=None):
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
     """Plot one section through the Earth through a pair of points.""" 
     
     fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
@@ -852,14 +691,10 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
     if vexaggerate != 0:
-<<<<<<< HEAD
-        rlatlon,elev=gettopotransect(lat1,lng1,azimuth,gcdelta,dbs_path=dbs_path,numeval=nelevinter)
-=======
         if outfile is not None:
             rlatlon,elev=gettopotransect(lat1,lng1,azimuth,gcdelta,dbs_path=dbs_path,numeval=nelevinter,outfile='transect_'+outfile.split('.')[0]+'_topo.json')
         else:
             rlatlon,elev=gettopotransect(lat1,lng1,azimuth,gcdelta,dbs_path=dbs_path,numeval=nelevinter)
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
         if min(elev)< 0.:
              extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
         else:
@@ -886,11 +721,6 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
     # Plot the model section
 #     grid_x, grid_y = np.mgrid[theta[0]:theta[1]:200j,3480.:6346.6:200j]
     grid_x, grid_y = np.meshgrid(np.linspace(theta[0],theta[1],n3dmodelinter),np.linspace(radii[0],radii[1],n3dmodelinter))
-<<<<<<< HEAD
-    junk,values = getmodeltransect(lat1,lng1,azimuth,gcdelta,radii=radii,dbs_path=dbs_path,numeval=n3dmodelinter)
-    interp_values=np.array(values)
-    
-    interp_values=(interp_values-interp_values.mean()).reshape((n3dmodelinter,n3dmodelinter))
 
     # Get the color map
     try:
@@ -898,7 +728,6 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
     except ValueError:
         cpalette=customcolorpalette(colorpalette)
         
-=======
     if outfile is not None:
         junk,values = getmodeltransect(lat1,lng1,azimuth,gcdelta,filename=filename,parameter=parameter,radii=radii,dbs_path=dbs_path,numeval=n3dmodelinter,outfile='transect_'+outfile.split('.')[0]+'_model3D.json')
     else:
@@ -906,10 +735,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
     interp_values=np.array(values)
     
     interp_values=(interp_values-interp_values.mean()).reshape((n3dmodelinter,n3dmodelinter))
-    #pdb.set_trace()
-#     values = np.random.rand(len(grid_x), len(grid_y))
-    cpalette=customcolorpalette(colorpalette)
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
+
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
@@ -943,16 +769,11 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
         fig1.savefig(outfile,dpi=100)
     return 
 
-<<<<<<< HEAD
 def plot1globalmap(filename,vmin,vmax,dbs_path='.',colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
-=======
-def plot1globalmap(filename,vmin,vmax,dbs_path='.',projection='hammer',colorlabel=None,lat_0=0,lon_0=150):
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
     """Plot one global map""" 
     fig=plt.figure() 
     ax=fig.add_subplot(1,1,1)
     epixarr=models.readepixfile(filename)
-<<<<<<< HEAD
     if projection=='ortho':
         globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
     else:
@@ -982,13 +803,6 @@ def plot1hitmap(hitfile,dbs_path='.',projection='robin',lat_0=0,lon_0=150,colorc
     ax.set_title(group+': Overtone '+overtone+', '+wavetype+' at '+period)
     if ifshow: plt.show()
     fig.savefig(hitfile+outformat,dpi=300)
-=======
-    if     projection=='ortho':
-        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0)
-    else:
-        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0)
-    plt.show()
->>>>>>> 4c0183250a7f880765e859c035eb0b05134b4378
     return 
     
     
