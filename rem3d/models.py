@@ -28,7 +28,22 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import plots 
 #######################################################################################
+def readepixfile(filename):
+    """Read .epix file format from a file.
+    Parameters
+    ----------
+    filename : Name of the file containing four columns
+              (latitude, longitude, pixel_size, value)
+    """
 
+    currentdir=os.getcwd()
+    try:
+        f = open(filename, 'r')
+        epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['lat','lon','pixsize','val'])
+    except IOError:
+        raise IOError("File (",filename,") does not exist in the current directory - ",currentdir)
+
+    return epixarr
 #####################
 # 1D model class
 

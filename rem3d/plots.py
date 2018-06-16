@@ -34,7 +34,6 @@ from matplotlib import gridspec # Relative size of subplots
 from . import mapping
 from . import tools
 from . import data
-from . import models
 from . import constants
 ########################      GENERIC   ################################################                       
                     
@@ -769,11 +768,10 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
         fig1.savefig(outfile,dpi=100)
     return 
 
-def plot1globalmap(filename,vmin,vmax,dbs_path='.',colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
+def plot1globalmap(epixarr,vmin,vmax,dbs_path='.',colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
     """Plot one global map""" 
     fig=plt.figure() 
     ax=fig.add_subplot(1,1,1)
-    epixarr=models.readepixfile(filename)
     if projection=='ortho':
         globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
     else:
