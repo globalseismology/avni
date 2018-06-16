@@ -32,7 +32,7 @@ def main():
     filename=arg.model+'.'+arg.parameter+'.'+str(arg.depth)+'km.epix'
          
     # Read the file
-    ierror, latlonval=rem3d.models.readepixfile(arg.base_path+'/'+filename)
+    latlonval=rem3d.models.readepixfile(arg.base_path+'/'+filename)
     
     # Plot the file
     fig=plt.figure() 
