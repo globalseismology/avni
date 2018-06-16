@@ -2,10 +2,8 @@
 from __future__ import division
 from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin, modf
 import sys,os
-import argparse #parsing arguments
 import numpy as np #for numerical analysis
 import multiprocessing
-import cartopy.crs as ccrs
 import codecs,json #printing output
 from joblib import Parallel, delayed
 import pdb    #for the debugger pdb.set_trace()
@@ -13,9 +11,6 @@ import pdb    #for the debugger pdb.set_trace()
 from netCDF4 import Dataset as netcdf #reading netcdf files
 import scipy.interpolate as spint
 import scipy.spatial.qhull as qhull
-import itertools
-import time
-import progressbar
 
 ############################### PLOTTING ROUTINES ################################        
 from .geolib import delazgc # geolib library from NSW
