@@ -474,9 +474,6 @@ class model3d(object):
     
         return 
 
-
-
-
 #####################
 # 1D model class
 

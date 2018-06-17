@@ -33,7 +33,7 @@ These instructions will get you a copy of the project up and running on your loc
 2. Install some mapping toolboxes (pandas, Basemap and its data) with the following options to add topography at all resolutions:
 `conda install -c anaconda pandas`
 `conda install -c anaconda netcdf4`
-`conda install -c anaconda basemap`
+`conda install -c conda-forge basemap`
 `conda install -c conda-forge basemap-data-hires`
 3. Install the stable version of REM3D and its additional dependencies with `pip install rem3d`. 
 

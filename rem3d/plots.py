@@ -313,7 +313,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
 #         cb = plt.colorbar(im,orientation='vertical',fraction=0.05,pad=0.05)
 #         cb.set_label(colorlabel)
         # Set colorbar, aspect ratio
-        cbar = plt.colorbar(im, alpha=0.05, aspect=12, shrink=0.5,norm=norm, spacing=spacing, ticks=bounds, boundaries=bounds,extendrect=True)
+        cbar = plt.colorbar(im, ax=ax,alpha=0.05, aspect=12, shrink=0.5,norm=norm, spacing=spacing, ticks=bounds, boundaries=bounds,extendrect=True)
         cbar.solids.set_edgecolor("face")
         # Remove colorbar container frame
 #         cbar.outline.set_visible(False)
