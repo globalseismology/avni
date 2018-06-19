@@ -179,7 +179,7 @@ def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transfo
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=20,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
     
@@ -307,19 +307,26 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
     # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
     plot_plates(m, dbs_path=dbs_path, color='w', linewidth=1.5)
+    m.drawmapboundary(linewidth=1.5)    
+    if hotspots: plot_hotspots(m, dbs_path=dbs_path, s=30, color='m', edgecolor='k')
 
 #   Add a colorbar
     if colorlabel is not None:
 #         cb = plt.colorbar(im,orientation='vertical',fraction=0.05,pad=0.05)
 #         cb.set_label(colorlabel)
         # Set colorbar, aspect ratio
-        cbar = plt.colorbar(im, ax=ax,alpha=0.05, aspect=12, shrink=0.5,norm=norm, spacing=spacing, ticks=bounds, boundaries=bounds,extendrect=True)
+        cbar = plt.colorbar(im, ax=ax, alpha=0.05, aspect=12, shrink=0.5,norm=norm, spacing=spacing, ticks=bounds, boundaries=bounds,extendrect= False)
+        #cbar = m.colorbar(im, ax=ax,location='right',pad="2%", size='3%', norm=norm, spacing=spacing, ticks=bounds, boundaries=bounds,extendrect= False)
+        #cbar = plt.colorbar(im, cax=ax, alpha=0.05, aspect=12, shrink=0.5,norm=norm, spacing=spacing, ticks=bounds, boundaries=bounds,extendrect= False)
+        # Colorbar label, customize fontsize and distance to colorbar
         cbar.solids.set_edgecolor("face")
+        cbar.set_label(colorlabel,rotation=90, labelpad=5)
         # Remove colorbar container frame
 #         cbar.outline.set_visible(False)
         # Fontsize for colorbar ticklabels
         if colorticks:
-            cbar.ax.tick_params(labelsize=14)
+            # To change fontsize use updatefont
+            #cbar.ax.tick_params(labelsize=15)
             # Customize colorbar tick labels
             cbar.set_ticks(mytks)
             mytkslabels = [str(int(a)) if (a).is_integer() else str(a) for a in mytks]
@@ -330,13 +337,6 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
             plt.setp(cbarytks, visible=False)
             cbarytks = plt.getp(cbar.ax.axes, 'yticklabels')
             plt.setp(cbarytks, visible=False)
-        # Colorbar label, customize fontsize and distance to colorbar
-        cbar.set_label(colorlabel,rotation=90, labelpad=5)
-
-        
-    m.drawmapboundary(linewidth=1.5)    
-    if hotspots: plot_hotspots(m, dbs_path=dbs_path, s=30, color='m', edgecolor='k')
-
     return m    
     
     

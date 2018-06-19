@@ -54,6 +54,225 @@ def readepixfile(filename):
         raise IOError("File (",filename,") does not exist in the current directory - ",currentdir)
 
     return epixarr
+ 
+def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
+    """
+    Reads a standard 3D model file. maxkern is the maximum number of radial kernels
+    and maxcoeff is the maximum number of corresponding lateral basis functions.
+    resolution and realization are the indices for the resolution level
+    and the realization from a model ensemble (usually 0 if a single file)
+    """    
+    if (not os.path.isfile(modelfile)): raise IOError("Filename ("+modelfile+") does not exist")
+
+    desckern=np.zeros(maxkern, dtype='a40')
+    ihorpar=np.zeros(maxkern, dtype=int)
+    coef=np.zeros([maxcoeff,maxkern], dtype=float)
+    with open(modelfile) as f: lines = f.readlines()
+    ii=0
+    while ii < len(lines):
+        line=lines[ii]; ii=ii+1
+        if line.startswith("REFERENCE MODEL:"): refmodel=line[16:].rstrip('\n').strip(' ')
+        if line.startswith("KERNEL SET:"): kerstr=line[12:].rstrip('\n').strip(' ')
+        if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
+        if line.startswith("DESC") and line[8] == ':': 
+            idummy=int(line[4:8])
+            substr=line[9:len(line.rstrip('\n'))]
+            ifst,ilst=tools.firstnonspaceindex(substr)
+            desckern[idummy-1]=substr[ifst:ilst]
+        if line.startswith("HORIZONTAL PARAMETERIZATIONS:"): 
+            nhorpar = int(line[29:].rstrip('\n'))
+            hsplfile=np.zeros(nhorpar, dtype='a40')
+            typehpar=np.zeros(nhorpar, dtype='a40')
+            ityphpar=np.zeros(nhorpar, dtype=int)
+            lmaxhor=np.zeros(nhorpar, dtype=int)
+            ncoefhor=np.zeros(nhorpar, dtype=int)
+            ixlspl=np.zeros([maxcoeff,nhorpar], dtype=int)
+            xlaspl=np.zeros([maxcoeff,nhorpar], dtype=float)
+            xlospl=np.zeros([maxcoeff,nhorpar], dtype=float)
+            xraspl=np.zeros([maxcoeff,nhorpar], dtype=float)
+        if line.startswith("HPAR") and line[8] == ':':     
+            idummy=int(line[4:8])
+            substr=line[9:len(line.rstrip('\n'))]
+            ifst,ilst=tools.firstnonspaceindex(substr)
+            if substr[ifst:ifst+20] == 'SPHERICAL HARMONICS,':
+                lmax = int(substr[21:].rstrip('\n'))
+                ityphpar[idummy-1]=1
+                typehpar[idummy-1]='SPHERICAL HARMONICS'
+                lmaxhor[idummy-1]=lmax
+                ncoefhor[idummy-1]=(lmax+1)**2
+            elif substr[ifst:ifst+18] == 'SPHERICAL SPLINES,':
+                ifst1=ifst+18
+                ifst=len(substr)
+                ilst=len(substr)
+                while substr[ifst-1:ifst] != ',': ifst=ifst-1
+                ncoef=int(substr[ifst+1:ilst].rstrip('\n'))
+                substr=substr[ifst1:ifst-1]
+                ifst1,ilst=tools.firstnonspaceindex(substr)
+                hsplfile[idummy-1]=substr[ifst1:ilst]
+                ityphpar[idummy-1]=2
+                typehpar[idummy-1]='SPHERICAL SPLINES'
+                lmaxhor[idummy-1]=0
+                ncoefhor[idummy-1]=ncoef
+                for jj in range(ncoef):
+                    arr=lines[ii].rstrip('\n').split(); ii=ii+1
+                    ixlspl[jj,idummy-1]=int(arr[0]); xlaspl[jj,idummy-1]=arr[1]
+                    xlospl[jj,idummy-1]=arr[2]; xraspl[jj,idummy-1]=arr[3]
+        if line.startswith("STRU") and line[8] == ':':
+            idummy=int(line[4:8])
+            ihor=int(line[9:].rstrip('\n'))
+            ihorpar[idummy-1]=ihor
+            ncoef=ncoefhor[ihor-1]
+            for jj in range(ncoef/6):
+                arr=lines[ii].rstrip('\n').split(); ii=ii+1
+                coef[jj*6:(jj+1)*6,idummy-1]=[float(i) for i in arr]
+            remain = ncoef % 6    
+            arr=lines[ii].rstrip('\n').split(); ii=ii+1
+            coef[(jj+1)*6:(jj+1)*6+remain,idummy-1]=[float(i) for i in arr]
+
+    # Store the variables
+    numvar=0; varstr=np.zeros(nmodkern, dtype='a40')
+    ivarkern=np.zeros(nmodkern)
+    for ii in np.arange(nmodkern):
+        string=desckern[ii]
+        #pdb.set_trace()
+        for kk in np.arange(numvar):
+            if varstr[kk] == string[:string.index(',')]:
+                ivarkern[ii]=kk+1
+        if ivarkern[ii] == 0:
+            numvar=numvar+1
+            varstr[numvar-1] = string[:string.index(',')]
+            ivarkern[ii]=numvar
+
+    # Save the relevant portions
+    desckern = desckern[:nmodkern]
+    ihorpar = ihorpar[:nmodkern]
+    varstr = varstr[:numvar]
+    coef = coef[:max(ncoefhor),:nmodkern].transpose() # to get it in a kernel * coeff format
+    ixlspl = ixlspl[:max(ncoefhor),:].transpose() 
+    xlaspl = xlaspl[:max(ncoefhor),:].transpose() 
+    xlospl = xlospl[:max(ncoefhor),:].transpose() 
+    xraspl = xraspl[:max(ncoefhor),:].transpose() 
+    
+    # Store in a dictionary
+    model3d = {}
+    model3d['refmodel']=refmodel; model3d['kerstr']=kerstr;model3d['nmodkern']=nmodkern
+    model3d['desckern']=desckern; model3d['nhorpar']=nhorpar;model3d['hsplfile']=hsplfile
+    model3d['ityphpar']=ityphpar; model3d['typehpar']=typehpar; model3d['lmaxhor']=lmaxhor
+    model3d['ncoefhor']=ncoefhor; model3d['ixlspl']=ixlspl; model3d['xlaspl']=xlaspl
+    model3d['xlospl']=xlospl; model3d['xraspl']=xraspl; model3d['ihorpar']=ihorpar
+    model3d['ivarkern']=ivarkern; model3d['numvar']=numvar
+    model3d['varstr']=varstr; model3d['coef']=coef
+    return model3d
+    
+def readensemble(filename):
+    """Read .npz file containing a collection of models.
+
+    Parameters
+    ----------
+
+    filename : An ensemble file
+
+    """
+
+
+    return 
+
+def readprojection():
+    """Read .npz file containing a collection of models.
+
+    Parameters
+    ----------
+
+    filename : An file containing all projection matrices
+
+    """
+
+
+    return 
+#####################
+# Vertical basis parameter class that defines an unique combination of functions, their radial parameterization and any scaling
+# 3D model class
+class radial_basis(object):
+    '''
+    A class for radial bases that defines a unique combination of parameters,
+    their radial parameterization and any scaling that is used.
+    '''
+    def __init__(self):
+        self.proj = {'data': None,'to_name':None,'to_type':'boxcar','to_attributes':{}}
+        self.metadata = {'from_name':None,'from_type':None,'from_attributes':{}}
+    
+    def readprojfile(self,projverfile):
+        """
+        Read projection matrix for going between vertical bases from a file
+        """    
+
+    def eval_radial(self,depth):
+        """
+        Evaluate radial basis at a depth interpolated from existing projection matrices.
+        """    
+    
+    def project_boxdepth(self,depth_range):
+        """
+        Project from current vertical basis to a vertical boxcar basis
+        depth_range is named numpy array of top and bottom depths
+        """    
+        
+        
+#####################
+# Horizontal basis parameter class that defines an unique combination of parameters, their radial parameterization and any scaling
+# 3D model class
+class lateral_basis(object):
+    '''
+    A class for radial bases that defines a unique combination of parameters,
+    their radial parameterization and any scaling that is used.
+    '''
+    def __init__(self, types=['epix','grid','sh','wavelet','slepians']):
+        self.proj = {}
+        for type in types:
+            self.proj[type] = {'data':None,'to_name':None,'to_type':type,'to_attributes':{}}        
+        self.metadata = {'from_name':None,'from_type':None,'from_attributes':{}}
+    
+    def readprojfile(self,projfile,from_type,to_type):
+        """
+        Reads a projection matrix file that evaluates the radial bases at various depths.
+        """
+        
+    def eval_lateral(self,lat,lon):
+        """
+        Evaluate radial basis at a depth interpolated from existing projection matrices.
+        """    
+
+    def project_lateral(self,lat,lon):
+        """
+        Project from current horizontal basis to another orthogonal basis 
+        and return the coefficients.
+        """    
+
+#####################
+# Kernel set class that stores the list 
+# 3D model class
+class radial_basis(object):
+    '''
+    A class for radial bases that defines a unique combination of parameters,
+    their radial parameterization and any scaling that is used.
+    '''
+    def __init__(self):
+        self.data = None
+        self.metadata = {}
+        self.metadata['name'] = None
+        self.metadata['type'] = None
+        self.metadata['depths'] = None
+    
+    def readprojfile(self,projfile):
+        """
+        Reads a projection matrix file that evaluates the radial bases at various depths.
+        """    
+
+    def eval_radial(self,depth):
+        """
+        Reads a projection matrix file that evaluates the radial bases at various depths.
+        """    
+
 #####################
 # 3D model class
 class model3d(object):
@@ -61,10 +280,11 @@ class model3d(object):
     A class for 1D reference Earth models used in tomography
     '''
 
-    def __init__(self):
-        self.metadata = {}
-        self.ensemble = {}
-        self.ensemble['realization_0'] = {}
+    def __init__(self,num_resolution=1,num_realization=1):
+        self.metadata ={}
+        self.data = {}
+        for ii in np.arange(num_resolution): self.metadata['resolution_'+str(ii)] = None
+        self.data['resolution_'+str(ii)]={'realization_'+str(jj):{'name':None,'coef':None} for jj in np.arange(num_realization)}
         self.name = None
         self.type = None
         self.refmodel = None
@@ -72,7 +292,7 @@ class model3d(object):
 
     def __str__(self):
         if self.name is not None:
-            output = "%s is a three-dimensional model ensemble with %s realizations of %s type and %s as the reference model" % (self.name,len(self.ensemble), self.type,self.refmodel)
+            output = "%s is a three-dimensional model ensemble with %s resolution levels, %s realizations of %s type and %s as the reference model" % (self.name,len(self.metadata), len(self.data['resolution_0']),self.type,self.refmodel)
         else:
             output = "No three-dimensional model has been read into this model3d instance yet"
         return output
@@ -91,129 +311,40 @@ class model3d(object):
             setattr(result, k, deepcopy(v, memo))
         return result
         
-
-    def read3dmodelfile(self,modelfile,maxkern=300,maxcoeff=6000):
+    def readfile(self,modelfile,resolution=0,realization=0,maxkern=300,maxcoeff=6000):
         """
         Reads a standard 3D model file. maxkern is the maximum number of radial kernels
         and maxcoeff is the maximum number of corresponding lateral basis functions.
+        resolution and realization are the indices for the resolution level
+        and the realization from a model ensemble (usually 0 if a single file)
         """    
         if (not os.path.isfile(modelfile)): raise IOError("Filename ("+modelfile+") does not exist")
     
-        desckern=np.zeros(maxkern, dtype='a40')
-        ihorpar=np.zeros(maxkern, dtype=int)
-        coef=np.zeros([maxcoeff,maxkern], dtype=float)
-        with open(modelfile) as f: lines = f.readlines()
-        ii=0
-        while ii < len(lines):
-            line=lines[ii]; ii=ii+1
-            if line.startswith("REFERENCE MODEL:"): refmodel=line[16:].rstrip('\n').strip(' ')
-            if line.startswith("KERNEL SET:"): kerstr=line[12:].rstrip('\n').strip(' ')
-            if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
-            if line.startswith("DESC") and line[8] == ':': 
-                idummy=int(line[4:8])
-                substr=line[9:len(line.rstrip('\n'))]
-                ifst,ilst=tools.firstnonspaceindex(substr)
-                desckern[idummy-1]=substr[ifst:ilst]
-            if line.startswith("HORIZONTAL PARAMETERIZATIONS:"): 
-                nhorpar = int(line[29:].rstrip('\n'))
-                hsplfile=np.zeros(nhorpar, dtype='a40')
-                typehpar=np.zeros(nhorpar, dtype='a40')
-                ityphpar=np.zeros(nhorpar, dtype=int)
-                lmaxhor=np.zeros(nhorpar, dtype=int)
-                ncoefhor=np.zeros(nhorpar, dtype=int)
-                ixlspl=np.zeros([maxcoeff,nhorpar], dtype=int)
-                xlaspl=np.zeros([maxcoeff,nhorpar], dtype=float)
-                xlospl=np.zeros([maxcoeff,nhorpar], dtype=float)
-                xraspl=np.zeros([maxcoeff,nhorpar], dtype=float)
-            if line.startswith("HPAR") and line[8] == ':':     
-                idummy=int(line[4:8])
-                substr=line[9:len(line.rstrip('\n'))]
-                ifst,ilst=tools.firstnonspaceindex(substr)
-                if substr[ifst:ifst+20] == 'SPHERICAL HARMONICS,':
-                    lmax = int(substr[21:].rstrip('\n'))
-                    ityphpar[idummy-1]=1
-                    typehpar[idummy-1]='SPHERICAL HARMONICS'
-                    lmaxhor[idummy-1]=lmax
-                    ncoefhor[idummy-1]=(lmax+1)**2
-                elif substr[ifst:ifst+18] == 'SPHERICAL SPLINES,':
-                    ifst1=ifst+18
-                    ifst=len(substr)
-                    ilst=len(substr)
-                    while substr[ifst-1:ifst] != ',': ifst=ifst-1
-                    ncoef=int(substr[ifst+1:ilst].rstrip('\n'))
-                    substr=substr[ifst1:ifst-1]
-                    ifst1,ilst=tools.firstnonspaceindex(substr)
-                    hsplfile[idummy-1]=substr[ifst1:ilst]
-                    ityphpar[idummy-1]=2
-                    typehpar[idummy-1]='SPHERICAL SPLINES'
-                    lmaxhor[idummy-1]=0
-                    ncoefhor[idummy-1]=ncoef
-                    for jj in range(ncoef):
-                        arr=lines[ii].rstrip('\n').split(); ii=ii+1
-                        ixlspl[jj,idummy-1]=int(arr[0]); xlaspl[jj,idummy-1]=arr[1]
-                        xlospl[jj,idummy-1]=arr[2]; xraspl[jj,idummy-1]=arr[3]
-            if line.startswith("STRU") and line[8] == ':':
-                idummy=int(line[4:8])
-                ihor=int(line[9:].rstrip('\n'))
-                ihorpar[idummy-1]=ihor
-                ncoef=ncoefhor[ihor-1]
-                for jj in range(ncoef/6):
-                    arr=lines[ii].rstrip('\n').split(); ii=ii+1
-                    coef[jj*6:(jj+1)*6,idummy-1]=[float(i) for i in arr]
-                remain = ncoef % 6    
-                arr=lines[ii].rstrip('\n').split(); ii=ii+1
-                coef[(jj+1)*6:(jj+1)*6+remain,idummy-1]=[float(i) for i in arr]
-
-        # Store the variables
-        numvar=0; varstr=np.zeros(nmodkern, dtype='a40')
-        ivarkern=np.zeros(nmodkern)
-        for ii in np.arange(nmodkern):
-            string=desckern[ii]
-            #pdb.set_trace()
-            for kk in np.arange(numvar):
-                if varstr[kk] == string[:string.index(',')]:
-                    ivarkern[ii]=kk+1
-            if ivarkern[ii] == 0:
-                numvar=numvar+1
-                varstr[numvar-1] = string[:string.index(',')]
-                ivarkern[ii]=numvar
-    
-        # Save the relevant portions
-        desckern = desckern[:nmodkern]
-        ihorpar = ihorpar[:nmodkern]
-        varstr = varstr[:numvar]
-        coef = coef[:max(ncoefhor),:nmodkern].transpose() # to get it in a kernel * coeff format
-        ixlspl = ixlspl[:max(ncoefhor),:].transpose() 
-        xlaspl = xlaspl[:max(ncoefhor),:].transpose() 
-        xlospl = xlospl[:max(ncoefhor),:].transpose() 
-        xraspl = xraspl[:max(ncoefhor),:].transpose() 
-    
+        # read mean model   
+        model=read3dmodelfile(modelfile)
     
         # Write to a dictionary
-        metadata = {};ensemble = {};realization={}
-        metadata['kerstr']=kerstr; metadata['nmodkern']=nmodkern
-        metadata['desckern']=desckern; metadata['nhorpar']=nhorpar; metadata['hsplfile']=hsplfile
-        metadata['typehpar']=typehpar; metadata['ityphpar']=ityphpar; metadata['lmaxhor']=lmaxhor
-        metadata['ixlspl']=ixlspl; metadata['xlaspl']=xlaspl; metadata['xlospl']=xlospl
-        metadata['xraspl']=xraspl; metadata['ihorpar']=ihorpar; metadata['ivarkern']=ivarkern
-        metadata['numvar']=numvar; metadata['varstr']=varstr
-        metadata['ncoefhor']=ncoefhor
-
-        realization['coef'] = sparse.csr_matrix(coef); 
-        realization['name'] = model3d
-        ensemble['realization_0'] = realization
+        metadata = {}
+        metadata['kerstr']=model['kerstr']; metadata['nmodkern']=model['nmodkern']
+        metadata['desckern']=model['desckern']; metadata['nhorpar']=model['nhorpar']; metadata['hsplfile']=model['hsplfile']
+        metadata['typehpar']=model['typehpar']; metadata['ityphpar']=model['ityphpar']; metadata['lmaxhor']=model['lmaxhor']
+        metadata['ixlspl']=model['ixlspl']; metadata['xlaspl']=model['xlaspl']; metadata['xlospl']=model['xlospl']
+        metadata['xraspl']=model['xraspl']; metadata['ihorpar']=model['ihorpar']; metadata['ivarkern']=model['ivarkern']
+        metadata['numvar']=model['numvar']; metadata['varstr']=model['varstr']
+        metadata['ncoefhor']=model['ncoefhor']
         
-        # store the relevant values in self
-        self.metadata = metadata
-        self.refmodel = refmodel
-        self.ensemble = ensemble
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = ntpath.basename(modelfile)
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = sparse.csr_matrix(model['coef'])
+
+        self.metadata['resolution_'+str(resolution)] = metadata
+        self.refmodel = model['refmodel']
         self.name = ntpath.basename(modelfile)
         self.description = "Read from "+modelfile
         self.type = 'rem3d'
         
         return 
 
-    def coeff2modelarr(self,realization=0):
+    def coeff2modelarr(self,resolution=[0],realization=0):
         """
         Convert the coeffiecient matrix from the file to a sparse model array
         realization is the index of the set of coefficients in an ensemble. Default is 0
@@ -222,18 +353,25 @@ class model3d(object):
         if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
         
-        coefficients = self.ensemble['realization_'+str(realization)]['coef'].toarray()
-        # Loop over all kernel basis
-        for ii in range(len(self.metadata['ihorpar'])): 
-            if ii == 0: # first radial kernel
-                ncoef = self.metadata['ncoefhor'][self.metadata['ihorpar'][ii]-1] # number of coefficients for this radial kernel
-                modelarr=coefficients[ii,:ncoef]
-                #modelarr=self.metadata['coef'][ii,:ncoef]
-            else:
-                modelarr=np.append(modelarr,coefficients[ii,:ncoef]) 
-                #modelarr=np.append(modelarr,self.metadata['coef'][ii,:ncoef])  
-        modelarr = sparse.csr_matrix(modelarr) # Convert to sparse matrix
-        modelarr = modelarr.T # take the transpose to make dot products easy 
+        if isinstance(resolution, (list,tuple,np.ndarray)):
+            resolution = np.asarray(resolution)
+        else:
+            raise TypeError('resolution must be function or array, not %s' % type(resolution))
+            
+        for res in resolution: 
+
+            coefficients =self.data['resolution_'+str(res)]['realization_'+str(realization)]['coef'].toarray()
+            # Loop over all kernel basis
+            for ii in range(len(self.metadata['resolution_'+str(res)]['ihorpar'])): 
+                if ii == 0: # first radial kernel
+                    ncoef = self.metadata['resolution_'+str(res)]['ncoefhor'][self.metadata['resolution_'+str(res)]['ihorpar'][ii]-1] # number of coefficients for this radial kernel
+                    modelarr=coefficients[ii,:ncoef]
+                    #modelarr=self.metadata['coef'][ii,:ncoef]
+                else:
+                    modelarr=np.append(modelarr,coefficients[ii,:ncoef]) 
+                    #modelarr=np.append(modelarr,self.metadata['coef'][ii,:ncoef])  
+            modelarr = sparse.csr_matrix(modelarr) # Convert to sparse matrix
+            modelarr = modelarr.T # take the transpose to make dot products easy 
         return modelarr
         
     def getradialattributes(self,parserfile='attributes.ini'):
@@ -249,30 +387,32 @@ class model3d(object):
         if (not os.path.isfile(filepath)): raise IOError("Configuration file ("+filepath+") does not exist")
         parser = ConfigObj(filepath)
     
-        # Read the kernel set from the model3d dictionary 
-        kerstr=self.metadata['kerstr']
+        for ll in np.arange(len(self.metadata)): # Loop over every resolution
 
-        # Read the basis
-        temp = parser['Kernel_Set'][kerstr]['radial_knots']; radial_knots = []
-        for ii in range(len(temp)): 
-            temp2 = [float(i) for i in temp[ii].split(',')]
-            radial_knots.append(temp2)
+            # Read the kernel set from the model3d dictionary 
+            kerstr=self.metadata['resolution_'+str(ll)]['kerstr']
 
-        # Clustering configuration
-        radial_type = parser['Kernel_Set'][kerstr]['radial_type']            
+            # Read the basis
+            temp = parser['Kernel_Set'][kerstr]['radial_knots']; radial_knots = []
+            for ii in range(len(temp)): 
+                temp2 = [float(i) for i in temp[ii].split(',')]
+                radial_knots.append(temp2)
+
+            # Clustering configuration
+            radial_type = parser['Kernel_Set'][kerstr]['radial_type']            
         
-        # Loop over all kernel basis
-        knot_depth=[]
-        for ii in range(len(self.metadata['ihorpar'])): 
-            ifound=0
-            for jj in range(len(radial_type)):
-                if re.search(radial_type[jj],self.metadata['desckern'][ii]):
-                    index = int(self.metadata['desckern'][ii].split(',')[-1]) - 1
-                    knot_depth.append(radial_knots[jj][index]); ifound=1
-            if ifound != 1: 
-                print("Warning: Did not find radial kernel knot depth in getradialattributes for "+self.metadata['desckern'][ii]+". Setting to NaN to denote ignorance in clustering")
-                knot_depth.append(np.nan)
-        self.metadata['knot_depth']=np.array(knot_depth)
+            # Loop over all kernel basis
+            knot_depth=[]
+            for ii in range(len(self.metadata['resolution_'+str(ll)]['ihorpar'])): 
+                ifound=0
+                for jj in range(len(radial_type)):
+                    if re.search(radial_type[jj],self.metadata['resolution_'+str(ll)]['desckern'][ii]):
+                        index = int(self.metadata['resolution_'+str(ll)]['desckern'][ii].split(',')[-1]) - 1
+                        knot_depth.append(radial_knots[jj][index]); ifound=1
+                if ifound != 1: 
+                    print("Warning: Did not find radial kernel knot depth in getradialattributes for "+self.metadata['resolution_'+str(ll)]['desckern'][ii]+". Setting to NaN to denote ignorance in clustering")
+                    knot_depth.append(np.nan)
+        self.metadata['resolution_'+str(ll)]['knot_depth']=np.array(knot_depth)
         return 
             
     def readprojmatrix(self,lateral_basis):
@@ -390,13 +530,14 @@ class model3d(object):
     
         """
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
-    
-        ifindspline=np.where(self.metadata['typehpar']=='SPHERICAL SPLINES')[0]
-        for ifind in ifindspline:
-            filename=self.metadata['hsplfile'][ifind]
-            arr = np.vstack([self.metadata['xlospl'][ifind],self.metadata['xlaspl'][ifind],self.metadata['xraspl'][ifind]]).transpose()
-            np.savetxt(filename,arr, fmt='%7.3f %7.3f %7.3f')   
-            print(".... written "+filename)
+        for ii in np.arange(len(self.metadata)):
+        
+            ifindspline=np.where(self.metadata['resolution_'+str(ii)]['typehpar']=='SPHERICAL SPLINES')[0]
+            for ifind in ifindspline:
+                filename=self.metadata['resolution_'+str(ii)]['hsplfile'][ifind]
+                arr = np.vstack([self.metadata['resolution_'+str(ii)]['xlospl'][ifind],self.metadata['resolution_'+str(ii)]['xlaspl'][ifind],self.metadata['resolution_'+str(ii)]['xraspl'][ifind]]).transpose()
+                np.savetxt(filename,arr, fmt='%7.3f %7.3f %7.3f')   
+                print(".... written "+filename)
         return
 
 

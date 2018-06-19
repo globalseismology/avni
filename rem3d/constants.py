@@ -10,7 +10,7 @@ downloadpage = 'https://maurya.umd.edu/files'
 localfilefolder = 'files'
 
 """
-configuration files
+configuration folder
 """
 configfolder = 'config'
 

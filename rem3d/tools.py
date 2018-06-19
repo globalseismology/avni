@@ -80,11 +80,23 @@ def get_configdir(checkwrite=True,makedir=True):
     Make a new directory if doesn't exist (makedir==True)
     """
     installdir = get_installdir(checkwrite=checkwrite)
-    get_configdir = installdir+'/'+constants.configfolder
+    configdir = installdir+'/'+constants.configfolder
     if checkwrite and makedir: 
-        if not os.path.exists(get_configdir):
-            os.makedirs(get_configdir)        
-    return get_configdir
+        if not os.path.exists(configdir):
+            os.makedirs(configdir)        
+    return configdir
+
+def get_projections(checkwrite=True,makedir=True,type='radial'):
+    """
+    Get the file containing projection matrices. 
+    Make a new directory if doesn't exist (makedir==True)
+    """
+    if type != 'radial' and type != 'lateral': 
+        raise ValueError('type is undefined in get_projections')
+    configdir = get_configdir(checkwrite=checkwrite,makedir=makedir)
+    projections = configdir+'/projections.'+type+'.npz'
+    exists = os.path.isfile(projections)
+    return projections,exists
         
 def writejson(nparray,filename,encoding='utf-8'):
     """Writes a json file from a numpy array"""
