@@ -24,7 +24,7 @@ from . import data
 from . import mapping
 ########################      GENERIC   ################################################                       
 
-def updatefont(ax=None,fontsize=15,fontname='sans-serif'): 
+def updatefont(fontsize=15,fontname='sans-serif',ax=None): 
     """
     Updates the font type and sizes globally or for a particular axis handle
     

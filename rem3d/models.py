@@ -412,7 +412,11 @@ class model3d(object):
                 if ifound != 1: 
                     print("Warning: Did not find radial kernel knot depth in getradialattributes for "+self.metadata['resolution_'+str(ll)]['desckern'][ii]+". Setting to NaN to denote ignorance in clustering")
                     knot_depth.append(np.nan)
-        self.metadata['resolution_'+str(ll)]['knot_depth']=np.array(knot_depth)
+            # Stor in relevant variables
+            self.metadata['resolution_'+str(ll)]['knot_depth']=np.array(knot_depth)
+            self.metadata['resolution_'+str(ll)]['description']=parser['Kernel_Set'][kerstr]['radial_knots']
+            self.metadata['resolution_'+str(ll)]['scaling']=parser['Kernel_Set'][kerstr]['scaling']
+
         return 
             
     def readprojmatrix(self,lateral_basis):
@@ -499,6 +503,28 @@ class model3d(object):
         projection['refvalarr']=refvalarr; projection['projarr']=projarr       
         projection['model']=model; projection['param']=lateral_basis         
         return projection
+
+    def getprojmatrix(self,to_name='epix',depths = [30.,50.]):
+        """
+        Get the projection matrix from a lateral basis to another and for particular depths  
+        """    
+        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        
+        # Get the radial projection file
+        projfile,exists = tools.get_projections(type='radial')
+        
+        pdb.set_trace()
+        
+     
+        # Write to a dictionary
+        projection = {}
+        projection['ndp']=ndp; projection['npx']=npx; projection['nhorcum']=nhorcum; 
+        projection['neval']=neval; projection['deptharr']=deptharr; projection['refstrarr']=refstrarr
+        projection['xlat']=xlat; projection['xlon']=xlon; projection['area']=area
+        projection['refvalarr']=refvalarr; projection['projarr']=projarr       
+        projection['model']=model; projection['param']=lateral_basis         
+        return projection
+
 
     def getprojtimesmodel(self,projection,variable,depth,realization=0):
         """
@@ -810,7 +836,7 @@ class reference1D(object):
         """
         depthkmarr = (6371000. - self.data['radius'])/1000. # in km
         #Set default fontsize for plots
-        plots.updatefont(None,10)
+        plots.updatefont(10)
         fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
         gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios) 
         fig.patch.set_facecolor('white')
