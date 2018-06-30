@@ -10,9 +10,17 @@ contain them.
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import os,sys
+import sys,os
 import numpy as np #for numerical analysis
+import pdb    #for the debugger pdb.set_trace()
+from math import pi
 
+import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
+import matplotlib.pyplot as plt
+from scipy import sparse
+import re
+from copy import copy, deepcopy
+import struct
 ####################### IMPORT REM3D LIBRARIES  #######################################
 
 from . import tools   
