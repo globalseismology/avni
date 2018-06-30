@@ -147,4 +147,117 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     model3d['ivarkern']=ivarkern; model3d['numvar']=numvar
     model3d['varstr']=varstr; model3d['coef']=coef
     return model3d
+
+#####################
+# 3D model class
+class model3d(object):
+    '''
+    A class for 3D reference Earth models used in tomography
+    '''
+
+    def __init__(self,num_resolution=1,num_realization=1):
+        self.metadata ={}
+        self.data = {}
+        for ii in np.arange(num_resolution): 
+            self.metadata['resolution_'+str(ii)] = None
+            self.data['resolution_'+str(ii)] = {}
+            for jj in np.arange(num_realization):
+                self.data['resolution_'+str(ii)]['realization_'+str(jj)] = {'name':None,'coef':None}
+        self.name = None
+        self.type = None
+        self.refmodel = None
+        self.description = None
+    
+    def __str__(self):
+        if self.name is not None:
+            output = "%s is a three-dimensional model ensemble with %s resolution levels, %s realizations of %s type and %s as the reference model" % (self.name,len(self.metadata), len(self.data['resolution_0']),self.type,self.refmodel)
+        else:
+            output = "No three-dimensional model has been read into this model3d instance yet"
+        return output
+        
+                
+    def __copy__(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        return result
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result
+
+    def readfile(self,modelfile,resolution=0,realization=0,maxkern=300,maxcoeff=6000):
+        """
+        Reads a standard 3D model file. maxkern is the maximum number of radial kernels
+        and maxcoeff is the maximum number of corresponding lateral basis functions.
+        resolution and realization are the indices for the resolution level
+        and the realization from a model ensemble (usually 0 if a single file)
+        """    
+        if (not os.path.isfile(modelfile)): raise IOError("Filename ("+modelfile+") does not exist")
+    
+        # read mean model   
+        model=read3dmodelfile(modelfile)
+    
+        # Write to a dictionary
+        metadata = {}
+        metadata['kerstr']=model['kerstr']; metadata['nmodkern']=model['nmodkern']
+        metadata['desckern']=model['desckern']; metadata['nhorpar']=model['nhorpar']; metadata['hsplfile']=model['hsplfile']
+        metadata['typehpar']=model['typehpar']; metadata['ityphpar']=model['ityphpar']; metadata['lmaxhor']=model['lmaxhor']
+        metadata['ixlspl']=model['ixlspl']; metadata['xlaspl']=model['xlaspl']; metadata['xlospl']=model['xlospl']
+        metadata['xraspl']=model['xraspl']; metadata['ihorpar']=model['ihorpar']; metadata['ivarkern']=model['ivarkern']
+        metadata['numvar']=model['numvar']; metadata['varstr']=model['varstr']
+        metadata['ncoefhor']=model['ncoefhor']
+        
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = ntpath.basename(modelfile)
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = sparse.csr_matrix(model['coef'])
+
+        self.metadata['resolution_'+str(resolution)] = metadata
+        self.refmodel = model['refmodel']
+        self.name = ntpath.basename(modelfile)
+        self.description = "Read from "+modelfile
+        self.type = 'rem3d'
+        
+        return 
+
+    def coeff2modelarr(self,resolution=[0],realization=0):
+        """
+        Convert the coeffiecient matrix from the file to a sparse model array. Add
+        up all the resolutions if a list is provided.
+        
+        realization : index of the set of coefficients in an ensemble. Default is 0
+        as there is only one set of coefficients when read from a model file.
+        
+        resolution : list of resolutions to include the the modelarray
+        """
+        if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
+        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        
+        if isinstance(resolution, (list,tuple,np.ndarray)):
+            resolution = np.asarray(resolution)
+        else:
+            raise TypeError('resolution must be function or array, not %s' % type(resolution))
+            
+        # Loop over resolution levels, adding coefficients 
+        for ir in range(len(resolution)): 
+            try:
+                coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef'].toarray()
+            # Loop over all kernel basis
+                for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])): 
+                    # number of coefficients for this radial kernel
+                    ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
+                    # first radial kernel and first tesselation level
+                    if ii == 0 and ir == 0: 
+                        modelarr=coefficients[ii,:ncoef]
+                    else:
+                        modelarr=np.append(modelarr,coefficients[ii,:ncoef]) 
+            except AttributeError: # 
+                raise ValueError('resolution '+str(resolution[ir])+' and realization '+str(realization)+' not filled up yet.')
+        modelarr = sparse.csr_matrix(modelarr) # Convert to sparse matrix
+        modelarr = modelarr.T # take the transpose to make dot products easy 
+        return modelarr
+
     
