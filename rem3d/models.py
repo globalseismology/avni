@@ -13,6 +13,10 @@ from builtins import *
 import os,sys
 import numpy as np #for numerical analysis
 
+####################### IMPORT REM3D LIBRARIES  #######################################
+
+from . import tools   
+
 #####################
 
 def readepixfile(filename):
