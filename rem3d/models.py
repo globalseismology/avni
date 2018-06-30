@@ -29,6 +29,8 @@ from scipy import sparse
 from configobj import ConfigObj
 import re
 from copy import copy, deepcopy
+import struct
+
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import tools   
@@ -177,7 +179,7 @@ def readensemble(filename):
 
     return 
 
-def readprojection():
+def readprojections(type='radial'):
     """Read .npz file containing a collection of models.
 
     Parameters
@@ -226,16 +228,53 @@ class lateral_basis(object):
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.
     '''
-    def __init__(self, types=['epix','grid','sh','wavelet','slepians']):
+    def __init__(self, name, type):
+        """
+        types : 'epix','ylm','sh','wavelet','slepians'
+        """
         self.proj = {}
-        for type in types:
-            self.proj[type] = {'data':None,'to_name':None,'to_type':type,'to_attributes':{}}        
-        self.metadata = {'from_name':None,'from_type':None,'from_attributes':{}}
+        self.metadata = {'name':name,'type':type,'attributes':{}}
+
+    def addtypes(self, names, types):
+        """
+        types = ['ylm','sh','wavelet','slepians']
+        """
+        # check the type 
+        if isinstance(types,string_types): types = np.array(types) 
+        if len(names) !=len(types): raise ValueError("len(names) !=len(types)")
+
+        for ii in np.arange(len(types)):
+            # if does not exist already`or not the same as self type
+            if types[ii] not in self.proj.keys() and types[ii] != self.metadata['type']:         
+                self.proj[types[ii]] = {}
+                self.proj[types[ii]][to_name[ii]] = {'data':None,'attributes':{}}        
     
-    def readprojfile(self,projfile,from_type,to_type):
+    def readprojfile(self,infile):
         """
         Reads a projection matrix file that evaluates the radial bases at various depths.
         """
+        
+        if (not os.path.isfile(infile)): raise IOError("Filename ("+infile+") does not exist. Use shell script print_projmatrix to create it.")
+        nbytes = os.path.getsize(infile)
+
+        cc = 0 #initialize byte counter
+        ifswp = '' # Assuem that byte order is not be swapped unless elat is absurdly high
+
+        with open(infile, "rb") as f:
+            # preliminary metadata
+            indata = f.read(4); cc = cc+4 # try to read iflag
+            iflag = struct.unpack(ifswp+'i',indata)[0] # Read flag
+            if iflag != 1: 
+                ifswp = '!' # swap endianness from now on
+                iflag = struct.unpack(ifswp+'i',indata)[0]
+                if iflag != 1: sys.exit("Error: iflag != 1")
+            self.metadata['from_type'] = struct.unpack('20s',f.read(20))[0].strip(); cc = cc+20
+            pdb.set_trace()
+            self.proj['to_type'] = struct.unpack('20s',f.read(20))[0].strip(); cc = cc+20
+            #ndp = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
+            #npx = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
+            #nhorcum = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
+
         
     def eval_lateral(self,lat,lon):
         """
@@ -283,13 +322,16 @@ class model3d(object):
     def __init__(self,num_resolution=1,num_realization=1):
         self.metadata ={}
         self.data = {}
-        for ii in np.arange(num_resolution): self.metadata['resolution_'+str(ii)] = None
-        self.data['resolution_'+str(ii)]={'realization_'+str(jj):{'name':None,'coef':None} for jj in np.arange(num_realization)}
+        for ii in np.arange(num_resolution): 
+            self.metadata['resolution_'+str(ii)] = None
+            self.data['resolution_'+str(ii)] = {}
+            for jj in np.arange(num_realization):
+                self.data['resolution_'+str(ii)]['realization_'+str(jj)] = {'name':None,'coef':None}
         self.name = None
         self.type = None
         self.refmodel = None
         self.description = None
-
+    
     def __str__(self):
         if self.name is not None:
             output = "%s is a three-dimensional model ensemble with %s resolution levels, %s realizations of %s type and %s as the reference model" % (self.name,len(self.metadata), len(self.data['resolution_0']),self.type,self.refmodel)
@@ -297,6 +339,7 @@ class model3d(object):
             output = "No three-dimensional model has been read into this model3d instance yet"
         return output
         
+                
     def __copy__(self):
         cls = self.__class__
         result = cls.__new__(cls)
@@ -310,7 +353,35 @@ class model3d(object):
         for k, v in self.__dict__.items():
             setattr(result, k, deepcopy(v, memo))
         return result
-        
+
+    def add_realization(self,resolution=None,name=None,coef=None):
+        """
+        Added a set of realizations to the object. resolution is the tesselation level at
+        which the instance is update with name and coeff (default: None).
+        """      
+        if resolution==None:
+            resolution = len(self.data)
+            for ii in np.arange(resolution):
+                realization = len(self.data['resolution_'+str(ii)]) 
+                self.data['resolution_'+str(ii)]['realization_'+str(realization)] = {'name':name,'coef':coef}
+        else:
+            if isinstance(resolution, int) :
+                realization = len(self.data['resolution_'+str(resolution)])
+                self.data['resolution_'+str(resolution)]['realization_'+str(realization)] = {'name':name,'coef':coef}    
+            else:
+                raise ValueError('Invalid resolution in add_realization')
+
+    def add_resolution(self,num_realization=1):
+        """
+        Added a resolution level to the object. num_realization is the number 
+        of realizations of model coefficients within that object.
+        """      
+        num_resolution = len(self.data)
+        self.metadata['resolution_'+str(num_resolution)] = None
+        self.data['resolution_'+str(num_resolution)] = {}
+        for jj in np.arange(num_realization):
+            self.data['resolution_'+str(num_resolution)]['realization_'+str(jj)] = {'name':None,'coef':None}
+
     def readfile(self,modelfile,resolution=0,realization=0,maxkern=300,maxcoeff=6000):
         """
         Reads a standard 3D model file. maxkern is the maximum number of radial kernels
@@ -346,9 +417,13 @@ class model3d(object):
 
     def coeff2modelarr(self,resolution=[0],realization=0):
         """
-        Convert the coeffiecient matrix from the file to a sparse model array
-        realization is the index of the set of coefficients in an ensemble. Default is 0
+        Convert the coeffiecient matrix from the file to a sparse model array. Add
+        up all the resolutions if a list is provided.
+        
+        realization : index of the set of coefficients in an ensemble. Default is 0
         as there is only one set of coefficients when read from a model file.
+        
+        resolution : list of resolutions to include the the modelarray
         """
         if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
@@ -358,20 +433,23 @@ class model3d(object):
         else:
             raise TypeError('resolution must be function or array, not %s' % type(resolution))
             
-        for res in resolution: 
-
-            coefficients =self.data['resolution_'+str(res)]['realization_'+str(realization)]['coef'].toarray()
+        # Loop over resolution levels, adding coefficients 
+        for ir in range(len(resolution)): 
+            try:
+                coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef'].toarray()
             # Loop over all kernel basis
-            for ii in range(len(self.metadata['resolution_'+str(res)]['ihorpar'])): 
-                if ii == 0: # first radial kernel
-                    ncoef = self.metadata['resolution_'+str(res)]['ncoefhor'][self.metadata['resolution_'+str(res)]['ihorpar'][ii]-1] # number of coefficients for this radial kernel
-                    modelarr=coefficients[ii,:ncoef]
-                    #modelarr=self.metadata['coef'][ii,:ncoef]
-                else:
-                    modelarr=np.append(modelarr,coefficients[ii,:ncoef]) 
-                    #modelarr=np.append(modelarr,self.metadata['coef'][ii,:ncoef])  
-            modelarr = sparse.csr_matrix(modelarr) # Convert to sparse matrix
-            modelarr = modelarr.T # take the transpose to make dot products easy 
+                for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])): 
+                    # number of coefficients for this radial kernel
+                    ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
+                    # first radial kernel and first tesselation level
+                    if ii == 0 and ir == 0: 
+                        modelarr=coefficients[ii,:ncoef]
+                    else:
+                        modelarr=np.append(modelarr,coefficients[ii,:ncoef]) 
+            except AttributeError: # 
+                raise ValueError('resolution '+str(resolution[ir])+' and realization '+str(realization)+' not filled up yet.')
+        modelarr = sparse.csr_matrix(modelarr) # Convert to sparse matrix
+        modelarr = modelarr.T # take the transpose to make dot products easy 
         return modelarr
         
     def getradialattributes(self,parserfile='attributes.ini'):
@@ -414,7 +492,7 @@ class model3d(object):
                     knot_depth.append(np.nan)
             # Stor in relevant variables
             self.metadata['resolution_'+str(ll)]['knot_depth']=np.array(knot_depth)
-            self.metadata['resolution_'+str(ll)]['description']=parser['Kernel_Set'][kerstr]['radial_knots']
+            self.metadata['resolution_'+str(ll)]['description']=parser['Kernel_Set'][kerstr]['description']
             self.metadata['resolution_'+str(ll)]['scaling']=parser['Kernel_Set'][kerstr]['scaling']
 
         return 
