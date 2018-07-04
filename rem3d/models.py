@@ -640,7 +640,7 @@ class model3d(object):
         depindex = absdiff.argmin()
         if min(absdiff) > 0. :
             print ("No unique depth found in the projection matrix. Choosing the nearest available depth "+str(deptharr[depindex]))
-        modelselect=projarr[depindex,varindex[0]]*modelarr    
+        modelselect=projarr[depindex,varindex[0]].value*modelarr    
         return modelselect,deptharr[depindex]
 
     def printsplinefiles(self):
@@ -711,7 +711,8 @@ class model3d(object):
                         flag=flag-1
                     else:
                         modeleselect,_ = self.getprojtimesmodel(projection,variable=refstrarr[x],depth=depth)
-                        percent_or_km = input("Is the value in percentage or km or percentage -default is None [km/%]:")
+                        percent_or_km = input("Is the value in percentage or km or percentage -default is % [km/%]:")
+                        if percent_or_km=='': percent_or_km = '%'                            
                         if percent_or_km == '%': 
                             modelarray = modeleselect.toarray().flatten()*100. # In Percent assuming elastic parameters
                         else:
