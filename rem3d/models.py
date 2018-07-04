@@ -30,6 +30,7 @@ from configobj import ConfigObj
 import re
 from copy import copy, deepcopy
 import struct
+import h5sparse
 
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -319,7 +320,7 @@ class model3d(object):
     A class for 1D reference Earth models used in tomography
     '''
 
-    def __init__(self,num_resolution=1,num_realization=1):
+    def __init__(self,file=None,num_resolution=1,num_realization=1):
         self.metadata ={}
         self.data = {}
         for ii in np.arange(num_resolution): 
@@ -331,6 +332,7 @@ class model3d(object):
         self.type = None
         self.refmodel = None
         self.description = None
+        if file is not None: self.readfile(file)
     
     def __str__(self):
         if self.name is not None:
@@ -371,7 +373,7 @@ class model3d(object):
             else:
                 raise ValueError('Invalid resolution in add_realization')
 
-    def add_resolution(self,num_realization=1):
+    def add_resolution(self):
         """
         Added a resolution level to the object. num_realization is the number 
         of realizations of model coefficients within that object.
@@ -379,8 +381,7 @@ class model3d(object):
         num_resolution = len(self.data)
         self.metadata['resolution_'+str(num_resolution)] = None
         self.data['resolution_'+str(num_resolution)] = {}
-        for jj in np.arange(num_realization):
-            self.data['resolution_'+str(num_resolution)]['realization_'+str(jj)] = {'name':None,'coef':None}
+        self.data['resolution_'+str(num_resolution)]['realization_0'] = {'name':None,'coef':None}
 
     def readfile(self,modelfile,resolution=0,realization=0,maxkern=300,maxcoeff=6000):
         """
@@ -505,8 +506,8 @@ class model3d(object):
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
         #read all the bytes to indata
-        outfile=self.name+'.'+lateral_basis+'.proj.bin.npz'
-        infile=self.name+'.'+lateral_basis+'.proj.bin'
+        outfile = self.name+'.'+lateral_basis+'.proj.bin.h5'
+        infile = self.name+'.'+lateral_basis+'.proj.bin'
     
         xlat=[];xlon=[];area=[];deptharr=[]
         cc = 0 #initialize byte counter
@@ -558,20 +559,39 @@ class model3d(object):
             if cc != nbytes: sys.exit("Error: number of bytes read "+str(cc)+" do not match expected ones "+str(nbytes))
             deptharr=np.array(deptharr); refstrarr=np.array(refstrarr)
             xlat=np.array(xlat); xlon=np.array(xlon); area=np.array(area)
-            np.savez_compressed(outfile, ndp=ndp, npx=npx,nhorcum=nhorcum, neval=neval, \
-                   deptharr=deptharr,refstrarr=refstrarr, \
-                   xlat=xlat,xlon=xlon,area=area, \
-                   refvalarr=refvalarr,projarr=projarr,model=model,param=lateral_basis)
+            
+            with h5sparse.File(outfile) as h5f:
+                h5f.create_dataset("infile", dtype="S80",data= np.string_(ntpath.basename(infile)))
+                h5f.create_dataset("ndp",dtype="i4", data=ndp)
+                h5f.create_dataset("npx",dtype="i4", data=npx)
+                h5f.create_dataset("nhorcum",dtype="i4", data=nhorcum)
+                h5f.create_dataset("neval",dtype="i4", data=neval)
+                h5f.create_dataset("deptharr", data=deptharr,compression="gzip")
+                h5f.create_dataset("refstrarr", data=refstrarr,compression="gzip")
+                h5f.create_dataset("xlat", data=xlat,compression="gzip")
+                h5f.create_dataset("xlon", data=xlon,compression="gzip")
+                h5f.create_dataset("area", data=area,compression="gzip")
+                h5f.create_dataset("model", dtype="S80",data=np.string_(model))
+                h5f.create_dataset("param", dtype="S80",data= np.string_(lateral_basis))
+                for ii in np.arange(len(deptharr)):
+                    for jj in np.arange(len(refstrarr)):
+                        h5f.create_dataset("data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/refvalue", data=refvalarr[ii,jj])
+                        h5f.create_dataset("data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/projarr", data=projarr[ii,jj],compression="gzip")            
         else:
             print("....reading "+outfile)
-            data = np.load(outfile)
-            ndp=int(data['ndp']); npx=int(data['npx']); nhorcum=int(data['nhorcum']); neval=int(data['neval'])
-            deptharr=data['deptharr'];refstrarr=data['refstrarr'];xlat=data['xlat']
-            xlon=data['xlon'];area=data['area'];refvalarr=data['refvalarr'];projarr=data['projarr']  
-            model=data['model'];param=data['param']
-        
-            d = dict(enumerate(refvalarr.flatten(), 1)); refvalarr=d[1]
-            d = dict(enumerate(projarr.flatten(), 1)); projarr=d[1]
+            h5f = h5sparse.File(outfile,'r')
+            ndp=h5f['ndp'].value; npx=h5f['npx'].value; nhorcum=h5f['nhorcum'].value
+            neval=h5f['neval'].value; deptharr=h5f['deptharr'].value
+            refstrarr=h5f['refstrarr'].value; xlat=h5f['xlat'].value
+            xlon=h5f['xlon'].value; area=h5f['area'].value
+            model=h5f['model'].value; param=h5f['param'].value
+            
+        # Always read the following from hdf5 so projarr is list of sparse hdf5 - fast I/O
+        projarr={};refvalarr={}
+        for ii in np.arange(len(deptharr)):
+            for jj in np.arange(len(refstrarr)):
+                projarr[ii,jj] = h5f["data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/projarr"]
+                refvalarr[ii,jj] = h5f["data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/refvalue"].value
      
         # Write to a dictionary
         projection = {}
