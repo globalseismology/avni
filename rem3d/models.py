@@ -67,7 +67,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     """    
     if (not os.path.isfile(modelfile)): raise IOError("Filename ("+modelfile+") does not exist")
 
-    desckern=np.zeros(maxkern, dtype='a40')
+    desckern=np.zeros(maxkern, dtype='U40')
     ihorpar=np.zeros(maxkern, dtype=int)
     coef=np.zeros([maxcoeff,maxkern], dtype=float)
     with open(modelfile) as f: lines = f.readlines()
@@ -84,8 +84,8 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
             desckern[idummy-1]=substr[ifst:ilst]
         if line.startswith("HORIZONTAL PARAMETERIZATIONS:"): 
             nhorpar = int(line[29:].rstrip('\n'))
-            hsplfile=np.zeros(nhorpar, dtype='a40')
-            typehpar=np.zeros(nhorpar, dtype='a40')
+            hsplfile=np.zeros(nhorpar, dtype='U40')
+            typehpar=np.zeros(nhorpar, dtype='U40')
             ityphpar=np.zeros(nhorpar, dtype=int)
             lmaxhor=np.zeros(nhorpar, dtype=int)
             ncoefhor=np.zeros(nhorpar, dtype=int)
@@ -133,7 +133,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
             coef[(jj+1)*6:(jj+1)*6+remain,idummy-1]=[float(i) for i in arr]
 
     # Store the variables
-    numvar=0; varstr=np.zeros(nmodkern, dtype='a40')
+    numvar=0; varstr=np.zeros(nmodkern, dtype='U40')
     ivarkern=np.zeros(nmodkern)
     for ii in np.arange(nmodkern):
         string=desckern[ii]
