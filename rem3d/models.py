@@ -125,7 +125,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
             ihor=int(line[9:].rstrip('\n'))
             ihorpar[idummy-1]=ihor
             ncoef=ncoefhor[ihor-1]
-            for jj in range(ncoef/6):
+            for jj in range(int(ncoef/6)):
                 arr=lines[ii].rstrip('\n').split(); ii=ii+1
                 coef[jj*6:(jj+1)*6,idummy-1]=[float(i) for i in arr]
             remain = ncoef % 6    
