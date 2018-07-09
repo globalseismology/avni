@@ -55,7 +55,7 @@ def updatefont(fontsize=15,fontname='sans-serif',ax=None):
         ax.title.set_fontname(fontname)
     return ax if ax is not None else None
                     
-def standardcolorpalette(name='rem3d',RGBoption='rem3d',reverse=True):
+def standardcolorpalette(name='rem3d'):
     """
     Get a custom REM3D color palette from constants.py
     
@@ -63,15 +63,15 @@ def standardcolorpalette(name='rem3d',RGBoption='rem3d',reverse=True):
     ----------
     
     name : color palette name that will be used elsewhere
-    
-    RGBoption : option for values of RGB from constants
-    
+           if name ends in '_r', use the reversed color scale.    
     reverse: if the colors need to be reversed from those provided.
     
     """
-    if reverse:
+    if name.endswith('_r'):
+        RGBoption = name.split('_r')[0]
         RGBlist=constants.colorscale[RGBoption]['RGB'][::-1]
     else:
+        RGBoption = name
         RGBlist=constants.colorscale[RGBoption]['RGB']
     custom_cmap = mcolors.LinearSegmentedColormap.from_list(name, RGBlist,N=len(RGBlist))
     cmx.register_cmap(name=custom_cmap.name, cmap=custom_cmap)
@@ -235,7 +235,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
     try:
         cpalette = plt.get_cmap(colorpalette)
     except ValueError:
-        cpalette=standardcolorpalette(RGBoption=colorpalette)
+        cpalette=standardcolorpalette(colorpalette)
     # define the 10 bins and normalize
     if isinstance(colorcontour,np.ndarray) or isinstance(colorcontour,list): # A list of boundaries for color bar
         if isinstance(colorcontour,list): 
