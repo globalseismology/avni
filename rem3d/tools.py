@@ -68,23 +68,23 @@ def get_installdir(module='rem3d',checkwrite=True,checkenv=True):
 Specify "+module+"_dir environment variable or chdir to a different directory with I/O access.")
     return installdir
 
-def get_filedir(checkwrite=True,makedir=True):
+def get_filedir(module='rem3d',checkwrite=True,makedir=True):
     """
     Get the local files directory. Make a new directory if doesn't exist (makedir==True)
     """
-    installdir = get_installdir(checkwrite=checkwrite)
+    installdir = get_installdir(module=module,checkwrite=checkwrite)
     filedir = installdir+'/'+constants.localfilefolder
     if checkwrite and makedir: 
         if not os.path.exists(filedir):
             os.makedirs(filedir)        
     return filedir
 
-def get_configdir(checkwrite=True,makedir=True):
+def get_configdir(module='rem3d',checkwrite=True,makedir=True):
     """
     Get the directory containing configuration files. 
     Make a new directory if doesn't exist (makedir==True)
     """
-    installdir = get_installdir(checkwrite=checkwrite)
+    installdir = get_installdir(module=module,checkwrite=checkwrite)
     configdir = installdir+'/'+constants.configfolder
     if checkwrite and makedir: 
         if not os.path.exists(configdir):
