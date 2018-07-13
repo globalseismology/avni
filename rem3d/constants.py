@@ -1,4 +1,9 @@
-from __future__ import absolute_import
+#!/usr/bin/env python
+
+# python 3 compatibility
+from __future__ import absolute_import, division, print_function
+from builtins import *
+
 import scipy.constants
 import pdb    #for the debugger pdb.set_trace()
 import pkgutil

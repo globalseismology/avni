@@ -29,7 +29,7 @@ def main():
         help='Database path containing all files')
     arg = parser.parse_args()
     
-    filename=arg.model+'.'+arg.parameter+'.'+str(arg.depth)+'km.epix'
+    filename=arg.model+'.'+str(arg.depth)+'.epix'
          
     # Read the file
     latlonval=rem3d.models.readepixfile(arg.base_path+'/'+filename)

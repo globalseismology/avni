@@ -1,4 +1,9 @@
-from __future__ import absolute_import
+#!/usr/bin/env python
+
+# python 3 compatibility
+from __future__ import absolute_import, division, print_function
+from builtins import *
+
 import scipy.constants
 import pkgutil
 import os
@@ -37,30 +42,30 @@ def listfolders(path):
     dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
     return dirs
 
-def get_installdir(checkwrite=True,checkenv=True):
+def get_installdir(module='rem3d',checkwrite=True,checkenv=True):
     """
-    Get the installation directory for the rem3d module. checkwrite checks for write access to the files.
+    Get the installation directory for any module. checkwrite checks for write access to the files.
     checkenv checks if the directory is specified as an environment variable.
     """
     installdir = None
     if checkenv:
-        if os.environ.get('REM3Ddir') is not None:
-            installdir=os.environ.get('REM3Ddir')
-            print("Warning: Reading REM3Ddir from environment variables - "+installdir)
+        if os.environ.get(module+'_dir') is not None:
+            installdir=os.environ.get(module+'_dir')
+            print("Warning: Reading "+module+"_dir"+" from environment variables - "+installdir)
 
     if installdir is None:
-        loader=pkgutil.find_loader('rem3d')
+        loader=pkgutil.find_loader(module)
         if loader is None:
             installdir = os.getcwd()
-            print("Warning: installation directory not found for rem3d. Using current directory - "+installdir)
+            print("Warning: installation directory not found for "+module+". Using current directory - "+installdir)
         else:
-            installdir = os.path.dirname(loader.get_filename('rem3d'))
+            installdir = os.path.dirname(loader.get_filename(module))
             if installdir is None:
-                raise ValueError("Error: Specify REM3Ddir environment variable (export REM3Ddir=/path/to/rem3d/) or install rem3d module. ")
+                raise ValueError("Error: Specify "+module+"_dir environment variable (export "+module+"_dir=/path) or install "+module+" module.")
             if checkwrite:
                 if not os.access(installdir, os.W_OK):
-                    raise PermissionError("Error: Cannot I/O to rem3d directory "+installdir+ " due to permissions. \
-Specify rem3d_dir environment variable or chdir to a different directory with I/O access. ")
+                    raise PermissionError("Error: Cannot I/O to "+module+" directory "+installdir+ " due to permissions. \
+Specify "+module+"_dir environment variable or chdir to a different directory with I/O access.")
     return installdir
 
 def get_filedir(checkwrite=True,makedir=True):

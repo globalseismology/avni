@@ -5,7 +5,10 @@ Usage import
 """
 #####################  IMPORT STANDARD MODULES   ######################################   
 
-from __future__ import division
+# python 3 compatibility
+from __future__ import absolute_import, division, print_function
+from builtins import *
+
 from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin, modf
 import sys,os
 import numpy as np #for numerical analysis
