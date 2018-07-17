@@ -30,13 +30,13 @@ from configobj import ConfigObj
 import re
 from copy import copy, deepcopy
 import struct
-import h5sparse
-
+import h5py
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import tools   
 from . import plots 
-from . import constants               
+from . import constants
+               
 #######################################################################################
 def readepixfile(filename):
     """Read .epix file format from a file.
@@ -559,32 +559,34 @@ class model3d(object):
             if cc != nbytes: sys.exit("Error: number of bytes read "+str(cc)+" do not match expected ones "+str(nbytes))
             deptharr=np.array(deptharr); refstrarr=np.array(refstrarr)
             xlat=np.array(xlat); xlon=np.array(xlon); area=np.array(area)
-            
-            with h5sparse.File(outfile) as h5f:
-                h5f.create_dataset("infile", dtype="S80",data= np.string_(ntpath.basename(infile)))
-                h5f.create_dataset("ndp",dtype="i4", data=ndp)
-                h5f.create_dataset("npx",dtype="i4", data=npx)
-                h5f.create_dataset("nhorcum",dtype="i4", data=nhorcum)
-                h5f.create_dataset("neval",dtype="i4", data=neval)
-                h5f.create_dataset("deptharr", data=deptharr,compression="gzip")
-                h5f.create_dataset("refstrarr", data=refstrarr,compression="gzip")
-                h5f.create_dataset("xlat", data=xlat,compression="gzip")
-                h5f.create_dataset("xlon", data=xlon,compression="gzip")
-                h5f.create_dataset("area", data=area,compression="gzip")
-                h5f.create_dataset("model", dtype="S80",data=np.string_(model))
-                h5f.create_dataset("param", dtype="S80",data= np.string_(lateral_basis))
-                for ii in np.arange(len(deptharr)):
-                    for jj in np.arange(len(refstrarr)):
-                        h5f.create_dataset("data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/refvalue", data=refvalarr[ii,jj])
-                        h5f.create_dataset("data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/projarr", data=projarr[ii,jj],compression="gzip")            
+                        
+            h5f = h5py.File(outfile,'w')
+            h5f.create_dataset("infile", dtype="S80",data= np.string_(ntpath.basename(infile)))
+            h5f.create_dataset("ndp", dtype="i4",data=ndp)
+            h5f.create_dataset("npx", dtype="i4",data=npx)
+            h5f.create_dataset("nhorcum", dtype="i4",data=nhorcum)
+            h5f.create_dataset("neval", dtype="i4",data=neval)
+            h5f.create_dataset("deptharr", data=deptharr,compression="gzip")
+            h5f.create_dataset("refstrarr", data=refstrarr,compression="gzip")
+            h5f.create_dataset("xlat", data=xlat,compression="gzip")
+            h5f.create_dataset("xlon", data=xlon,compression="gzip")
+            h5f.create_dataset("area", data=area,compression="gzip")
+            h5f.create_dataset("model", dtype="S80",data=np.string_(model))
+            h5f.create_dataset("param", dtype="S80",data= np.string_(lateral_basis))
+            for ii in np.arange(len(deptharr)):
+                for jj in np.arange(len(refstrarr)):
+                    h5f.create_dataset("data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/refvalue", data=refvalarr[ii,jj])
+                    h5f.create_dataset("data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/projarr", data=projarr[ii,jj],compression="gzip")   
+            h5f.close()   
         else:
             print("....reading "+outfile)
-            h5f = h5sparse.File(outfile,'r')
+            h5f = h5py.File(outfile,'r')
             ndp=h5f['ndp'].value; npx=h5f['npx'].value; nhorcum=h5f['nhorcum'].value
             neval=h5f['neval'].value; deptharr=h5f['deptharr'].value
             refstrarr=h5f['refstrarr'].value; xlat=h5f['xlat'].value
             xlon=h5f['xlon'].value; area=h5f['area'].value
             model=h5f['model'].value; param=h5f['param'].value
+            h5f.close()  
             
         # Always read the following from hdf5 so projarr is list of sparse hdf5 - fast I/O
         projarr={};refvalarr={}
