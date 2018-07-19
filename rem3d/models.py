@@ -163,7 +163,7 @@ class model3d(object):
     A class for 3D reference Earth models used in tomography
     '''
 
-    def __init__(self,num_resolution=1,num_realization=1):
+    def __init__(self,file=None,num_resolution=1,num_realization=1):
         self.metadata ={}
         self.data = {}
         for ii in np.arange(num_resolution): 
@@ -175,6 +175,7 @@ class model3d(object):
         self.type = None
         self.refmodel = None
         self.description = None
+        if file is not None: self.readfile(file)
     
     def __str__(self):
         if self.name is not None:

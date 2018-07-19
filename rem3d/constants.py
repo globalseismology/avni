@@ -3,9 +3,6 @@ from __future__ import absolute_import, division, print_function
 from builtins import *
 
 import scipy.constants
-import ConfigParser
-import pkgutil
-import StringIO
 
 """
 download files

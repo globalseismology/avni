@@ -247,13 +247,13 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         mytks = np.append(bounds[bounds.nonzero()],np.ceil(vmax))
         bounds = np.append(bounds,np.ceil(vmax))
         spacing='uniform'
-    elif isinstance(colorcontour,(int, long)): # Number of intervals for color bar
+    elif isinstance(colorcontour,(int, float)): # Number of intervals for color bar
         bounds = np.linspace(vmin,vmax,colorcontour+1)
         mytks = np.arange(vmin,vmax+(vmax-vmin)/4.,(vmax-vmin)/4.)
         mytkslabel = [str(a) for a in mytks]
         spacing='proportional'
     else:
-        print "Error: Undefined colorcontour in globalmap; should be a numpy array, list or integer "
+        print("Error: Undefined colorcontour in globalmap; should be a numpy array, list or integer ")
         sys.exit(2)        
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
     
@@ -270,7 +270,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
     spacing_lon = np.unique(spacing_lon[spacing_lon != 0])
     # Check if an unique grid spacing exists for both lat and lon
     if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon): 
-        print "Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation"
+        print("Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation")
         # compute native map projection coordinates of lat/lon grid.
         x, y = m(valarray['lon'], valarray['lat'])
         rlatlon = np.vstack([np.ones(len(valarray['lon'])),valarray['lat'],valarray['lon']]).transpose()
@@ -299,7 +299,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         X,Y=np.meshgrid(lon,lat)
         val = np.empty_like(X)
         val[:] = np.nan;
-        for i in xrange(0, valarray['lat'].size):
+        for i in range(0, valarray['lat'].size):
             ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
             ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
             val[ilat,ilon] = valarray['val'][i]
