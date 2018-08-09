@@ -15,7 +15,23 @@ import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap, shiftgrid
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
-from scipy.interpolate import griddata
+import multiprocessing
+from joblib import Parallel, delayed
+import pdb    #for the debugger pdb.set_trace()
+# from scipy.io import netcdf_file as netcdf #reading netcdf files
+from netCDF4 import Dataset as netcdf #reading netcdf files
+import scipy.interpolate as spint
+import scipy.spatial.qhull as qhull
+import time
+import progressbar
+# For polar sectionplot
+from matplotlib.transforms import Affine2D
+import mpl_toolkits.axisartist.floating_axes as floating_axes
+import mpl_toolkits.axisartist.angle_helper as angle_helper
+from matplotlib.projections import PolarAxes
+from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
+from matplotlib import gridspec # Relative size of subplots
+
 ####################       IMPORT OWN MODULES     ######################################
 from . import tools
 from . import data
@@ -179,7 +195,192 @@ def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transfo
             m.plot(x, y, '-')
     return
 
+<<<<<<< HEAD
 def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=20,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+=======
+
+def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=True,**kwargs):
+    """plots great-circle paths from lon lat arrays. Uses cartopy."""
+    if kwargs:
+        for x,y,z,w in np.vstack((stlon,stlat,eqlon,eqlat)).transpose():
+            m.drawgreatcircle(x,y,z,w, **kwargs)
+        x, y = m(stlon, stlat); m.scatter(x, y, marker='^', **kwargs)
+        x, y = m(eplon, eplat); m.scatter(x, y, marker='o', **kwargs)
+    else:
+        for x,y,z,w in np.vstack((stlon,stlat,eqlon,eqlat)).transpose():
+            m.drawgreatcircle(x,y,z,w)
+        x, y = m(stlon, stlat); m.scatter(x, y, marker='^', edgecolors='k')
+        x, y = m(eplon, eplat); m.scatter(x, y, marker='o', edgecolors='k')
+    m.coastlines(color='gray')
+    if ifglobal: m.set_global()    # set global extent
+    return m
+
+
+def backgroundmap(ax,dbs_path='.',platescolor='r', **kwargs):
+    """plots a background map of a 3D model on axis ax. kwargs are arguments for Basemap"""
+    
+    # set up map
+    if kwargs:
+        m = Basemap(ax=ax, **kwargs)
+    else:
+        m = Basemap(ax=ax,projection='robin', lat_0=0, lon_0=150, resolution='l')
+    
+    clip_path = m.drawmapboundary()
+    # draw coastlines.
+#     m.drawcoastlines(linewidth=1.)
+    # draw a boundary around the map, fill the background.
+    # this background will end up being the ocean color, since
+    # the continents will be drawn on top.
+    m.drawmapboundary(fill_color='white')
+    # fill continents, set lake color same as ocean color.
+    m.fillcontinents(color='lightgray',lake_color='white')
+    # add plates and hotspots
+    dbs_path=tools.get_fullpath(dbs_path)
+    plot_plates(m, dbs_path=dbs_path, color=platescolor, linewidth=1.)
+    m.drawmapboundary(linewidth=1.5)    
+    return m
+
+def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,height=50.,dbs_path='.',platescolor='r',numdegticks=7,hotspots=False):
+    """plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
+    
+    # Calculate intermediate points    
+    lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*111325.)
+    interval=gcdelta*111325./(numdegticks-1) # interval in km
+    coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*111325.,interval))
+
+    # Center lat lon based on azimuth
+    if gcdelta > 350.:
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,45.*111325.)
+    elif gcdelta >= 180. and gcdelta <= 350.:
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*111325.)
+    else:
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*111325.)
+        
+    # Choose what to do based on projection
+    if projection=='ortho':
+        m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l')
+    else:
+        # center left lat/lon, then left crnr
+        latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*111325./2.)
+        llcrnrlat,llcrnrlon=mapping.getDestinationLatLong(latcenleft,loncenleft,180.,height*111325./2.)
+        # center right lat/lon, then left crnr
+        latcenright,loncenright=mapping.getDestinationLatLong(lat_0,lon_0,90.,width*111325./2.)
+        urcrnrlat,urcrnrlon=mapping.getDestinationLatLong(latcenright,loncenright,0.,height*111325./2.)
+
+        m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l',llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat, urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
+        # draw parallels and meridians.
+        # label parallels on right and top
+        # meridians on bottom and left
+        parallels = np.arange(-90,91,10.)
+        # labels = [left,right,top,bottom]
+        m.drawparallels(parallels,labels=[1,0,0,0])
+        meridians = np.arange(0.,361.,20.)
+        m.drawmeridians(meridians,labels=[0,0,0,1])
+
+    if hotspots: plot_hotspots(m, dbs_path=tools.get_fullpath(dbs_path), s=30, color='lightgreen', edgecolor='k')
+
+    if gcdelta > 350.:
+        dotsstart_x,dotsstart_y=m(coords[0:1][:,1],coords[0:1][:,0])
+        m.scatter(dotsstart_x,dotsstart_y,s=50,zorder=10,facecolor='orange',edgecolor='k')
+    dotsstart_x,dotsstart_y=m(coords[1:2][:,1],coords[1:2][:,0])
+    dots_x,dots_y=m(coords[2:-1][:,1],coords[2:-1][:,0])
+    m.scatter(dots_x,dots_y,s=50,zorder=10,facecolor='w',edgecolor='k')
+    m.scatter(dotsstart_x,dotsstart_y,s=50,zorder=10,facecolor='m',edgecolor='k')
+    dotsall_x,dotsall_y=m(coords[:,1],coords[:,0])
+    if gcdelta < 180.:
+        m.drawgreatcircle(lon1, lat1, lon2, lat2,color='k',linewidth=3.)
+    elif gcdelta == 180.:
+        latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*111325.)
+        latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*111325.)
+#         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*111325.)
+        lonextent,latextent=m([lonextent1,lonextent2],[latextent1,latextent2])
+        m.plot(lonextent,latextent,color='k',linewidth=3.)
+    return m
+
+
+def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path='.',plottopo=False,numeval=50,downsampleetopo1=True,distnearthreshold=5.,outfile='transect_topo.json'):
+    """Get the topography transect.dbs_path should have filename. numeval is number of evaluations of topo/bathymetry along the transect. downsampleetopo1 if true samples every 3 points to get 0.5 deg before interpolation. distnearthreshold is the threshold for nearest points to consider for interpolation in km. """
+    
+    recalculate=True
+    if os.path.isfile(outfile):
+        [lat1_t,lng1_t,azimuth_t,gcdelta_t,filename_t,dbs_path_t,plottopo_t,numeval_t,downsampleetopo1_t,distnearthreshold_t],evalpoints_t,grid_z1_t=tools.readjson(outfile)
+        dbs_path=tools.get_fullpath(dbs_path)
+        if lat1_t==lat1 and lng1_t==lng1 and azimuth_t==azimuth and gcdelta_t==gcdelta and str(filename_t)==filename and str(dbs_path_t)==dbs_path and plottopo_t==plottopo and numeval_t==numeval and downsampleetopo1_t==downsampleetopo1 and distnearthreshold_t==distnearthreshold:
+            evalpoints=evalpoints_t
+            grid_z1=grid_z1_t
+            recalculate=False
+    
+    if recalculate:    
+        # Calculate intermediate points            
+        lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
+        interval=gcdelta*111325./(numeval-1) # interval in km
+        coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
+        
+        if(len(coords) != numeval):
+            print "Error: The number of intermediate points is not accurate. Decrease it?"
+            pdb.set_trace()
+            sys.exit(2)
+    
+        # Read the topography file
+        dbs_path=tools.get_fullpath(dbs_path)
+        if os.path.isfile(dbs_path+'/'+filename):
+            data = netcdf(dbs_path+'/'+filename,'r')
+        else:
+            print "Error: Could not find file "+dbs_path+'/'+filename    
+            pdb.set_trace()
+            sys.exit(2)
+    
+        # Create the arrays for interpolation
+        radarr=np.array([6371.])
+        if downsampleetopo1: 
+            sampling=3
+        else:
+            sampling=1    
+        lonarr=data.variables['lon'][::][0::sampling] #sample every 3 points to get 0.5 deg
+        latarr=data.variables['lat'][::][0::sampling] #sample every 3 points to get 0.5 deg
+        grid_y, grid_z, grid_x=np.meshgrid(latarr,radarr,lonarr)
+    #     grid_x, grid_y = np.meshgrid(data.variables['lon'][::],data.variables['lat'][::])    
+        values=data.variables['z'][::][0::sampling,0::sampling] #sample every 3 points to get 0.5 deg    
+        if plottopo:
+            fig=plt.figure() 
+            ax=fig.add_subplot(1,1,1)
+            ax.pcolormesh(grid_x,grid_y,values,cmap='coolwarm')
+            plt.show()
+        #Evaluate the topography at the points
+        rlatlon=np.column_stack((np.ravel(grid_z), np.ravel(grid_y), np.ravel(grid_x)))
+
+        t0 = time.time()
+        gridpoints=mapping.spher2cart(rlatlon)
+        evalpoints=np.column_stack((6371.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
+        coordstack=mapping.spher2cart(evalpoints)
+        checkifnear=np.zeros_like(gridpoints[:,0],dtype=bool) # array for checking if the point is near to any point in the path (coordstack)
+    
+        print "....Getting the topography transect from "+dbs_path+'/'+filename
+        bar = progressbar.ProgressBar(maxval=len(coordstack), \
+        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+        bar.start()
+        for ii in np.arange(len(coordstack)):
+            dist=np.sqrt( np.power(gridpoints[:,0]-coordstack[ii,0],2) + np.power(gridpoints[:,1]-coordstack[ii,1],2) + np.power(gridpoints[:,2]-coordstack[ii,2],2) )
+            checkifneartemp=dist<distnearthreshold
+            checkifnear=np.logical_or(checkifnear,checkifneartemp)
+            if len(np.where(checkifneartemp==True)[0]) == 0: 
+                print "Error: No points found with the given distnearthreshold in atleast 1 point. Increase the bound? "
+                sys.exit(2)
+            bar.update(ii+1)    
+        bar.finish()
+    
+        indexselect=np.where(checkifnear==True)[0]    
+        valuesselect=np.ravel(values)[indexselect]    
+        print("--- Chose %s points with distances < %s km for interpolation ---" % (len(valuesselect),  distnearthreshold))
+        grid_z1 = spint.griddata(gridpoints[indexselect], valuesselect, coordstack, method='nearest')
+    
+        writearr=np.array([[lat1,lng1,azimuth,gcdelta,filename,dbs_path,plottopo,numeval,downsampleetopo1,distnearthreshold],evalpoints.tolist(),grid_z1.tolist()])
+        tools.writejson(writearr,outfile)
+        data.close() #close netcdf file
+    return evalpoints,grid_z1
+
+def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+>>>>>>> 8a2055a34aa4bcbebba0fd840df18bd5cb5cde75
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
     
@@ -286,7 +487,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         xyz_new = mapping.spher2cart(rlatlon)
         
         # grid the data.
-        val = griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)    
+        val = spint.griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)    
         s = m.transform_scalar(val,lon,lat, 1000, 500)
         im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
         #im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True)
