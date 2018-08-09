@@ -15,13 +15,45 @@ import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap, shiftgrid
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
-
+from scipy.interpolate import griddata
 ####################       IMPORT OWN MODULES     ######################################
 from . import tools
 from . import data
 from . import models
 from . import constants
+from . import mapping
 ########################      GENERIC   ################################################                       
+
+def updatefont(ax=None,fontsize=15,fontname='sans-serif'): 
+    """
+    Updates the font type and sizes globally or for a particular axis handle
+    
+    Parameters
+    ----------
+    
+    ax :  figure axis handle
+    
+    fontsize,fontname : font parameters
+    
+    Return:
+    ----------
+    
+    ax : updated axis handle if ax is not None
+    
+    """
+    if ax is None:
+        plt.rcParams["font.family"] = fontname
+        plt.rcParams["font.size"] = fontsize
+    else:
+        for item in (ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(fontsize)
+            item.set_fontname(fontname)
+        for item in ([ax.xaxis.label, ax.yaxis.label]):
+            item.set_fontsize(fontsize+2)
+            item.set_fontname(fontname)
+        ax.title.set_fontsize(fontsize+3)
+        ax.title.set_fontname(fontname)
+    return ax if ax is not None else None
                     
 def standardcolorpalette(name='rem3d',RGBoption='rem3d',reverse=True):
     """
@@ -44,7 +76,16 @@ def standardcolorpalette(name='rem3d',RGBoption='rem3d',reverse=True):
     custom_cmap = mcolors.LinearSegmentedColormap.from_list(name, RGBlist,N=len(RGBlist))
     cmx.register_cmap(name=custom_cmap.name, cmap=custom_cmap)
     return custom_cmap    
-
+    
+def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm',colorcontour=20):
+    """gets the value of color for a given palette"""
+    jet = cm = cmx.get_cmap(palette) 
+    #cNorm  = mcolors.Normalize(vmin=xmin, vmax=xmax)
+    bounds = np.linspace(xmin,xmax,colorcontour+1)
+    cNorm = mcolors.BoundaryNorm(bounds,cm.N)
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=palette)
+    colorVal = scalarMap.to_rgba(val)
+    return colorVal
                 
 ############################### PLOTTING ROUTINES ################################        
 
@@ -138,7 +179,7 @@ def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transfo
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=20,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
     
@@ -161,14 +202,16 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
     colorcontour :  the number of contours for colors in the plot. Maximum is 520 and odd values
                     are preferred so that mid value is at white/yellow or other neutral colors.
     
+    colorticks : Label and draw the ticks in the colorbar if True (default)
+    
     projection : map projection for the global plot
     
-    colorlabel : label to use for the colorbar
+    colorlabel : label to use for the colorbar. If None, no colorbar is plotted.
     
     lat_0, lon_0 : center latitude and longitude for the plot
     
     outformat : format of the output file 
-    
+
     kwargs : optional arguments for Basemap 
     """ 
 
@@ -184,44 +227,15 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
     # meridians on bottom and left
     parallels = np.arange(-90.,90.,grid[0])
     # labels = [left,right,top,bottom]
-    m.drawparallels(parallels,labels=[True,False,False,False],linewidth=gridwidth,fontsize=14)
+    m.drawparallels(parallels,labels=[True,False,False,False],linewidth=gridwidth)
     meridians = np.arange(-180.,180.,grid[1])
-    m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth,fontsize=14)
+    m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth)
 
-    # plot the model
-    for ii in np.arange(len(valarray['lon'])): 
-        if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
-    numlon=len(np.unique(valarray['lon']))
-    numlat=len(np.unique(valarray['lat']))
-    # grid spacing assuming a even grid
-    # Get the unique lat and lon spacing, avoiding repeated lat/lon
-    spacing_lat = np.ediff1d(np.sort(valarray['lat']))
-    spacing_lat =np.unique(spacing_lat[spacing_lat != 0])
-    spacing_lon = np.ediff1d(np.sort(valarray['lon']))
-    spacing_lon =np.unique(spacing_lon[spacing_lon != 0])
-    # Check if an unique grid spacing exists for both lat and lon
-    if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon): 
-        print "Error: spacing for latitude and longitude should be the same throughout"
-        sys.exit(2) 
-    else: 
-        grid_spacing = spacing_lat
-    # Create a grid
-    lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
-    lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
-    X,Y=np.meshgrid(lon,lat)
-    val = np.empty_like(X)
-    val[:] = np.nan;
-    for i in xrange(0, valarray['lat'].size):
-        ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
-        ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
-        val[ilat,ilon] = valarray['val'][i]
-    s = m.transform_scalar(val,lon,lat, 1000, 500)
     # Get the color map
     try:
         cpalette = plt.get_cmap(colorpalette)
     except ValueError:
         cpalette=standardcolorpalette(RGBoption=colorpalette)
-    
     # define the 10 bins and normalize
     if isinstance(colorcontour,np.ndarray) or isinstance(colorcontour,list): # A list of boundaries for color bar
         if isinstance(colorcontour,list): 
@@ -232,17 +246,65 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
         mytks = np.append(bounds[bounds.nonzero()],np.ceil(vmax))
         bounds = np.append(bounds,np.ceil(vmax))
         spacing='uniform'
-    elif isinstance(colorcontour,int): # Number of intervals for color bar
+    elif isinstance(colorcontour,(int, float)): # Number of intervals for color bar
         bounds = np.linspace(vmin,vmax,colorcontour+1)
         mytks = np.arange(vmin,vmax+(vmax-vmin)/4.,(vmax-vmin)/4.)
         mytkslabel = [str(a) for a in mytks]
         spacing='proportional'
     else:
-        print "Error: Undefined colorcontour, should be a numpy array, list or integer "
+        print("Error: Undefined colorcontour in globalmap; should be a numpy array, list or integer ")
         sys.exit(2)        
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
-    im = m.imshow(s, cmap=cpalette.name, clip_path=clip_path, vmin=vmin, vmax=vmax, norm=norm)
-#    # add plates and hotspots
+    
+    # plot the model
+    for ii in np.arange(len(valarray['lon'])): 
+        if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
+    numlon=len(np.unique(valarray['lon']))
+    numlat=len(np.unique(valarray['lat']))
+    # grid spacing assuming a even grid
+    # Get the unique lat and lon spacing, avoiding repeated lat/lon
+    spacing_lat = np.ediff1d(np.sort(valarray['lat']))
+    spacing_lat = np.unique(spacing_lat[spacing_lat != 0])
+    spacing_lon = np.ediff1d(np.sort(valarray['lon']))
+    spacing_lon = np.unique(spacing_lon[spacing_lon != 0])
+    # Check if an unique grid spacing exists for both lat and lon
+    if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon): 
+        print("Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation")
+        # compute native map projection coordinates of lat/lon grid.
+        x, y = m(valarray['lon'], valarray['lat'])
+        rlatlon = np.vstack([np.ones(len(valarray['lon'])),valarray['lat'],valarray['lon']]).transpose()
+        xyz = mapping.spher2cart(rlatlon)
+        
+        # Create a grid
+        grid_spacing = 1.
+        lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
+        lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
+        lons,lats=np.meshgrid(lon,lat)
+        
+        # evaluate in cartesian
+        rlatlon = np.vstack([np.ones_like(lons.flatten()),lats.flatten(),lons.flatten()]).transpose()
+        xyz_new = mapping.spher2cart(rlatlon)
+        
+        # grid the data.
+        val = griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)    
+        s = m.transform_scalar(val,lon,lat, 1000, 500)
+        im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+        #im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True)
+    else: 
+        grid_spacing = spacing_lat
+        # Create a grid
+        lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
+        lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
+        X,Y=np.meshgrid(lon,lat)
+        val = np.empty_like(X)
+        val[:] = np.nan;
+        for i in range(0, valarray['lat'].size):
+            ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
+            ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
+            val[ilat,ilon] = valarray['val'][i]
+        s = m.transform_scalar(val,lon,lat, 1000, 500)
+        im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+    # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
     plot_plates(m, dbs_path=dbs_path, color='w', linewidth=1.5)
 
@@ -256,22 +318,23 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorpalette='r
         # Remove colorbar container frame
 #         cbar.outline.set_visible(False)
         # Fontsize for colorbar ticklabels
-        cbar.ax.tick_params(labelsize=14)
-        # Customize colorbar tick labels
-        cbar.set_ticks(mytks)
-        mytkslabels = [str(int(a)) if (a).is_integer() else str(a) for a in mytks]
-        cbar.ax.set_yticklabels(mytkslabels)
+        if colorticks:
+            cbar.ax.tick_params(labelsize=14)
+            # Customize colorbar tick labels
+            cbar.set_ticks(mytks)
+            mytkslabels = [str(int(a)) if (a).is_integer() else str(a) for a in mytks]
+            cbar.ax.set_yticklabels(mytkslabels)
+        else:   
+            # Remove color bar tick lines, while keeping the tick labels
+            cbarytks = plt.getp(cbar.ax.axes, 'yticklines')
+            plt.setp(cbarytks, visible=False)
+            cbarytks = plt.getp(cbar.ax.axes, 'yticklabels')
+            plt.setp(cbarytks, visible=False)
         # Colorbar label, customize fontsize and distance to colorbar
-        cbar.set_label(colorlabel,rotation=90, fontsize=16, labelpad=5)
-        # Remove color bar tick lines, while keeping the tick labels
-#         cbarytks = plt.getp(cbar.ax.axes, 'yticklines')
-#         plt.setp(cbarytks, visible=False)
+        cbar.set_label(colorlabel,rotation=90, labelpad=5)
+
         
     m.drawmapboundary(linewidth=1.5)    
     if hotspots: plot_hotspots(m, dbs_path=dbs_path, s=30, color='m', edgecolor='k')
 
     return m    
-
-    
-    
-    

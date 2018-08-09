@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from __future__ import absolute_import
 import re
 import os
@@ -17,8 +19,6 @@ if int(npv[0]) != 1:
     raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
 if int(npv[1]) < 7:
     raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
-
-import numpy.distutils.fcompiler
 
 # write short description
 #--------------------------------------------------------------------------
@@ -62,8 +62,8 @@ metadata = dict(name = 'rem3d',
                 author_email='pritwiraj.moulik@gmail.com',
                 license='GPL',
                 packages = ['rem3d'],
-                install_requires=['requests'],
-                data_files=[('', ['README.md'])],
+                install_requires=['requests','future'],
+                data_files=[('rem3d', ['README.md'])],
                 keywords = ['earth-science','earth-observation','earthquake',
                 'earth','earthquake-data','geology','geophysics',
                 'geophysical-inversions','seismology','seismic-inversion',

@@ -1,4 +1,9 @@
-from __future__ import absolute_import
+#!/usr/bin/env python
+
+# python 3 compatibility
+from __future__ import absolute_import, division, print_function
+from builtins import *
+
 from os.path import dirname, basename, isfile
 import glob
 import pkgutil 
@@ -10,6 +15,7 @@ from .version import version as __version__
 # tools: generic tools library
 # data: data analyses library
 # models: models library
+# mapping: mapping library
 # plots: plotting library
 
 __path__ = pkgutil.extend_path(__path__, __name__)
