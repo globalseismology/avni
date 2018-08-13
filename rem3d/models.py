@@ -26,7 +26,7 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from . import plots 
+#from . import plots 
 #######################################################################################
 def readepixfile(filename):
     """Read .epix file format from a file.
@@ -170,25 +170,26 @@ class reference1D(object):
         file format options 'tvel' and 'nd'.
 
         Note: TauP can't handle zero shear velocity in the ocean layer...
-          To work around this, zero values an ocean layer will be written 
-          as 1e-4.
         '''
         if self.data is not None and self.__nlayers__ > 0:
             model_name = self.name
             f = open(model_name+'.tvel','w')
-            f.write('{} - P\n'.format(model_name))
-            f.write('{} - S\n'.format(model_name))
+            f.write(u'{} - P\n'.format(model_name))
+            f.write(u'{} - S\n'.format(model_name))
 
             for i in range(0,len(self.data)):
-                f.write('{:2.4f}   {:2.4f}   {:2.4f}    {:2.4f}\n'.format(
+                f.write(u'{:<10.4f} {:<10.4f} {:<10.4f} {:<10.4f}\n'.format(
                    (self.radius_max - self.data['radius'][::-1][i]) / 1000.0,
-                   self.data['vp'][::-1][i] / 1000.0,
-                   self.data['vs'][::-1][i] / 1000.0,
+                   self.data['vpv'][::-1][i] / 1000.0,
+                   self.data['vsv'][::-1][i] / 1000.0,
                    self.data['rho'][::-1][i] / 1000.0))       
             f.close()
         else:
             raise ValueError('reference1D object is not allocated')
 
+	if self.data['vpv'][-1] == 0 or self.data['vsv'][-1] == 0:
+	    raise Warning('zero velocity layer detected at surface ...\n \
+	                  TauP raytracing may not work')
 
     def to_axisem(self,anelastic=True,anisotropic=True):
         '''
@@ -196,26 +197,33 @@ class reference1D(object):
         '''
         if self.data is not None and self.__nlayers__ > 0:
             model_name = self.name
+            #f = open(model_name+'.bm','w',encoding='utf-8')
             f = open(model_name+'.bm','w')
             n_discon = 0
 
             if anelastic:
-                f.write('ANELASTIC     T\n')
+                #f.write(unicode('ANELASTIC     T\n'))
+                f.write(u'ANELASTIC     T\n')
             else:
-                f.write('ANELASTIC     F\n')
+                #f.write(unicode('ANELASTIC     F\n'))
+                f.write(u'ANELASTIC     F\n')
 
             if anisotropic:
-                f.write('ANISOTROPIC     T\n')
+                #f.write(unicode('ANISOTROPIC     T\n'))
+                f.write(u'ANISOTROPIC     T\n')
             else:
-                f.write('ANISOTROPIC     F\n')
+                #f.write(unicode('ANISOTROPIC     F\n'))
+                f.write(u'ANISOTROPIC     F\n')
 
-            f.write('UNITS      m\n')
+            #f.write(unicode('UNITS      m\n'))
+            f.write(u'UNITS      m\n')
 
             if anisotropic:
-                f.write('COLUMNS   radius    rho    vpv    vsv    qka    qmu    vph    vsh    eta\n')
+                #f.write(unicode('COLUMNS   radius    rho    vpv    vsv    qka    qmu    vph    vsh    eta\n'))
+                f.write(u'COLUMNS   radius    rho    vpv    vsv    qka    qmu    vph    vsh    eta\n')
 
             for i in range(0,len(self.data)):
-                f.write('{}    {}    {}    {}    {}    {}    {}    {}    {}\n'.format(
+                f.write(u'{:<12.2f} {:<12.2f} {:<12.2f} {:<12.2f} {:<12.2f} {:<12.2f} {:<12.2f} {:<12.2f} {:<12.2f}\n'.format(
                 self.data['radius'][::-1][i],
                 self.data['rho'][::-1][i],
                 self.data['vpv'][::-1][i],
@@ -229,7 +237,7 @@ class reference1D(object):
                 if i < len(self.data)-1 and self.data['radius'][::-1][i] == self.data['radius'][::-1][i+1]:
                     depth_here = (self.radius_max - self.data['radius'][::-1][i]) / 1000.0 
                     n_discon += 1
-                    f.write('#    Discontinuity {}, depth {:6.2f} km\n'.format(n_discon,depth_here))
+                    f.write(u'#    Discontinuity {}, depth {:6.2f} km\n'.format(n_discon,depth_here))
         else:
             raise ValueError('reference1D object is not allocated')
             
@@ -344,3 +352,101 @@ class reference1D(object):
         ax22.yaxis.set_minor_locator(minorLocator)
         if ifshow: plt.show()
         plt.savefig(self.name+outfile)
+
+def epix_to_remd3d_ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
+    '''
+    write a rem3d formatted ascii file from a directory containing epix files 
+
+    positional arguments
+    -------------------------------------------------------------------
+    epix_dir: path to directory containing epix layer files
+    output_file: name of rem3d format output file
+    ref_model: the 1D reference model used for the specified tomography model
+    mod_desc: tomographic model parameter (e.g. "(SH+SV)*0.5")
+    n_hpar:number of horizontal parameterizations (currently only handles 
+           models with 1 horizontal parameterization, and with a constant
+	   pixel width)
+    '''
+    f_out = open(output_file,'w')
+    cwd = os.getcwd()
+
+    #find layer info
+    globpath=cwd+'/'+epix_dir+'/*'
+    filenames=glob.glob(globpath) 
+    print('WHAT THE FUCK')
+    print(filenames)
+    print('WHAT THE FUCK')
+    layer_start = []
+    layer_end = []
+
+    for filename in filenames:
+        print(filename)
+	start_ = filename.split('.epix')[-2].split('_')[-2]
+	end_ = filename.split('.epix')[-2].split('_')[-1]
+        layer_start.append(float(start_))
+        layer_end.append(float(end_))
+
+    layer_start.sort()
+    layer_end.sort()
+    print("LAYERSSSSSSSSSSSSSSSSSSSSSSSSS")
+    print(layer_start)
+    print(layer_end)
+    print("LAYERSSSSSSSSSSSSSSSSSSSSSSSSS")
+    zmin = np.min(layer_start)
+    zmax = np.max(layer_end)
+    dz = layer_end[1] - layer_start[1]
+    depths = np.arange(dz,2900.0+dz,dz)
+    depths[0] = zmin
+    depths[-1] = zmax
+
+    #write header
+    kernel_set = 'BOX{:1.0f}+I1D'.format(dz)
+    f_out.write(u'REFERENCE MODEL: {} \n'.format(ref_model))
+    f_out.write(u'KERNEL SET: {}\n'.format(kernel_set))
+
+    #write radial kernels
+    n_rad_kernels = len(depths)-1
+    f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(n_rad_kernels))
+    for i in range(0,n_rad_kernels):
+        f_out.write(u'DESC  {:3.0f}: {}, {:1.1f} - {:1.1f} km\n'.format(i+1,
+        mod_desc,depths[i],depths[i+1]))
+
+    #write horizontal parameterization(s)
+    epixarr = np.loadtxt(filenames[0])
+    lats = epixarr[:,0]
+    lons = epixarr[:,1]
+    px_w = epixarr[:,2] 
+    pixel_width = px_w[0]
+
+    f_out.write(u'HORIZONTAL PARAMETERIZATIONS: {}\n'.format(n_hpar))
+    for i in range(0,n_hpar):
+        f_out.write(u'HPAR   {}: PIXELS,  {:1.1f} x {:1.1f}\n'.format(
+	                                i+1,pixel_width,pixel_width))
+        shape = (int(180.0/pixel_width),int(360.0/pixel_width)) 
+        lats_arr = np.reshape(lats,shape,order='F')
+        lons_arr = np.reshape(lons,shape,order='F')
+        px_w_arr = np.reshape(px_w,shape,order='F')
+
+        lats = lats_arr.flatten()
+        lons = lons_arr.flatten()
+        px_w = px_w_arr.flatten()
+
+	for j in range(0,len(lons)):
+	    if lons[i] > 180.0:
+	        lons[i] -= 360.0
+            f_out.write(u'{:5.1f} {:5.1f} {:5.1f}\n'.format(lons[i],
+	                lats[i], px_w[i]))
+
+    #write model coefficients
+    line = ff.FortranRecordWriter('(6E12.4)')
+    for i in range(0,len(depths)-1):
+        print('writing coefficients for layer ', i+1)
+        epix_name='*{:1.1f}_{:1.1f}.epix'.format(depths[i],depths[i+1])
+	epix_glob = glob.glob(cwd+'/'+epix_dir+'/'+epix_name)
+	print(epix_glob)
+	epixarr = np.loadtxt(epix_glob[0])
+        coefs = epixarr[:,3]
+        coefs_arr = np.reshape(coefs,shape,order='F')
+	coefs = coefs_arr.flatten()
+        f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(i+1,pixel_width))
+        f_out.write(line.write(coefs)+u'\n')
