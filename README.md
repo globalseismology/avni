@@ -10,7 +10,7 @@ Homepage: [rem3d.org](https://maurya.umd.edu)
 
 Documentation: readthedocs [html](http://rem3d.readthedocs.io), [pdf](https://media.readthedocs.org/pdf/rem3d/latest/rem3d.pdf)  
 
-Source code: [github](https://github.com/pmoulik/rem3d) 
+Source code: [github](https://github.com/globalseismology/rem3d) 
 
 Contact the REM3D team at info@rem3d.org with any questions or suggestions.
 
@@ -19,7 +19,7 @@ Contact the REM3D team at info@rem3d.org with any questions or suggestions.
 REM3D needs the following python modules installed in the system.
 * Python 2.7.x or Python 3.4+
 * Python modules:
-  NumPy, SciPy, Matplotlib
+  NumPy, SciPy, Matplotlib, Basemap, Pandas, netCDF4
   
 Users may also want to install MATLAB for some codes. We have tested our versions on MATLAB 2015.
 
@@ -30,20 +30,21 @@ These instructions will get you a copy of the project up and running on your loc
 ### Basic Installation
 
 1. Install the [Anaconda Python Distribution](https://www.continuum.io/downloads). We recommend the 64-bit Python 2.7 version. 
-2. Install some mapping toolboxes (Cartopy, Basemap and its data) with the following options to add topography at all resolutions:
-`conda install -c scitools/label/archive cartopy`
-`conda install -c anaconda basemap`
+2. Install some mapping toolboxes (pandas, Basemap and its data) with the following options to add topography at all resolutions:
+`conda install -c anaconda pandas`
+`conda install -c anaconda netcdf4`
+`conda install -c conda-forge basemap`
 `conda install -c conda-forge basemap-data-hires`
-2. Install REM3D module using pip by opening a terminal window and entering
-`pip install rem3d --user`.  If you are a developer, clone the appropriate branch of the Github repository and enter 'pip install -e . --user'. This lets you to keep working on files inside the Github folder without recompiling the codes.
+3. Install the stable version of REM3D and its additional dependencies with `pip install rem3d`. 
 
-### Matlab and Fortran installation (optional)
+### Advanced installation (for developers)
 
-If you want to use REM3D's Matlab and Fortran routines, you will need to do the following additional steps. This assumes that you have a free account at <https://github.com>
+If you want to use REM3D's development routines, you will need to do the following additional steps. This assumes that you have a free account at <https://github.com>
 
 1. Create an account on our [Web site](https://maurya.umd.edu/login/register) and request access rights from [here](https://maurya.umd.edu/join-us/github).
-2. Please accept the invitation through e-mail. Clone REM3D git repository from the terminal `git clone https://username:password@github.com/pmoulik/rem3d.git`. This will create a directory that contains a folder call `rem3d`.
-3. Open Matlab `matlab -nodisplay` from the same directory that contains `rem3d` and then add it to the path `addpath(genpath('/home/user/Github/rem3d/rem3d-matlab']))`.
+2. Please accept the invitation through e-mail. Clone the development branch REM3D git repository and the appro from the terminal `git clone -b devel https://username:password@github.com/globalseismology/rem3d.git`. This will create a directory that contains a folder call `rem3d`.
+3. Install REM3D module by opening a terminal window, navigating to `rem3d` directory and entering
+`pip install -e . --user`. This lets you to keep working on files inside the Github folder without recompiling the codes..
 
 ## Start Here
 
@@ -68,14 +69,14 @@ Please read [contributing.md](docs/contributing.md) for details on our code of c
 
 ### Versioning
 
-We use [SemVer](http://semver.org/) for versioning as explained in [versioning_conventions.md](docs/versioning_conventions.md). For the versions available, see the [tags on this repository](https://github.com/pmoulik/rem3d/tags). 
+We use [SemVer](http://semver.org/) for versioning as explained in [versioning_conventions.md](docs/versioning_conventions.md). For the versions available, see the [tags on this repository](https://github.com/globalseismology/rem3d/tags). 
 
 ### Authors
 
 * **Pritwiraj Moulik** - *Primary administrator* - [github](https://github.com/pmoulik)
 * **Ved Lekic** - *Co-administrator* - [github](https://github.com/vedlekic)
 
-See also the list of [contributors](https://github.com/pmoulik/rem3d/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/globalseismology/rem3d/contributors) who participated in this project.
 
 ## License
 

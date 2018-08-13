@@ -7,7 +7,7 @@ Welcome to the development wiki of REM3D.  The goal of this page is to provide i
 Get started
 -----------
 
-TPd2VQ developers may want to install the following softwares and extensions to facilitate proper code usage and documentation.
+REM3D developers may want to install the following softwares and extensions to facilitate proper code usage and documentation.
 * sphinx
 * numpydoc (sphinx extension)
 * sphinxcontrib.bibtex for references (sphinx extension)
@@ -21,7 +21,7 @@ sudo pip install sphinxcontrib-bibtex sphinxcontrib-matlabdomain
 sudo pip install recommonmark
 ```
 
-Contributors and core developers should always work in the `devel` branch. To clone that directory, type the following in a terminal using your Github username and password.
+Contributors and core developers should always start with the `devel` branch. To clone the REM3D repository, type the following in a terminal using your Github username and password.
 ```
 git clone -b devel https://username:password@github.com/pmoulik/rem3d.git
 ```
@@ -37,8 +37,6 @@ Further reading
 - [Using Git for REM3D](git_for_REM3D.md):  The standard way of contributing to REM3D development is described here. This approach is recommended for most users, especially those not familiar with Git. These instructions are adequate for contributing to REM3D, but we recommend that all new users to Git attempt the tutorial above for more complete understanding of the workflow.
 
 - [Best Practices](best_practices.md):  Accepted conventions for REM3D development are described here.  To create a product that is maintainable over the long term, it is important that contributing scientists follow these conventions.
-
-
 
 - [Versioning Conventions](versioning_conventions.md):  The conventions behind REM3D's version numbering system are explained here.
 
