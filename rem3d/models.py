@@ -57,7 +57,7 @@ def readepixfile(filename):
         raise IOError("File (",filename,") does not exist in the current directory - ",currentdir)
 
     return epixarr
- 
+
 def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     """
     Reads a standard 3D model file. maxkern is the maximum number of radial kernels
@@ -317,7 +317,7 @@ class radial_basis(object):
 # 3D model class
 class model3d(object):
     '''
-    A class for 1D reference Earth models used in tomography
+    A class for 3D reference Earth models used in tomography
     '''
 
     def __init__(self,file=None,num_resolution=1,num_realization=1):
@@ -355,7 +355,7 @@ class model3d(object):
         for k, v in self.__dict__.items():
             setattr(result, k, deepcopy(v, memo))
         return result
-
+      
     def add_realization(self,resolution=None,name=None,coef=None):
         """
         Added a set of realizations to the object. resolution is the tesselation level at
@@ -1042,3 +1042,4 @@ class reference1D(object):
         ax22.yaxis.set_minor_locator(minorLocator)
         if ifshow: plt.show()
         plt.savefig(self.name+outfile)
+

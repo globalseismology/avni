@@ -18,8 +18,23 @@ import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap, shiftgrid
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
-import pdb
-from scipy.interpolate import griddata
+import multiprocessing
+from joblib import Parallel, delayed
+import pdb    #for the debugger pdb.set_trace()
+# from scipy.io import netcdf_file as netcdf #reading netcdf files
+from netCDF4 import Dataset as netcdf #reading netcdf files
+import scipy.interpolate as spint
+import scipy.spatial.qhull as qhull
+import time
+import progressbar
+# For polar sectionplot
+from matplotlib.transforms import Affine2D
+import mpl_toolkits.axisartist.floating_axes as floating_axes
+import mpl_toolkits.axisartist.angle_helper as angle_helper
+from matplotlib.projections import PolarAxes
+from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
+from matplotlib import gridspec # Relative size of subplots
+
 ####################       IMPORT OWN MODULES     ######################################
 from . import constants
 from . import tools
@@ -214,7 +229,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
     lat_0, lon_0 : center latitude and longitude for the plot
     
     outformat : format of the output file 
-        
+
     kwargs : optional arguments for Basemap 
     """ 
 
@@ -249,14 +264,13 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         mytks = np.append(bounds[bounds.nonzero()],np.ceil(vmax))
         bounds = np.append(bounds,np.ceil(vmax))
         spacing='uniform'
-    elif isinstance(colorcontour,(int, long)): # Number of intervals for color bar
+    elif isinstance(colorcontour,(int, float)): # Number of intervals for color bar
         bounds = np.linspace(vmin,vmax,colorcontour+1)
         mytks = np.arange(vmin,vmax+(vmax-vmin)/4.,(vmax-vmin)/4.)
         mytkslabel = [str(a) for a in mytks]
         spacing='proportional'
     else:
         raise ValueError("Undefined colorcontour in globalmap; should be a numpy array, list or integer")
-        sys.exit(2)        
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
     
     # plot the model
@@ -289,7 +303,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         xyz_new = mapping.spher2cart(rlatlon)
         
         # grid the data.
-        val = griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)    
+        val = spint.griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)    
         s = m.transform_scalar(val,lon,lat, 1000, 500)
         im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
         #im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True)
@@ -301,7 +315,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         X,Y=np.meshgrid(lon,lat)
         val = np.empty_like(X)
         val[:] = np.nan;
-        for i in xrange(0, valarray['lat'].size):
+        for i in range(0, valarray['lat'].size):
             ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
             ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
             val[ilat,ilon] = valarray['val'][i]
@@ -341,6 +355,3 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
             cbarytks = plt.getp(cbar.ax.axes, 'yticklabels')
             plt.setp(cbarytks, visible=False)
     return m    
-    
-    
-    

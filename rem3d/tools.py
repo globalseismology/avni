@@ -102,6 +102,7 @@ def get_projections(checkwrite=True,makedir=True,type='radial'):
     projections = configdir+'/projections.'+type+'.npz'
     exists = os.path.isfile(projections)
     return projections,exists
+
         
 def writejson(nparray,filename,encoding='utf-8'):
     """Writes a json file from a numpy array"""

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from __future__ import absolute_import
 import re
 import os
@@ -131,7 +133,6 @@ metadata = dict(name = 'rem3d',
                 'requests','future','msgpack','argparse','configobj'],
                 data_files=[('rem3d', ['README.md']),
                 ('rem3d/config',['rem3d/config/attributes.ini'])],
-                
                 keywords = ['earth-science','earth-observation','earthquake',
                 'earth','earthquake-data','geology','geophysics',
                 'geophysical-inversions','seismology','seismic-inversion',
