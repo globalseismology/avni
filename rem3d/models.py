@@ -373,9 +373,6 @@ def epix_to_remd3d_ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
     #find layer info
     globpath=cwd+'/'+epix_dir+'/*'
     filenames=glob.glob(globpath) 
-    print('WHAT THE FUCK')
-    print(filenames)
-    print('WHAT THE FUCK')
     layer_start = []
     layer_end = []
 
@@ -388,10 +385,6 @@ def epix_to_remd3d_ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
 
     layer_start.sort()
     layer_end.sort()
-    print("LAYERSSSSSSSSSSSSSSSSSSSSSSSSS")
-    print(layer_start)
-    print(layer_end)
-    print("LAYERSSSSSSSSSSSSSSSSSSSSSSSSS")
     zmin = np.min(layer_start)
     zmax = np.max(layer_end)
     dz = layer_end[1] - layer_start[1]
