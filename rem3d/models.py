@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec # Relative size of subplots
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
+import xarray as xr
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 #from . import plots 
@@ -443,3 +444,121 @@ def epix_to_remd3d_ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
 	coefs = coefs_arr.flatten()
         f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(i+1,pixel_width))
         f_out.write(line.write(coefs)+u'\n')
+
+def rem3d_ascii_to_xarray(rem3d_ascii_file,save_netcdf=False,outfile=None):
+
+    with open(rem3d_ascii_file) as f:
+    
+	#read header
+        for i, line in enumerate(f):
+
+	    if i == 0:
+                ref_model = line.split('REFERENCE MODEL:')[1].strip()
+	    if i == 1:
+                krnl_set = line.split('KERNEL SET:')[1].strip()
+	    if i == 2:
+                nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
+		nrad_krnl = int(nrad_krnl)
+	        break
+
+	#read radial kernels
+	rkrnl_start = np.zeros(nrad_krnl)
+	rkrnl_end = np.zeros(nrad_krnl)
+	#TODO implement other radial kernel options
+	if krnl_set[0:3] == 'BOX':
+            krnl_wdth = krnl_set[3:].split('+')[0]
+	    krnl_wdth = float(krnl_wdth)
+	    npts_dep = nrad_krnl
+
+        for i, line in enumerate(f):
+	    if i <= nrad_krnl-1:
+	        mod_par = line.strip().split()[2].split(',')[0]
+		rkrnl_start[i] = float(line.strip().split()[3])
+		rkrnl_end[i] = float(line.strip().split()[5])
+
+		if i == nrad_krnl-1:
+		    break
+
+	#read horizontal parameterization info
+	hpar_list = []
+	#TODO implement parameterizations besides pixels
+	for i, line in enumerate(f):
+	    if i == 0:
+	        nhpar = int(line.strip().split()[-1])
+		print('NHPAR', nhpar)
+	    elif i== 1:
+	        hpar_type = line.strip().split()[2].split(',')[0]
+	        hpar_name = line.split(':')[1].strip()
+		hpar_list.append(hpar_name)
+
+		if hpar_type == 'PIXELS':
+		    lons = []
+		    lats = []
+		    pxwd = []
+		    pxw_lon = float(line.strip().split()[3])
+		    pxw_lat = float(line.strip().split()[5])
+	        break
+
+        for j in range(0,nhpar):
+	    for i, line in enumerate(f):
+
+	        if line.strip().split()[0] == 'HPAR':
+	            par_type = line.strip()[2].split(',')[0]
+		    #if par_type == 'PIXELS':
+		    #    pxw_lon = float(line.strip()[3])
+		    #    pxw_lat = float(line.strip()[4])
+                    #    npts_lon = int(360. / pxw_lon)
+		    #	npts_lat = int(180. / pxw_lat)
+		    break
+
+		elif line.strip().split()[0] == 'STRU':
+		    i_layer = int(line.strip().split()[1].split(':')[0])
+		    i_hpar = int(line.strip().split()[2])
+		    break
+
+		else:
+		    lons.append(float(line.strip().split()[0]))
+		    lats.append(float(line.strip().split()[1]))
+		    pxwd.append(float(line.strip().split()[2]))
+
+        #read structure coefficients block
+	layer_coefs = []
+	layer_dict = {}
+	for i, line in enumerate(f):
+
+	    if line.strip().split()[0] == 'STRU':
+		layer_dict[i_layer] = layer_coefs
+                i_layer = int(line.strip().split()[1].split(':')[0])
+		i_hpar = int(line.strip().split()[2])
+		layer_coefs = []
+	    else:
+	        for coef in line.strip().split(): 
+                    layer_coefs.append(float(coef))
+
+        layer_dict[i_layer] = layer_coefs #add layer layer to dict
+        #create dims arrays
+        lon = np.arange((pxw_lon/2.),360.,pxw_lon)
+	for i in range(0,len(lon)):
+	    if lon[i] >= 180.0:
+	        lon[i] -= 360.0
+	lat = np.arange(-90.+(pxw_lat/2.),90,pxw_lat)
+	dep = (rkrnl_start + rkrnl_end) / 2.
+
+	#create xarray 
+	data_array = xr.DataArray(np.zeros((len(dep),len(lon),len(lat))),
+	                          dims = ['depth','lon','lat'])
+
+        data_array['lon'] = lon
+	data_array['lat'] = lat
+	data_array['depth'] = dep
+
+	#fill in data array
+	for i,layer in enumerate(layer_dict):
+	    data_array[i,:,:] = np.reshape(layer_dict[layer],
+	                        (len(lon),len(lat)),order='F')
+	print('done reading model')
+	
+	if save_netcdf:
+	    data_array.to_netcdf(outfile)
+
+	return data_array
