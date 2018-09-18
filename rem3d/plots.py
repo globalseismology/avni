@@ -106,6 +106,34 @@ def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm',colorcontour=20):
     return colorVal
                 
 ############################### PLOTTING ROUTINES ################################        
+def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=True,**kwargs):
+    """
+    Plots great-circle paths from lon lat arrays.
+    
+    Parameters
+    ----------
+    m : figure axis handle
+
+    stlon,stlat : station location
+    
+    eplon,eplat : earthquake location
+    
+    ifglobal :  set global extent
+    
+    kwargs : denotes the arguments, if any, for scatter
+
+    """
+    if kwargs:
+        m.drawgreatcircle(eplon,eplat,stlon,stlat, **kwargs)
+        m.scatter(stlon, stlat, marker='^',edgecolors='k', **kwargs)
+        m.scatter(eplon, eplat, marker='o',edgecolors='k', **kwargs)
+    else:
+        m.drawgreatcircle(eplon,eplat,stlon,stlat)
+        m.scatter(stlon, stlat, marker='^', edgecolors='k')
+        m.scatter(eplon, eplat, marker='o', edgecolors='k')
+    m.coastlines(color='gray')
+    if ifglobal: m.set_global()    # set global extent
+    return m
 
 def plot_hotspots(m, dbs_path = '.', lon360 = False, **kwargs):
     """

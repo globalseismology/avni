@@ -86,6 +86,7 @@ else:
 
 f90_dir='rem3d/f2py'
 packagelist=['rem3d']
+for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
 
 
 # write short description
@@ -119,6 +120,12 @@ from os.path import join
 from numpy.distutils.core import Extension
 from numpy.distutils.core import setup
  
+extf = [Extension(name='rem3d.'+module,
+                sources = [join(f90_dir,module,f) for f in os.listdir(join(f90_dir,module)) if f.endswith('.f')],
+                extra_f90_compile_args = f90_flags,
+                extra_link_args = omp_lib)
+            for module in os.listdir(f90_dir)]
+
 
 metadata = dict(name = 'rem3d',
                 version=versionstuff['version'],
@@ -129,6 +136,7 @@ metadata = dict(name = 'rem3d',
                 author_email='pritwiraj.moulik@gmail.com',
                 license='GPL',
                 packages = packagelist,
+                ext_modules = extf,
                 install_requires=['fortranformat','joblib','progressbar2',
                 'requests','future','msgpack','argparse','configobj'],
                 data_files=[('rem3d', ['README.md']),
