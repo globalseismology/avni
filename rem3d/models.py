@@ -530,7 +530,10 @@ class model3d(object):
                 nhorcum = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
                 for jj in np.arange(npx):
                     xlat.append(struct.unpack(ifswp+'f',f.read(4))[0]); cc = cc+4
-                    xlon.append(struct.unpack(ifswp+'f',f.read(4))[0]); cc = cc+4
+                    xlontemp = struct.unpack(ifswp+'f',f.read(4))[0]; cc = cc+4
+                    # Change from -180 to 180 limits to be compatible with model3d format
+                    if xlontemp > 180: xlontemp = xlontemp - 360.
+                    xlon.append(xlontemp)
                     area.append(struct.unpack(ifswp+'f',f.read(4))[0]); cc = cc+4
                 # loop by deptharr
                 projarr={};refstrarr=[];refvalarr={}
@@ -559,41 +562,48 @@ class model3d(object):
             if cc != nbytes: sys.exit("Error: number of bytes read "+str(cc)+" do not match expected ones "+str(nbytes))
             deptharr=np.array(deptharr); refstrarr=np.array(refstrarr)
             xlat=np.array(xlat); xlon=np.array(xlon); area=np.array(area)
+            model = self.name
                         
             h5f = h5py.File(outfile,'w')
-            h5f.create_dataset("infile", dtype="S80",data= np.string_(ntpath.basename(infile)))
-            h5f.create_dataset("ndp", dtype="i4",data=ndp)
-            h5f.create_dataset("npx", dtype="i4",data=npx)
-            h5f.create_dataset("nhorcum", dtype="i4",data=nhorcum)
-            h5f.create_dataset("neval", dtype="i4",data=neval)
-            h5f.create_dataset("deptharr", data=deptharr,compression="gzip")
-            h5f.create_dataset("refstrarr", data=refstrarr,compression="gzip")
-            h5f.create_dataset("xlat", data=xlat,compression="gzip")
-            h5f.create_dataset("xlon", data=xlon,compression="gzip")
-            h5f.create_dataset("area", data=area,compression="gzip")
-            h5f.create_dataset("model", dtype="S80",data=np.string_(model))
-            h5f.create_dataset("param", dtype="S80",data= np.string_(lateral_basis))
+            h5f.attrs["infile"] = np.string_(ntpath.basename(infile))
+            h5f.attrs["ndp"] = ndp
+            h5f.attrs["npx"] = npx
+            h5f.attrs["nhorcum"] = nhorcum
+            h5f.attrs["neval"] = neval
+            h5f.attrs["deptharr"] = deptharr
+            h5f.attrs["refstrarr"] = refstrarr
+            h5f.attrs["xlat"] = xlat
+            h5f.attrs["xlon"] = xlon
+            h5f.attrs["area"] = area
+            h5f.attrs["model"] = np.string_(model)
+            h5f.attrs["param"] = np.string_(lateral_basis)
+            
             for ii in np.arange(len(deptharr)):
                 for jj in np.arange(len(refstrarr)):
-                    h5f.create_dataset("data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/refvalue", data=refvalarr[ii,jj])
-                    h5f.create_dataset("data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/projarr", data=projarr[ii,jj],compression="gzip")   
+                    proj = h5f.create_group("projection/depth_"+str(ii)+ "/refstr_"+str(jj))
+                    proj.attrs['refvalue']=refvalarr[ii,jj]
+                    proj.create_dataset('data',data=projarr[ii,jj].data, compression="gzip")
+                    proj.create_dataset('indptr',data=projarr[ii,jj].indptr, compression="gzip")
+                    proj.create_dataset('indices',data=projarr[ii,jj].indices, compression="gzip")
+                    proj.attrs['shape'] = projarr[ii,jj].shape 
             h5f.close()   
         else:
             print("....reading "+outfile)
             h5f = h5py.File(outfile,'r')
-            ndp=h5f['ndp'].value; npx=h5f['npx'].value; nhorcum=h5f['nhorcum'].value
-            neval=h5f['neval'].value; deptharr=h5f['deptharr'].value
-            refstrarr=h5f['refstrarr'].value; xlat=h5f['xlat'].value
-            xlon=h5f['xlon'].value; area=h5f['area'].value
-            model=h5f['model'].value; param=h5f['param'].value
-            h5f.close()  
+            ndp=h5f.attrs['ndp']; npx=h5f.attrs['npx']; nhorcum=h5f.attrs['nhorcum']
+            neval=h5f.attrs['neval']; deptharr=h5f.attrs['deptharr']
+            refstrarr=h5f.attrs['refstrarr']; xlat=h5f.attrs['xlat']
+            xlon=h5f.attrs['xlon']; area=h5f.attrs['area']
+            model=h5f.attrs['model']; param=h5f.attrs['param']
             
-        # Always read the following from hdf5 so projarr is list of sparse hdf5 - fast I/O
-        projarr={};refvalarr={}
-        for ii in np.arange(len(deptharr)):
-            for jj in np.arange(len(refstrarr)):
-                projarr[ii,jj] = h5f["data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/projarr"]
-                refvalarr[ii,jj] = h5f["data/depth_"+str(ii)+"/refstr_"+str(jj)+ "/refvalue"].value
+            # Always read the following from hdf5 so projarr is list ofsparsehdf5-fast I/O
+            projarr={};refvalarr={}
+            for ii in np.arange(len(deptharr)):
+                for jj in np.arange(len(refstrarr)):
+                    proj = h5f["projection/depth_"+str(ii)+ "/refstr_"+str(jj)]
+                    refvalarr[ii,jj] = proj.attrs['refvalue']
+                    projarr[ii,jj] = sparse.csr_matrix((proj['data'][:], proj['indices'][:],proj['indptr'][:]), proj.attrs['shape'])
+            h5f.close()  
      
         # Write to a dictionary
         projection = {}
@@ -642,7 +652,7 @@ class model3d(object):
         depindex = absdiff.argmin()
         if min(absdiff) > 0. :
             print ("No unique depth found in the projection matrix. Choosing the nearest available depth "+str(deptharr[depindex]))
-        modelselect=projarr[depindex,varindex[0]].value*modelarr    
+        modelselect=projarr[depindex,varindex[0]]*modelarr    
         return modelselect,deptharr[depindex]
 
     def printsplinefiles(self):
