@@ -106,7 +106,7 @@ def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm',colorcontour=20):
     return colorVal
                 
 ############################### PLOTTING ROUTINES ################################        
-def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=True,**kwargs):
+def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
     """
     Plots great-circle paths from lon lat arrays.
     
