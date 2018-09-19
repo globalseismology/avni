@@ -7,18 +7,22 @@ from builtins import *
 from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin, modf
 import sys,os
 import numpy as np #for numerical analysis
+import multiprocessing
+import codecs,json #printing output
+from joblib import Parallel, delayed
+import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
+from netCDF4 import Dataset as netcdf #reading netcdf files
+import scipy.interpolate as spint
 import scipy.spatial.qhull as qhull
+import itertools
+import time
+import progressbar
 
 ############################### PLOTTING ROUTINES ################################        
-from . import constants
+from .trigd import atand,tand
+from .f2py import delazgc # geolib library from NSW
 ###############################
-
-def atand(x):
-    return degrees(atan(x))
-    
-def tand(x):
-    return tan(radians(x))
         
 def midpoint(lat1, lon1, lat2, lon2):
     """Get the mid-point from positions in geographic coordinates.Input values as degrees"""
@@ -39,6 +43,35 @@ def midpoint(lat1, lon1, lat2, lon2):
 
     return [round(degrees(lat3), 2), round(degrees(lon3), 2)]
 
+
+def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
+    """Get the distance and azimuths from positions in geographic coordinates"""
+    
+    geoco=0.993277    
+    if isinstance(eplat,list): # if the input is a list loop 
+        delta=[];azep=[];azst=[]
+        # Standard checks on number of cores
+        avail_cores = multiprocessing.cpu_count()
+        if num_cores > avail_cores: 
+            sys.exit("Number of cores requested ("+str(num_cores)+") is higher than available ("+str(avail_cores)+")")
+        # Crate list of tuples of job arguments and pass to parallel using a helper routine     
+        job_args = [(atand(geoco*tand(item_lat)),eplon[jj],atand(geoco*tand(stlat[jj])),stlon[jj]) for jj, item_lat in enumerate(eplat)]
+        temp=Parallel(n_jobs=num_cores)(delayed(delazgc_helper)(ii) for ii in job_args)
+        for il in temp: delta.append(il[0]);azep.append(il[1]);azst.append(il[2])
+
+    elif isinstance(eplat,float):
+        elat=atand(geoco*tand(eplat))
+        elon=eplon
+        slat=atand(geoco*tand(stlat))
+        slon=stlon
+        delta,azep,azst = delazgc(elat,elon,slat,slon)    
+    else:    
+        print("get_distaz only takes list or floats")
+        sys.exit(2)    
+    return delta,azep,azst
+
+def delazgc_helper(args):
+    return delazgc(*args)
     
 def cart2spher(xyz):
     """Convert from cartesian to spherical coordinates

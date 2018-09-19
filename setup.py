@@ -86,7 +86,7 @@ else:
 
 f90_dir='rem3d/f2py'
 packagelist=['rem3d']
-for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
+#for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
 
 
 # write short description
@@ -120,12 +120,24 @@ from os.path import join
 from numpy.distutils.core import Extension
 from numpy.distutils.core import setup
  
-extf = [Extension(name='rem3d.'+module,
-                sources = [join(f90_dir,module,f) for f in os.listdir(join(f90_dir,module)) if f.endswith('.f')],
+# Use this if you need import rem3d.module for every module folder
+# extf = [Extension(name='rem3d.'+module,
+#                 sources = [join(f90_dir,module,f) for f in os.listdir(join(f90_dir,module)) if f.endswith('.f')],
+#                 extra_f77_compile_args = f90_flags,
+#                 extra_f90_compile_args = f90_flags,
+#                 extra_link_args = omp_lib)
+#             for module in os.listdir(f90_dir)]
+# 
+# Use this if you need a single module for all subroutines import rem3d.f2py
+sourcefiles = []
+for path,dir,filelist in os.walk(join(f90_dir)):
+    for f in filelist:
+        if f.endswith('.f'): sourcefiles.append(join(path,f))
+extf = [Extension(name='rem3d.f2py',
+                sources = sourcefiles,
+                extra_f77_compile_args = f90_flags,
                 extra_f90_compile_args = f90_flags,
-                extra_link_args = omp_lib)
-            for module in os.listdir(f90_dir)]
-
+                extra_link_args = omp_lib)]
 
 metadata = dict(name = 'rem3d',
                 version=versionstuff['version'],
