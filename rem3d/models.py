@@ -677,7 +677,7 @@ class model3d(object):
         return
 
 
-    def plotslices(self,lateral_basis='pixel1',dbs_path='~/dbs'):
+    def plotslices(self,lateral_basis='pixel1',dbs_path='~/dbs',x=0,percent_or_km='%',colormin = -6.,colormax=6.,depth=None):
         """
         Plots interactively a model slice of a variable at a given depth till an 
         invalid depth is input by the user
@@ -685,7 +685,11 @@ class model3d(object):
         Parameters
         ----------
         model3d : the model dictionary read by read3dmodelfile
+        
         param : lateral parameterization dictionary read by readprojmatrix
+        
+        x,percent_or_km, colormin,colormax,depth : plotting options for jupyter 
+                                                   instead of interactive input
         """    
         # Select appropriate modelarray m
         modelarr = self.coeff2modelarr() # convert to modelarr of d = G*m
@@ -714,17 +718,23 @@ class model3d(object):
                     try:
                         x = int(input("Select variable to plot - default is 0:"))
                     except (ValueError,EOFError):
-                        x = 0
+                        x = x
                     try:
                         depth = float(input("Select depth - select any value for topography ["+str(min(deptharr))+"-"+str(max(deptharr))+"] :"))
                     except (ValueError,EOFError):
-                        depth = min(deptharr)
+                        if depth is None:
+                            depth = min(deptharr)
+                        else:
+                            depth = depth
                     if depth < min(deptharr) or depth > max(deptharr):
                         flag=flag-1
                     else:
                         modeleselect,_ = self.getprojtimesmodel(projection,variable=refstrarr[x],depth=depth)
-                        percent_or_km = input("Is the value in percentage or km or percentage -default is % [km/%]:")
-                        if percent_or_km=='': percent_or_km = '%'                            
+                        try:
+                            percent_or_km = input("Is the value in percentage or km or percentage -default is % [km/%]:")
+                        except (EOFError):
+                            percent_or_km = percent_or_km
+                        if percent_or_km == '': percent_or_km = '%'                            
                         if percent_or_km == '%': 
                             modelarray = modeleselect.toarray().flatten()*100. # In Percent assuming elastic parameters
                         else:
@@ -735,7 +745,7 @@ class model3d(object):
                             colorstr = input("Input two values for minimum and maximum values of colorbar - default is -6 6:")
                             colormin,colormax = float(colorstr.split()[0]),float(colorstr.split()[1])
                         except (ValueError,IndexError,EOFError):
-                            colormin = -6.; colormax=6.
+                            colormin = colormin; colormax=colormax
             
                         # Plot the model
                         test = np.vstack((xlat,xlon,modelarray)).transpose()
@@ -748,7 +758,10 @@ class model3d(object):
                         fig.canvas.draw() 
                 except SyntaxError:
                     flag=flag-1
-            new_figure = input("Another figure? y/n:")
+            try:
+                new_figure = input("Another figure? y/n:")
+            except (EOFError):
+                new_figure = 'n'
     
         return 
 
