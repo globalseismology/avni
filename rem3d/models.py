@@ -703,7 +703,7 @@ class model3d(object):
             try: 
                 subplotstr = input("Provide rows and colums of subplots - default  is 1 1:")
                 subploty,subplotx = int(subplotstr.split()[0]),int(subplotstr.split()[1])
-            except (ValueError,IndexError,SyntaxError):
+            except (ValueError,IndexError,SyntaxError,EOFError):
                 subploty = 1; subplotx=1
 
             flag=0  # flag for depth
@@ -713,11 +713,11 @@ class model3d(object):
                     for ii in np.arange(len(refstrarr)): print(ii,refstrarr[ii])
                     try:
                         x = int(input("Select variable to plot - default is 0:"))
-                    except ValueError:
+                    except (ValueError,EOFError):
                         x = 0
                     try:
                         depth = float(input("Select depth - select any value for topography ["+str(min(deptharr))+"-"+str(max(deptharr))+"] :"))
-                    except ValueError:
+                    except (ValueError,EOFError):
                         depth = min(deptharr)
                     if depth < min(deptharr) or depth > max(deptharr):
                         flag=flag-1
@@ -734,7 +734,7 @@ class model3d(object):
                         try: 
                             colorstr = input("Input two values for minimum and maximum values of colorbar - default is -6 6:")
                             colormin,colormax = float(colorstr.split()[0]),float(colorstr.split()[1])
-                        except (ValueError,IndexError):
+                        except (ValueError,IndexError,EOFError):
                             colormin = -6.; colormax=6.
             
                         # Plot the model
