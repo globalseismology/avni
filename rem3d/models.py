@@ -36,7 +36,7 @@ import h5py
 from . import tools   
 from . import plots 
 from . import constants
-               
+from . import io                
 #######################################################################################
 def readepixfile(filename):
     """Read .epix file format from a file.
@@ -561,7 +561,15 @@ class model3d(object):
                                 projarr[ii,kk]=sparse.csr_matrix( (proja,(np.ones_like(coeirow)*jj,coeirow-1)), shape=(npx,nhorcum))
             if cc != nbytes: sys.exit("Error: number of bytes read "+str(cc)+" do not match expected ones "+str(nbytes))
             deptharr=np.array(deptharr); refstrarr=np.array(refstrarr)
+            # save grid
+            namelist = ['xlat', 'xlon', 'area']
+            namelist = [str(name) for name in namelist]
+            formatlist=['f8','f8','f8']
             xlat=np.array(xlat); xlon=np.array(xlon); area=np.array(area)
+            results = [xlat, xlon, area]        
+            results = map(list, zip(*results))
+            dtype = dict(names = namelist, formats=formatlist)     
+            grid = np.array([tuple(x) for x in results],dtype=dtype)
             model = self.name
                         
             h5f = h5py.File(outfile,'w')
@@ -572,9 +580,7 @@ class model3d(object):
             h5f.attrs["neval"] = neval
             h5f.attrs["deptharr"] = deptharr
             h5f.attrs["refstrarr"] = refstrarr
-            h5f.attrs["xlat"] = xlat
-            h5f.attrs["xlon"] = xlon
-            h5f.attrs["area"] = area
+            io.store_numpy_hdf(h5f,'grid',grid)
             h5f.attrs["model"] = np.string_(model)
             h5f.attrs["param"] = np.string_(lateral_basis)
             
@@ -582,18 +588,15 @@ class model3d(object):
                 for jj in np.arange(len(refstrarr)):
                     proj = h5f.create_group("projection/depth_"+str(ii)+ "/refstr_"+str(jj))
                     proj.attrs['refvalue']=refvalarr[ii,jj]
-                    proj.create_dataset('data',data=projarr[ii,jj].data, compression="gzip")
-                    proj.create_dataset('indptr',data=projarr[ii,jj].indptr, compression="gzip")
-                    proj.create_dataset('indices',data=projarr[ii,jj].indices, compression="gzip")
-                    proj.attrs['shape'] = projarr[ii,jj].shape 
+                    io.store_sparse_hdf(h5f,"projection/depth_"+str(ii)+ "/refstr_"+str(jj),projarr[ii,jj])
             h5f.close()   
         else:
             print("....reading "+outfile)
             h5f = h5py.File(outfile,'r')
             ndp=h5f.attrs['ndp']; npx=h5f.attrs['npx']; nhorcum=h5f.attrs['nhorcum']
             neval=h5f.attrs['neval']; deptharr=h5f.attrs['deptharr']
-            refstrarr=h5f.attrs['refstrarr']; xlat=h5f.attrs['xlat']
-            xlon=h5f.attrs['xlon']; area=h5f.attrs['area']
+            refstrarr=h5f.attrs['refstrarr']; grid = io.load_numpy_hdf(h5f,'grid') 
+            xlat=grid['xlat']; xlon=grid['xlon']; area=grid['area']
             model=h5f.attrs['model']; param=h5f.attrs['param']
             
             # Always read the following from hdf5 so projarr is list ofsparsehdf5-fast I/O
@@ -602,7 +605,7 @@ class model3d(object):
                 for jj in np.arange(len(refstrarr)):
                     proj = h5f["projection/depth_"+str(ii)+ "/refstr_"+str(jj)]
                     refvalarr[ii,jj] = proj.attrs['refvalue']
-                    projarr[ii,jj] = sparse.csr_matrix((proj['data'][:], proj['indices'][:],proj['indptr'][:]), proj.attrs['shape'])
+                    projarr[ii,jj] = io.load_sparse_hdf(h5f,"projection/depth_"+str(ii)+ "/refstr_"+str(jj))
             h5f.close()  
      
         # Write to a dictionary
