@@ -18,10 +18,13 @@ import scipy.spatial.qhull as qhull
 import itertools
 import time
 import progressbar
+import pint # For SI units
+ureg = pint.UnitRegistry()
 
 ############################### PLOTTING ROUTINES ################################        
 from .trigd import atand,tand
 from .f2py import delazgc # geolib library from NSW
+from . import constants
 ###############################
         
 def midpoint(lat1, lon1, lat2, lon2):
@@ -47,7 +50,7 @@ def midpoint(lat1, lon1, lat2, lon2):
 def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
     """Get the distance and azimuths from positions in geographic coordinates"""
     
-    geoco=0.993277    
+    geoco = constants.geoco
     if isinstance(eplat,list): # if the input is a list loop 
         delta=[];azep=[];azst=[]
         # Standard checks on number of cores
@@ -66,8 +69,7 @@ def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
         slon=stlon
         delta,azep,azst = delazgc(elat,elon,slat,slon)    
     else:    
-        print("get_distaz only takes list or floats")
-        sys.exit(2)    
+        raise ValueError("get_distaz only takes list or floats")
     return delta,azep,azst
 
 def delazgc_helper(args):
@@ -100,10 +102,10 @@ def spher2cart(rlatlon):
  
 def getDestinationLatLong(lat,lng,azimuth,distance):
     '''returns the lat an long of destination point 
-    given the start lat, long, aziuth, and distance'''
-    R = 6378.1 #Radius of the Earth in km
+    given the start lat, long, aziuth, and distance (in meters)'''
+    R = constants.R #Radius of the Earth in m
     brng = radians(azimuth) #Bearing is degrees converted to radians.
-    d = distance/1000 #Distance m converted to km
+    d = distance * ureg.m #Distance m 
     lat1 = radians(lat) #Current dd lat point converted to radians
     lon1 = radians(lng) #Current dd long point converted to radians
     lat2 = asin(sin(lat1) * cos(d/R) + cos(lat1)* sin(d/R)* cos(brng))

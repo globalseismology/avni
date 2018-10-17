@@ -6,6 +6,8 @@ from builtins import *
 import scipy.constants
 import pdb    #for the debugger pdb.set_trace()
 import pkgutil
+import pint # For SI units
+ureg = pint.UnitRegistry()
 
 """
 download files
@@ -21,8 +23,8 @@ configfolder = 'config'
 """
 Mapping constants
 """
-geoco=0.993277    #correction for geographic-geocentric conversion
-
+geoco = 0.993277    #correction for geographic-geocentric conversion
+R = 6371000. * ureg.m    #Radius of the Earth in m
 
 """
 Color scales
