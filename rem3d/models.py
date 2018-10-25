@@ -36,7 +36,7 @@ import h5py
 from . import tools   
 from . import plots 
 from . import constants
-from . import io                
+from . import io 
 #######################################################################################
 def readepixfile(filename):
     """Read .epix file format from a file.
@@ -297,21 +297,47 @@ class radial_basis(object):
     their radial parameterization and any scaling that is used.
     '''
     def __init__(self):
-        self.data = None
+        self.data = {}
+        self.data['depths'] = None
+        self.data['vercof'] = None
+        self.data['dvercof'] = None
         self.metadata = {}
         self.metadata['name'] = None
         self.metadata['type'] = None
-        self.metadata['depths'] = None
+        self.metadata['knots'] = None
     
     def readprojfile(self,projfile):
         """
-        Reads a projection matrix file that evaluates the radial bases at various depths.
+        Reads a projection matrix file that goes between the radial bases.
         """    
 
-    def eval_radial(self,depth):
+    def eval_radial(self,depths):
         """
-        Reads a projection matrix file that evaluates the radial bases at various depths.
-        """    
+        Evaluates the radial bases at various depths.
+        
+        Input parameters:
+        ----------------
+        
+        depths: depths (in ikm) where the radial parameteriation needs to be evaluated. 
+        """  
+
+        if isinstance(depths, (list,tuple,np.ndarray)):
+            depths = np.asarray(depths)
+        elif isinstance(depths, float):
+            depths = np.asarray([depths])
+        else:
+            raise TypeError('depths must be list or tuple, not %s' % type(depths))
+
+        # compute the radial parameteriation in specific depths
+        if self.metadata['type'] is 'vbspl':
+            vercof, dvercof = tools.eval_vbspl(depths,self.metadata['knots'])
+            self.data['vercof'] = vercof
+            self.data['dvercof'] = dvercof
+            self.data['depths'] = depths
+        else:
+            raise TypeError('metadata type note defined in eval_radial %s' % self.metadata['type'])
+
+              
 
 #####################
 # 3D model class
