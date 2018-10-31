@@ -1,4 +1,4 @@
-      parameter (mxnbn=50000)
+      parameter (mxnbn=500000)
       common /nbncommon/ nreadnbn,ivernbn,cmtnamenbn,stampnbn,
      #  catalognbn,regionnbn,lyearnbn,monthnbn,idaynbn,ihnbn,minnbn,
      #  fsecnbn,eplatnbn,eplongnbn,depthnbn,xmbnbn,xmsnbn,
