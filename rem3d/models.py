@@ -36,7 +36,7 @@ import h5py
 from . import tools   
 from . import plots 
 from . import constants
-               
+from . import io 
 #######################################################################################
 def readepixfile(filename):
     """Read .epix file format from a file.
@@ -297,21 +297,47 @@ class radial_basis(object):
     their radial parameterization and any scaling that is used.
     '''
     def __init__(self):
-        self.data = None
+        self.data = {}
+        self.data['depths'] = None
+        self.data['vercof'] = None
+        self.data['dvercof'] = None
         self.metadata = {}
         self.metadata['name'] = None
         self.metadata['type'] = None
-        self.metadata['depths'] = None
+        self.metadata['knots'] = None
     
     def readprojfile(self,projfile):
         """
-        Reads a projection matrix file that evaluates the radial bases at various depths.
+        Reads a projection matrix file that goes between the radial bases.
         """    
 
-    def eval_radial(self,depth):
+    def eval_radial(self,depths):
         """
-        Reads a projection matrix file that evaluates the radial bases at various depths.
-        """    
+        Evaluates the radial bases at various depths.
+        
+        Input parameters:
+        ----------------
+        
+        depths: depths (in ikm) where the radial parameteriation needs to be evaluated. 
+        """  
+
+        if isinstance(depths, (list,tuple,np.ndarray)):
+            depths = np.asarray(depths)
+        elif isinstance(depths, float):
+            depths = np.asarray([depths])
+        else:
+            raise TypeError('depths must be list or tuple, not %s' % type(depths))
+
+        # compute the radial parameteriation in specific depths
+        if self.metadata['type'] is 'vbspl':
+            vercof, dvercof = tools.eval_vbspl(depths,self.metadata['knots'])
+            self.data['vercof'] = vercof
+            self.data['dvercof'] = dvercof
+            self.data['depths'] = depths
+        else:
+            raise TypeError('metadata type note defined in eval_radial %s' % self.metadata['type'])
+
+              
 
 #####################
 # 3D model class
@@ -561,7 +587,15 @@ class model3d(object):
                                 projarr[ii,kk]=sparse.csr_matrix( (proja,(np.ones_like(coeirow)*jj,coeirow-1)), shape=(npx,nhorcum))
             if cc != nbytes: sys.exit("Error: number of bytes read "+str(cc)+" do not match expected ones "+str(nbytes))
             deptharr=np.array(deptharr); refstrarr=np.array(refstrarr)
+            # save grid
+            namelist = ['xlat', 'xlon', 'area']
+            namelist = [str(name) for name in namelist]
+            formatlist=['f8','f8','f8']
             xlat=np.array(xlat); xlon=np.array(xlon); area=np.array(area)
+            results = [xlat, xlon, area]        
+            results = map(list, zip(*results))
+            dtype = dict(names = namelist, formats=formatlist)     
+            grid = np.array([tuple(x) for x in results],dtype=dtype)
             model = self.name
                         
             h5f = h5py.File(outfile,'w')
@@ -572,9 +606,7 @@ class model3d(object):
             h5f.attrs["neval"] = neval
             h5f.attrs["deptharr"] = deptharr
             h5f.attrs["refstrarr"] = refstrarr
-            h5f.attrs["xlat"] = xlat
-            h5f.attrs["xlon"] = xlon
-            h5f.attrs["area"] = area
+            io.store_numpy_hdf(h5f,'grid',grid)
             h5f.attrs["model"] = np.string_(model)
             h5f.attrs["param"] = np.string_(lateral_basis)
             
@@ -582,18 +614,15 @@ class model3d(object):
                 for jj in np.arange(len(refstrarr)):
                     proj = h5f.create_group("projection/depth_"+str(ii)+ "/refstr_"+str(jj))
                     proj.attrs['refvalue']=refvalarr[ii,jj]
-                    proj.create_dataset('data',data=projarr[ii,jj].data, compression="gzip")
-                    proj.create_dataset('indptr',data=projarr[ii,jj].indptr, compression="gzip")
-                    proj.create_dataset('indices',data=projarr[ii,jj].indices, compression="gzip")
-                    proj.attrs['shape'] = projarr[ii,jj].shape 
+                    io.store_sparse_hdf(h5f,"projection/depth_"+str(ii)+ "/refstr_"+str(jj),projarr[ii,jj])
             h5f.close()   
         else:
             print("....reading "+outfile)
             h5f = h5py.File(outfile,'r')
             ndp=h5f.attrs['ndp']; npx=h5f.attrs['npx']; nhorcum=h5f.attrs['nhorcum']
             neval=h5f.attrs['neval']; deptharr=h5f.attrs['deptharr']
-            refstrarr=h5f.attrs['refstrarr']; xlat=h5f.attrs['xlat']
-            xlon=h5f.attrs['xlon']; area=h5f.attrs['area']
+            refstrarr=h5f.attrs['refstrarr']; grid = io.load_numpy_hdf(h5f,'grid') 
+            xlat=grid['xlat']; xlon=grid['xlon']; area=grid['area']
             model=h5f.attrs['model']; param=h5f.attrs['param']
             
             # Always read the following from hdf5 so projarr is list ofsparsehdf5-fast I/O
@@ -602,7 +631,7 @@ class model3d(object):
                 for jj in np.arange(len(refstrarr)):
                     proj = h5f["projection/depth_"+str(ii)+ "/refstr_"+str(jj)]
                     refvalarr[ii,jj] = proj.attrs['refvalue']
-                    projarr[ii,jj] = sparse.csr_matrix((proj['data'][:], proj['indices'][:],proj['indptr'][:]), proj.attrs['shape'])
+                    projarr[ii,jj] = io.load_sparse_hdf(h5f,"projection/depth_"+str(ii)+ "/refstr_"+str(jj))
             h5f.close()  
      
         # Write to a dictionary
@@ -677,7 +706,7 @@ class model3d(object):
         return
 
 
-    def plotslices(self,lateral_basis='pixel1',dbs_path='~/dbs'):
+    def plotslices(self,lateral_basis='pixel1',dbs_path='~/dbs',x=0,percent_or_km='%',colormin = -6.,colormax=6.,depth=None):
         """
         Plots interactively a model slice of a variable at a given depth till an 
         invalid depth is input by the user
@@ -685,7 +714,11 @@ class model3d(object):
         Parameters
         ----------
         model3d : the model dictionary read by read3dmodelfile
+        
         param : lateral parameterization dictionary read by readprojmatrix
+        
+        x,percent_or_km, colormin,colormax,depth : plotting options for jupyter 
+                                                   instead of interactive input
         """    
         # Select appropriate modelarray m
         modelarr = self.coeff2modelarr() # convert to modelarr of d = G*m
@@ -703,7 +736,7 @@ class model3d(object):
             try: 
                 subplotstr = input("Provide rows and colums of subplots - default  is 1 1:")
                 subploty,subplotx = int(subplotstr.split()[0]),int(subplotstr.split()[1])
-            except (ValueError,IndexError,SyntaxError):
+            except (ValueError,IndexError,SyntaxError,EOFError):
                 subploty = 1; subplotx=1
 
             flag=0  # flag for depth
@@ -713,18 +746,24 @@ class model3d(object):
                     for ii in np.arange(len(refstrarr)): print(ii,refstrarr[ii])
                     try:
                         x = int(input("Select variable to plot - default is 0:"))
-                    except ValueError:
-                        x = 0
+                    except (ValueError,EOFError):
+                        x = x
                     try:
                         depth = float(input("Select depth - select any value for topography ["+str(min(deptharr))+"-"+str(max(deptharr))+"] :"))
-                    except ValueError:
-                        depth = min(deptharr)
+                    except (ValueError,EOFError):
+                        if depth is None:
+                            depth = min(deptharr)
+                        else:
+                            depth = depth
                     if depth < min(deptharr) or depth > max(deptharr):
                         flag=flag-1
                     else:
                         modeleselect,_ = self.getprojtimesmodel(projection,variable=refstrarr[x],depth=depth)
-                        percent_or_km = input("Is the value in percentage or km or percentage -default is % [km/%]:")
-                        if percent_or_km=='': percent_or_km = '%'                            
+                        try:
+                            percent_or_km = input("Is the value in percentage or km or percentage -default is % [km/%]:")
+                        except (EOFError):
+                            percent_or_km = percent_or_km
+                        if percent_or_km == '': percent_or_km = '%'                            
                         if percent_or_km == '%': 
                             modelarray = modeleselect.toarray().flatten()*100. # In Percent assuming elastic parameters
                         else:
@@ -734,8 +773,8 @@ class model3d(object):
                         try: 
                             colorstr = input("Input two values for minimum and maximum values of colorbar - default is -6 6:")
                             colormin,colormax = float(colorstr.split()[0]),float(colorstr.split()[1])
-                        except (ValueError,IndexError):
-                            colormin = -6.; colormax=6.
+                        except (ValueError,IndexError,EOFError):
+                            colormin = colormin; colormax=colormax
             
                         # Plot the model
                         test = np.vstack((xlat,xlon,modelarray)).transpose()
@@ -748,7 +787,10 @@ class model3d(object):
                         fig.canvas.draw() 
                 except SyntaxError:
                     flag=flag-1
-            new_figure = input("Another figure? y/n:")
+            try:
+                new_figure = input("Another figure? y/n:")
+            except (EOFError):
+                new_figure = 'n'
     
         return 
 
