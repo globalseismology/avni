@@ -50,8 +50,8 @@ def eval_vbspl(depths,knots):
         raise TypeError('depths must be list or tuple, not %s' % type(depths))
 
     # find repeated values
-    repeats = [item for item, count in Counter(knots).iteritems() if count > 1]
-    repeats_gt_2= [item for item, count in Counter(knots).iteritems() if count > 2]
+    repeats = [item for item, count in Counter(knots).items() if count > 1]
+    repeats_gt_2= [item for item, count in Counter(knots).items() if count > 2]
     if len(repeats_gt_2) != 0: raise ValueError('Cannot have more than 2 repetitions in knots')
     
     if len(repeats) > 0: # if there are repeated knots, splits it
