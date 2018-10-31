@@ -11,9 +11,89 @@ import sys
 import codecs,json #printing output
 import numpy as np
 from math import ceil
+from collections import Counter
+import pdb
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import constants
+from rem3d.f2py import vbspl
 #######################################################################################
+
+def eval_vbspl(depths,knots):
+    """
+    Evaluate the cubic spline know with second derivative as 0 at end points.
+    
+    Input parameters:
+    ----------------
+    
+    depth: value or array of depths queried
+    
+    knots: numpy array or list of depths of spline knots
+    
+    Output:
+    ------
+    
+    vercof, dvercof: value of the spline coefficients at each depth and its derivative.
+                      Both arrays have size (Ndepth, Nknots).
+    
+    """
+    if isinstance(knots, (list,tuple,np.ndarray)):
+        knots = np.asarray(knots)
+        knots = np.sort(knots)
+    else:
+        raise TypeError('knots must be list or tuple, not %s' % type(knots))
+        
+    if isinstance(depths, (list,tuple,np.ndarray)):
+        depths = np.asarray(depths)
+    elif isinstance(depths, float):
+        depths = np.asarray([depths])
+    else:
+        raise TypeError('depths must be list or tuple, not %s' % type(depths))
+
+    # find repeated values
+    repeats = [item for item, count in Counter(knots).iteritems() if count > 1]
+    repeats_gt_2= [item for item, count in Counter(knots).iteritems() if count > 2]
+    if len(repeats_gt_2) != 0: raise ValueError('Cannot have more than 2 repetitions in knots')
+    
+    if len(repeats) > 0: # if there are repeated knots, splits it
+        split_at = []
+        for ii in range(len(repeats)):
+            split_at.append(np.where(knots==repeats[ii])[0][1])
+        knots_list = np.split(knots, split_at)
+        
+        jj = 0
+        for depth in depths:
+            jj = jj + 1
+            for kk in range(len(knots_list)):
+                # create the arrays as Fortran-contiguous
+                splpts = np.array(knots_list[kk].tolist(), order = 'F')
+                #Undefined if depth does not lie within the depth extents of knot points
+                if depth < min(knots_list[kk]) or depth > max(knots_list[kk]): 
+                    temp1 = temp2 = np.zeros_like(splpts)
+                else:
+                    (temp1, temp2) = vbspl(depth,len(splpts),splpts)
+                if kk == 0:
+                    vercof_temp = temp1; dvercof_temp = temp2
+                else:
+                    vercof_temp = np.concatenate((vercof_temp,temp1))
+                    dvercof_temp = np.concatenate((dvercof_temp,temp1))    
+            if jj == 1:
+                vercof = vercof_temp; dvercof = dvercof_temp
+            else:    
+                vercof = np.vstack([vercof,vercof_temp]) 
+                dvercof = np.vstack([dvercof,dvercof_temp]) 
+    else:
+        # create the arrays as Fortran-contiguous
+        splpts = np.array(knots.tolist(), order = 'F')
+        jj = 0
+        for depth in depths:
+            jj = jj + 1
+            (vercof_temp, dvercof_temp) = vbspl(depth,len(splpts),splpts)
+            if jj == 1:
+                vercof = vercof_temp; dvercof = dvercof_temp
+            else:    
+                vercof = np.vstack([vercof,vercof_temp]) 
+                dvercof = np.vstack([dvercof,dvercof_temp]) 
+    return vercof, dvercof
 
 def firstnonspaceindex(string):
     """
