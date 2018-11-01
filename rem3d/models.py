@@ -31,6 +31,7 @@ import re
 from copy import copy, deepcopy
 import struct
 import h5py
+from collections import Counter
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import tools   
@@ -241,10 +242,9 @@ class lateral_basis(object):
         types = ['ylm','sh','wavelet','slepians']
         """
         # check the type 
-        if isinstance(types,string_types): types = np.array(types) 
         if len(names) !=len(types): raise ValueError("len(names) !=len(types)")
-
-        for ii in np.arange(len(types)):
+        if isinstance(types,string_types): types = np.array(types) 
+        for ii in np.arange(types.size):
             # if does not exist already`or not the same as self type
             if types[ii] not in self.proj.keys() and types[ii] != self.metadata['type']:         
                 self.proj[types[ii]] = {}
@@ -802,12 +802,16 @@ class reference1D(object):
     A class for 1D reference Earth models used in tomography
     '''
 
-    def __init__(self):
+    def __init__(self,file=None):
         self.__nlayers__ = None
         self.data = None
         self.metadata = {}
         self.name = None
         self.radius_max = None
+        if file is not None: 
+            self.read(file)
+            self.get_Love_elastic()
+            self.get_discontinuity()
     
     def __str__(self):
         if self.data is not None and self.__nlayers__ > 0:
@@ -825,6 +829,9 @@ class reference1D(object):
             formats=[np.float for ii in range(len(names))]
             modelarr = np.genfromtxt(file,dtype=None,comments='#',skip_header=3,
             names=names)
+            # Add depth assuming model describes from Earth center to surface
+            names.append('depth'); formats.append(np.float)
+            modelarr=append_fields(modelarr, 'depth', np.max(modelarr['radius'])-modelarr['radius'], usemask=False)
             self.metadata['attributes'] = names
             self.metadata['description'] = 'Read from '+file
             self.metadata['filename'] = file
@@ -837,6 +844,7 @@ class reference1D(object):
         Model1D_Attr = np.dtype([(native_str(names[ii]),formats[ii]) for ii in range(len(names))])
         self.data = np.zeros(self.__nlayers__,dtype=Model1D_Attr)
         self.data['radius'] = modelarr['radius']
+        self.data['depth'] = modelarr['depth']
         self.data['rho'] = modelarr['rho']
         self.data['vpv'] = modelarr['vpv']
         self.data['vsv'] = modelarr['vsv']
@@ -846,12 +854,25 @@ class reference1D(object):
         self.data['vsh'] = modelarr['vsh']
         self.data['eta'] = modelarr['eta']
         self.radius_max = np.max(self.data['radius'])
+        
 
     def get_Love_elastic(self):
         '''
         Get the Love parameters and Voigt averaged elastic properties with depth
+        
+        A,C,N,L,F: anisotropy elastic Love parameters
+        kappa: bulk modulus
+        mu: shear modulus
+        vphi: bulk sound velocity
+        xi: shear anisotropy ratio
+        phi: P anisotropy ratio
+        Zs, Zp: S and P impedances
         '''
         if self.data is not None and self.__nlayers__ > 0:
+            # Add metadata
+            self.metadata['attributes'].append(['A','C','N','L','F','vp','vs','vphi','xi','phi','Zp','Zs'])
+            
+            # Add data fields
             self.data=append_fields(self.data, 'A', self.data['rho']*self.data['vph']**2 , usemask=False)
             self.data=append_fields(self.data, 'C', self.data['rho']*self.data['vpv']**2 , usemask=False)
             self.data=append_fields(self.data, 'N', self.data['rho']*self.data['vsh']**2 , usemask=False)
@@ -861,12 +882,51 @@ class reference1D(object):
             self.data=append_fields(self.data, 'mu', (self.data['A']+self.data['C']-2.*self.data['F']+5.*self.data['N']+6.*self.data['L'])/15. , usemask=False)
             self.data=append_fields(self.data, 'vp', np.sqrt(np.divide((self.data['kappa']+4.*self.data['mu']/3.),self.data['rho'])) , usemask=False)
             self.data=append_fields(self.data, 'vs', np.sqrt(np.divide(self.data['mu'],self.data['rho'])) , usemask=False)
+            self.data=append_fields(self.data, 'vphi', np.sqrt(np.divide(self.data['kappa'],self.data['rho'])) , usemask=False)
             with np.errstate(divide='ignore', invalid='ignore'): # Ignore warning about dividing by zero
                 xi = np.power(np.divide(self.data['vsh'],self.data['vsv']),2)
             self.data=append_fields(self.data, 'xi', xi , usemask=False)
             self.data=append_fields(self.data, 'phi', np.power(np.divide(self.data['vpv'],self.data['vph']),2) , usemask=False)
+            self.data=append_fields(self.data, 'Zp', self.data['vp']*self.data['rho'], usemask=False)
+            self.data=append_fields(self.data, 'Zs', self.data['vs']*self.data['rho'], usemask=False)
         else:
             raise ValueError('reference1D object is not allocated')
+
+    def get_discontinuity(self):
+        '''
+        Get values, average values and contrasts at discontinuities
+        
+        Output:
+        ------
+        
+        Returns a structure self.metadata['disc'] that has three arrays:
+        
+        delta: containing absolute difference in attributes between smaller/larger radii 
+        average: containing absolute average attributes between smaller/larger radii
+        contrasts: containing contrast in attributes (in %)
+        '''
+        
+        disc_depths = [item for item, count in Counter(self.data['depth']).items() if count > 1]
+        disc = {}
+# Create a named array for discontinuities
+        disc['delta'] = np.zeros(len(np.unique(disc_depths)),dtype=self.data.dtype)
+        disc['contrast'] = np.copy(disc['delta']);disc['average'] = np.copy(disc['delta'])
+        
+        icount  = 0
+        for depth in np.unique(disc_depths):
+            sel = self.data[np.where(self.data['depth']==depth)]
+            for field in self.data.dtype.names:
+                if field == 'radius' or field == 'depth':
+                    disc['delta'][field][icount] = sel[0][field]
+                    disc['average'][field][icount] = sel[0][field]
+                    disc['contrast'][field][icount] = sel[0][field]
+                else:
+                    disc['delta'][field][icount] = sel[0][field]-sel[1][field] 
+                    disc['average'][field][icount] = 0.5*(sel[0][field]+sel[1][field])
+                    disc['contrast'][field][icount] = abs(disc['delta'][field][icount]) / disc['average'][field][icount]*100.
+            icount = icount+1
+        self.metadata['discontinuities'] = disc
+
 
     def get_custom_parameter(self,parameters):
         '''
@@ -876,21 +936,21 @@ class reference1D(object):
             # convert to array for ease of looping
             if isinstance(parameters,string_types): parameters = np.array(parameters) 
             
-            for parameter in parameters:
-                if 'SH-SV' in parameter:
-                    self.data=append_fields(self.data, parameter, self.data['vsh'] - self.data['vsv'] , usemask=False)
-                elif 'PH-PV' in parameter:
-                    self.data=append_fields(self.data, parameter, self.data['vph'] - self.data['vpv'] , usemask=False)
-                elif '(SH+SV)*0.5' in parameter:
-                    self.data=append_fields(self.data, parameter, (self.data['vsh'] + self.data['vsv'])/2. , usemask=False)
-                elif '(PH+PV)*0.5' in parameter:
-                    self.data=append_fields(self.data, parameter, (self.data['vph'] + self.data['vpv'])/2. , usemask=False)
-                elif 'dETA/ETA' in parameter:
-                    self.data=append_fields(self.data, parameter, self.data['eta'] , usemask=False)
-                elif 'dRHO/RHO' in parameter:
-                    self.data=append_fields(self.data, parameter, self.data['rho'] , usemask=False)                
+            for ii in np.arange(parameters.size):
+                if 'SH-SV' in parameters[ii]:
+                    self.data=append_fields(self.data, parameters[ii], self.data['vsh'] - self.data['vsv'] , usemask=False)
+                elif 'PH-PV' in parameters[ii]:
+                    self.data=append_fields(self.data, parameters[ii], self.data['vph'] - self.data['vpv'] , usemask=False)
+                elif '(SH+SV)*0.5' in parameters[ii]:
+                    self.data=append_fields(self.data, parameters[ii], (self.data['vsh'] + self.data['vsv'])/2. , usemask=False)
+                elif '(PH+PV)*0.5' in parameters[ii]:
+                    self.data=append_fields(self.data, parameters[ii], (self.data['vph'] + self.data['vpv'])/2. , usemask=False)
+                elif 'dETA/ETA' in parameters[ii]:
+                    self.data=append_fields(self.data, parameters[ii], self.data['eta'] , usemask=False)
+                elif 'dRHO/RHO' in parameters[ii]:
+                    self.data=append_fields(self.data, parameters[ii], self.data['rho'] , usemask=False)                
                 else:
-                    raise NotImplementedError('parameter ',parameter,' is not currently implemented in reference1D.get_custom_parameter')
+                    raise NotImplementedError('parameter ',parameters[ii],' is not currently implemented in reference1D.get_custom_parameter')
         else:
             raise ValueError('reference1D object is not allocated')
 
@@ -1065,6 +1125,7 @@ class reference1D(object):
         ax21.plot(depthkmarr[top1000km],anisoVs[top1000km],'b')
         ax21.plot(depthkmarr[top1000km],anisoVp[top1000km],'r')
         ax21.set_ylim([0, 4])        
+        ax21.set_xlim([0., 1000.])
         majorLocator = MultipleLocator(1)
         majorFormatter = FormatStrFormatter('%d')
         minorLocator = MultipleLocator(0.5)
@@ -1085,6 +1146,7 @@ class reference1D(object):
         ax21.set_ylabel("$V_P$"+' or '+"$V_S$"+' anisotropy (%)')
         ax22.set_ylabel('Shear attenuation Q'+'$_{\mu}$')
         ax22.set_ylim([0, 400])        
+        ax22.set_xlim([0., 1000.])
         majorLocator = MultipleLocator(100)
         majorFormatter = FormatStrFormatter('%d')
         minorLocator = MultipleLocator(50)
