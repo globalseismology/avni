@@ -318,7 +318,7 @@ class radial_basis(object):
         Input parameters:
         ----------------
         
-        depths: depths (in ikm) where the radial parameteriation needs to be evaluated. 
+        depths: depths (in km) where the radial parameteriation needs to be evaluated. 
         """  
 
         if isinstance(depths, (list,tuple,np.ndarray)):
