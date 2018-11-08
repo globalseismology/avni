@@ -59,6 +59,9 @@ def eval_vbspl(depths,knots):
         for ii in range(len(repeats)):
             split_at.append(np.where(knots==repeats[ii])[0][1])
         knots_list = np.split(knots, split_at)
+        for knots in knots_list: 
+            if len(knots) < 4:
+                raise ValueError('Atleast 4 knots need to be defined at or between '+str(min(knots))+' and '+str(max(knots))+' km') 
         
         jj = 0
         for depth in depths:
@@ -82,12 +85,18 @@ def eval_vbspl(depths,knots):
                 vercof = np.vstack([vercof,vercof_temp]) 
                 dvercof = np.vstack([dvercof,dvercof_temp]) 
     else:
+        if len(knots) < 4:
+            raise ValueError('Atleast 4 knots need to be defined at or between '+str(min(knots))+' and '+str(max(knots))+' km') 
         # create the arrays as Fortran-contiguous
         splpts = np.array(knots.tolist(), order = 'F')
         jj = 0
         for depth in depths:
             jj = jj + 1
-            (vercof_temp, dvercof_temp) = vbspl(depth,len(splpts),splpts)
+            #Undefined if depth does not lie within the depth extents of knot points
+            if depth < min(knots) or depth > max(knots): 
+                vercof_temp = dvercof_temp = np.zeros_like(splpts)
+            else:
+                (vercof_temp, dvercof_temp) = vbspl(depth,len(splpts),splpts)
             if jj == 1:
                 vercof = vercof_temp; dvercof = dvercof_temp
             else:    
