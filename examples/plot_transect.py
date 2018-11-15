@@ -30,23 +30,10 @@ def main():
         help='Base path containing FILE')   
     parser.add_argument('-c', '--num_cores', type=int, default=1,
         help='Number of cores to use')
-    parser.add_argument('--topo_tree', type=str, default=None,
-        help='cPickled ckDTree object containing structure of the topography grid')
-    parser.add_argument('--tomo_tree', type=str, default=None,
-        help='cPickled ckDTree object containing structure of the tomography file')
     arg = parser.parse_args()
     
     filename=arg.base_path+'/'+arg.file
-    print arg.topo_tree
 
-    if arg.topo_tree is not None:
-        print 'READING TOPOGRAPHY TREE'
-        topo_tree = cPickle.load(open(arg.dbs_path+'/'+arg.topo_tree, 'r'))
-	print 'DONE'
-    if arg.tomo_tree is not None:
-        print 'READING TOMOGRAPHY TREE'
-        tomo_tree = cPickle.load(open(arg.dbs_path+'/'+arg.tomo_tree, 'r'))
-	print 'DONE'
 
     ##### Example of a regional transects
     #Japan
@@ -60,19 +47,20 @@ def main():
 #     plot1section(lat1,lng1,azep,delta,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{P} / V_{P}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval)
 
     # N. Chile    
-    print "PLOTTING SECTION 1"
+    print("PLOTTING SECTION 1")
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
     delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
-    plot1section(lat1,lng1,azep,delta,topo_tree=topo_tree,tomo_tree=tomo_tree,filename=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=50,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=200,numevalt=50,k=8)
+    topo_tree,tomo_tree = plot1section(lat1,lng1,azep,delta,modelname=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=50,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=200,numevalt=50,k=8)
 
     ###### Example of a 180 degree transect without topography
-    print "PLOTTING SECTION 2"
+    print("PLOTTING SECTION 2")
     lat1 = 0.;lng1 = 0.;azimuth = -30.;gcdelta = 180.
-    plot1section(lat1,lng1,azimuth,gcdelta,topo_tree=topo_tree,tomo_tree=tomo_tree,filename=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=360,numevalz=360,k=8)
+    plot1section(lat1,lng1,azimuth,gcdelta,topotree=topo_tree,modeltree=tomo_tree,modelname=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=360,numevalz=360,k=8)
 
     ###### Example of a 360 degree transect without topography
+    print("PLOTTING SECTION 3")
     lat1 = 0.;lng1 = 0.;azimuth = -45.;gcdelta = 360.
-    plot1section(lat1,lng1,azimuth,gcdelta,topo_tree=topo_tree,tomo_tree=tomo_tree,filename=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=720,numevalz=720,k=8)
+    plot1section(lat1,lng1,azimuth,gcdelta,topotree=topo_tree,modeltree=tomo_tree,modelname=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=720,numevalz=720,k=8)
         
     return
 

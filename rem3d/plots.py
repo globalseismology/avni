@@ -23,7 +23,7 @@ import scipy.spatial.qhull as qhull
 import itertools
 import time
 import progressbar
-import cPickle
+import pickle
 import xarray as xr
 # For polar sectionplot
 from matplotlib.transforms import Affine2D
@@ -499,7 +499,7 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
     
     return ax1, aux_ax
 
-def gettopotransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path='.',plottopo=False,numeval=50,downsampleetopo1=True,distnearthreshold=5.,stride=10,k=1):
+def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd', tree= None, dbs_path='.', plottopo=False,numeval=50,downsampleetopo1=True, distnearthreshold=5.,stride=10,k=1):
     """Get the topography transect.dbs_path should have filename. numeval is number of evaluations of topo/bathymetry along the transect. downsampleetopo1 if true samples every 3 points to get 0.5 deg before interpolation. distnearthreshold is the threshold for nearest points to consider for interpolation in km. """
 
     #read topography file
@@ -507,19 +507,25 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='ETOPO1_Bed_g_g
     if os.path.isfile(dbs_path+'/'+filename):
         f = Dataset(dbs_path+'/'+filename)
     else:
-        print "Error: Could not find file "+dbs_path+'/'+filename    
-        pdb.set_trace()
-        sys.exit(2)
+        raise InputError("Error: Could not find file "+dbs_path+'/'+filename)
     lons = f.variables['lon'][::stride]
     lats = f.variables['lat'][::stride]
     topo2d = f.variables['z'][::stride,::stride]
 
+    #Build the tree if none is provided
     if tree is None:
-        lons2d,lats2d = np.meshgrid(lons,lats)
-	rads2d = np.zeros(len(topo2d.flatten())) + 6371.0
-	rlatlon = np.array(zip(rads2d.flatten(),lats2d.flatten(),lons2d.flatten()))
-	xyz = mapping.spher2cart(rlatlon)
-	tree = cKDTree(xyz)
+        treefile = '.'.join(filename.split('.')[:-1])+'.KDTree.pkl'
+        if os.path.isfile(dbs_path+'/'+treefile):
+            print('... Reading KDtree file '+treefile)
+            tree = pickle.load(open(dbs_path+'/'+treefile,'r'))
+        else:
+            print('... KDtree file '+treefile+' not found for interpolations. Building it')
+            lons2d,lats2d = np.meshgrid(lons,lats)        
+            rads2d = np.zeros(len(topo2d.flatten())) + 6371.0
+            rlatlon = np.array(zip(rads2d.flatten(),lats2d.flatten(),lons2d.flatten()))
+            xyz = mapping.spher2cart(rlatlon)
+            tree = cKDTree(xyz)
+            pickle.dump(tree,open(dbs_path+'/'+treefile,'wb'))
 
     #find destination point
     lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
@@ -536,8 +542,8 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='ETOPO1_Bed_g_g
     vals = topo2d.flatten(order='C')[inds]
     
     f.close() #close netcdf file
-    print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
-    return qpts_rlatlon,vals
+    #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
+    return qpts_rlatlon,vals,tree
     
 def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     """Plot a section on the axis ax. """        
@@ -559,7 +565,7 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     return ax
     
 
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='S40RTS_pixel_0.5x0.5.nc4',parameter='vs',radii=[3480.,6346.6],dbs_path='/home/rmaguire/dbs',numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S40RTS_pixel_0.5x0.5.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path='.',numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
     #read tomography file
@@ -568,26 +574,27 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='S40RTS_pixel_
         #f = Dataset(dbs_path+'/'+filename)
         f = xr.open_dataarray(dbs_path+'/'+filename)
     else:
-        print "Error: Could not find file "+dbs_path+'/'+filename    
-        pdb.set_trace()
-        sys.exit(2)
-
-    print f
+        raise InputError("Error: Could not find file "+dbs_path+'/'+filename)    
+        
     lon = f['lon']
     lat = f['lat']
     dep = f['depth']
     rad = 6371.0 - dep
-    print rad
     dvs = f.data
 
     #Build the tree if none is provided
     if tree is None:
-        mgrid = np.meshgrid(lon,lat,rad)
-	rlatlon = np.array(zip(mgrid[2].flatten(),mgrid[1].flatten(),mgrid[0].flatten()))
-	xyz = mapping.spher2cart(rlatlon)
-	print 'BUILDING TREE'
-	tree = cKDTree(xyz)
-	cPickle.dump(tree,open('S40RTS_pixel_0.5x0.5_TREE.pkl','w'))
+        treefile = '.'.join(filename.split('.')[:-1])+'.KDTree.pkl'
+        if os.path.isfile(dbs_path+'/'+treefile):
+            print('... Reading KDtree file '+treefile)
+            tree = pickle.load(open(dbs_path+'/'+treefile,'r'))
+        else:
+            print('... KDtree file '+treefile+' not found for interpolations. Building it')
+            mgrid = np.meshgrid(lon,lat,rad)
+            rlatlon = np.array(zip(mgrid[2].flatten(),mgrid[1].flatten(),mgrid[0].flatten()))
+            xyz = mapping.spher2cart(rlatlon)
+            tree = cKDTree(xyz)
+            pickle.dump(tree,open(dbs_path+'/'+treefile,'wb'))
 
     lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
     interval=gcdelta*111325./(numevalx-1) # interval in km
@@ -596,7 +603,6 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='S40RTS_pixel_
         
     if(len(coords) != numevalx):
         raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
-
     evalpoints=np.column_stack((radevalarr[0]*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
     for radius in radevalarr[1:]:
         pointstemp = np.column_stack((radius*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
@@ -604,29 +610,18 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='S40RTS_pixel_
 
     coordstack = mapping.spher2cart(evalpoints)
     d,inds = tree.query(coordstack,k=k)
-    print coordstack
-    print coordstack.shape
-
     npts_surf = coords.shape[0]
     if k == 1:
         tomovals = dvs.flatten(order='F')[inds]
     else:
         w = 1.0 / d**2
         tomovals = np.sum(w * dvs.flatten(order='F')[inds], axis = 1)/ np.sum(w, axis=1)
-	
-    xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')
-        
+    xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')     
     f.close() #close netcdf file
-    return evalpoints,xsec.T
+    return evalpoints,xsec.T,tree
 
-def plot1section(lat1,lng1,azimuth,gcdelta,topo_tree=None,tomo_tree=None,filename='S40RTS_pixel_0.5x0.5.nc4',parameter='vs',vmin=None,vmax=None,dbs_path='.', colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalt=50,numevalx=50,numevalz=50,k=1,outfile=None):
+def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',modelname='S40RTS_pixel_0.5x0.5.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalt=50,numevalx=50,numevalz=50,k=1,topofile='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
     """Plot one section through the Earth through a pair of points.""" 
-    
-    fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
-    gs = gridspec.GridSpec(1, 2, width_ratios=width_ratios) 
-
-    fig.subplots_adjust(wspace=0.3, left=0.05, right=0.95)
-    fig.patch.set_facecolor('white')
     
     # Specify theta such that it is symmetric
     lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
@@ -637,15 +632,19 @@ def plot1section(lat1,lng1,azimuth,gcdelta,topo_tree=None,tomo_tree=None,filenam
     theta_range=np.linspace(theta[0],theta[1],nelevinter)
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
-    if vexaggerate != 0:
-        if outfile is not None:
-            rlatlon,elev=gettopotransect(lat1,lng1,azimuth,gcdelta,tree=topo_tree,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path=dbs_path,plottopo=False,numeval=numevalt,downsampleetopo1=True,distnearthreshold    =5.,stride=10,k=1)
-        else:
-            rlatlon,elev=gettopotransect(lat1,lng1,azimuth,gcdelta,tree=topo_tree,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path=dbs_path,plottopo=False,numeval=numevalt,downsampleetopo1=True,distnearthreshold    =5.,stride=10,k=1)
+    if vexaggerate != 0:   
+        rlatlon,elev,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,filename=topofile, tree=topotree,dbs_path=dbs_path,plottopo=False,numeval=numevalt,downsampleetopo1=True,distnearthreshold    =5.,stride=10,k=1)
         if min(elev)< 0.:
              extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
         else:
              extend_radius=max(elev)*vexaggerate/1000.
+    
+    # Start plotting
+    fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
+    gs = gridspec.GridSpec(1, 2, width_ratios=width_ratios) 
+
+    fig.subplots_adjust(wspace=0.3, left=0.05, right=0.95)
+    fig.patch.set_facecolor('white')
     
     ####### Inset map
     ax=plt.subplot(gs[0])
@@ -676,10 +675,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,topo_tree=None,tomo_tree=None,filenam
     except ValueError:
         cpalette=customcolorpalette(colorpalette)
         
-    if outfile is not None:
-        junk,values = getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=tomo_tree,filename=filename,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,k=k)
-    else:
-        junk,values = getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=tomo_tree,filename=filename,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,k=k)
+    junk,values,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,filename=modelname,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,k=k)
     interp_values=np.array(values)
     
     #interp_values=(interp_values-interp_values.mean()).reshape((n3dmodelinter,n3dmodelinter))
@@ -716,7 +712,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,topo_tree=None,tomo_tree=None,filenam
     plt.draw()
     if outfile is not None:
         fig1.savefig(outfile,dpi=100)
-    return 
+    return topotree, modeltree
 
 def plot1globalmap(epixarr,vmin,vmax,dbs_path='.',colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
     """Plot one global map""" 
@@ -727,7 +723,7 @@ def plot1globalmap(epixarr,vmin,vmax,dbs_path='.',colorpalette='rainbow2',projec
     else:
         globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
     if ifshow: plt.show()
-    fig.savefig(filename+outformat,dpi=300)
+    fig.savefig(modelname+outformat,dpi=300)
     return 
 
 def plot1hitmap(hitfile,dbs_path='.',projection='robin',lat_0=0,lon_0=150,colorcontour=[0,25,100,250,400,600,800,1000,1500,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000],colorpalette='Blues',outformat='.pdf',ifshow=True):
