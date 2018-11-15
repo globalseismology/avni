@@ -18,14 +18,18 @@ import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 from netCDF4 import Dataset as netcdf #reading netcdf files
 import scipy.interpolate as spint
+from scipy.spatial import cKDTree
 import scipy.spatial.qhull as qhull
 import itertools
 import time
 import progressbar
+import cPickle
+import xarray as xr
 # For polar sectionplot
 from matplotlib.transforms import Affine2D
 import mpl_toolkits.axisartist.floating_axes as floating_axes
 import mpl_toolkits.axisartist.angle_helper as angle_helper
+from netCDF4 import Dataset
 from matplotlib.projections import PolarAxes
 from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
 from matplotlib import gridspec # Relative size of subplots
@@ -495,87 +499,45 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
     
     return ax1, aux_ax
 
-def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path='.',plottopo=False,numeval=50,downsampleetopo1=True,distnearthreshold=5.,outfile='transect_topo.json'):
+def gettopotransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path='.',plottopo=False,numeval=50,downsampleetopo1=True,distnearthreshold=5.,stride=10,k=1):
     """Get the topography transect.dbs_path should have filename. numeval is number of evaluations of topo/bathymetry along the transect. downsampleetopo1 if true samples every 3 points to get 0.5 deg before interpolation. distnearthreshold is the threshold for nearest points to consider for interpolation in km. """
-    
-    recalculate=True
-    if os.path.isfile(outfile):
-        [lat1_t,lng1_t,azimuth_t,gcdelta_t,filename_t,dbs_path_t,plottopo_t,numeval_t,downsampleetopo1_t,distnearthreshold_t],evalpoints_t,grid_z1_t=tools.readjson(outfile)
-        dbs_path=tools.get_fullpath(dbs_path)
-        if lat1_t==lat1 and lng1_t==lng1 and azimuth_t==azimuth and gcdelta_t==gcdelta and str(filename_t)==filename and str(dbs_path_t)==dbs_path and plottopo_t==plottopo and numeval_t==numeval and downsampleetopo1_t==downsampleetopo1 and distnearthreshold_t==distnearthreshold:
-            evalpoints=evalpoints_t
-            grid_z1=grid_z1_t
-            recalculate=False
-    
-    if recalculate:    
-        # Calculate intermediate points            
-        lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
-        interval=gcdelta*111325./(numeval-1) # interval in km
-        coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
-        
-        if(len(coords) != numeval):
-            print "Error: The number of intermediate points is not accurate. Decrease it?"
-            pdb.set_trace()
-            sys.exit(2)
-    
-        # Read the topography file
-        dbs_path=tools.get_fullpath(dbs_path)
-        if os.path.isfile(dbs_path+'/'+filename):
-            data = netcdf(dbs_path+'/'+filename,'r')
-        else:
-            print "Error: Could not find file "+dbs_path+'/'+filename    
-            pdb.set_trace()
-            sys.exit(2)
-    
-        # Create the arrays for interpolation
-        radarr=np.array([6371.])
-        if downsampleetopo1: 
-            sampling=3
-        else:
-            sampling=1    
-        lonarr=data.variables['lon'][::][0::sampling] #sample every 3 points to get 0.5 deg
-        latarr=data.variables['lat'][::][0::sampling] #sample every 3 points to get 0.5 deg
-        grid_y, grid_z, grid_x=np.meshgrid(latarr,radarr,lonarr)
-    #     grid_x, grid_y = np.meshgrid(data.variables['lon'][::],data.variables['lat'][::])    
-        values=data.variables['z'][::][0::sampling,0::sampling] #sample every 3 points to get 0.5 deg    
-        if plottopo:
-            fig=plt.figure() 
-            ax=fig.add_subplot(1,1,1)
-            ax.pcolormesh(grid_x,grid_y,values,cmap='coolwarm')
-            plt.show()
-        #Evaluate the topography at the points
-        rlatlon=np.column_stack((np.ravel(grid_z), np.ravel(grid_y), np.ravel(grid_x)))
 
-        t0 = time.time()
-        gridpoints=mapping.spher2cart(rlatlon)
-        evalpoints=np.column_stack((6371.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
-        coordstack=mapping.spher2cart(evalpoints)
-        checkifnear=np.zeros_like(gridpoints[:,0],dtype=bool) # array for checking if the point is near to any point in the path (coordstack)
-    
-        print "....Getting the topography transect from "+dbs_path+'/'+filename
-        bar = progressbar.ProgressBar(maxval=len(coordstack), \
-        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-        bar.start()
-        for ii in np.arange(len(coordstack)):
-            dist=np.sqrt( np.power(gridpoints[:,0]-coordstack[ii,0],2) + np.power(gridpoints[:,1]-coordstack[ii,1],2) + np.power(gridpoints[:,2]-coordstack[ii,2],2) )
-            checkifneartemp=dist<distnearthreshold
-            checkifnear=np.logical_or(checkifnear,checkifneartemp)
-            if len(np.where(checkifneartemp==True)[0]) == 0: 
-                print "Error: No points found with the given distnearthreshold in atleast 1 point. Increase the bound? "
-                sys.exit(2)
-            bar.update(ii+1)    
-        bar.finish()
-    
-        indexselect=np.where(checkifnear==True)[0]    
-        valuesselect=np.ravel(values)[indexselect]    
-        print("--- Chose %s points with distances < %s km for interpolation ---" % (len(valuesselect),  distnearthreshold))
-        grid_z1 = spint.griddata(gridpoints[indexselect], valuesselect, coordstack, method='nearest')
-    
-        writearr=np.array([[lat1,lng1,azimuth,gcdelta,filename,dbs_path,plottopo,numeval,downsampleetopo1,distnearthreshold],evalpoints.tolist(),grid_z1.tolist()])
-        tools.writejson(writearr,outfile)
-        data.close() #close netcdf file
-    return evalpoints,grid_z1
+    #read topography file
+    dbs_path=tools.get_fullpath(dbs_path)
+    if os.path.isfile(dbs_path+'/'+filename):
+        f = Dataset(dbs_path+'/'+filename)
+    else:
+        print "Error: Could not find file "+dbs_path+'/'+filename    
+        pdb.set_trace()
+        sys.exit(2)
+    lons = f.variables['lon'][::stride]
+    lats = f.variables['lat'][::stride]
+    topo2d = f.variables['z'][::stride,::stride]
 
+    if tree is None:
+        lons2d,lats2d = np.meshgrid(lons,lats)
+	rads2d = np.zeros(len(topo2d.flatten())) + 6371.0
+	rlatlon = np.array(zip(rads2d.flatten(),lats2d.flatten(),lons2d.flatten()))
+	xyz = mapping.spher2cart(rlatlon)
+	tree = cKDTree(xyz)
+
+    #find destination point
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
+    interval=gcdelta*111325./(numeval-1) # interval in km
+    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
+
+    #query tree for topography
+    qpts_lng = np.linspace(lng1,lng2,len(coords))
+    qpts_lat = np.linspace(lat1,lat2,len(coords))
+    qpts_rad = np.linspace(6371.0,6371.0,len(coords))
+    qpts_rlatlon = np.array(zip(qpts_rad,qpts_lat,qpts_lng))
+    qpts_xyz = mapping.spher2cart(qpts_rlatlon)
+    d,inds = tree.query(qpts_xyz,k=k)
+    vals = topo2d.flatten(order='C')[inds]
+    
+    f.close() #close netcdf file
+    print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
+    return qpts_rlatlon,vals
     
 def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     """Plot a section on the axis ax. """        
@@ -597,81 +559,68 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     return ax
     
 
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',parameter='vs',radii=[3480.,6346.6],dbs_path='.',numeval=200,distnearthreshold=500.,outfile='transect_model3D.json'):
-    """Get the topography transect.dbs_path should have filename. numeval is number of evaluations of topo/bathymetry along the transect. downsampleetopo1 if true samples every 3 points to get 0.5 deg before interpolation. distnearthreshold is the threshold for nearest points to consider for interpolation in km. """
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='S40RTS_pixel_0.5x0.5.nc4',parameter='vs',radii=[3480.,6346.6],dbs_path='/home/rmaguire/dbs',numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
+    """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
-    recalculate=True
-    if os.path.isfile(outfile):
-        [lat1_t,lng1_t,azimuth_t,gcdelta_t,parameter_t,filename_t,dbs_path_t,numeval_t,distnearthreshold_t],radii_t,evalpoints_t,grid_z1_t=tools.readjson(outfile)
-        dbs_path=tools.get_fullpath(dbs_path)
-        if lat1_t==lat1 and lng1_t==lng1 and azimuth_t==azimuth and gcdelta_t==gcdelta and str(parameter_t)==parameter and str(filename_t)==filename and str(dbs_path_t)==dbs_path and numeval_t==numeval and distnearthreshold_t==distnearthreshold and radii_t ==radii:
-            evalpoints=evalpoints_t
-            grid_z1=grid_z1_t
-            recalculate=False
-    
-    if recalculate:    
-        # Calculate intermediate points            
-        lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
-        interval=gcdelta*111325./(numeval-1) # interval in km
-        radevalarr=np.linspace(radii[0],radii[1],numeval) #radius arr in km
-        coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
-        
-        if(len(coords) != numeval):
-            raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
-        
-        # Read the topography file
-        dbs_path=tools.get_fullpath(dbs_path)
-        if os.path.isfile(dbs_path+'/'+filename):
-            data = netcdf(dbs_path+'/'+filename,'r')
-        else:
-            print "Error: Could not find file "+dbs_path+'/'+filename    
-            sys.exit(2)
-        # Create the arrays for interpolation
-        radarr=6371.-data.variables['depth'][::]    
-        lonarr=data.variables['longitude'][::]
-        latarr=data.variables['latitude'][::]
-        grid_y, grid_z,grid_x=np.meshgrid(latarr,radarr,lonarr)
-        values=data.variables[parameter][::]
-        #Evaluate the topography at the points
-        rlatlon=np.column_stack((np.ravel(grid_z), np.ravel(grid_y), np.ravel(grid_x)))
+    #read tomography file
+    dbs_path=tools.get_fullpath(dbs_path)
+    if os.path.isfile(dbs_path+'/'+filename):
+        #f = Dataset(dbs_path+'/'+filename)
+        f = xr.open_dataarray(dbs_path+'/'+filename)
+    else:
+        print "Error: Could not find file "+dbs_path+'/'+filename    
+        pdb.set_trace()
+        sys.exit(2)
 
-        t0 = time.time()
-        gridpoints=mapping.spher2cart(rlatlon)
-        evalpoints=np.column_stack((radevalarr[0]*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
-        for radius in radevalarr[1:]:
-            pointstemp=np.column_stack((radius*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
-            evalpoints=np.row_stack((evalpoints,pointstemp))    
+    print f
+    lon = f['lon']
+    lat = f['lat']
+    dep = f['depth']
+    rad = 6371.0 - dep
+    print rad
+    dvs = f.data
 
-        coordstack=mapping.spher2cart(evalpoints)
-        checkifnear=np.zeros_like(gridpoints[:,0],dtype=bool) # array for checking if the point is near to any point in the path (coordstack)
-    
+    #Build the tree if none is provided
+    if tree is None:
+        mgrid = np.meshgrid(lon,lat,rad)
+	rlatlon = np.array(zip(mgrid[2].flatten(),mgrid[1].flatten(),mgrid[0].flatten()))
+	xyz = mapping.spher2cart(rlatlon)
+	print 'BUILDING TREE'
+	tree = cKDTree(xyz)
+	cPickle.dump(tree,open('S40RTS_pixel_0.5x0.5_TREE.pkl','w'))
+
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
+    interval=gcdelta*111325./(numevalx-1) # interval in km
+    radevalarr=np.linspace(radii[0],radii[1],numevalz) #radius arr in km
+    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
         
-        print("....Getting the 3D-model transect from "+dbs_path+'/'+filename)
-        bar = progressbar.ProgressBar(maxval=len(coordstack), \
-        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-        bar.start()
-        for ii in np.arange(len(coordstack)):
-            dist=np.sqrt( np.power(gridpoints[:,0]-coordstack[ii,0],2) + np.power(gridpoints[:,1]-coordstack[ii,1],2) + np.power(gridpoints[:,2]-coordstack[ii,2],2) )
-            checkifneartemp=dist<distnearthreshold
-            checkifnear=np.logical_or(checkifnear,checkifneartemp)
-            if len(np.where(checkifneartemp==True)[0]) == 0: 
-                raise ValueError("Error: No points found with the given distnearthreshold in atleast 1 point. Increase the bound? ")
-            bar.update(ii+1)    
-        bar.finish()
-    
-        indexselect=np.where(checkifnear==True)[0]    
-        valuesselect=np.ravel(values)[indexselect]    
-        print("--- Chose %s points with distances < %s km for interpolation ---" % (len(valuesselect),  distnearthreshold))
-        grid_z1 = spint.griddata(gridpoints[indexselect], valuesselect, coordstack, method='nearest')
-    
-        writearr=np.array([[lat1,lng1,azimuth,gcdelta,parameter,filename,dbs_path,numeval,distnearthreshold],radii,evalpoints.tolist(),grid_z1.tolist()])
-                
-        tools.writejson(writearr,outfile)
-        data.close() #close netcdf file
-    return evalpoints,grid_z1
-    
+    if(len(coords) != numevalx):
+        raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
 
-def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',parameter='vs',vmin=None,vmax=None,dbs_path='.', colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],outfile=None):
+    evalpoints=np.column_stack((radevalarr[0]*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
+    for radius in radevalarr[1:]:
+        pointstemp = np.column_stack((radius*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
+        evalpoints = np.row_stack((evalpoints,pointstemp))
+
+    coordstack = mapping.spher2cart(evalpoints)
+    d,inds = tree.query(coordstack,k=k)
+    print coordstack
+    print coordstack.shape
+
+    npts_surf = coords.shape[0]
+    if k == 1:
+        tomovals = dvs.flatten(order='F')[inds]
+    else:
+        w = 1.0 / d**2
+        tomovals = np.sum(w * dvs.flatten(order='F')[inds], axis = 1)/ np.sum(w, axis=1)
+	
+    xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')
+    np.save('xsec{}.np'.format(numevalz),xsec)
+        
+    f.close() #close netcdf file
+    return evalpoints,xsec.T
+
+def plot1section(lat1,lng1,azimuth,gcdelta,topo_tree=None,tomo_tree=None,filename='S40RTS_pixel_0.5x0.5.nc4',parameter='vs',vmin=None,vmax=None,dbs_path='.', colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalt=50,numevalx=50,numevalz=50,k=1,outfile=None):
     """Plot one section through the Earth through a pair of points.""" 
     
     fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
@@ -691,9 +640,9 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
     extend_radius=0.
     if vexaggerate != 0:
         if outfile is not None:
-            rlatlon,elev=gettopotransect(lat1,lng1,azimuth,gcdelta,dbs_path=dbs_path,numeval=nelevinter,outfile='transect_'+outfile.split('.')[0]+'_topo.json')
+            rlatlon,elev=gettopotransect(lat1,lng1,azimuth,gcdelta,tree=topo_tree,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path=dbs_path,plottopo=False,numeval=numevalt,downsampleetopo1=True,distnearthreshold    =5.,stride=10,k=1)
         else:
-            rlatlon,elev=gettopotransect(lat1,lng1,azimuth,gcdelta,dbs_path=dbs_path,numeval=nelevinter)
+            rlatlon,elev=gettopotransect(lat1,lng1,azimuth,gcdelta,tree=topo_tree,filename='ETOPO1_Bed_g_gmt4.grd',dbs_path=dbs_path,plottopo=False,numeval=numevalt,downsampleetopo1=True,distnearthreshold    =5.,stride=10,k=1)
         if min(elev)< 0.:
              extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
         else:
@@ -706,7 +655,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
         insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
     elif gcdelta >= 30. and gcdelta <=180:
         numdegticks=7
-        insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,        numdegticks=numdegticks)
+        insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
     else:    
         numdegticks=7
         width=gcdelta*1.2
@@ -719,7 +668,8 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
 
     # Plot the model section
 #     grid_x, grid_y = np.mgrid[theta[0]:theta[1]:200j,3480.:6346.6:200j]
-    grid_x, grid_y = np.meshgrid(np.linspace(theta[0],theta[1],n3dmodelinter),np.linspace(radii[0],radii[1],n3dmodelinter))
+    #grid_x, grid_y = np.meshgrid(np.linspace(theta[0],theta[1],n3dmodelinter),np.linspace(radii[0],radii[1],n3dmodelinter))
+    grid_x, grid_y = np.meshgrid(np.linspace(theta[0],theta[1],numevalx),np.linspace(radii[0],radii[1],numevalz))
 
     # Get the color map
     try:
@@ -728,12 +678,13 @@ def plot1section(lat1,lng1,azimuth,gcdelta,filename='S362ANI+M_kmps.nc',paramete
         cpalette=customcolorpalette(colorpalette)
         
     if outfile is not None:
-        junk,values = getmodeltransect(lat1,lng1,azimuth,gcdelta,filename=filename,parameter=parameter,radii=radii,dbs_path=dbs_path,numeval=n3dmodelinter,outfile='transect_'+outfile.split('.')[0]+'_model3D.json')
+        junk,values = getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=tomo_tree,filename=filename,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,k=k)
     else:
-        junk,values = getmodeltransect(lat1,lng1,azimuth,gcdelta,filename=filename,parameter=parameter,radii=radii,dbs_path=dbs_path,numeval=n3dmodelinter)
+        junk,values = getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=tomo_tree,filename=filename,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,k=k)
     interp_values=np.array(values)
     
-    interp_values=(interp_values-interp_values.mean()).reshape((n3dmodelinter,n3dmodelinter))
+    #interp_values=(interp_values-interp_values.mean()).reshape((n3dmodelinter,n3dmodelinter))
+    interp_values=(interp_values-interp_values.mean()).reshape((numevalx,numevalz))
 
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)
