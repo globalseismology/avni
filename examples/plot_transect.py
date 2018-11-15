@@ -63,7 +63,7 @@ def main():
     print "PLOTTING SECTION 1"
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
     delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
-    plot1section(lat1,lng1,azep,delta,topo_tree=topo_tree,tomo_tree=tomo_tree,filename=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=50,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=60,numevalz=60,numevalt=50,k=8)
+    plot1section(lat1,lng1,azep,delta,topo_tree=topo_tree,tomo_tree=tomo_tree,filename=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=50,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=200,numevalt=50,k=8)
 
     ###### Example of a 180 degree transect without topography
     print "PLOTTING SECTION 2"

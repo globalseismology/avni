@@ -615,7 +615,6 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,tree=None,filename='S40RTS_pixel_
         tomovals = np.sum(w * dvs.flatten(order='F')[inds], axis = 1)/ np.sum(w, axis=1)
 	
     xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')
-    np.save('xsec{}.np'.format(numevalz),xsec)
         
     f.close() #close netcdf file
     return evalpoints,xsec.T
