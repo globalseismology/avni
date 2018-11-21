@@ -18,6 +18,56 @@ from . import constants
 from rem3d.f2py import vbspl
 #######################################################################################
 
+
+def krunge(n,x,h,y,f,m=0,phi=np.zeros(6),savey=np.zeros(6)):
+    """
+    some sort of integration or interpolation? x is 
+    incremented on second and fourth calls. Resets itself after 
+    5'th call.
+
+    Input parameters:
+    ----------------
+    input: (these are guesses)
+    m = call number
+    n   = number of points
+    f() = function evaluated at each point
+    x   = independent variable
+    h   = step size
+    
+    Output:
+    ------
+    y() = 
+    """
+    if len(y) > 6 or len(f) > 6: 
+        raise ValueError ("len(y) > 6 or len(f) >  in krunge")
+    m = m + 1    
+    if m == 1:
+        krunge=1
+    elif m == 2:
+        for j in np.arange(n): 
+            savey[j] = y[j]
+            phi[j]   = f[j]
+            y[j] = savey[j]+(0.5*h*f[j])
+        x = x + 0.5*h
+        krunge = 1
+    elif m == 3:
+        for j in np.arange(n): 
+            phi[j] = phi[j] + (2.0*f[j])
+            y[j]   = savey[j] + (0.5*h*f[j])
+        krunge = 1
+    elif m == 4:
+        for j in np.arange(n): 
+            phi[j] = phi[j] + (2.0*f[j])
+            y[j]   = savey[j] + (h*f[j])
+        x = x + 0.5*h
+        krunge = 1
+    elif m == 5:
+        for j in np.arange(n): 
+            y[j] = savey[j] + (phi[j]+f[j])*h/6.0
+        m    = 0
+        krunge = 0
+    return krunge,y,f,m,phi,savey
+        
 def eval_vbspl(depths,knots):
     """
     Evaluate the cubic spline know with second derivative as 0 at end points.
