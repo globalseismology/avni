@@ -641,13 +641,20 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',modelname='S40RTS_pixel_
     
     # Start plotting
     fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
-    gs = gridspec.GridSpec(1, 2, width_ratios=width_ratios) 
+    if gcdelta < 360.0:
+        gs = gridspec.GridSpec(1, 2, width_ratios=width_ratios) 
+        fig.subplots_adjust(wspace=0.3, left=0.05, right=0.95)
+        ax=plt.subplot(gs[0])
+    elif gcdelta == 360.0:
+        ax=fig.add_axes([0.268,0.307,0.375,0.375])
+        gs = gridspec.GridSpec(1, 1) 
+	ax.set_aspect('equal')
+    else:
+        raise ValueError("gcdelta > 360.0")
 
-    fig.subplots_adjust(wspace=0.3, left=0.05, right=0.95)
     fig.patch.set_facecolor('white')
     
     ####### Inset map
-    ax=plt.subplot(gs[0])
     if gcdelta > 180.:
         numdegticks=13
         insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
@@ -660,7 +667,14 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',modelname='S40RTS_pixel_
         height=gcdelta*1.2
         insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='merc',dbs_path=dbs_path,width=width,height=height,numdegticks=numdegticks)
     ###### Actual cross-section
-    ax1, aux_ax1 = setup_axes(fig, gs[1], theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
+    if gcdelta < 360.0:
+        ax1, aux_ax1 = setup_axes(fig, gs[1], theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
+    elif gcdelta ==360.0:
+        ax1, aux_ax1 = setup_axes(fig, gs[0], theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
+	ax1.set_aspect('equal')
+	aux_ax1.set_aspect('equal')
+        #ax1, aux_ax1 = setup_axes(fig, fig.add_axes([0,1,0,1]), theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
+
     if vexaggerate != 0:
         aux_ax1=plottopotransect(aux_ax1,theta_range,elev,vexaggerate=vexaggerate)
 
