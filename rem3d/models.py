@@ -188,9 +188,9 @@ class reference1D(object):
         else:
             raise ValueError('reference1D object is not allocated')
 
-	if self.data['vpv'][-1] == 0 or self.data['vsv'][-1] == 0:
-	    raise Warning('zero velocity layer detected at surface ...\n \
-	                  TauP raytracing may not work')
+        if self.data['vpv'][-1] == 0 or self.data['vsv'][-1] == 0:
+            raise Warning('zero velocity layer detected at surface ...\n \
+                      TauP raytracing may not work')
 
     def to_axisem(self,anelastic=True,anisotropic=True):
         '''
@@ -354,19 +354,24 @@ class reference1D(object):
         if ifshow: plt.show()
         plt.savefig(self.name+outfile)
 
-def epix_to_remd3d_ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
+def epix2ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
     '''
     write a rem3d formatted ascii file from a directory containing epix files 
 
-    positional arguments
-    -------------------------------------------------------------------
+    Input parameters:
+    ----------------
+  
     epix_dir: path to directory containing epix layer files
+    
     output_file: name of rem3d format output file
+    
     ref_model: the 1D reference model used for the specified tomography model
+    
     mod_desc: tomographic model parameter (e.g. "(SH+SV)*0.5")
+    
     n_hpar:number of horizontal parameterizations (currently only handles 
-           models with 1 horizontal parameterization, and with a constant
-	   pixel width)
+           models with 1 horizontal parameterization, and with a constant pixel width)
+           
     '''
     f_out = open(output_file,'w')
     cwd = os.getcwd()
@@ -379,8 +384,8 @@ def epix_to_remd3d_ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
 
     for filename in filenames:
         print(filename)
-	start_ = filename.split('.epix')[-2].split('_')[-2]
-	end_ = filename.split('.epix')[-2].split('_')[-1]
+        start_ = filename.split('.epix')[-2].split('_')[-2]
+        end_ = filename.split('.epix')[-2].split('_')[-1]
         layer_start.append(float(start_))
         layer_end.append(float(end_))
 
@@ -394,7 +399,6 @@ def epix_to_remd3d_ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
     depths[-1] = zmax
 
     #write header
-    kernel_set = 'BOX{:1.0f}+I1D'.format(dz)
     f_out.write(u'REFERENCE MODEL: {} \n'.format(ref_model))
     f_out.write(u'KERNEL SET: {}\n'.format(kernel_set))
 
@@ -410,12 +414,15 @@ def epix_to_remd3d_ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
     lats = epixarr[:,0]
     lons = epixarr[:,1]
     px_w = epixarr[:,2] 
+    if len(np.unique(pixel_width)) is not 1: 
+        raise ValueError('epix2ascii can only handle constant pixel width')
     pixel_width = px_w[0]
+    kernel_set = 'BOX{:1.0f}+I1D'.format(dz)
+    #kernel_set = 'BOX{:1.0f}_PIX{:1.1f}'.format(dz,pixel_width)
 
     f_out.write(u'HORIZONTAL PARAMETERIZATIONS: {}\n'.format(n_hpar))
     for i in range(0,n_hpar):
-        f_out.write(u'HPAR   {}: PIXELS,  {:1.1f} x {:1.1f}\n'.format(
-	                                i+1,pixel_width,pixel_width))
+        f_out.write(u'HPAR   {}: PIXELS,  {:1.1f} x {:1.1f}\n'.format(                               i+1,pixel_width,pixel_width))
         shape = (int(180.0/pixel_width),int(360.0/pixel_width)) 
         lats_arr = np.reshape(lats,shape,order='F')
         lons_arr = np.reshape(lons,shape,order='F')
@@ -425,140 +432,148 @@ def epix_to_remd3d_ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
         lons = lons_arr.flatten()
         px_w = px_w_arr.flatten()
 
-	for j in range(0,len(lons)):
-	    if lons[i] > 180.0:
-	        lons[i] -= 360.0
+    for j in range(0,len(lons)):
+        if lons[i] > 180.0:
+            lons[i] -= 360.0
             f_out.write(u'{:5.1f} {:5.1f} {:5.1f}\n'.format(lons[i],
-	                lats[i], px_w[i]))
+                    lats[i], px_w[i]))
 
     #write model coefficients
     line = ff.FortranRecordWriter('(6E12.4)')
     for i in range(0,len(depths)-1):
         print('writing coefficients for layer ', i+1)
         epix_name='*{:1.1f}_{:1.1f}.epix'.format(depths[i],depths[i+1])
-	epix_glob = glob.glob(cwd+'/'+epix_dir+'/'+epix_name)
-	print(epix_glob)
-	epixarr = np.loadtxt(epix_glob[0])
+        epix_glob = glob.glob(cwd+'/'+epix_dir+'/'+epix_name)
+        print(epix_glob)
+        epixarr = np.loadtxt(epix_glob[0])
         coefs = epixarr[:,3]
         coefs_arr = np.reshape(coefs,shape,order='F')
-	coefs = coefs_arr.flatten()
+        coefs = coefs_arr.flatten()
         f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(i+1,pixel_width))
         f_out.write(line.write(coefs)+u'\n')
 
-def rem3d_ascii_to_xarray(rem3d_ascii_file,save_netcdf=False,outfile=None):
+def ascii2xarray(ascii_file,save_netcdf=False,outfile=None):
+    '''
+    write a rem3d formatted ascii file from a directory containing epix files 
 
-    with open(rem3d_ascii_file) as f:
+    Input parameters:
+    ----------------
+  
+    ascii_file: path to rem3d format output file
     
-	#read header
-        for i, line in enumerate(f):
+    save_netcdf: save netcdf format
+    
+    outfile: output netcdf file
+    
+    '''
 
-	    if i == 0:
+    with open(ascii_file) as f:
+    #read header
+        for i, line in enumerate(f):
+            if i == 0:
                 ref_model = line.split('REFERENCE MODEL:')[1].strip()
-	    if i == 1:
+            elif i == 1:
                 krnl_set = line.split('KERNEL SET:')[1].strip()
-	    if i == 2:
+            elif i == 2:
                 nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
-		nrad_krnl = int(nrad_krnl)
-	        break
+                    nrad_krnl = int(nrad_krnl)
+            else:
+                break
 
-	#read radial kernels
-	rkrnl_start = np.zeros(nrad_krnl)
-	rkrnl_end = np.zeros(nrad_krnl)
-	#TODO implement other radial kernel options
-	if krnl_set[0:3] == 'BOX':
-            krnl_wdth = krnl_set[3:].split('+')[0]
-	    krnl_wdth = float(krnl_wdth)
-	    npts_dep = nrad_krnl
+        #read radial kernels
+        rkrnl_start = np.zeros(nrad_krnl)
+        rkrnl_end = np.zeros(nrad_krnl)
+        #TODO implement other radial kernel options
+        if krnl_set[0:3] == 'BOX': krnl_wdth = float(krnl_set[3:].split('+')[0])
+        npts_dep = nrad_krnl
 
         for i, line in enumerate(f):
-	    if i <= nrad_krnl-1:
-	        mod_par = line.strip().split()[2].split(',')[0]
-		rkrnl_start[i] = float(line.strip().split()[3])
-		rkrnl_end[i] = float(line.strip().split()[5])
+            if i <= nrad_krnl-1:
+                mod_par = line.strip().split()[2].split(',')[0]
+                rkrnl_start[i] = float(line.strip().split()[3])
+                rkrnl_end[i] = float(line.strip().split()[5])
+            if i == nrad_krnl-1: break
 
-		if i == nrad_krnl-1:
-		    break
+        #read horizontal parameterization info
+        hpar_list = []
+        #TODO implement parameterizations besides pixels
+        for i, line in enumerate(f):
+            if i == 0:
+                nhpar = int(line.strip().split()[-1])
+                print('NHPAR', nhpar)
+            elif i== 1:
+                hpar_type = line.strip().split()[2].split(',')[0]
+                hpar_name = line.split(':')[1].strip()
+                hpar_list.append(hpar_name)
 
-	#read horizontal parameterization info
-	hpar_list = []
-	#TODO implement parameterizations besides pixels
-	for i, line in enumerate(f):
-	    if i == 0:
-	        nhpar = int(line.strip().split()[-1])
-		print('NHPAR', nhpar)
-	    elif i== 1:
-	        hpar_type = line.strip().split()[2].split(',')[0]
-	        hpar_name = line.split(':')[1].strip()
-		hpar_list.append(hpar_name)
-
-		if hpar_type == 'PIXELS':
-		    lons = []
-		    lats = []
-		    pxwd = []
-		    pxw_lon = float(line.strip().split()[3])
-		    pxw_lat = float(line.strip().split()[5])
-	        break
+                if hpar_type == 'PIXELS':
+                    lons = []
+                    lats = []
+                    pxwd = []
+                    pxw_lon = float(line.strip().split()[3])
+                    pxw_lat = float(line.strip().split()[5])
+                break
 
         for j in range(0,nhpar):
-	    for i, line in enumerate(f):
+            for i, line in enumerate(f):
 
-	        if line.strip().split()[0] == 'HPAR':
-	            par_type = line.strip()[2].split(',')[0]
-		    #if par_type == 'PIXELS':
-		    #    pxw_lon = float(line.strip()[3])
-		    #    pxw_lat = float(line.strip()[4])
+                if line.strip().split()[0] == 'HPAR':
+                    par_type = line.strip()[2].split(',')[0]
+                    #if par_type == 'PIXELS':
+                    #    pxw_lon = float(line.strip()[3])
+                    #    pxw_lat = float(line.strip()[4])
                     #    npts_lon = int(360. / pxw_lon)
-		    #	npts_lat = int(180. / pxw_lat)
-		    break
+                    #        npts_lat = int(180. / pxw_lat)
+                    break
 
-		elif line.strip().split()[0] == 'STRU':
-		    i_layer = int(line.strip().split()[1].split(':')[0])
-		    i_hpar = int(line.strip().split()[2])
-		    break
+                elif line.strip().split()[0] == 'STRU':
+                    i_layer = int(line.strip().split()[1].split(':')[0])
+                    i_hpar = int(line.strip().split()[2])
+                    break
 
-		else:
-		    lons.append(float(line.strip().split()[0]))
-		    lats.append(float(line.strip().split()[1]))
-		    pxwd.append(float(line.strip().split()[2]))
+                else:
+                    lons.append(float(line.strip().split()[0]))
+                    lats.append(float(line.strip().split()[1]))
+                    pxwd.append(float(line.strip().split()[2]))
 
         #read structure coefficients block
-	layer_coefs = []
-	layer_dict = {}
-	for i, line in enumerate(f):
+        layer_coefs = []
+        layer_dict = {}
+        for i, line in enumerate(f):
 
-	    if line.strip().split()[0] == 'STRU':
-		layer_dict[i_layer] = layer_coefs
+            if line.strip().split()[0] == 'STRU':
+                layer_dict[i_layer] = layer_coefs
                 i_layer = int(line.strip().split()[1].split(':')[0])
-		i_hpar = int(line.strip().split()[2])
-		layer_coefs = []
-	    else:
-	        for coef in line.strip().split(): 
+                i_hpar = int(line.strip().split()[2])
+                layer_coefs = []
+            else:
+                for coef in line.strip().split(): 
                     layer_coefs.append(float(coef))
 
         layer_dict[i_layer] = layer_coefs #add layer layer to dict
-        #create dims arrays
-        lon = np.arange((pxw_lon/2.),360.,pxw_lon)
-	for i in range(0,len(lon)):
-	    if lon[i] >= 180.0:
-	        lon[i] -= 360.0
-	lat = np.arange(-90.+(pxw_lat/2.),90,pxw_lat)
-	dep = (rkrnl_start + rkrnl_end) / 2.
+    
+    #create dims arrays
+    lon = np.arange((pxw_lon/2.),360.,pxw_lon)
+    for i in range(0,len(lon)):
+        if lon[i] >= 180.0:
+            lon[i] -= 360.0
+    lat = np.arange(-90.+(pxw_lat/2.),90,pxw_lat)
+    dep = (rkrnl_start + rkrnl_end) / 2.
 
-	#create xarray 
-	data_array = xr.DataArray(np.zeros((len(dep),len(lon),len(lat))),
-	                          dims = ['depth','lon','lat'])
+    #create xarray 
+    data_array = xr.DataArray(np.zeros((len(dep),len(lon),len(lat))),
+                              dims = ['depth','lon','lat'])
 
-        data_array['lon'] = lon
-	data_array['lat'] = lat
-	data_array['depth'] = dep
+    data_array['lon'] = lon
+    data_array['lat'] = lat
+    data_array['depth'] = dep
 
-	#fill in data array
-	for i,layer in enumerate(layer_dict):
-	    data_array[i,:,:] = np.reshape(layer_dict[layer],
-	                        (len(lon),len(lat)),order='F')
-	print('done reading model')
-	
-	if save_netcdf:
-	    data_array.to_netcdf(outfile)
+    #fill in data array
+    for i,layer in enumerate(layer_dict):
+        data_array[i,:,:] = np.reshape(layer_dict[layer],
+                                (len(lon),len(lat)),order='F')
+    print('done reading model')
+        
+    if save_netcdf: data_array.to_netcdf(outfile)
 
-	return data_array
+    return data_array
