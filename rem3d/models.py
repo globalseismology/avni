@@ -38,7 +38,6 @@ from . import tools
 from . import plots 
 from . import constants
 from . import io 
-from .f2py import drspln, drsple
 #######################################################################################
 def readepixfile(filename):
     """Read .epix file format from a file.
@@ -201,6 +200,20 @@ class radial_basis(object):
     '''
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.
+    
+    Structure:
+    ---------
+    
+    object.data: Contains the following fields that describe the radial basis.
+        depths_in_km: depth array in km
+        vercof: value of the bases evaluated at those depths
+        dvercof: gradient of the bases evaluated at those depths
+    
+    object.metadata: Contains metadata for various calculations.
+        name: to store a name for the radial_basis
+        type: type of radial basis e.g. vbspl
+        attributes: a dictionary containing variables used to define this particular type
+                    e.g. knots for vbspl. Checked that these are defined using self.check.
     '''
     def __init__(self,name,type,attributes={},depths_in_km=np.arange(0.,6371.+1.)):
         self.data = {}
@@ -354,60 +367,6 @@ class lateral_basis(object):
         """    
 
 #####################
-<<<<<<< HEAD
-=======
-# Kernel set class that stores the list 
-# 3D model class
-class radial_basis(object):
-    '''
-    A class for radial bases that defines a unique combination of parameters,
-    their radial parameterization and any scaling that is used.
-    '''
-    def __init__(self):
-        self.data = {}
-        self.data['depths'] = None
-        self.data['vercof'] = None
-        self.data['dvercof'] = None
-        self.metadata = {}
-        self.metadata['name'] = None
-        self.metadata['type'] = None
-        self.metadata['knots'] = None
-    
-    def readprojfile(self,projfile):
-        """
-        Reads a projection matrix file that goes between the radial bases.
-        """    
-
-    def eval_radial(self,depths):
-        """
-        Evaluates the radial bases at various depths.
-        
-        Input parameters:
-        ----------------
-        
-        depths: depths (in km) where the radial parameteriation needs to be evaluated. 
-        """  
-
-        if isinstance(depths, (list,tuple,np.ndarray)):
-            depths = np.asarray(depths)
-        elif isinstance(depths, float):
-            depths = np.asarray([depths])
-        else:
-            raise TypeError('depths must be list or tuple, not %s' % type(depths))
-
-        # compute the radial parameteriation in specific depths
-        if self.metadata['type'] is 'vbspl':
-            vercof, dvercof = tools.eval_vbspl(depths,self.metadata['knots'])
-            self.data['vercof'] = vercof
-            self.data['dvercof'] = dvercof
-            self.data['depths'] = depths
-        else:
-            raise TypeError('metadata type note defined in eval_radial %s' % self.metadata['type'])
-
-              
-
-#####################
->>>>>>> dbda764d8e4144aebbea77408e856ee8a5fc59d9
 # 3D model class
 class model3d(object):
     '''
@@ -938,8 +897,7 @@ class reference1D(object):
         '''
         if self.data is not None and self.__nlayers__ > 0:
             # Add metadata
-            for field in ['A','C','N','L','F','vp','vs','vphi','xi','phi','Zp','Zs']:
-                self.metadata['attributes'].append(field)
+            self.metadata['attributes'].append(['A','C','N','L','F','vp','vs','vphi','xi','phi','Zp','Zs'])
             
             # Add data fields
             self.data=append_fields(self.data, 'A', self.data['rho']*self.data['vph']**2 , usemask=False)
@@ -960,118 +918,7 @@ class reference1D(object):
             self.data=append_fields(self.data, 'Zs', self.data['vs']*self.data['rho'], usemask=False)
         else:
             raise ValueError('reference1D object is not allocated')
-            
-    def get_geodetic(self):
-        '''
-        Get geodetic parameters
 
-        Output:
-        ------
-        
-        Returns a structure self.metadata['disc'] that has three arrays:        
-        
-        '''
-        if self.data is not None and self.__nlayers__ > 0:
-        # Add metadata
-            for field in ['ell','etaB','gravity']:
-                self.metadata['attributes'].append(field)
-             
-            # ---- normalize radii and density
-            # 
-            r = np.copy(self.data['radius'])/self.data['radius'][-1]
-            rho = np.copy(self.data['rho'])/constants.rhobar
-            
-            # ---- spline the density
-            n = len(r)
-            rn = r[n-1]
-            qrho,wk = drspln(1,n,r,rho)
-
-            # ---- integrate to get ellipticity and gravity
-            y = np.zeros(3); y1 = np.zeros(3); y2 = np.zeros(3); y3 = np.zeros(3)
-            ydot = np.zeros(3)
-            y[0] = 1.
-            y[1] = 0.
-            y[2] = rho[0]
-            rr   = 1.e-5
-            # initalize
-            ell = np.zeros(n); eta = np.zeros(n); g = np.zeros(n)
-            for i in np.arange(1,n):
-                rstep=r[i]-r[i-1]
-                if abs(rstep) <= 1.e-5: 
-                    # If it is discontinuity, assume continuity in these parameters
-                    ell[i]=ell[i-1]
-                    eta[i]=eta[i-1]
-                    g[i]=g[i-1]
-                else:
-                    for ii in np.arange(3): y1[ii]=y[ii]
-                    rr1=rr
-                    if rr+rstep > r[i]: rstep=r[i]-rr
-                    iback=1
-                    k=0 ; idone=0; ydot = np.zeros(3)
-                    while k != 1 and idone == 0:
-                        # First run when m, phi and savey are undefined
-                        try:
-                            k,y,ydot,m,phi,savey = tools.krunge(3,rr,rstep,y,ydot,m,phi,savey)
-                            pdb.set_trace()
-                        except NameError:
-                            k,y,ydot,m,phi,savey = tools.krunge(3,rr,rstep,y,ydot,m=0, phi=np.zeros(3),savey=np.zeros(3))
-                            
-                        if iback == 1:
-                            for ii in np.arange(3): y2[ii]=y[ii]
-                            rr2=rr
-                            rstep=rstep*0.5
-                            for ii in np.arange(3): y[ii]=y1[ii]
-                            rr=rr1
-                            iback=2
-                        elif iback == 2:
-                            for ii in np.arange(3): y3[ii]=y[ii]
-                            rr3=rr
-                            iback=3
-                        elif iback == 3:
-                            for ii in np.arange(3):
-                                if abs(y[ii]-y2[ii]) > 0.5e-5:
-                                    for jj in np.arange(3): y2[jj]=y3[jj]
-                                    rr2=rr3
-                                    rstep=rstep*0.5
-                                    for ii in np.arange(3): y[ii]=y1[ii]
-                                    rr=rr1
-                                    iback=2
-                                else:
-                                    if abs(rr-r[i]) < 1.e-5:
-                                        ell[i]=y[0]
-                                        eta[i]=rr*y[1]/y[0]
-                                        g[i]=4.*rr*y[2]/3.
-                                        idone = 1
-                                    else:
-                                        rstep=4.*rstep
-                                        for ii in np.arange(3): y2[ii]=y[ii]
-                                        rr2=rr
-                                        rstep=rstep*0.5
-                                        for ii in np.arange(3): y[ii]=y1[ii]
-                                        rr=rr1
-                                        iback=2
-                        pdb.set_trace()
-                        ydot[0]=y[1]
-                        t=rr-r[i-1]
-                        im1=i-1
-                        rhot=rho[im1]+t*(qrho[0,im1]+t*(qrho[1,im1]+t*qrho[2,im1]))
-                        ydot[2]=3.*(rhot-y[2])/rr
-                        ydot[1]=-2.*(ydot[2]*y[0]+3.*rhot*y[1])/(y[2]*rr)
-                        
-            # Store relevant values 
-            factr=.75*g[-1]/r[-1]
-            rhobar=constants.rhobar*factr # average density of the model
-            wn = np.sqrt(np.pi*constants.G*rhobar)
-            vn = rn*wn
-            gn = rn*np.power(wn,2.)
-            fac=(2.5*(constants.omega/wn)^2.)/(4.*ell[-1]*(eta[-1]+2.)/3.)
-            g[0]=0.
-            ell[0]=1.
-            for i in np.arange(n):
-                rho[i] = rho[i]/factr*rhobar
-                g[i] = g[i]/factr*gn
-                ell[i] = ell[i]*fac
-             
     def get_discontinuity(self):
         '''
         Get values, average values and contrasts at discontinuities
@@ -1082,9 +929,7 @@ class reference1D(object):
         Returns a structure self.metadata['disc'] that has three arrays:
         
         delta: containing absolute difference in attributes between smaller/larger radii 
-        
         average: containing absolute average attributes between smaller/larger radii
-        
         contrasts: containing contrast in attributes (in %)
         '''
         
@@ -1136,55 +981,20 @@ class reference1D(object):
         else:
             raise ValueError('reference1D object is not allocated')
 
-    def evaluate_at_depth(self,depth_in_km,parameter='vs',interpolation='linear',updown='+'):   
+    def evaluate_at_depth(self,depth_in_km,parameter='vs',interpolation='linear'):   
         '''
         Get the values of a parameter at a given depth
-        
-        Input parameters:
-        ----------------
-        
-        depth_in_km : depth where parameter needs to be evaluated - list/float/tuple
-        
-        parameter : parameter in self.data that needs evaluation
-        
-        interpolation : type of interpolation used with scipy.interpolate.griddata
-        
-        updown : if depth corresponds to a discontinuity, whether to use top (+) 
-                 or bottom (-) value. 
-        
-        Output:
-        ------
-        
-        values : evaluated values
         '''
         values=None
-        for depth in depth_in_km:
-            if depth > 6371. : raise ValueError('depth_in_km cannot be > 6371 km')
         if self.data is not None and self.__nlayers__ > 0:
-            disc_km = (6371000.-self.metadata['discontinuities']['average']['radius']) /1000.
             if parameter in self.data.dtype.names:
-                datavalues = self.data[parameter]
+                values = self.data[parameter]
                 depth_array = (6371000. - self.data['radius'])/1000. # in km
-                
                 # Sort to make interpolation possible
                 indx = depth_array.argsort()
                 # convert to array for ease of looping
-                if isinstance(depth_in_km,float) or isinstance(depth_in_km,int): depth_in_km = np.array([depth_in_km]) 
-                elif isinstance(depth_in_km, (list,tuple,np.ndarray)):
-                    depth_in_km = np.asarray(depth_in_km)
-                values = griddata(depth_array[indx], datavalues[indx], depth_in_km, method=interpolation)
-                # replace whether discontinuities are requested
-                depth_disc = np.intersect1d(depth_in_km,disc_km)
-                if len(depth_disc) > 0:
-                    for ii in np.arange(len(depth_disc)): 
-                        indx_disc, = np.where(depth_array == depth_disc[ii])
-                        indx_replace, = np.where(depth_in_km == depth_disc[ii])
-                        if updown == '+':
-                            values[indx_replace] = datavalues[indx_disc[1]]
-                        elif updown == '-':
-                            values[indx_replace] = datavalues[indx_disc[0]]
-                        else:
-                            raise ValueError('Invalid argument for updown '+updown)
+                if isinstance(depth_in_km,float) or isinstance(depth_in_km,int): depth_in_km = np.array(depth_in_km) 
+                values = griddata(depth_array[indx], values[indx], depth_in_km, method=interpolation)
             else:
                 raise ValueError('parameter '+parameter+' not defined in array')
         else:
