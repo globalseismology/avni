@@ -195,31 +195,95 @@ def readprojections(type='radial'):
     return 
 #####################
 # Vertical basis parameter class that defines an unique combination of functions, their radial parameterization and any scaling
-# 3D model class
+
 class radial_basis(object):
     '''
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.
     '''
-    def __init__(self):
-        self.proj = {'data': None,'to_name':None,'to_type':'boxcar','to_attributes':{}}
-        self.metadata = {'from_name':None,'from_type':None,'from_attributes':{}}
-    
-    def readprojfile(self,projverfile):
+    def __init__(self,name,type,attributes={},depths_in_km=np.arange(0.,6371.+1.)):
+        self.data = {}
+        self.data['depths_in_km'] = None
+        self.data['vercof'] = None
+        self.data['dvercof'] = None
+        self.metadata = {}
+        self.metadata = {'name':name,'type':type,'attributes':attributes}
+        # Check if all required atributes are available
+        self.check()
+        # Evaluate the radial basis and store them in data
+        self.eval_radial(depths_in_km,store=True)
+
+    def add_attribute(self,key,value):
         """
-        Read projection matrix for going between vertical bases from a file
+        Add attributes needed by the radial basis
+        
+        Input parameters:
+        ----------------
+        
+        key: string key name
+        
+        value: values corresponding to the key
+        """
+        self.metadata['attributes'][key] = value
+        
+    def check(self):
+        """
+        Checks that object contains all attributes required for evaluating a 
+        particular basis set.
+        """
+        if self.metadata['type'] is 'vbspl':
+            for key in ['knots']:
+                try:
+                    knots = self.metadata['attributes'][key]
+                except:
+                    print('Current attributes : ',self.metadata['attributes'].keys())
+                    raise KeyError('Attribute '+key+' missing for radial basis type '+self.metadata['type'])
+        else:
+            raise TypeError('metadata type note defined in eval_radial %s' % self.metadata['type'])
+        
+    
+    def readprojfile(self,projfile):
+        """
+        Reads a projection matrix file that goes between the radial bases.
         """    
 
-    def eval_radial(self,depth):
+    def eval_radial(self,depths_in_km,store=False):
         """
-        Evaluate radial basis at a depth interpolated from existing projection matrices.
-        """    
-    
+        Evaluates the radial bases at various depths.
+        
+        Input parameters:
+        ----------------
+        
+        depths_in_km: depths where the radial parameteriation needs to be evaluated. 
+        """  
+
+        if isinstance(depths_in_km, (list,tuple,np.ndarray)):
+            depths = np.asarray(depths_in_km)
+        elif isinstance(depths, float):
+            depths = np.asarray([depths_in_km])
+        else:
+            raise TypeError('depths must be list or tuple, not %s' % type(depths_in_km))
+
+        # compute the radial parameteriation in specific depths
+        if self.metadata['type'] is 'vbspl':
+            knots = self.metadata['attributes']['knots']
+            vercof, dvercof = tools.eval_vbspl(depths,knots)
+        else:
+            raise TypeError('metadata type note defined in eval_radial %s' % self.metadata['type'])
+            
+        # Store if needed
+        if store:
+            self.data['vercof'] = vercof
+            self.data['dvercof'] = dvercof
+            self.data['depths_in_km'] = depths
+        else:
+            return vercof,dvercof
+
     def project_boxdepth(self,depth_range):
         """
         Project from current vertical basis to a vertical boxcar basis
         depth_range is named numpy array of top and bottom depths
-        """    
+        """                 
         
         
 #####################
@@ -287,57 +351,6 @@ class lateral_basis(object):
         Project from current horizontal basis to another orthogonal basis 
         and return the coefficients.
         """    
-
-#####################
-# Kernel set class that stores the list 
-# 3D model class
-class radial_basis(object):
-    '''
-    A class for radial bases that defines a unique combination of parameters,
-    their radial parameterization and any scaling that is used.
-    '''
-    def __init__(self):
-        self.data = {}
-        self.data['depths'] = None
-        self.data['vercof'] = None
-        self.data['dvercof'] = None
-        self.metadata = {}
-        self.metadata['name'] = None
-        self.metadata['type'] = None
-        self.metadata['knots'] = None
-    
-    def readprojfile(self,projfile):
-        """
-        Reads a projection matrix file that goes between the radial bases.
-        """    
-
-    def eval_radial(self,depths):
-        """
-        Evaluates the radial bases at various depths.
-        
-        Input parameters:
-        ----------------
-        
-        depths: depths (in ikm) where the radial parameteriation needs to be evaluated. 
-        """  
-
-        if isinstance(depths, (list,tuple,np.ndarray)):
-            depths = np.asarray(depths)
-        elif isinstance(depths, float):
-            depths = np.asarray([depths])
-        else:
-            raise TypeError('depths must be list or tuple, not %s' % type(depths))
-
-        # compute the radial parameteriation in specific depths
-        if self.metadata['type'] is 'vbspl':
-            vercof, dvercof = tools.eval_vbspl(depths,self.metadata['knots'])
-            self.data['vercof'] = vercof
-            self.data['dvercof'] = dvercof
-            self.data['depths'] = depths
-        else:
-            raise TypeError('metadata type note defined in eval_radial %s' % self.metadata['type'])
-
-              
 
 #####################
 # 3D model class

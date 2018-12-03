@@ -28,7 +28,7 @@ configfolder = 'config'
 Mapping constants
 """
 a_e = 6378136.3   # Equatorial radius
-GM = 398600.4415E+9  # ﻿Geocentric gravitational constant ﻿m^3/s^2
+GM = 398600.4415E+9 # Geocentric gravitational constant m^3s^-2
 G = 6.67408E-11 # Gravitational constant m^3kg^-1s^-2
 f = 1./298.256415099 #flattening
 # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
