@@ -570,12 +570,11 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,f=None,filename='S40RTS_pixel_0.5
     
     #read tomography file
     #dbs_path=tools.get_fullpath(dbs_path)
-    #if f != None:
-    #    if os.path.isfile(dbs_path+'/'+filename):
-    #        f = xr.open_dataarray(dbs_path+'/'+filename)
-    #    else:
-    #        raise ValueError('can not file model file')
-    
+    #if os.path.isfile(dbs_path+'/'+filename):
+    #    #f = Dataset(dbs_path+'/'+filename)
+    #    f = xr.open_dataarray(dbs_path+'/'+filename)
+    #else:
+    #    raise ValueError("Error: Could not find file "+dbs_path+'/'+filename)    
         
     lon = f['lon']
     lat = f['lat']

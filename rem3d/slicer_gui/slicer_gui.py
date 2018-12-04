@@ -16,7 +16,7 @@ from matplotlib import gridspec
 
 from rem3d.geolib import ddelazgc
 from rem3d.mapping import spher2cart
-from rem3d.plots import globalmap
+#from rem3d.plots import globalmap
 from rem3d.plots import getmodeltransect
 from rem3d.plots import setup_axes
 
