@@ -507,7 +507,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd', 
     if os.path.isfile(dbs_path+'/'+filename):
         f = Dataset(dbs_path+'/'+filename)
     else:
-        raise InputError("Error: Could not find file "+dbs_path+'/'+filename)
+        raise ValueError("Error: Could not find file "+dbs_path+'/'+filename)
     lons = f.variables['lon'][::stride]
     lats = f.variables['lat'][::stride]
     topo2d = f.variables['z'][::stride,::stride]
@@ -565,16 +565,17 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     return ax
     
 
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S40RTS_pixel_0.5x0.5.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path='.',numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,f=None,filename='S40RTS_pixel_0.5x0.5.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path='.',numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
     #read tomography file
-    dbs_path=tools.get_fullpath(dbs_path)
-    if os.path.isfile(dbs_path+'/'+filename):
-        #f = Dataset(dbs_path+'/'+filename)
-        f = xr.open_dataarray(dbs_path+'/'+filename)
-    else:
-        raise InputError("Error: Could not find file "+dbs_path+'/'+filename)    
+    #dbs_path=tools.get_fullpath(dbs_path)
+    #if f != None:
+    #    if os.path.isfile(dbs_path+'/'+filename):
+    #        f = xr.open_dataarray(dbs_path+'/'+filename)
+    #    else:
+    #        raise ValueError('can not file model file')
+    
         
     lon = f['lon']
     lat = f['lat']

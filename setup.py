@@ -85,6 +85,7 @@ else:
 f90_dir='rem3d/f2py'
 packagelist=['rem3d']
 for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
+packagelist.append('rem3d/slicer_gui')
 
 
 # write short description
