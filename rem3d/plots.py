@@ -507,7 +507,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd', 
     if os.path.isfile(dbs_path+'/'+filename):
         f = Dataset(dbs_path+'/'+filename)
     else:
-        raise InputError("Error: Could not find file "+dbs_path+'/'+filename)
+        raise ValueError("Error: Could not find file "+dbs_path+'/'+filename)
     lons = f.variables['lon'][::stride]
     lats = f.variables['lat'][::stride]
     topo2d = f.variables['z'][::stride,::stride]
@@ -574,7 +574,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,filename='S40RTS_pixel_0.5x0.5.nc
         #f = Dataset(dbs_path+'/'+filename)
         f = xr.open_dataarray(dbs_path+'/'+filename)
     else:
-        raise InputError("Error: Could not find file "+dbs_path+'/'+filename)    
+        raise ValueError("Error: Could not find file "+dbs_path+'/'+filename)    
         
     lon = f['lon']
     lat = f['lat']
