@@ -71,12 +71,23 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     desckern=np.zeros(maxkern, dtype='U40')
     ihorpar=np.zeros(maxkern, dtype=int)
     coef=np.zeros([maxcoeff,maxkern], dtype=float)
+    #defaults
+    refmodel = None; kerstr = None; crust = None; null_model= None
+    interpolant = None; cite = None; shortcite = None; scaling = None
     with open(modelfile) as f: lines = f.readlines()
     ii=0
     while ii < len(lines):
         line=lines[ii]; ii=ii+1
         if line.startswith("REFERENCE MODEL:"): refmodel=line[16:].rstrip('\n').strip(' ')
         if line.startswith("KERNEL SET:"): kerstr=line[12:].rstrip('\n').strip(' ')
+        if line.startswith("NULL MODEL:"): 
+            null_model=line[12:].rstrip('\n').strip(' ')
+            if 'None' in null_model or 'none' in null_model: null_model=None
+        if line.startswith("CITE:"): cite=line[6:].rstrip('\n').strip(' ')
+        if line.startswith("SHORTCITE:"): shortcite=line[11:].rstrip('\n').strip(' ')
+        if line.startswith("INTERPOLANT:"): interpolant=line[13:].rstrip('\n').strip(' ')
+        if line.startswith("CRUST:"): crust=line[7:].rstrip('\n').strip(' ')
+        if line.startswith("SCALING:"): scaling=line[9:].rstrip('\n').strip(' ')
         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
         if line.startswith("DESC") and line[8] == ':': 
             idummy=int(line[4:8])
@@ -166,6 +177,10 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     model3d['xlospl']=xlospl; model3d['xraspl']=xraspl; model3d['ihorpar']=ihorpar
     model3d['ivarkern']=ivarkern; model3d['numvar']=numvar
     model3d['varstr']=varstr; model3d['coef']=coef
+    model3d['crust']=crust; model3d['null_model']=null_model
+    model3d['interpolant']=interpolant; model3d['cite']=cite
+    model3d['shortcite']=shortcite; model3d['scaling']=scaling
+
     return model3d
     
 def readensemble(filename):
@@ -367,6 +382,23 @@ class lateral_basis(object):
         """    
 
 #####################
+# kernel set
+class kernel_set(object):
+    '''
+    A class for kernel sets that define the G matrix for relating data d to model m, d=Gm
+    '''
+
+    def __init__(self,parameters,radial_basis,lateral_basis,indices):
+        self.metadata ={}
+        self.data = {}
+        self.name = None
+        self.type = None
+        self.refmodel = None
+        self.description = None
+        if file is not None: self.readfile(file)
+
+
+#####################
 # 3D model class
 class model3d(object):
     '''
@@ -377,7 +409,7 @@ class model3d(object):
         self.metadata ={}
         self.data = {}
         for ii in np.arange(num_resolution): 
-            self.metadata['resolution_'+str(ii)] = None
+            self.metadata['resolution_'+str(ii)] = {'name':None,'coef':None}
             self.data['resolution_'+str(ii)] = {}
             for jj in np.arange(num_realization):
                 self.data['resolution_'+str(ii)]['realization_'+str(jj)] = {'name':None,'coef':None}
@@ -450,19 +482,24 @@ class model3d(object):
     
         # Write to a dictionary
         metadata = {}
-        metadata['kerstr']=model['kerstr']; metadata['nmodkern']=model['nmodkern']
-        metadata['desckern']=model['desckern']; metadata['nhorpar']=model['nhorpar']; metadata['hsplfile']=model['hsplfile']
-        metadata['typehpar']=model['typehpar']; metadata['ityphpar']=model['ityphpar']; metadata['lmaxhor']=model['lmaxhor']
-        metadata['ixlspl']=model['ixlspl']; metadata['xlaspl']=model['xlaspl']; metadata['xlospl']=model['xlospl']
-        metadata['xraspl']=model['xraspl']; metadata['ihorpar']=model['ihorpar']; metadata['ivarkern']=model['ivarkern']
+        metadata['kerstr'] = model['kerstr']; metadata['nmodkern'] = model['nmodkern']
+        metadata['desckern'] = model['desckern']; metadata['nhorpar'] = model['nhorpar']
+        metadata['hsplfile']=model['hsplfile']; metadata['typehpar']=model['typehpar']
+        metadata['ityphpar']=model['ityphpar']; metadata['lmaxhor']=model['lmaxhor']
+        metadata['ixlspl']=model['ixlspl']; metadata['xlaspl']=model['xlaspl']
+        metadata['xlospl']=model['xlospl']; metadata['xraspl']=model['xraspl']
+        metadata['ihorpar']=model['ihorpar']; metadata['ivarkern']=model['ivarkern']
         metadata['numvar']=model['numvar']; metadata['varstr']=model['varstr']
-        metadata['ncoefhor']=model['ncoefhor']
+        metadata['ncoefhor']=model['ncoefhor']; metadata['reference1D']= model['refmodel']
+        
+        metadata['crust']=model['crust']; metadata['null_model']=model['null_model']
+        metadata['interpolant']=model['interpolant']; metadata['cite']=model['cite']
+        metadata['shortcite']=model['shortcite']; metadata['scaling']=model['scaling']
         
         self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = ntpath.basename(modelfile)
         self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = sparse.csr_matrix(model['coef'])
 
         self.metadata['resolution_'+str(resolution)] = metadata
-        self.refmodel = model['refmodel']
         self.name = ntpath.basename(modelfile)
         self.description = "Read from "+modelfile
         self.type = 'rem3d'
@@ -961,7 +998,7 @@ class reference1D(object):
         '''
         if self.data is not None and self.__nlayers__ > 0:
             # convert to array for ease of looping
-            if isinstance(parameters,string_types): parameters = np.array(parameters) 
+            if isinstance(parameters,string_types): parameters = np.array([parameters]) 
             
             for ii in np.arange(parameters.size):
                 if 'SH-SV' in parameters[ii]:
