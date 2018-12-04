@@ -476,7 +476,7 @@ def ascii2xarray(ascii_file,save_netcdf=False,outfile=None):
                 krnl_set = line.split('KERNEL SET:')[1].strip()
             elif i == 2:
                 nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
-                    nrad_krnl = int(nrad_krnl)
+                nrad_krnl = int(nrad_krnl)
             else:
                 break
 
