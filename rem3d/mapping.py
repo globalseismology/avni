@@ -15,11 +15,6 @@ import pdb    #for the debugger pdb.set_trace()
 from netCDF4 import Dataset as netcdf #reading netcdf files
 import scipy.interpolate as spint
 import scipy.spatial.qhull as qhull
-import itertools
-import time
-import progressbar
-import pint # For SI units
-ureg = pint.UnitRegistry()
 
 ############################### PLOTTING ROUTINES ################################        
 from .trigd import atand,tand
@@ -160,11 +155,10 @@ http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-
     bary = np.einsum('njk,nk->nj', temp[:, :d, :], delta)
     return vertices, np.hstack((bary, 1 - bary.sum(axis=1, keepdims=True)))
 
-  
 def interpolate(values, vtx, wts, fill_value=np.nan):
     """An interpolated values is computed for that grid point, using the barycentric coordinates, and the values of the function at the vertices of the enclosing simplex. From:
-    http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids"""
+    http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids"""    
     ret = np.einsum('nj,nj->n', np.take(values, vtx), wts)
     ret[np.any(wts < 0, axis=1)] = fill_value
-    return ret    
-
+    return ret
+ 
