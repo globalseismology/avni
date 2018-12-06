@@ -7,7 +7,7 @@ import argparse #parsing arguments
 import cPickle
 
 ################################ IMPORT REM3D MODULES   #####################################
-from rem3d.geolib import ddelazgc # geolib library from NSW
+from rem3d.f2py import ddelazgc # geolib library from NSW
 from rem3d.plots import plot1section
 #########################################################
 def main():

@@ -685,7 +685,9 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd', 
             print('... KDtree file '+treefile+' not found for interpolations. Building it')
             lons2d,lats2d = np.meshgrid(lons,lats)        
             rads2d = np.zeros(len(topo2d.flatten())) + 6371.0
-            rlatlon = np.array(zip(rads2d.flatten(),lats2d.flatten(),lons2d.flatten()))
+            #rlatlon = np.array(zip(rads2d.flatten(),lats2d.flatten(),lons2d.flatten()))
+            rlatlon = np.column_stack((rads2d.flatten(),lats2d.flatten(), lons2d.flatten()))
+
             xyz = mapping.spher2cart(rlatlon)
             tree = cKDTree(xyz)
             pickle.dump(tree,open(dbs_path+'/'+treefile,'wb'))
@@ -699,7 +701,8 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd', 
     qpts_lng = np.linspace(lng1,lng2,len(coords))
     qpts_lat = np.linspace(lat1,lat2,len(coords))
     qpts_rad = np.linspace(6371.0,6371.0,len(coords))
-    qpts_rlatlon = np.array(zip(qpts_rad,qpts_lat,qpts_lng))
+    #qpts_rlatlon = np.array(zip(qpts_rad,qpts_lat,qpts_lng))
+    qpts_rlatlon = np.column_stack((qpts_rad,qpts_lat,qpts_lng))
     qpts_xyz = mapping.spher2cart(qpts_rlatlon)
     d,inds = tree.query(qpts_xyz,k=k)
     vals = topo2d.flatten(order='C')[inds]

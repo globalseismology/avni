@@ -100,7 +100,7 @@ def getDestinationLatLong(lat,lng,azimuth,distance):
     given the start lat, long, aziuth, and distance (in meters)'''
     R = constants.R #Radius of the Earth in m
     brng = radians(azimuth) #Bearing is degrees converted to radians.
-    d = distance * ureg.m #Distance m 
+    d = distance #Distance m 
     lat1 = radians(lat) #Current dd lat point converted to radians
     lon1 = radians(lng) #Current dd long point converted to radians
     lat2 = asin(sin(lat1) * cos(d/R) + cos(lat1)* sin(d/R)* cos(brng))
