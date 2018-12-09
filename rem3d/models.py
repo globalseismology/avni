@@ -110,11 +110,11 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
             substr=line[9:len(line.rstrip('\n'))]
             ifst,ilst=tools.firstnonspaceindex(substr)
             if substr[ifst:ifst+20] == 'SPHERICAL HARMONICS,':
-                lmax = int(substr[21:].rstrip('\n'))
                 ityphpar[idummy-1]=1
                 typehpar[idummy-1]='SPHERICAL HARMONICS'
                 lmaxhor[idummy-1]=lmax
                 ncoefhor[idummy-1]=(lmax+1)**2
+                lmax = int(substr[21:].rstrip('\n'))
             elif substr[ifst:ifst+18] == 'SPHERICAL SPLINES,':
                 ifst1=ifst+18
                 ifst=len(substr)
@@ -128,10 +128,13 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
                 typehpar[idummy-1]='SPHERICAL SPLINES'
                 lmaxhor[idummy-1]=0
                 ncoefhor[idummy-1]=ncoef
+                # specific variables
                 for jj in range(ncoef):
                     arr=lines[ii].rstrip('\n').split(); ii=ii+1
                     ixlspl[jj,idummy-1]=int(arr[0]); xlaspl[jj,idummy-1]=arr[1]
                     xlospl[jj,idummy-1]=arr[2]; xraspl[jj,idummy-1]=arr[3]
+            else:
+                raise ValueError('Undefined parameterization type - '+substr[ifst:ilst])
         if line.startswith("STRU") and line[8] == ':':
             idummy=int(line[4:8])
             ihor=int(line[9:].rstrip('\n'))
@@ -163,6 +166,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     ihorpar = ihorpar[:nmodkern]
     varstr = varstr[:numvar]
     coef = coef[:max(ncoefhor),:nmodkern].transpose() # to get it in a kernel * coeff format
+    ncoefcum = np.cumsum([ncoefhor[ihor-1] for ihor in ihorpar])
     ixlspl = ixlspl[:max(ncoefhor),:].transpose() 
     xlaspl = xlaspl[:max(ncoefhor),:].transpose() 
     xlospl = xlospl[:max(ncoefhor),:].transpose() 
@@ -176,7 +180,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     model3d['ncoefhor']=ncoefhor; model3d['ixlspl']=ixlspl; model3d['xlaspl']=xlaspl
     model3d['xlospl']=xlospl; model3d['xraspl']=xraspl; model3d['ihorpar']=ihorpar
     model3d['ivarkern']=ivarkern; model3d['numvar']=numvar
-    model3d['varstr']=varstr; model3d['coef']=coef
+    model3d['varstr']=varstr; model3d['coef']=coef; model3d['ncoefcum']=ncoefcum
     model3d['crust']=crust; model3d['null_model']=null_model
     model3d['interpolant']=interpolant; model3d['cite']=cite
     model3d['shortcite']=shortcite; model3d['scaling']=scaling
@@ -491,6 +495,8 @@ class model3d(object):
         metadata['ihorpar']=model['ihorpar']; metadata['ivarkern']=model['ivarkern']
         metadata['numvar']=model['numvar']; metadata['varstr']=model['varstr']
         metadata['ncoefhor']=model['ncoefhor']; metadata['reference1D']= model['refmodel']
+        # Cumulative number of elements for each desckern kernel. For G matrix filtering.
+        metadata['ncoefcum']=model['ncoefcum']
         
         metadata['crust']=model['crust']; metadata['null_model']=model['null_model']
         metadata['interpolant']=model['interpolant']; metadata['cite']=model['cite']
