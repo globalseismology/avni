@@ -814,7 +814,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',modelname='S40RTS_pixel_
     elif gcdelta == 360.0:
         ax=fig.add_axes([0.268,0.307,0.375,0.375])
         gs = gridspec.GridSpec(1, 1) 
-	ax.set_aspect('equal')
+        ax.set_aspect('equal')
     else:
         raise ValueError("gcdelta > 360.0")
 
@@ -837,8 +837,8 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',modelname='S40RTS_pixel_
         ax1, aux_ax1 = setup_axes(fig, gs[1], theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
     elif gcdelta ==360.0:
         ax1, aux_ax1 = setup_axes(fig, gs[0], theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
-	ax1.set_aspect('equal')
-	aux_ax1.set_aspect('equal')
+    ax1.set_aspect('equal')
+    aux_ax1.set_aspect('equal')
         #ax1, aux_ax1 = setup_axes(fig, fig.add_axes([0,1,0,1]), theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
 
     if vexaggerate != 0:
