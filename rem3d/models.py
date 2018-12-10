@@ -112,9 +112,9 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
             if substr[ifst:ifst+20] == 'SPHERICAL HARMONICS,':
                 ityphpar[idummy-1]=1
                 typehpar[idummy-1]='SPHERICAL HARMONICS'
+                lmax = int(substr[21:].rstrip('\n'))
                 lmaxhor[idummy-1]=lmax
                 ncoefhor[idummy-1]=(lmax+1)**2
-                lmax = int(substr[21:].rstrip('\n'))
             elif substr[ifst:ifst+18] == 'SPHERICAL SPLINES,':
                 ifst1=ifst+18
                 ifst=len(substr)
@@ -1113,7 +1113,7 @@ class reference1D(object):
         else:
             raise ValueError('reference1D object is not allocated')
             
-    def plot(self,figuresize=[7,12],height_ratios=[2, 2, 1],ifshow=True,outfile='.png'):
+    def plot(self,figuresize=[7,12],height_ratios=[2, 2, 1],ifshow=True,format='.eps',isotropic=False,zoomdepth=[0.,1000.]):
         """ 
         Plot the cards array in a PREM like plot
         """
@@ -1131,7 +1131,7 @@ class reference1D(object):
         ax01.plot(depthkmarr,self.data['vph']/1000.,'r:')
         mantle=np.where( depthkmarr < 2891.)
         ax01.plot(depthkmarr[mantle],self.data['eta'][mantle],'g')
-        ax01.set_xlim([0., 6371.])
+        ax01.set_xlim([0., 6371.])        
         ax01.set_ylim([0, 14])
     
         majorLocator = MultipleLocator(2)
@@ -1159,17 +1159,24 @@ class reference1D(object):
 
 
         ax11=plt.subplot(gs[1])
-        top1000km=np.where( depthkmarr < 1000.)
-        ax11.plot(depthkmarr[top1000km],self.data['rho'][top1000km]/1000.,'k')
-        ax11.plot(depthkmarr[top1000km],self.data['vsv'][top1000km]/1000.,'b')
-        ax11.plot(depthkmarr[top1000km],self.data['vsh'][top1000km]/1000.,'b:')
+        depthselect=np.intersect1d(np.where( depthkmarr >= zoomdepth[0]),np.where( depthkmarr <= zoomdepth[1]))
+        ax11.plot(depthkmarr[depthselect],self.data['rho'][depthselect]/1000.,'k')
+        if isotropic:
+            ax11.plot(depthkmarr[depthselect],self.data['vs'][depthselect]/1000.,'b')
+        else:
+            ax11.plot(depthkmarr[depthselect],self.data['vsv'][depthselect]/1000.,'b')
+            ax11.plot(depthkmarr[depthselect],self.data['vsh'][depthselect]/1000.,'b:')
         ax12 = ax11.twinx()
-        ax12.plot(depthkmarr[top1000km],self.data['vpv'][top1000km]/1000.,'r')
-        ax12.plot(depthkmarr[top1000km],self.data['vph'][top1000km]/1000.,'r:')
-        ax11.plot(depthkmarr[top1000km],self.data['eta'][top1000km],'g')
-        ax11.set_xlim([0., 1000.])
+        if isotropic:
+            ax12.plot(depthkmarr[depthselect],self.data['vp'][depthselect]/1000.,'r')
+        else:
+            ax12.plot(depthkmarr[depthselect],self.data['vpv'][depthselect]/1000.,'r')
+            ax12.plot(depthkmarr[depthselect],self.data['vph'][depthselect]/1000.,'r:')
+        
+        ax11.plot(depthkmarr[depthselect],self.data['eta'][depthselect],'g')
+        ax11.set_xlim(zoomdepth)
         ax11.set_ylim([0, 7])
-        ax12.set_xlim([0., 1000.])
+        ax12.set_xlim(zoomdepth)
         ax12.set_ylim([-2, 12])        
         ax11.set_ylabel('Shear velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
         ax12.set_ylabel('Compressional velocity (km/sec)')
@@ -1192,10 +1199,10 @@ class reference1D(object):
         with np.errstate(divide='ignore', invalid='ignore'): # Ignore warning about dividing by zero
             anisoVs=(self.data['vsh']-self.data['vsv'])*200./(self.data['vsh']+self.data['vsv'])
         anisoVp=(self.data['vph']-self.data['vpv'])*200./(self.data['vph']+self.data['vpv'])
-        ax21.plot(depthkmarr[top1000km],anisoVs[top1000km],'b')
-        ax21.plot(depthkmarr[top1000km],anisoVp[top1000km],'r')
-        ax21.set_ylim([0, 4])        
-        ax21.set_xlim([0., 1000.])
+        ax21.plot(depthkmarr[depthselect],anisoVs[depthselect],'b')
+        ax21.plot(depthkmarr[depthselect],anisoVp[depthselect],'r')
+        ax21.set_ylim([0, 5])        
+        ax21.set_xlim(zoomdepth)
         majorLocator = MultipleLocator(1)
         majorFormatter = FormatStrFormatter('%d')
         minorLocator = MultipleLocator(0.5)
@@ -1211,12 +1218,12 @@ class reference1D(object):
 
 
         ax22 = ax21.twinx()
-        ax22.plot(depthkmarr[top1000km],self.data['Qmu'][top1000km],'k')
+        ax22.plot(depthkmarr[depthselect],self.data['Qmu'][depthselect],'k')
         ax21.set_xlabel('Depth (km)')
         ax21.set_ylabel("$V_P$"+' or '+"$V_S$"+' anisotropy (%)')
         ax22.set_ylabel('Shear attenuation Q'+'$_{\mu}$')
         ax22.set_ylim([0, 400])        
-        ax22.set_xlim([0., 1000.])
+        ax22.set_xlim(zoomdepth)
         majorLocator = MultipleLocator(100)
         majorFormatter = FormatStrFormatter('%d')
         minorLocator = MultipleLocator(50)
@@ -1224,8 +1231,10 @@ class reference1D(object):
         ax22.yaxis.set_major_formatter(majorFormatter)
         # for the minor ticks, use no labels; default NullFormatter
         ax22.yaxis.set_minor_locator(minorLocator)
-        if ifshow: plt.show()
-        plt.savefig(self.name+outfile)
+        if ifshow: 
+            plt.show()
+        else:
+            plt.savefig(self.name+format)
 
 
 def epix2ascii(epix_dir,output_file,ref_model,mod_desc,n_hpar=1):
