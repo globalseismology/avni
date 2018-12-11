@@ -432,8 +432,16 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         val = np.empty_like(X)
         val[:] = np.nan;
         for i in range(0, valarray['lat'].size):
-            ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
-            ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
+            # Get the indices
+            try: # if unique values exist
+                ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
+                ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
+            except IndexError: # take nearest points if unique lat/lon not available
+            # This is a case when converting pix to epix.
+                array = np.asarray(X[0,:])
+                ilon = (np.abs(array - valarray['lon'][i])).argmin()
+                array = np.asarray(Y[:,0])
+                ilat = (np.abs(array - valarray['lat'][i])).argmin()                
             val[ilat,ilon] = valarray['val'][i]
         s = m.transform_scalar(val,lon,lat, 1000, 500)
         im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)

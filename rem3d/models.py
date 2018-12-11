@@ -58,6 +58,27 @@ def readepixfile(filename):
         raise IOError("File (",filename,") does not exist in the current directory - ",currentdir)
 
     return epixarr
+    
+def writeepixfile(filename,epixarr,headers=['#BASIS:PIX','#FORMAT:50']):
+    """Write .epix file format from a named array.
+
+    Parameters
+    ----------
+
+    filename : Name of the file containing four columns
+              (latitude, longitude, pixel_size, value)
+
+    """
+    #combine headers
+    header=''
+    for hh in headers: header=header+'\n'+hh
+    currentdir=os.getcwd()
+    try:
+        np.savetxt(filename, epixarr, fmt='%8.3f %8.3f %8.3f  %+12.7e',header=header,comments='')
+    except :
+        raise ValueError("File (",filename,") cannot be written in the current directory - ",currentdir)
+
+    return 
 
 def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     """
