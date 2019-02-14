@@ -18,7 +18,7 @@ import scipy.spatial.qhull as qhull
 
 ############################### PLOTTING ROUTINES ################################        
 from .trigd import atand,tand
-from .f2py import delazgc # geolib library from NSW
+from .f2py import ddelazgc # geolib library from NSW
 from . import constants
 ###############################
         
@@ -62,13 +62,13 @@ def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
         elon=eplon
         slat=atand(geoco*tand(stlat))
         slon=stlon
-        delta,azep,azst = delazgc(elat,elon,slat,slon)    
+        delta,azep,azst = ddelazgc(elat,elon,slat,slon)    
     else:    
         raise ValueError("get_distaz only takes list or floats")
     return delta,azep,azst
 
 def delazgc_helper(args):
-    return delazgc(*args)
+    return ddelazgc(*args)
     
 def cart2spher(xyz):
     """Convert from cartesian to spherical coordinates

@@ -442,6 +442,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
                 ilon = (np.abs(array - valarray['lon'][i])).argmin()
                 array = np.asarray(Y[:,0])
                 ilat = (np.abs(array - valarray['lat'][i])).argmin()                
+                
             val[ilat,ilon] = valarray['val'][i]
         s = m.transform_scalar(val,lon,lat, 1000, 500)
         im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
