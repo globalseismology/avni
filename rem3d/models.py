@@ -1061,6 +1061,23 @@ class reference1D(object):
                     disc['average'][field][icount] = 0.5*(sel[0][field]+sel[1][field])
                     disc['contrast'][field][icount] = abs(disc['delta'][field][icount]) / disc['average'][field][icount]*100.
             icount = icount+1
+            
+            
+        #---- find discontinuities        
+        discfind = disc['delta']['radius'][np.abs(1221.5-disc['delta']['radius']/1000.)<25.]
+        if len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
+        disc['itopic'] = np.where(self.data['radius']==discfind[0])[0][1]
+        
+        discfind = disc['delta']['radius'][np.abs(3480.0-disc['delta']['radius']/1000.)<25.]
+        if len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
+        disc['itopoc'] = np.where(self.data['radius']==discfind[0])[0][1]
+        
+        discfind = disc['delta']['radius'][np.abs(6368.0-disc['delta']['radius']/1000.)<0.1]
+        if len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
+        disc['itopcrust'] = np.where(self.data['radius']==discfind[0])[0][1]
+        
+        disc['itopmantle'] = min(np.where(self.data['vp']<7500.)[0])
+        
         self.metadata['discontinuities'] = disc
 
 
@@ -1110,6 +1127,35 @@ class reference1D(object):
             raise ValueError('reference1D object is not allocated')
         return values
 
+    def to_cards(self,fmt='cards'):
+        '''
+        Writes a model file that is compatible with MINEOS.
+
+          as 1e-4.
+        '''
+        if self.data is not None and self.__nlayers__ > 0:
+            model_name = self.name
+            ntotlev = self.__nlayers__
+            itopic = self.metadata['discontinuities']['itopic']
+            itopoc = self.metadata['discontinuities']['itopoc']
+            itopmantle = self.metadata['discontinuities']['itopmantle']
+            itopcrust = self.metadata['discontinuities']['itopcrust']
+            
+            f = open(model_name+'.'+fmt,'w')
+            f.write(model_name+'\n')
+            f.write('1 1. 1 1\n')
+            line = ff.FortranRecordWriter('(5I5)')
+            f.write(line.write([ntotlev,itopic,itopoc,itopmantle,itopcrust])+u'\n')
+            line = ff.FortranRecordWriter('(f8.0,3f9.2,2f9.1,2f9.2,f9.5)')
+
+            write = self.data[['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']]
+            for i in range(0,len(write)):
+                f.write(line.write(write[i])+u'\n')
+            f.close()
+        else:
+            raise ValueError('reference1D object is not allocated')
+
+
     def to_TauPmodel(self,fmt='tvel'):
         '''
         Writes a model file that is compatible with TauP.
@@ -1121,7 +1167,7 @@ class reference1D(object):
         '''
         if self.data is not None and self.__nlayers__ > 0:
             model_name = self.name
-            f = open(model_name+'.tvel','w')
+            f = open(model_name+'.'+fmt,'w')
             f.write('{} - P\n'.format(model_name))
             f.write('{} - S\n'.format(model_name))
 
