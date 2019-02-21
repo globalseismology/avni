@@ -1130,8 +1130,6 @@ class reference1D(object):
     def to_cards(self,fmt='cards'):
         '''
         Writes a model file that is compatible with MINEOS.
-
-          as 1e-4.
         '''
         if self.data is not None and self.__nlayers__ > 0:
             model_name = self.name
