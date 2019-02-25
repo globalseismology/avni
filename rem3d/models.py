@@ -1127,7 +1127,7 @@ class reference1D(object):
             raise ValueError('reference1D object is not allocated')
         return values
 
-    def to_cards(self,fmt='cards'):
+    def to_cards(self,dir='.',fmt='cards'):
         '''
         Writes a model file that is compatible with MINEOS.
         '''
@@ -1139,7 +1139,7 @@ class reference1D(object):
             itopmantle = self.metadata['discontinuities']['itopmantle']
             itopcrust = self.metadata['discontinuities']['itopcrust']
             
-            f = open(model_name+'.'+fmt,'w')
+            f = open(dir+'/'+model_name+'.'+fmt,'w')
             f.write(model_name+'\n')
             f.write('1 1. 1 1\n')
             line = ff.FortranRecordWriter('(5I5)')
@@ -1154,7 +1154,7 @@ class reference1D(object):
             raise ValueError('reference1D object is not allocated')
 
 
-    def to_TauPmodel(self,fmt='tvel'):
+    def to_TauPmodel(self,dir='.',fmt='tvel'):
         '''
         Writes a model file that is compatible with TauP.
         file format options 'tvel' and 'nd'.
@@ -1165,7 +1165,7 @@ class reference1D(object):
         '''
         if self.data is not None and self.__nlayers__ > 0:
             model_name = self.name
-            f = open(model_name+'.'+fmt,'w')
+            f = open(dir+'/'+model_name+'.'+fmt,'w')
             f.write('{} - P\n'.format(model_name))
             f.write('{} - S\n'.format(model_name))
 
@@ -1180,13 +1180,13 @@ class reference1D(object):
             raise ValueError('reference1D object is not allocated')
 
 
-    def to_axisem(self,anelastic=True,anisotropic=True):
+    def to_axisem(self,dir='.',anelastic=True,anisotropic=True):
         '''
          Write 1D model to be used as an external model in axisem
         '''
         if self.data is not None and self.__nlayers__ > 0:
             model_name = self.name
-            f = open(model_name+'.bm','w')
+            f = open(dir+'/'+model_name+'.bm','w')
             n_discon = 0
 
             if anelastic:
