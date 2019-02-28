@@ -18,6 +18,13 @@ from . import constants
 from rem3d.f2py import vbspl
 #######################################################################################
 
+def alphanum_key(s): 
+    '''
+    helper tool to sort lists in ascending numerical order (natural sorting),
+    rather than lexicographic sorting
+    '''
+    return [int(c) if c.isdigit() else c for c in re.split('([0-9]+)', s)]
+
 
 def krunge(n,x,h,y,f,m=0,phi=np.zeros(6),savey=np.zeros(6)):
     """
