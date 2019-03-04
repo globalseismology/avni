@@ -313,12 +313,23 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     model_name = parser['metadata']['name']
     ref_model = parser['metadata']['reference1D']
     epix_folder = parser['metadata']['folder']
+    interpolant_type = parser['metadata']['interpolant_type']
+    cite = parser['metadata']['cite']
+    crust = parser['metadata']['crust']
+    forward_modeling = parser['metadata']['forward_modeling']
+    scaling = parser['metadata']['scaling']
     kernel_set = '{}'.format(parser['metadata']['kernel_set'])
 
     #write header
     f_out = open(output_dir+'/{}.rem3d.ascii'.format(model_name),'w')
+    f_out.write(u'NAME: {}\n'.format(model_name))
     f_out.write(u'REFERENCE MODEL: {} \n'.format(ref_model))
     f_out.write(u'KERNEL SET: {}\n'.format(kernel_set))
+    f_out.write(u'INTERPOLANT: {}\n'.format(interpolant_type))
+    f_out.write(u'CITE: {}\n'.format(cite))
+    if crust is not 'None': f_out.write(u'CRUST: {}\n'.format(crust))
+    f_out.write(u'FORWARD MODELING: {}\n'.format(forward_modeling))
+    f_out.write(u'SCALING: {}\n'.format(scaling))
 
     #find the number radial kernels
     epix_lengths = []
@@ -360,23 +371,32 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         #write descriptions of radial kernels
         for j, epix_file in enumerate(epix_files):
 
-            #read header
+            #read header and store basic metadata
+            metadata = {}
             head = []
             with open(epix_file) as f:
                 for line in f:
                     if line.startswith('#'):
                         head.append(line)
-
+                    for field in ['DEPTH','AVERAGE','IFREMAV','REFVALUE','REFMODEL','UNIT','WHAT']:
+                        if field in line: metadata[field] = line.split(':')[1].split('\n')[0].lstrip().rstrip()
+                                    
+            # conduct checks
+            assert (parser['parameters'][parameter]['unit']==metadata['UNIT'])," in file "+epix_file
+            assert (parser['parameters'][parameter]['shortname'] == metadata['WHAT'])," in file "+epix_file
+            assert (parser['metadata']['reference1D']==metadata['REFMODEL'])
+            
             if mod_type == 'heterogeneity':
                 for line in head:
-                    if line.strip().split(':')[0] == '#DEPTH_RANGE':
-                        depth_range = line.split(':')[1].split('\n')[0]
+                    if 'DEPTH_RANGE' in line: depth_range = line.split(':')[1].split('\n')[0] 
                 f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,mod_desc,depth_range))
 
             elif mod_type == 'topography':
+                assert (float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']))," in file "+epix_file
                 depth_ref = parser['parameters'][parameter]['depth']
                 f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,mod_desc,depth_ref))
-
+            
+            # now read the data
             f = np.loadtxt(epix_file)
 
             if j == 0 and k == 1:
@@ -399,9 +419,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                         lats.append(f[:,0])
                         lons.append(f[:,1])
                         pxs.append(f[:,2])
-
                 stru_indx.append(n_hpar)
-
             k += 1
 
     #write horizontal parameterization
@@ -434,7 +452,8 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 lon_here -= 360.0
             f_out.write(u'{:5.1f} {:5.1f} {:5.1f}\n'.format(lon_here,
                         lat_here, px_here))
-
+    
+    # write coefficients
     k = 1
     for i, parameter in enumerate(parser['parameters']):
 
@@ -464,7 +483,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             f_out.write(line.write(coefs)+u'\n')
             k += 1
 
-def ascii2xarray(ascii_file,save_netcdf=False,outfile=None,setup_file='setup.cfg'):
+def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg'):
     '''
     write an xarrary dataset from a rem3d formatted ascii file
 
@@ -472,9 +491,7 @@ def ascii2xarray(ascii_file,save_netcdf=False,outfile=None,setup_file='setup.cfg
     ----------------
   
     ascii_file: path to rem3d format output file
-    
-    save_netcdf: save netcdf format
-    
+        
     outfile: output netcdf file
     
     '''
@@ -491,11 +508,11 @@ def ascii2xarray(ascii_file,save_netcdf=False,outfile=None,setup_file='setup.cfg
     with open(ascii_file) as f:
     #read header
         for i, line in enumerate(f):
-            if i == 0:
+            if 'REFERENCE MODEL' in line:
                 ref_model = line.split('REFERENCE MODEL:')[1].strip()
-            elif i == 1:
+            if 'KERNEL SET' in line:
                 krnl_set = line.split('KERNEL SET:')[1].strip()
-            elif i == 2:
+            if 'RADIAL STRUCTURE KERNELS' in line:
                 nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
                 nrad_krnl = int(nrad_krnl)
                 break
@@ -507,7 +524,6 @@ def ascii2xarray(ascii_file,save_netcdf=False,outfile=None,setup_file='setup.cfg
         rpar = []
         variable_idxs = []
 
-        if krnl_set[0:3] == 'BOX': krnl_wdth = float(krnl_set[3:].split('+')[0])
         npts_dep = nrad_krnl
 
         hpar_idx = 0
@@ -558,14 +574,15 @@ def ascii2xarray(ascii_file,save_netcdf=False,outfile=None,setup_file='setup.cfg
             pxwd = []
 
             line = f.readline()
-            print(line)
+            print(line.strip())
             hpar_type = line.strip().split()[2].split(',')[0]
             hpar_name = line.split(':')[1].strip()
 
             if hpar_name.lower().startswith('pixel'):
-                 pxw_lon = float(line.strip().split()[3])
-                 pxw_lat = float(line.strip().split()[5])
+                 pxw_lon = float(line.strip().split()[3].strip(','))
+                 pxw_lat = float(line.strip().split()[5].strip(','))
                  nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
+                 assert(nlines == float(line.strip().split()[6].strip(',')))
             else:
                 raise ValueError('only PIXEL parameterizations enabled')
 
@@ -612,11 +629,9 @@ def ascii2xarray(ascii_file,save_netcdf=False,outfile=None,setup_file='setup.cfg
 
     #make DataArrays for each variable, and add to the dataset
     for variable in variables:
-        print(variable)
-
         hpar_idx = model_dict[variable]['hpar_idx'] 
         pxw = hpar_list[hpar_idx][2][0]
-        print('PXW', pxw)
+        print(variable,': PXW', pxw)
 
         #create dims arrays
         lon = np.arange((pxw/2.),360.,pxw)
@@ -649,7 +664,8 @@ def ascii2xarray(ascii_file,save_netcdf=False,outfile=None,setup_file='setup.cfg
     attrs = parser['metadata']
     ds.attrs = attrs
  
-    if save_netcdf: ds.to_netcdf(outfile)
+    if outfile != None: ds.to_netcdf(outfile)
+    return ds
         
 #####################
 # Vertical basis parameter class that defines an unique combination of functions, their radial parameterization and any scaling
