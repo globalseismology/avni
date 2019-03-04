@@ -1668,6 +1668,9 @@ class reference1D(object):
         else:
             raise ValueError('reference1D object is not allocated')
 
+        if self.data['vp'][-1] == 0 or self.data['vs'][-1] == 0:
+            raise Warning('zero velocity layer detected at surface ...\n \
+                      TauP raytracing may not work')
 
     def to_axisem(self,dir='.',anelastic=True,anisotropic=True):
         '''
