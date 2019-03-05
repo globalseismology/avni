@@ -34,6 +34,8 @@ import h5py
 from collections import Counter
 import xarray as xr
 import traceback
+import pandas as pd
+
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import tools   
 from . import plots 
@@ -483,7 +485,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             f_out.write(line.write(coefs)+u'\n')
             k += 1
 
-def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg'):
+def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg',compression_opts=9, engine='h5netcdf',compression='gzip'):
     '''
     write an xarrary dataset from a rem3d formatted ascii file
 
@@ -531,7 +533,7 @@ def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg'):
         var_idx = 0
 
         for i, line in enumerate(f):
-            print(line)
+            print(line.strip())
             if i < nrad_krnl:
 
                 variable = line.strip().split()[2].split(',')[0]
@@ -664,7 +666,11 @@ def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg'):
     attrs = parser['metadata']
     ds.attrs = attrs
  
-    if outfile != None: ds.to_netcdf(outfile)
+    # write to netcdf
+    comp = {'compression': compression, 'compression_opts': compression_opts}
+    encoding = {var: comp for var in ds.data_vars}
+    if outfile != None: ds.to_netcdf(outfile,engine=engine,encoding=encoding)
+    
     return ds
         
 #####################
@@ -881,9 +887,9 @@ class model3d(object):
                 var1 = traceback.format_exc()
                 try:# try hdf5
                     if kwargs:
-                        self.readhdf5(file,**kwargs)
+                        self.readhdf5(file,resolution=0,realization=0,**kwargs)
                     else:
-                        self.readhdf5(file)
+                        self.readhdf5(file,resolution=0,realization=0)
                 except:
                     var2 = traceback.format_exc()
                     print(var1)
@@ -966,6 +972,10 @@ class model3d(object):
         self.type = 'rem3d'
         
         return 
+        
+    def readnc4(self,nc4file,resolution=0,realization=0,**kwargs):
+        if (not os.path.isfile(nc4file)): raise IOError("Filename ("+nc4file+") does not exist")
+        
 
     def readhdf5(self,hdffile,query=None):
         """
@@ -1008,12 +1018,15 @@ class model3d(object):
         return   
         
           
-    def writehdf5(self, hdffile = None):
+    def writehdf5(self, hdffile = None, overwrite = False):
         """
         Writes the model object to hdf5 file
         """
         if hdffile == None: hdffile = self.name+'.h5'
-        hf = h5py.File(hdffile, 'a')
+        if overwrite:
+            hf = h5py.File(hdffile, 'w')
+        else:
+            hf = h5py.File(hdffile, 'a')
         g1 = hf.require_group(self.name)
         
         if self.name != None: g1.attrs['name']=self.name
@@ -1050,6 +1063,7 @@ class model3d(object):
                     print('Warning: No name found for resolution '+str(ires)+', realization '+str(icase))
                 key = self.name+'/resolution_'+str(ires)+'/realization_'+str(icase)
                 io.store_sparse_hdf(hf,key,self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'])
+                
         hf.close()
         
             
