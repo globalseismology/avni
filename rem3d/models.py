@@ -305,7 +305,7 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
 
 
     
-def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True):
+def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True):
     '''
     write a rem3d formatted ascii file from a directory containing epix files 
 
@@ -401,9 +401,10 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                         if field in line: metadata[field] = line.split(':')[1].split('\n')[0].lstrip().rstrip()
                                     
             # conduct checks
-            assert (parser['parameters'][parameter]['unit']==metadata['UNIT'])," in file "+epix_file
-            assert (parser['parameters'][parameter]['shortname'] == metadata['WHAT'])," in file "+epix_file
-            assert (parser['metadata']['reference1D']==metadata['REFMODEL'])
+            if checks:
+                assert (parser['parameters'][parameter]['unit']==metadata['UNIT'])," in file "+epix_file
+                assert (parser['parameters'][parameter]['shortname'] == metadata['WHAT'])," in file "+epix_file
+                assert (parser['metadata']['reference1D']==metadata['REFMODEL'])," in file "+epix_file
             
             if mod_type == 'heterogeneity':
                 for line in head:
@@ -411,7 +412,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,mod_desc,depth_range))
 
             elif mod_type == 'topography':
-                assert (float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']))," in file "+epix_file
+                if checks: assert (float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']))," in file "+epix_file
                 depth_ref = parser['parameters'][parameter]['depth']
                 f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,mod_desc,depth_ref))
             
