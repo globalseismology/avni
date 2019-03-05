@@ -9,6 +9,7 @@ from builtins import *
 
 import pickle
 import sys,os
+import timeit
 import argparse #parsing arguments
 import glob # pattern matching for finding files
 import numpy as np #for numerical analysis
@@ -288,6 +289,21 @@ def readprojections(type='radial'):
 
     return 
     
+def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True):
+    start_time  =  timeit.default_timer()    
+    print('... writing ASCII file')
+    asciifile = epix2ascii(model_dir=model_dir,setup_file=setup_file,output_dir=output_dir,n_hpar=n_hpar,write_zeros=write_zeros)
+    elapsed  =  timeit.default_timer() - start_time
+    print("........ evaluations took "+str(elapsed)+" s")
+
+    print('... written ASCII file '+asciifile+'. evaluations took '+str(elapsed)+' s')
+    ncfile = output_dir+'/'+asciifile.split('.ascii')[0]+'.nc4'
+    print('... writing netcdf file '+ncfile)
+    ds = ascii2xarray(asciifile,outfile=ncfile,setup_file=setup_file,compression_opts=9, engine='h5netcdf',compression='gzip')
+    
+    return ds
+
+
     
 def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True):
     '''
@@ -323,7 +339,8 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     kernel_set = '{}'.format(parser['metadata']['kernel_set'])
 
     #write header
-    f_out = open(output_dir+'/{}.rem3d.ascii'.format(model_name),'w')
+    outfile = output_dir+'/{}.rem3d.ascii'.format(model_name)
+    f_out = open(outfile,'w')
     f_out.write(u'NAME: {}\n'.format(model_name))
     f_out.write(u'REFERENCE MODEL: {} \n'.format(ref_model))
     f_out.write(u'KERNEL SET: {}\n'.format(kernel_set))
@@ -484,6 +501,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(k,px_w))
             f_out.write(line.write(coefs)+u'\n')
             k += 1
+    return outfile
 
 def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg',compression_opts=9, engine='h5netcdf',compression='gzip'):
     '''
