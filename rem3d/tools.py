@@ -13,6 +13,7 @@ import numpy as np
 from math import ceil
 from collections import Counter
 import pdb
+import re
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import constants
 from rem3d.f2py import vbspl

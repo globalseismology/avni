@@ -9,6 +9,7 @@ from builtins import *
 
 import pickle
 import sys,os
+import timeit
 import argparse #parsing arguments
 import glob # pattern matching for finding files
 import numpy as np #for numerical analysis
@@ -33,6 +34,8 @@ import struct
 import h5py
 from collections import Counter
 import xarray as xr
+import traceback
+import pandas as pd
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import tools   
@@ -114,6 +117,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
         if line.startswith("DESC"): 
             idummy=int(line[4:line.index(':')])
+            if idummy >= maxkern: raise ValueError('number of radial kernels > maxkern ('+str(maxkern)+') : increase it in read3dmodelfile') 
             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
             ifst,ilst=tools.firstnonspaceindex(substr)
             desckern[idummy-1]=substr[ifst:ilst]
@@ -284,6 +288,410 @@ def readprojections(type='radial'):
 
 
     return 
+    
+def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True):
+    start_time  =  timeit.default_timer()    
+    print('... writing ASCII file')
+    asciifile = epix2ascii(model_dir=model_dir,setup_file=setup_file,output_dir=output_dir,n_hpar=n_hpar,write_zeros=write_zeros)
+    elapsed  =  timeit.default_timer() - start_time
+    print("........ evaluations took "+str(elapsed)+" s")
+
+    print('... written ASCII file '+asciifile+'. evaluations took '+str(elapsed)+' s')
+    ncfile = output_dir+'/'+asciifile.split('.ascii')[0]+'.nc4'
+    print('... writing netcdf file '+ncfile)
+    ds = ascii2xarray(asciifile,outfile=ncfile,setup_file=setup_file,compression_opts=9, engine='h5netcdf',compression='gzip')
+    
+    return ds
+
+
+    
+def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True):
+    '''
+    write a rem3d formatted ascii file from a directory containing epix files 
+
+    Input parameters:
+    ----------------
+  
+    epix_dir: path to directory containing epix layer files
+    
+    output_file: name of rem3d format output file
+        
+    n_hpar:number of horizontal parameterizations (currently only handles 
+           models with 1 horizontal parameterization, and with a constant pixel width)
+           
+    '''
+    cfg_file = model_dir+'/'+setup_file
+
+    if not os.path.isfile(cfg_file):
+        raise IOError('No configuration file found.'\
+	                 'Model directory must contain '+setup_file)
+    else:
+        parser = ConfigObj(cfg_file)
+
+    model_name = parser['metadata']['name']
+    ref_model = parser['metadata']['reference1D']
+    epix_folder = parser['metadata']['folder']
+    interpolant_type = parser['metadata']['interpolant_type']
+    cite = parser['metadata']['cite']
+    crust = parser['metadata']['crust']
+    forward_modeling = parser['metadata']['forward_modeling']
+    scaling = parser['metadata']['scaling']
+    kernel_set = '{}'.format(parser['metadata']['kernel_set'])
+
+    #write header
+    outfile = output_dir+'/{}.rem3d.ascii'.format(model_name)
+    f_out = open(outfile,'w')
+    f_out.write(u'NAME: {}\n'.format(model_name))
+    f_out.write(u'REFERENCE MODEL: {} \n'.format(ref_model))
+    f_out.write(u'KERNEL SET: {}\n'.format(kernel_set))
+    f_out.write(u'INTERPOLANT: {}\n'.format(interpolant_type))
+    f_out.write(u'CITE: {}\n'.format(cite))
+    if crust is not 'None': f_out.write(u'CRUST: {}\n'.format(crust))
+    f_out.write(u'FORWARD MODELING: {}\n'.format(forward_modeling))
+    f_out.write(u'SCALING: {}\n'.format(scaling))
+
+    #find the number radial kernels
+    epix_lengths = []
+    for parameter in parser['parameters']:
+        mod_type = parser['parameters'][parameter]['type']
+
+        if mod_type == 'heterogeneity':
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+        elif mod_type == 'topography':
+            topo_folder = parser['parameters'][parameter]['folder']
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
+
+        epix_lengths.append(len(epix_files))
+    f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(np.sum(epix_lengths)))
+
+    n_hpar = 1 #default is a single horizontal parameterization for all parameters
+
+    stru_indx = []
+    stru_list = []
+    lats = []
+    lons = []
+    pxs = []
+
+    k = 1
+    for i, parameter in enumerate(parser['parameters']):
+
+        mod_type = parser['parameters'][parameter]['type']
+        mod_desc = parser['parameters'][parameter]['shortname']
+
+        if mod_type == 'heterogeneity':
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+            epix_files.sort(key=tools.alphanum_key)
+        elif mod_type == 'topography':
+            topo_folder = parser['parameters'][parameter]['folder']
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
+        else:
+            raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
+
+        #write descriptions of radial kernels
+        for j, epix_file in enumerate(epix_files):
+
+            #read header and store basic metadata
+            metadata = {}
+            head = []
+            with open(epix_file) as f:
+                for line in f:
+                    if line.startswith('#'):
+                        head.append(line)
+                    for field in ['DEPTH','AVERAGE','IFREMAV','REFVALUE','REFMODEL','UNIT','WHAT','FORMAT','BASIS']:
+                        if field in line: metadata[field] = line.split(':')[1].split('\n')[0].lstrip().rstrip()
+                                    
+            # conduct checks
+            if checks:
+                assert (parser['parameters'][parameter]['unit']==metadata['UNIT'])," in file "+epix_file
+                assert (parser['parameters'][parameter]['shortname'] == metadata['WHAT'])," in file "+epix_file
+                assert (parser['metadata']['reference1D']==metadata['REFMODEL'])," in file "+epix_file
+                assert (metadata['FORMAT']=='50')," in file "+epix_file
+                assert (metadata['BASIS']=='PIX')," in file "+epix_file
+            
+            if mod_type == 'heterogeneity':
+                for line in head:
+                    if 'DEPTH_RANGE' in line: depth_range = line.split(':')[1].split('\n')[0] 
+                f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,mod_desc,depth_range))
+
+            elif mod_type == 'topography':
+                if checks: assert (float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']))," in file "+epix_file
+                depth_ref = parser['parameters'][parameter]['depth']
+                f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,mod_desc,depth_ref))
+            
+            # now read the data
+            f = np.loadtxt(epix_file)
+
+            if j == 0 and k == 1:
+                par1 = f[:,0:2]
+                lats.append(f[:,0])
+                lons.append(f[:,1])
+                pxs.append(f[:,2])
+                stru_indx.append(n_hpar)
+            else:
+                par_new = f[:,0:2]
+                lats_new = f[:,0]
+                lons_new = f[:,1]
+                pxs_new = f[:,2]
+
+                #loop through all previous parameterizations
+                for ii in range(len(lats)):
+
+                    if not np.array_equal(par1,par_new):
+                        n_hpar += 1
+                        lats.append(f[:,0])
+                        lons.append(f[:,1])
+                        pxs.append(f[:,2])
+                stru_indx.append(n_hpar)
+            k += 1
+
+    #write horizontal parameterization
+    f_out.write(u'HORIZONTAL PARAMETERIZATIONS: {}\n'.format(len(lats)))
+    for i in range(0,len(lats)):
+        
+        #check pixel widths
+        if np.min(pxs[i]) != np.max(pxs[i]):
+            raise ValueError('no inhomogeneous model parameterizations allowed yet')
+        else:
+            px_w = pxs[i][0]
+
+        shape = (int(180.0/px_w),int(360.0/px_w))
+        lats_arr = np.reshape(lats,shape,order='F')
+        lons_arr = np.reshape(lons,shape,order='F')
+        px_w_arr = np.reshape(pxs,shape,order='F')
+
+        lats_ = lats_arr.flatten()
+        lons_ = lons_arr.flatten()
+        pxs_ = px_w_arr.flatten()
+
+        f_out.write(u'HPAR   {}: PIXELS,  {:3.2f} X {:3.2f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats_)))
+
+        for j in range(0,len(lats_)):
+            lon_here = lons_[j]
+            lat_here = lats_[j]
+            px_here = pxs_[j]
+
+            if lon_here > 180.0: lon_here -= 360.0
+            f_out.write(u'{:6.2f} {:6.2f} {:6.2f}\n'.format(lon_here,lat_here, px_here))
+    
+    # write coefficients
+    k = 1
+    for i, parameter in enumerate(parser['parameters']):
+
+        #epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+        mod_type = parser['parameters'][parameter]['type']
+        mod_desc = parser['parameters'][parameter]['shortname']
+
+        if mod_type == 'heterogeneity':
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+            epix_files.sort(key=tools.alphanum_key)
+        elif mod_type == 'topography':
+            topo_folder = parser['parameters'][parameter]['folder']
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
+        else:
+            raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
+        epix_files.sort(key=tools.alphanum_key)
+
+        #write model coefficients
+        line = ff.FortranRecordWriter('(6E12.4)')
+        for j, epix_file in enumerate(epix_files):
+            f = np.loadtxt(epix_file)
+            print('writing coefficients for layer ', k)
+            coefs = f[:,3]
+            coefs_arr = np.reshape(coefs,shape,order='F')
+            coefs = coefs_arr.flatten()
+            f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(k,px_w))
+            f_out.write(line.write(coefs)+u'\n')
+            k += 1
+    return outfile
+
+def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg',compression_opts=9, engine='h5netcdf',compression='gzip'):
+    '''
+    write an xarrary dataset from a rem3d formatted ascii file
+
+    Input parameters:
+    ----------------
+  
+    ascii_file: path to rem3d format output file
+        
+    outfile: output netcdf file
+    
+    '''
+
+    model_dict = {}
+    
+    # check for configuration file
+    if not os.path.isfile(setup_file):
+        raise IOError('No configuration file found.'\
+	                 'Model directory must contain '+setup_file)
+    else:
+        parser = ConfigObj(setup_file)
+
+    with open(ascii_file) as f:
+    #read header
+        for i, line in enumerate(f):
+            if 'REFERENCE MODEL' in line:
+                ref_model = line.split('REFERENCE MODEL:')[1].strip()
+            if 'KERNEL SET' in line:
+                krnl_set = line.split('KERNEL SET:')[1].strip()
+            if 'RADIAL STRUCTURE KERNELS' in line:
+                nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
+                nrad_krnl = int(nrad_krnl)
+                break
+
+        #read variables and parameterizations
+        variables = []
+        rpar_list = []
+        hpar_list = []
+        rpar = []
+        variable_idxs = []
+
+        npts_dep = nrad_krnl
+
+        hpar_idx = 0
+        rpar_idx = -1
+        var_idx = 0
+
+        for i, line in enumerate(f):
+            print(line.strip())
+            if i < nrad_krnl:
+
+                variable = line.strip().split()[2].split(',')[0]
+                if variable not in variables:
+                    variables.append(variable)
+                    model_dict[variable] = {}
+                    model_dict[variable]['hpar_idx'] = None
+                    variable_idxs.append(var_idx)
+
+                    if len(rpar) > 0 and rpar not in rpar_list:
+                        rpar_idx += 1
+                        rpar_list.append(rpar)
+                        model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
+                        var_idx += 1
+                        rpar = []
+
+                    if len(rpar) > 0 and rpar in rpar_list:
+                        rpar_list.append(rpar)
+                        model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
+                        var_idx += 1
+                        rpar = []
+                    
+                try:
+                    rpar_start = float(line.strip().split()[3])
+                    rpar_end = float(line.strip().split()[5])
+                    rpar.append((rpar_start + rpar_end)/2.)
+                except IndexError:
+                    model_dict[variable]['rpar_idx'] = None
+
+            if i == nrad_krnl: 
+                #read number of horizontal parameterizations
+                nhpar = int(line.strip().split()[-1])
+                nhpar = line.strip().split()[-1]
+                break
+
+        for i in range(0,nhpar):
+
+            lons = []
+            lats = []
+            pxwd = []
+
+            line = f.readline()
+            print(line.strip())
+            hpar_type = line.strip().split()[2].split(',')[0]
+            hpar_name = line.split(':')[1].strip()
+
+            if hpar_name.lower().startswith('pixel'):
+                 pxw_lon = float(line.strip().split()[3].strip(','))
+                 pxw_lat = float(line.strip().split()[5].strip(','))
+                 nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
+                 assert(nlines == float(line.strip().split()[6].strip(',')))
+            else:
+                raise ValueError('only PIXEL parameterizations enabled')
+
+            for j in range(nlines):
+                line = f.readline()
+                lons.append(float(line.strip().split()[0]))
+                lats.append(float(line.strip().split()[1]))
+                pxwd.append(float(line.strip().split()[2]))
+
+        hpar_list.append([lons,lats,pxwd])
+
+        #read coefficients
+        for variable in variables:
+            stru_idx = model_dict[variable]['rpar_idx']
+            model_dict[variable]['layers'] = {}
+
+            if stru_idx is not None:
+                n_stru = len(rpar_list[stru_idx])
+            else:
+                n_stru = 1
+
+            for i in range(0,n_stru):
+                layer_coefs = []
+
+                #get structure info
+                line = f.readline()
+                nstru = int(line.strip().split()[1].split(':')[0])
+                nhparam = int(line.strip().split()[2])
+                npts = len(hpar_list[nhparam-1][0][:])
+                nlines = int(npts/6)
+
+                if model_dict[variable]['hpar_idx'] == None:
+                    model_dict[variable]['hpar_idx'] = nhparam-1
+
+                for j in range(nlines):
+                     line = f.readline()
+                     for coef in line.strip().split():
+                         layer_coefs.append(float(coef))
+
+                model_dict[variable]['layers'][i] = layer_coefs
+
+    #open xarray dataset
+    ds = xr.Dataset()
+
+    #make DataArrays for each variable, and add to the dataset
+    for variable in variables:
+        hpar_idx = model_dict[variable]['hpar_idx'] 
+        pxw = hpar_list[hpar_idx][2][0]
+        print(variable,': PXW', pxw)
+
+        #create dims arrays
+        lon = np.arange((pxw/2.),360.,pxw)
+        for i in range(0,len(lon)):
+            if lon[i] >= 180.0:
+                lon[i] -= 360.0
+        lat = np.arange(-90.+(pxw/2.),90,pxw)
+
+        stru_idx = model_dict[variable]['rpar_idx']
+        if stru_idx is not None:
+            dep = rpar_list[stru_idx]
+            data_array = xr.DataArray(np.zeros((len(dep),len(lon),len(lat))),
+                                      dims = ['depth','longitude','latitude'],
+                                      #dims = ['depth','latitude','longitude'],
+                                      coords=[dep,lon,lat])
+            for i,layer in enumerate(model_dict[variable]['layers']):
+                data_array[i,:,:] = np.reshape(model_dict[variable]['layers'][layer],
+                                    (len(lon),len(lat)),order='F')
+            ds[variable] = data_array
+        else:
+            data_array = xr.DataArray(np.zeros((len(lon),len(lat))),
+                                      dims = ['longitude','latitude'],
+                                      coords = [lon,lat])
+            data_array[:,:] = np.reshape(model_dict[variable]['layers'][0],
+                                    (len(lon),len(lat)),order='F')
+
+
+    #add attributes
+    attrs = {}
+    attrs = parser['metadata']
+    ds.attrs = attrs
+ 
+    # write to netcdf
+    comp = {'compression': compression, 'compression_opts': compression_opts}
+    encoding = {var: comp for var in ds.data_vars}
+    if outfile != None: ds.to_netcdf(outfile,engine=engine,encoding=encoding)
+    
+    return ds
+        
 #####################
 # Vertical basis parameter class that defines an unique combination of functions, their radial parameterization and any scaling
 
@@ -480,21 +888,32 @@ class model3d(object):
     '''
     A class for 3D reference Earth models used in tomography
     '''
-
-    def __init__(self,file=None,num_resolution=1,num_realization=1,maxkern=300,maxcoeff=6000):
+    def __init__(self,file=None,**kwargs):
         self.metadata ={}
         self.data = {}
-        for ii in np.arange(num_resolution): 
-            self.metadata['resolution_'+str(ii)] = {'name':None,'coef':None}
-            self.data['resolution_'+str(ii)] = {}
-            for jj in np.arange(num_realization):
-                self.data['resolution_'+str(ii)]['realization_'+str(jj)] = {'name':None,'coef':None}
         self.name = None
         self.type = None
         self.refmodel = None
         self.description = None
-        if file is not None: self.readfile(file,maxkern=maxkern,maxcoeff=maxcoeff)
-    
+        self.add_resolution(realization=True)
+        if file is not None: 
+            try:# try ascii
+                if kwargs:
+                    self.readascii(file,resolution=0,realization=0,**kwargs)
+                else:
+                    self.readascii(file,resolution=0,realization=0)
+            except:
+                var1 = traceback.format_exc()
+                try:# try hdf5
+                    if kwargs:
+                        self.readhdf5(file,resolution=0,realization=0,**kwargs)
+                    else:
+                        self.readhdf5(file,resolution=0,realization=0)
+                except:
+                    var2 = traceback.format_exc()
+                    print(var1)
+                    print(var2)
+                        
     def __str__(self):
         if self.name is not None:
             output = "%s is a three-dimensional model ensemble with %s resolution levels, %s realizations of %s type and %s as the reference model" % (self.name,len(self.metadata), len(self.data['resolution_0']),self.type,self.refmodel)
@@ -533,18 +952,21 @@ class model3d(object):
                 self.data['resolution_'+str(resolution)]['realization_'+str(realization)] = {'name':name,'coef':coef}    
             else:
                 raise ValueError('Invalid resolution in add_realization')
+        return realization
 
-    def add_resolution(self):
+    def add_resolution(self,name=None,realization = False):
         """
         Added a resolution level to the object. num_realization is the number 
         of realizations of model coefficients within that object.
         """      
         num_resolution = len(self.data)
-        self.metadata['resolution_'+str(num_resolution)] = None
+        self.metadata['resolution_'+str(num_resolution)] = {'name':name}
         self.data['resolution_'+str(num_resolution)] = {}
-        self.data['resolution_'+str(num_resolution)]['realization_0'] = {'name':None,'coef':None}
+        if realization: 
+            self.data['resolution_'+str(num_resolution)]['realization_0'] = {'name':None,'coef':None}
+        return num_resolution
 
-    def readfile(self,modelfile,resolution=0,realization=0,maxkern=300,maxcoeff=6000):
+    def readascii(self,modelfile,resolution=0,realization=0,**kwargs):
         """
         Reads a standard 3D model file. maxkern is the maximum number of radial kernels
         and maxcoeff is the maximum number of corresponding lateral basis functions.
@@ -553,19 +975,282 @@ class model3d(object):
         """    
         if (not os.path.isfile(modelfile)): raise IOError("Filename ("+modelfile+") does not exist")
     
-        # read mean model   
-        model=read3dmodelfile(modelfile,maxkern=maxkern,maxcoeff=maxcoeff)
+        # read mean model  
+        if kwargs:
+            model=read3dmodelfile(modelfile,**kwargs)
+        else:
+            model=read3dmodelfile(modelfile)
         
         self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = model['data']['name']
         self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = sparse.csr_matrix(model['data']['coef'])
 
         self.metadata['resolution_'+str(resolution)] = model['metadata']
-        self.name = ntpath.basename(modelfile)
+        #rename the name field only if it is None
+        if self.name == None : self.name = ntpath.basename(modelfile)
         self.description = "Read from "+modelfile
         self.type = 'rem3d'
         
         return 
+        
+    def readnc4(self,nc4file,resolution=0,realization=0,**kwargs):
+        """
+        Read netCDF4 file into a resolution and realization of model3D class.
+        
+        """
+        
+        if (not os.path.isfile(nc4file)): raise IOError("Filename ("+nc4file+") does not exist")
+        ds = xr.open_dataset(nc4file)
+        
+        
+#         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
+#         if line.startswith("DESC"): 
+#             idummy=int(line[4:line.index(':')])
+#             if idummy >= maxkern: raise ValueError('number of radial kernels > maxkern ('+str(maxkern)+') : increase it in read3dmodelfile') 
+#             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
+#             ifst,ilst=tools.firstnonspaceindex(substr)
+#             desckern[idummy-1]=substr[ifst:ilst]
+# 
+#         if line.startswith("HPAR"):     
+#             idummy=int(line[4:line.index(':')])
+#             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
+#             ifst,ilst=tools.firstnonspaceindex(substr)
+# 
+#             elif substr[ifst:ifst+7] == 'PIXELS,':                
+#                 ifst1=ifst+7
+#                 ifst=len(substr)
+#                 ilst=len(substr)
+#                 while substr[ifst-1:ifst] != ',': ifst=ifst-1
+#                 ncoef=int(substr[ifst+1:ilst].rstrip('\n'))
+#                 substr=substr[ifst1:ifst-1]
+#                 ifst1,ilst=tools.firstnonspaceindex(substr)
+#                 hsplfile[idummy-1]=substr[ifst1:ilst]
+#                 ityphpar[idummy-1]=3
+#                 typehpar[idummy-1]='PIXELS'
+#                 ncoefhor[idummy-1]=ncoef
+#                 
+#                 # initialize
+#                 if ncoef > maxcoeff: raise ValueError('ncoef ('+str(ncoef)+') > maxcoeff ('+str(maxcoeff)+') : increase it in read3dmodelfile') 
+#                 xlapix=np.zeros([maxcoeff,nhorpar], dtype=float) # center latitude
+#                 xlopix=np.zeros([maxcoeff,nhorpar], dtype=float) # center longitude
+#                 xsipix=np.zeros([maxcoeff,nhorpar], dtype=float) #size of pixel
+# 
+#                 # specific variables
+#                 for jj in range(ncoef):
+#                     arr=lines[ii].rstrip('\n').split(); ii=ii+1
+#                     xlopix[jj,idummy-1]=arr[0]; xlapix[jj,idummy-1]=arr[1]
+#                     xsipix[jj,idummy-1]=arr[2]
+#             else:
+#                 raise ValueError('Undefined parameterization type - '+substr[ifst:ilst])
+#         if line.startswith("STRU"):
+#             idummy=int(line[4:line.index(':')])
+#             ihor=int(line[line.index(':')+1:].rstrip('\n'))
+#             ihorpar[idummy-1]=ihor
+#             ncoef=ncoefhor[ihor-1]
+#             for jj in range(int(ncoef/6)):
+#                 arr=lines[ii].rstrip('\n').split(); ii=ii+1
+#                 coef[jj*6:(jj+1)*6,idummy-1]=[float(i) for i in arr]
+#             remain = ncoef % 6    
+#             if remain > 0: 
+#                 arr=lines[ii].rstrip('\n').split(); ii=ii+1
+#                 coef[(jj+1)*6:(jj+1)*6+remain,idummy-1]=[float(i) for i in arr]
+#     # Store the variables
+#     numvar=0; varstr=np.zeros(nmodkern, dtype='U40')
+#     ivarkern=np.zeros(nmodkern)
+#     for ii in np.arange(nmodkern):
+#         string=desckern[ii]
+#         #pdb.set_trace()
+#         if numvar == 0:
+#             varstr[0] = string[:string.index(',')]
+#             ivarkern[ii]=1
+#             numvar=numvar+1
+#         else:
+#             for kk in np.arange(numvar):
+#                 if varstr[kk] == string[:string.index(',')]:
+#                     ivarkern[ii]=kk+1
+#         
+#         if ivarkern[ii] == 0:
+#             numvar=numvar+1
+#             varstr[numvar-1] = string[:string.index(',')]
+#             ivarkern[ii]=numvar
 
+    
+        # Store in a dictionary
+        metadata = {}
+        metadata['refmodel']=ds.attrs['reference1D']
+        metadata['kerstr']=ds.attrs['kernel_set']
+        metadata['nhorpar']=1
+        metadata['crust']=ds.attrs['crust']; metadata['null_model']=None
+        metadata['interpolant']=ds.attrs['interpolant_type'];
+        metadata['cite']=ds.attrs['cite']
+        metadata['shortcite']=ds.attrs['name']; metadata['scaling']=ds.attrs['scaling']
+        metadata['ityphpar']=np.array([3])
+        metadata['typehpar']=np.array(['PIXELS'], dtype='<U40')
+        # check the pixel size
+        pixlat = np.unique(np.ediff1d(np.array(ds.latitude)))
+        pixlon = np.unique(np.ediff1d(np.array(ds.longitude)))
+        pixlon = pixlon[np.where(pixlon>0.)]
+        assert(len(pixlat)==1)
+        assert(len(pixlon)==1)
+        assert(pixlat==pixlon)
+        metadata['hsplfile']=np.array([str(pixlat[0])+' X '+str(pixlat[0])], dtype='<U40')
+        lenarr = len(ds.latitude)*len(ds.longitude)
+        metadata['xsipix']=np.array([[pixlat[0] for ii in range(lenarr)]])
+        metadata['xlapix'] = np.zeros([1,lenarr])
+        metadata['xlopix'] = np.zeros([1,lenarr])  
+        # get data keys
+        data_keys = ds.data_vars.keys()
+        indx = 0   
+        idep = 0     
+        if len(ds.dims) == 3:
+            ndepth, nlat, nlon = ds[data_keys[0]].shape
+            for ilat in range(nlat):
+                for ilon in range(nlon):
+                    metadata['xlapix'][0][indx] = ds[data_keys[0]][idep,ilat,ilon].latitude
+                    metadata['xlopix'][0][indx] = ds[data_keys[0]][idep,ilat,ilon].longitude
+                    indx += 1
+        else:
+            raise ValueError('dimensions != 3')
+        
+                
+        #depth differences and get depth extents
+        depdiff = np.ediff1d(ds.depth)
+        deptop = np.copy(ds.depth)
+        depbottom = np.copy(ds.depth)
+        
+        for ii in range(len(depdiff)-2):
+            deptop[ii] = deptop[ii] - (2.*depdiff[ii]-depdiff[ii+1])/2.
+            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii]-depdiff[ii+1])/2.
+        for ii in range(len(depdiff),len(depdiff)-3,-1):
+            deptop[ii] = deptop[ii] - (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+            
+        pdb.set_trace()
+        ## create keys
+#         desckern = []
+#         for key in data_keys:
+#             if 'topo' in key:
+#                 desckern.append(u'{}, {} km\n'.format(key,depth_range)
+#             else:
+#                 desckern.append(u'{}, {} - {} km\n'.format(key,deptop[ii],depbottom[ii])
+# 
+#         
+#         ihorpar=np.zeros(maxkern, dtype=int)
+#         coef=np.zeros([maxcoeff,maxkern], dtype=float)
+#         
+#         ## Save the relevant portions
+#         desckern = desckern[:nmodkern]
+#         ihorpar = ihorpar[:nmodkern]
+#         varstr = varstr[:numvar]
+#         coef = coef[:max(ncoefhor),:nmodkern].transpose() # to get it in a kernel * coeff format
+#         ncoefcum = np.cumsum([ncoefhor[ihor-1] for ihor in ihorpar])
+# 
+# 
+#         metadata['desckern']=desckern; metadata['nmodkern']=nmodkern
+#         metadata['ncoefhor']=ncoefhor; metadata['ihorpar']=ihorpar
+#         metadata['ivarkern']=ivarkern; metadata['numvar']=numvar
+#         metadata['varstr']=varstr; metadata['ncoefcum']=ncoefcum
+        
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = ds.attrs['name']
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = sparse.csr_matrix(coef)
+        
+        self.metadata['resolution_'+str(resolution)] = metadata
+        
+        #rename the name field only if it is None
+        if self.name == None : self.name = ntpath.basename(nc4file)
+        self.description = "Read from "+nc4file
+        self.type = 'rem3d'
+        
+
+    def readhdf5(self,hdffile,query=None):
+        """
+        Reads a standard 3D model file from a hdf5 file
+        
+        Input Parameters:
+        ----------------
+        
+        query : if None, use the model available if only one is included. 
+                Choose from query hf.keys() if multiple ones are available
+        """    
+        if (not os.path.isfile(hdffile)): raise IOError("Filename ("+hdffile+") does not exist")
+        hf = h5py.File(hdffile, 'r')
+        if query is None:
+            if len(hf.keys()) == 1: 
+                query = hf.keys()[0]
+            else:
+                str=''
+                for str1 in hf.keys(): str=str+' , '+str1
+                raise ValueError("... choose one from multiple query "+str)
+        # read mean model   
+        for name,value in hf[query].attrs.items(): 
+            try:
+                setattr(self, name,hf[query].attrs[name]) 
+            except:
+                setattr(self, name,None) 
+                        
+        # loop over resolution
+        pdb.set_trace()
+        if len(self.data) < len(hf[query].keys()):
+            # add more resolutions
+            for ii in range(len(hf[query].keys()) - len(self.data)): self.add_resolution()
+        for resolution in hf[query].keys():
+            g1 = hf[query][resolution]
+            for name,value in g1.attrs.items(): 
+                try:
+                    setattr(self, name,g1.attrs[name]) 
+                except:
+                    setattr(self, name,None) 
+        return   
+        
+          
+    def writehdf5(self, hdffile = None, overwrite = False):
+        """
+        Writes the model object to hdf5 file
+        """
+        if hdffile == None: hdffile = self.name+'.h5'
+        if overwrite:
+            hf = h5py.File(hdffile, 'w')
+        else:
+            hf = h5py.File(hdffile, 'a')
+        g1 = hf.require_group(self.name)
+        
+        if self.name != None: g1.attrs['name']=self.name
+        if self.type != None: g1.attrs['type']=self.type
+        if self.refmodel != None: g1.attrs['refmodel']=self.refmodel
+        if self.description != None: g1.attrs['description']=self.description
+        
+        for ires in range(len(self.data)):
+            g2 = g1.require_group('resolution_'+str(ires))
+            # write metadata for this resolution
+            g2.attrs['type']='resolution'
+            try:
+                name = self.metadata['resolution_'+str(ires)]['name']
+                g2.attrs['name']=name
+            except:
+                print('Warning: No name found for resolution '+str(ires))
+            for key in self.metadata['resolution_'+str(ires)].keys():
+                keyval = self.metadata['resolution_'+str(ires)][key]
+                try:
+                    if keyval.dtype.kind in {'U', 'S'}:
+                        keyval = [n.encode('utf8') for n in keyval]
+                        g2.attrs[key]=keyval
+                except:
+                    if keyval != None: g2.attrs[key]=keyval
+                    
+            #now loop over every realization
+            for icase in range(len(self.data['resolution_'+str(ires)])):
+                g3 = g2.require_group('realization_'+str(icase))
+                g3.attrs['type']='realization'
+                try:
+                    name = self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['name']
+                    g3.attrs['name']=name
+                except:
+                    print('Warning: No name found for resolution '+str(ires)+', realization '+str(icase))
+                key = self.name+'/resolution_'+str(ires)+'/realization_'+str(icase)
+                io.store_sparse_hdf(hf,key,self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'])
+                
+        hf.close()
+        
+            
     def coeff2modelarr(self,resolution=[0],realization=0):
         """
         Convert the coeffiecient matrix from the file to a sparse model array. Add
@@ -1181,6 +1866,9 @@ class reference1D(object):
         else:
             raise ValueError('reference1D object is not allocated')
 
+        if self.data['vp'][-1] == 0 or self.data['vs'][-1] == 0:
+            raise Warning('zero velocity layer detected at surface ...\n \
+                      TauP raytracing may not work')
 
     def to_axisem(self,dir='.',anelastic=True,anisotropic=True):
         '''
@@ -1347,371 +2035,3 @@ class reference1D(object):
             plt.show()
         else:
             plt.savefig(self.name+format)
-
-
-def epix2ascii(epix_dir,output_dir,n_hpar=1,write_zeros=True):
-    '''
-    write a rem3d formatted ascii file from a directory containing epix files 
-
-    Input parameters:
-    ----------------
-  
-    epix_dir: path to directory containing epix layer files
-    
-    output_file: name of rem3d format output file
-        
-    n_hpar:number of horizontal parameterizations (currently only handles 
-           models with 1 horizontal parameterization, and with a constant pixel width)
-           
-    '''
-    f_out = open(output_file,'w')
-    cwd = os.getcwd()
-    cfg_file = cwd+'/'+model_dir+'/setup.cfg'
-
-    if not os.path.isfile(cfg_file):
-        raise IOError('No configuration file found.'\
-	                 'Model directory must contain setup.cfg')
-    else:
-        parser = ConfigObj(cfg_file)
-
-    model_name = parser['metadata']['name']
-    ref_model = parser['metadata']['reference1D']
-    epix_folder = parser['metadata']['folder']
-    kernel_set = '{}'.format(parser['metadata']['kernel_set'])
-
-    #write header
-    f_out = open(output_dir+'/{}.rem3d.ascii'.format(model_name),'w')
-    f_out.write(u'REFERENCE MODEL: {} \n'.format(ref_model))
-    f_out.write(u'KERNEL SET: {}\n'.format(kernel_set))
-
-    #find the number radial kernels
-    epix_lengths = []
-    for parameter in parser['parameters']:
-        mod_type = parser['parameters'][parameter]['type']
-
-        if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
-        elif mod_type == 'topography':
-            topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
-
-        epix_lengths.append(len(epix_files))
-    f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(np.sum(epix_lengths)))
-
-    n_hpar = 1 #default is a single horizontal parameterization for all parameters
-
-    stru_indx = []
-    stru_list = []
-    lats = []
-    lons = []
-    pxs = []
-
-    k = 1
-    for i, parameter in enumerate(parser['parameters']):
-
-        mod_type = parser['parameters'][parameter]['type']
-        mod_desc = parser['parameters'][parameter]['shortname']
-
-        if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
-            epix_files.sort(key=tools.alphanum_key)
-        elif mod_type == 'topography':
-            topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
-        else:
-            raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
-
-        #write descriptions of radial kernels
-        for j, epix_file in enumerate(epix_files):
-
-            #read header
-            head = []
-            with open(epix_file) as f:
-                for line in f:
-                    if line.startswith('#'):
-                        head.append(line)
-
-            if mod_type == 'heterogeneity':
-                for line in head:
-                    if line.strip().split(':')[0] == '#DEPTH_RANGE':
-                        depth_range = line.split(':')[1].split('\n')[0]
-                f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,mod_desc,depth_range))
-
-            elif mod_type == 'topography':
-                f_out.write(u'DESC  {:3.0f}: {}\n'.format(k,mod_desc))
-
-            f = np.loadtxt(epix_file)
-
-            if j == 0 and k == 1:
-                par1 = f[:,0:2]
-                lats.append(f[:,0])
-                lons.append(f[:,1])
-                pxs.append(f[:,2])
-                stru_indx.append(n_hpar)
-            else:
-                par_new = f[:,0:2]
-                lats_new = f[:,0]
-                lons_new = f[:,1]
-                pxs_new = f[:,2]
-
-                #loop through all previous parameterizations
-                for ii in range(len(lats)):
-
-                    if not np.array_equal(par1,par_new):
-                        n_hpar += 1
-                        lats.append(f[:,0])
-                        lons.append(f[:,1])
-                        pxs.append(f[:,2])
-
-                stru_indx.append(n_hpar)
-
-            k += 1
-
-    #write horizontal parameterization
-    f_out.write(u'HORIZONTAL PARAMETERIZATIONS: {}\n'.format(len(lats)))
-    for i in range(0,len(lats)):
-        
-        #check pixel widths
-        if np.min(pxs[i]) != np.max(pxs[i]):
-            raise ValueError('no inhomogeneous model parameterizations allowed yet')
-        else:
-            px_w = pxs[i][0]
-
-        shape = (int(180.0/px_w),int(360.0/px_w))
-        lats_arr = np.reshape(lats,shape,order='F')
-        lons_arr = np.reshape(lons,shape,order='F')
-        px_w_arr = np.reshape(pxs,shape,order='F')
-
-        lats_ = lats_arr.flatten()
-        lons_ = lons_arr.flatten()
-        pxs_ = px_w_arr.flatten()
-
-        f_out.write(u'HPAR   {}: PIXELS,  {:1.1f} x {:1.1f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats_)))
-
-        for j in range(0,len(lats_)):
-            lon_here = lons_[j]
-            lat_here = lats_[j]
-            px_here = pxs_[j]
-
-            if lon_here > 180.0:
-                lon_here -= 360.0
-            f_out.write(u'{:5.1f} {:5.1f} {:5.1f}\n'.format(lon_here,
-                        lat_here, px_here))
-
-    k = 1
-    for i, parameter in enumerate(parser['parameters']):
-
-        #epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
-        mod_type = parser['parameters'][parameter]['type']
-        mod_desc = parser['parameters'][parameter]['shortname']
-
-        if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
-            epix_files.sort(key=tools.alphanum_key)
-        elif mod_type == 'topography':
-            topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
-        else:
-            raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
-        epix_files.sort(key=tools.alphanum_key)
-
-        #write model coefficients
-        line = ff.FortranRecordWriter('(6E12.4)')
-        for j, epix_file in enumerate(epix_files):
-            f = np.loadtxt(epix_file)
-            print('writing coefficients for layer ', k)
-            coefs = f[:,3]
-            coefs_arr = np.reshape(coefs,shape,order='F')
-            coefs = coefs_arr.flatten()
-            f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(k,px_w))
-            f_out.write(line.write(coefs)+u'\n')
-            k += 1
-
-def ascii2xarray(ascii_file,save_netcdf=False,outfile=None,setup_file='setup.cfg'):
-    '''
-    write an xarrary dataset from a rem3d formatted ascii file
-
-    Input parameters:
-    ----------------
-  
-    ascii_file: path to rem3d format output file
-    
-    save_netcdf: save netcdf format
-    
-    outfile: output netcdf file
-    
-    '''
-
-    model_dict = {}
-
-    with open(ascii_file) as f:
-    #read header
-        for i, line in enumerate(f):
-            if i == 0:
-                ref_model = line.split('REFERENCE MODEL:')[1].strip()
-            elif i == 1:
-                krnl_set = line.split('KERNEL SET:')[1].strip()
-            elif i == 2:
-                nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
-                nrad_krnl = int(nrad_krnl)
-                break
-
-        #read variables and parameterizations
-        variables = []
-        rpar_list = []
-        hpar_list = []
-        rpar = []
-        variable_idxs = []
-
-        if krnl_set[0:3] == 'BOX': krnl_wdth = float(krnl_set[3:].split('+')[0])
-        npts_dep = nrad_krnl
-
-        hpar_idx = 0
-        rpar_idx = -1
-        var_idx = 0
-
-        for i, line in enumerate(f):
-            print(line)
-            if i < nrad_krnl:
-
-                variable = line.strip().split()[2].split(',')[0]
-                if variable not in variables:
-                    variables.append(variable)
-                    model_dict[variable] = {}
-                    model_dict[variable]['hpar_idx'] = None
-                    variable_idxs.append(var_idx)
-
-                    if len(rpar) > 0 and rpar not in rpar_list:
-                        rpar_idx += 1
-                        rpar_list.append(rpar)
-                        model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
-                        var_idx += 1
-                        rpar = []
-
-                    if len(rpar) > 0 and rpar in rpar_list:
-                        rpar_list.append(rpar)
-                        model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
-                        var_idx += 1
-                        rpar = []
-                    
-                try:
-                    rpar_start = float(line.strip().split()[3])
-                    rpar_end = float(line.strip().split()[5])
-                    rpar.append((rpar_start + rpar_end)/2.)
-                except IndexError:
-                    model_dict[variable]['rpar_idx'] = None
-
-            if i == nrad_krnl: 
-                #read number of horizontal parameterizations
-                nhpar = int(line.strip().split()[-1])
-                nhpar = line.strip().split()[-1]
-                break
-
-        for i in range(0,nhpar):
-
-            lons = []
-            lats = []
-            pxwd = []
-
-            line = f.readline()
-            print(line)
-            hpar_type = line.strip().split()[2].split(',')[0]
-            hpar_name = line.split(':')[1].strip()
-
-            if hpar_name.lower().startswith('pixel'):
-                 pxw_lon = float(line.strip().split()[3])
-                 pxw_lat = float(line.strip().split()[5])
-                 nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
-            else:
-                raise ValueError('only PIXEL parameterizations enabled')
-
-            for j in range(nlines):
-                line = f.readline()
-                lons.append(float(line.strip().split()[0]))
-                lats.append(float(line.strip().split()[1]))
-                pxwd.append(float(line.strip().split()[2]))
-
-        hpar_list.append([lons,lats,pxwd])
-
-        #read coefficients
-        for variable in variables:
-            stru_idx = model_dict[variable]['rpar_idx']
-            model_dict[variable]['layers'] = {}
-
-            if stru_idx is not None:
-                n_stru = len(rpar_list[stru_idx])
-            else:
-                n_stru = 1
-
-            for i in range(0,n_stru):
-                layer_coefs = []
-
-                #get structure info
-                line = f.readline()
-                nstru = int(line.strip().split()[1].split(':')[0])
-                nhparam = int(line.strip().split()[2])
-                npts = len(hpar_list[nhparam-1][0][:])
-                nlines = int(npts/6)
-
-                if model_dict[variable]['hpar_idx'] == None:
-                    model_dict[variable]['hpar_idx'] = nhparam-1
-
-                for j in range(nlines):
-                     line = f.readline()
-                     for coef in line.strip().split():
-                         layer_coefs.append(float(coef))
-
-                model_dict[variable]['layers'][i] = layer_coefs
-
-    #open xarray dataset
-    ds = xr.Dataset()
-
-    #make DataArrays for each variable, and add to the dataset
-    for variable in variables:
-        print(variable)
-
-        hpar_idx = model_dict[variable]['hpar_idx'] 
-        pxw = hpar_list[hpar_idx][2][0]
-        print('PXW', pxw)
-
-        #create dims arrays
-        lon = np.arange((pxw/2.),360.,pxw)
-        for i in range(0,len(lon)):
-            if lon[i] >= 180.0:
-                lon[i] -= 360.0
-        lat = np.arange(-90.+(pxw/2.),90,pxw)
-
-        stru_idx = model_dict[variable]['rpar_idx']
-        if stru_idx is not None:
-            dep = rpar_list[stru_idx]
-            data_array = xr.DataArray(np.zeros((len(dep),len(lon),len(lat))),
-                                      dims = ['depth','longitude','latitude'],
-                                      #dims = ['depth','latitude','longitude'],
-                                      coords=[dep,lon,lat])
-            for i,layer in enumerate(model_dict[variable]['layers']):
-                data_array[i,:,:] = np.reshape(model_dict[variable]['layers'][layer],
-                                    (len(lon),len(lat)),order='F')
-            ds[variable] = data_array
-        else:
-            data_array = xr.DataArray(np.zeros((len(lon),len(lat))),
-                                      dims = ['longitude','latitude'],
-                                      coords = [lon,lat])
-            data_array[:,:] = np.reshape(model_dict[variable]['layers'][0],
-                                    (len(lon),len(lat)),order='F')
-
-
-    #add attributes
-    attrs = {}
-    cwd = os.getcwd()
-
-    if not os.path.isfile(setup_file):
-        raise IOError('No configuration file found.'\
-	                 'Model directory must contain setup.cfg')
-    else:
-        parser = ConfigObj(setup_file)
-
-    attrs = parser['metadata']
-    ds.attrs = attrs
- 
-    if save_netcdf: ds.to_netcdf(outfile)
-        
