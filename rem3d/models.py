@@ -36,6 +36,7 @@ from collections import Counter
 import xarray as xr
 import traceback
 import pandas as pd
+from io import StringIO
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from . import tools   
@@ -292,20 +293,17 @@ def readprojections(type='radial'):
 def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True):
     start_time  =  timeit.default_timer()    
     print('... writing ASCII file')
-    asciifile = epix2ascii(model_dir=model_dir,setup_file=setup_file,output_dir=output_dir,n_hpar=n_hpar,write_zeros=write_zeros)
+    asciibuffer = epix2ascii(model_dir=model_dir,setup_file=setup_file,output_dir=output_dir,n_hpar=n_hpar,write_zeros=write_zeros,buffer=True)
     elapsed  =  timeit.default_timer() - start_time
     print("........ evaluations took "+str(elapsed)+" s")
-
     print('... written ASCII file '+asciifile+'. evaluations took '+str(elapsed)+' s')
     ncfile = output_dir+'/'+asciifile.split('.ascii')[0]+'.nc4'
     print('... writing netcdf file '+ncfile)
-    ds = ascii2xarray(asciifile,outfile=ncfile,setup_file=setup_file,compression_opts=9, engine='h5netcdf',compression='gzip')
+    ds = ascii2xarray(asciibuffer,outfile=ncfile,setup_file=setup_file,compression_opts=9, engine='h5netcdf',compression='gzip')
     
     return ds
-
-
     
-def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True):
+def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True,buffer=False):
     '''
     write a rem3d formatted ascii file from a directory containing epix files 
 
@@ -339,8 +337,12 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     kernel_set = '{}'.format(parser['metadata']['kernel_set'])
 
     #write header
-    outfile = output_dir+'/{}.rem3d.ascii'.format(model_name)
-    f_out = open(outfile,'w')
+    outfile = output_dir+'/{}.{}.rem3d.ascii'.format(model_name,kernel_set)
+    if buffer:
+        # Writing to a buffer
+        f_out = StringIO()
+    else:
+        f_out = open(outfile,'w')
     f_out.write(u'NAME: {}\n'.format(model_name))
     f_out.write(u'REFERENCE MODEL: {} \n'.format(ref_model))
     f_out.write(u'KERNEL SET: {}\n'.format(kernel_set))
@@ -404,7 +406,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             if checks:
                 assert (parser['parameters'][parameter]['unit']==metadata['UNIT'])," in file "+epix_file
                 assert (parser['parameters'][parameter]['shortname'] == metadata['WHAT'])," in file "+epix_file
-                assert (parser['metadata']['reference1D']==metadata['REFMODEL'])," in file "+epix_file
+                #assert (parser['metadata']['reference1D']==metadata['REFMODEL'])," in file "+epix_file
                 assert (metadata['FORMAT']=='50')," in file "+epix_file
                 assert (metadata['BASIS']=='PIX')," in file "+epix_file
             
@@ -502,9 +504,13 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(k,px_w))
             f_out.write(line.write(coefs)+u'\n')
             k += 1
-    return outfile
+    if buffer:
+        f_out.seek(0)
+        return f_out
+    else:
+        return outfile
 
-def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg',compression_opts=9, engine='h5netcdf',compression='gzip'):
+def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opts=9, engine='h5netcdf',compression='gzip'):
     '''
     write an xarrary dataset from a rem3d formatted ascii file
 
@@ -526,124 +532,147 @@ def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg',compression_opts
     else:
         parser = ConfigObj(setup_file)
 
-    with open(ascii_file) as f:
+    try: #attempt buffer
+        asciioutput.seek(0)
+    except:
+        asciioutput = open(asciioutput,'r')
+        
     #read header
-        for i, line in enumerate(f):
-            if 'REFERENCE MODEL' in line:
-                ref_model = line.split('REFERENCE MODEL:')[1].strip()
-            if 'KERNEL SET' in line:
-                krnl_set = line.split('KERNEL SET:')[1].strip()
-            if 'RADIAL STRUCTURE KERNELS' in line:
-                nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
-                nrad_krnl = int(nrad_krnl)
-                break
+    line = asciioutput.readline()
+    while line:
+        if 'REFERENCE MODEL' in line:
+            ref_model = line.split('REFERENCE MODEL:')[1].strip()
+        if 'KERNEL SET' in line:
+            krnl_set = line.split('KERNEL SET:')[1].strip()
+        if 'RADIAL STRUCTURE KERNELS' in line:
+            nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
+            nrad_krnl = int(nrad_krnl)
+            break
+        line = asciioutput.readline()
 
-        #read variables and parameterizations
-        variables = []
-        rpar_list = []
-        hpar_list = []
-        rpar = []
-        variable_idxs = []
 
-        npts_dep = nrad_krnl
+    #with open(ascii_file) as f:
+    #read header
+#         for i, line in enumerate(f):
+#             if 'REFERENCE MODEL' in line:
+#                 ref_model = line.split('REFERENCE MODEL:')[1].strip()
+#             if 'KERNEL SET' in line:
+#                 krnl_set = line.split('KERNEL SET:')[1].strip()
+#             if 'RADIAL STRUCTURE KERNELS' in line:
+#                 nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
+#                 nrad_krnl = int(nrad_krnl)
+#                 break
 
-        hpar_idx = 0
-        rpar_idx = -1
-        var_idx = 0
+    #read variables and parameterizations
+    variables = []
+    rpar_list = []
+    hpar_list = []
+    rpar = []
+    variable_idxs = []
 
-        for i, line in enumerate(f):
-            print(line.strip())
-            if i < nrad_krnl:
+    npts_dep = nrad_krnl
 
-                variable = line.strip().split()[2].split(',')[0]
-                if variable not in variables:
-                    variables.append(variable)
-                    model_dict[variable] = {}
-                    model_dict[variable]['hpar_idx'] = None
-                    variable_idxs.append(var_idx)
+    hpar_idx = 0
+    rpar_idx = -1
+    var_idx = 0
 
-                    if len(rpar) > 0 and rpar not in rpar_list:
-                        rpar_idx += 1
-                        rpar_list.append(rpar)
-                        model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
-                        var_idx += 1
-                        rpar = []
+    i = 0
+    line = asciioutput.readline()
+    while line:
+        print(line.strip())
+        if i < nrad_krnl:
 
-                    if len(rpar) > 0 and rpar in rpar_list:
-                        rpar_list.append(rpar)
-                        model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
-                        var_idx += 1
-                        rpar = []
-                    
-                try:
-                    rpar_start = float(line.strip().split()[3])
-                    rpar_end = float(line.strip().split()[5])
-                    rpar.append((rpar_start + rpar_end)/2.)
-                except IndexError:
-                    model_dict[variable]['rpar_idx'] = None
+            variable = line.strip().split()[2].split(',')[0]
+            if variable not in variables:
+                variables.append(variable)
+                model_dict[variable] = {}
+                model_dict[variable]['hpar_idx'] = None
+                variable_idxs.append(var_idx)
 
-            if i == nrad_krnl: 
-                #read number of horizontal parameterizations
-                nhpar = int(line.strip().split()[-1])
-                nhpar = line.strip().split()[-1]
-                break
+                if len(rpar) > 0 and rpar not in rpar_list:
+                    rpar_idx += 1
+                    rpar_list.append(rpar)
+                    model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
+                    var_idx += 1
+                    rpar = []
 
-        for i in range(0,nhpar):
+                if len(rpar) > 0 and rpar in rpar_list:
+                    rpar_list.append(rpar)
+                    model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
+                    var_idx += 1
+                    rpar = []
+                
+            try:
+                rpar_start = float(line.strip().split()[3])
+                rpar_end = float(line.strip().split()[5])
+                rpar.append((rpar_start + rpar_end)/2.)
+            except IndexError:
+                model_dict[variable]['rpar_idx'] = None
+            line = asciioutput.readline()
+            i += 1
 
-            lons = []
-            lats = []
-            pxwd = []
+        if i == nrad_krnl: 
+            #read number of horizontal parameterizations
+            nhpar = int(line.strip().split()[-1])
+            nhpar = line.strip().split()[-1]
+            break
 
-            line = f.readline()
-            print(line.strip())
-            hpar_type = line.strip().split()[2].split(',')[0]
-            hpar_name = line.split(':')[1].strip()
+    for i in range(0,nhpar):
 
-            if hpar_name.lower().startswith('pixel'):
-                 pxw_lon = float(line.strip().split()[3].strip(','))
-                 pxw_lat = float(line.strip().split()[5].strip(','))
-                 nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
-                 assert(nlines == float(line.strip().split()[6].strip(',')))
-            else:
-                raise ValueError('only PIXEL parameterizations enabled')
+        lons = []
+        lats = []
+        pxwd = []
+
+        line = asciioutput.readline()
+        print(line.strip())
+        hpar_type = line.strip().split()[2].split(',')[0]
+        hpar_name = line.split(':')[1].strip()
+
+        if hpar_name.lower().startswith('pixel'):
+             pxw_lon = float(line.strip().split()[3].strip(','))
+             pxw_lat = float(line.strip().split()[5].strip(','))
+             nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
+             assert(nlines == float(line.strip().split()[6].strip(',')))
+        else:
+            raise ValueError('only PIXEL parameterizations enabled')
+
+        for j in range(nlines):
+            line = asciioutput.readline()
+            lons.append(float(line.strip().split()[0]))
+            lats.append(float(line.strip().split()[1]))
+            pxwd.append(float(line.strip().split()[2]))
+
+    hpar_list.append([lons,lats,pxwd])
+
+    #read coefficients
+    for variable in variables:
+        stru_idx = model_dict[variable]['rpar_idx']
+        model_dict[variable]['layers'] = {}
+
+        if stru_idx is not None:
+            n_stru = len(rpar_list[stru_idx])
+        else:
+            n_stru = 1
+
+        for i in range(0,n_stru):
+            layer_coefs = []
+
+            #get structure info
+            line = asciioutput.readline()
+            nstru = int(line.strip().split()[1].split(':')[0])
+            nhparam = int(line.strip().split()[2])
+            npts = len(hpar_list[nhparam-1][0][:])
+            nlines = int(npts/6)
+
+            if model_dict[variable]['hpar_idx'] == None:
+                model_dict[variable]['hpar_idx'] = nhparam-1
 
             for j in range(nlines):
-                line = f.readline()
-                lons.append(float(line.strip().split()[0]))
-                lats.append(float(line.strip().split()[1]))
-                pxwd.append(float(line.strip().split()[2]))
+                 line = asciioutput.readline()
+                 for coef in line.strip().split():
+                     layer_coefs.append(float(coef))
 
-        hpar_list.append([lons,lats,pxwd])
-
-        #read coefficients
-        for variable in variables:
-            stru_idx = model_dict[variable]['rpar_idx']
-            model_dict[variable]['layers'] = {}
-
-            if stru_idx is not None:
-                n_stru = len(rpar_list[stru_idx])
-            else:
-                n_stru = 1
-
-            for i in range(0,n_stru):
-                layer_coefs = []
-
-                #get structure info
-                line = f.readline()
-                nstru = int(line.strip().split()[1].split(':')[0])
-                nhparam = int(line.strip().split()[2])
-                npts = len(hpar_list[nhparam-1][0][:])
-                nlines = int(npts/6)
-
-                if model_dict[variable]['hpar_idx'] == None:
-                    model_dict[variable]['hpar_idx'] = nhparam-1
-
-                for j in range(nlines):
-                     line = f.readline()
-                     for coef in line.strip().split():
-                         layer_coefs.append(float(coef))
-
-                model_dict[variable]['layers'][i] = layer_coefs
+            model_dict[variable]['layers'][i] = layer_coefs
 
     #open xarray dataset
     ds = xr.Dataset()
