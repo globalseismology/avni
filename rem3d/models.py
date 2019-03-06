@@ -397,7 +397,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 for line in f:
                     if line.startswith('#'):
                         head.append(line)
-                    for field in ['DEPTH','AVERAGE','IFREMAV','REFVALUE','REFMODEL','UNIT','WHAT']:
+                    for field in ['DEPTH','AVERAGE','IFREMAV','REFVALUE','REFMODEL','UNIT','WHAT','FORMAT','BASIS']:
                         if field in line: metadata[field] = line.split(':')[1].split('\n')[0].lstrip().rstrip()
                                     
             # conduct checks
@@ -405,6 +405,8 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 assert (parser['parameters'][parameter]['unit']==metadata['UNIT'])," in file "+epix_file
                 assert (parser['parameters'][parameter]['shortname'] == metadata['WHAT'])," in file "+epix_file
                 assert (parser['metadata']['reference1D']==metadata['REFMODEL'])," in file "+epix_file
+                assert (metadata['FORMAT']=='50')," in file "+epix_file
+                assert (metadata['BASIS']=='PIX')," in file "+epix_file
             
             if mod_type == 'heterogeneity':
                 for line in head:
@@ -461,17 +463,15 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         lons_ = lons_arr.flatten()
         pxs_ = px_w_arr.flatten()
 
-        f_out.write(u'HPAR   {}: PIXELS,  {:1.1f} x {:1.1f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats_)))
+        f_out.write(u'HPAR   {}: PIXELS,  {:3.2f} X {:3.2f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats_)))
 
         for j in range(0,len(lats_)):
             lon_here = lons_[j]
             lat_here = lats_[j]
             px_here = pxs_[j]
 
-            if lon_here > 180.0:
-                lon_here -= 360.0
-            f_out.write(u'{:5.1f} {:5.1f} {:5.1f}\n'.format(lon_here,
-                        lat_here, px_here))
+            if lon_here > 180.0: lon_here -= 360.0
+            f_out.write(u'{:6.2f} {:6.2f} {:6.2f}\n'.format(lon_here,lat_here, px_here))
     
     # write coefficients
     k = 1
@@ -993,7 +993,172 @@ class model3d(object):
         return 
         
     def readnc4(self,nc4file,resolution=0,realization=0,**kwargs):
+        """
+        Read netCDF4 file into a resolution and realization of model3D class.
+        
+        """
+        
         if (not os.path.isfile(nc4file)): raise IOError("Filename ("+nc4file+") does not exist")
+        ds = xr.open_dataset(nc4file)
+        
+        
+#         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
+#         if line.startswith("DESC"): 
+#             idummy=int(line[4:line.index(':')])
+#             if idummy >= maxkern: raise ValueError('number of radial kernels > maxkern ('+str(maxkern)+') : increase it in read3dmodelfile') 
+#             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
+#             ifst,ilst=tools.firstnonspaceindex(substr)
+#             desckern[idummy-1]=substr[ifst:ilst]
+# 
+#         if line.startswith("HPAR"):     
+#             idummy=int(line[4:line.index(':')])
+#             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
+#             ifst,ilst=tools.firstnonspaceindex(substr)
+# 
+#             elif substr[ifst:ifst+7] == 'PIXELS,':                
+#                 ifst1=ifst+7
+#                 ifst=len(substr)
+#                 ilst=len(substr)
+#                 while substr[ifst-1:ifst] != ',': ifst=ifst-1
+#                 ncoef=int(substr[ifst+1:ilst].rstrip('\n'))
+#                 substr=substr[ifst1:ifst-1]
+#                 ifst1,ilst=tools.firstnonspaceindex(substr)
+#                 hsplfile[idummy-1]=substr[ifst1:ilst]
+#                 ityphpar[idummy-1]=3
+#                 typehpar[idummy-1]='PIXELS'
+#                 ncoefhor[idummy-1]=ncoef
+#                 
+#                 # initialize
+#                 if ncoef > maxcoeff: raise ValueError('ncoef ('+str(ncoef)+') > maxcoeff ('+str(maxcoeff)+') : increase it in read3dmodelfile') 
+#                 xlapix=np.zeros([maxcoeff,nhorpar], dtype=float) # center latitude
+#                 xlopix=np.zeros([maxcoeff,nhorpar], dtype=float) # center longitude
+#                 xsipix=np.zeros([maxcoeff,nhorpar], dtype=float) #size of pixel
+# 
+#                 # specific variables
+#                 for jj in range(ncoef):
+#                     arr=lines[ii].rstrip('\n').split(); ii=ii+1
+#                     xlopix[jj,idummy-1]=arr[0]; xlapix[jj,idummy-1]=arr[1]
+#                     xsipix[jj,idummy-1]=arr[2]
+#             else:
+#                 raise ValueError('Undefined parameterization type - '+substr[ifst:ilst])
+#         if line.startswith("STRU"):
+#             idummy=int(line[4:line.index(':')])
+#             ihor=int(line[line.index(':')+1:].rstrip('\n'))
+#             ihorpar[idummy-1]=ihor
+#             ncoef=ncoefhor[ihor-1]
+#             for jj in range(int(ncoef/6)):
+#                 arr=lines[ii].rstrip('\n').split(); ii=ii+1
+#                 coef[jj*6:(jj+1)*6,idummy-1]=[float(i) for i in arr]
+#             remain = ncoef % 6    
+#             if remain > 0: 
+#                 arr=lines[ii].rstrip('\n').split(); ii=ii+1
+#                 coef[(jj+1)*6:(jj+1)*6+remain,idummy-1]=[float(i) for i in arr]
+#     # Store the variables
+#     numvar=0; varstr=np.zeros(nmodkern, dtype='U40')
+#     ivarkern=np.zeros(nmodkern)
+#     for ii in np.arange(nmodkern):
+#         string=desckern[ii]
+#         #pdb.set_trace()
+#         if numvar == 0:
+#             varstr[0] = string[:string.index(',')]
+#             ivarkern[ii]=1
+#             numvar=numvar+1
+#         else:
+#             for kk in np.arange(numvar):
+#                 if varstr[kk] == string[:string.index(',')]:
+#                     ivarkern[ii]=kk+1
+#         
+#         if ivarkern[ii] == 0:
+#             numvar=numvar+1
+#             varstr[numvar-1] = string[:string.index(',')]
+#             ivarkern[ii]=numvar
+
+    
+        # Store in a dictionary
+        metadata = {}
+        metadata['refmodel']=ds.attrs['reference1D']
+        metadata['kerstr']=ds.attrs['kernel_set']
+        metadata['nhorpar']=1
+        metadata['crust']=ds.attrs['crust']; metadata['null_model']=None
+        metadata['interpolant']=ds.attrs['interpolant_type'];
+        metadata['cite']=ds.attrs['cite']
+        metadata['shortcite']=ds.attrs['name']; metadata['scaling']=ds.attrs['scaling']
+        metadata['ityphpar']=np.array([3])
+        metadata['typehpar']=np.array(['PIXELS'], dtype='<U40')
+        # check the pixel size
+        pixlat = np.unique(np.ediff1d(np.array(ds.latitude)))
+        pixlon = np.unique(np.ediff1d(np.array(ds.longitude)))
+        pixlon = pixlon[np.where(pixlon>0.)]
+        assert(len(pixlat)==1)
+        assert(len(pixlon)==1)
+        assert(pixlat==pixlon)
+        metadata['hsplfile']=np.array([str(pixlat[0])+' X '+str(pixlat[0])], dtype='<U40')
+        lenarr = len(ds.latitude)*len(ds.longitude)
+        metadata['xsipix']=np.array([[pixlat[0] for ii in range(lenarr)]])
+        metadata['xlapix'] = np.zeros([1,lenarr])
+        metadata['xlopix'] = np.zeros([1,lenarr])  
+        # get data keys
+        data_keys = ds.data_vars.keys()
+        indx = 0   
+        idep = 0     
+        if len(ds.dims) == 3:
+            ndepth, nlat, nlon = ds[data_keys[0]].shape
+            for ilat in range(nlat):
+                for ilon in range(nlon):
+                    metadata['xlapix'][0][indx] = ds[data_keys[0]][idep,ilat,ilon].latitude
+                    metadata['xlopix'][0][indx] = ds[data_keys[0]][idep,ilat,ilon].longitude
+                    indx += 1
+        else:
+            raise ValueError('dimensions != 3')
+        
+                
+        #depth differences and get depth extents
+        depdiff = np.ediff1d(ds.depth)
+        deptop = np.copy(ds.depth)
+        depbottom = np.copy(ds.depth)
+        
+        for ii in range(len(depdiff)-2):
+            deptop[ii] = deptop[ii] - (2.*depdiff[ii]-depdiff[ii+1])/2.
+            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii]-depdiff[ii+1])/2.
+        for ii in range(len(depdiff),len(depdiff)-3,-1):
+            deptop[ii] = deptop[ii] - (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+            
+        pdb.set_trace()
+        ## create keys
+#         desckern = []
+#         for key in data_keys:
+#             if 'topo' in key:
+#                 desckern.append(u'{}, {} km\n'.format(key,depth_range)
+#             else:
+#                 desckern.append(u'{}, {} - {} km\n'.format(key,deptop[ii],depbottom[ii])
+# 
+#         
+#         ihorpar=np.zeros(maxkern, dtype=int)
+#         coef=np.zeros([maxcoeff,maxkern], dtype=float)
+#         
+#         ## Save the relevant portions
+#         desckern = desckern[:nmodkern]
+#         ihorpar = ihorpar[:nmodkern]
+#         varstr = varstr[:numvar]
+#         coef = coef[:max(ncoefhor),:nmodkern].transpose() # to get it in a kernel * coeff format
+#         ncoefcum = np.cumsum([ncoefhor[ihor-1] for ihor in ihorpar])
+# 
+# 
+#         metadata['desckern']=desckern; metadata['nmodkern']=nmodkern
+#         metadata['ncoefhor']=ncoefhor; metadata['ihorpar']=ihorpar
+#         metadata['ivarkern']=ivarkern; metadata['numvar']=numvar
+#         metadata['varstr']=varstr; metadata['ncoefcum']=ncoefcum
+        
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = ds.attrs['name']
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = sparse.csr_matrix(coef)
+        
+        self.metadata['resolution_'+str(resolution)] = metadata
+        
+        #rename the name field only if it is None
+        if self.name == None : self.name = ntpath.basename(nc4file)
+        self.description = "Read from "+nc4file
+        self.type = 'rem3d'
         
 
     def readhdf5(self,hdffile,query=None):
