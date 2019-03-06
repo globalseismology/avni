@@ -678,11 +678,12 @@ def ascii2xarray(ascii_file,outfile=None,setup_file='setup.cfg',compression_opts
                                       coords = [lon,lat])
             data_array[:,:] = np.reshape(model_dict[variable]['layers'][0],
                                     (len(lon),len(lat)),order='F')
-
+            ds[variable] = data_array
 
     #add attributes
     attrs = {}
-    attrs = parser['metadata']
+    for key in parser['metadata'].keys():
+        attrs[key] = parser['metadata'][key].decode('utf-8')
     ds.attrs = attrs
  
     # write to netcdf
