@@ -290,14 +290,28 @@ def readprojections(type='radial'):
 
     return 
     
-def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True):
-    start_time  =  timeit.default_timer()    
+def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True,buffer=False):
+    start_time  =  timeit.default_timer()  
+    
+    cfg_file = model_dir+'/'+setup_file
+
+    if not os.path.isfile(cfg_file):
+        raise IOError('No configuration file found.'\
+	                 'Model directory must contain '+setup_file)
+    else:
+        parser = ConfigObj(cfg_file)
+    model_name = parser['metadata']['name']
+    kernel_set = '{}'.format(parser['metadata']['kernel_set'])
+      
     print('... writing ASCII file')
-    asciibuffer = epix2ascii(model_dir=model_dir,setup_file=setup_file,output_dir=output_dir,n_hpar=n_hpar,write_zeros=write_zeros,buffer=True)
+    asciibuffer = epix2ascii(model_dir=model_dir,setup_file=setup_file,output_dir=output_dir,n_hpar=n_hpar,write_zeros=write_zeros,buffer=buffer)
     elapsed  =  timeit.default_timer() - start_time
     print("........ evaluations took "+str(elapsed)+" s")
-    print('... written ASCII file '+asciifile+'. evaluations took '+str(elapsed)+' s')
-    ncfile = output_dir+'/'+asciifile.split('.ascii')[0]+'.nc4'
+    if buffer:
+        print('... written ASCII file '+asciibuffer+'. evaluations took '+str(elapsed)+' s')
+    else:
+        print('... read to ASCII buffer. evaluations took '+str(elapsed)+' s')
+    ncfile = output_dir+'/{}.{}.rem3d.nc4'.format(model_name,kernel_set)
     print('... writing netcdf file '+ncfile)
     ds = ascii2xarray(asciibuffer,outfile=ncfile,setup_file=setup_file,compression_opts=9, engine='h5netcdf',compression='gzip')
     
