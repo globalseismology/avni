@@ -548,7 +548,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     else:
         return outfile
 
-def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opts=9, engine='h5netcdf',compression='gzip'):
+def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, engine='netcdf4'):
     '''
     write an xarrary dataset from a rem3d formatted ascii file
 
@@ -561,7 +561,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opt
     
     setup_file: setup file containing metadata for the model
     
-    compression_opts, engine, compression: options for compression in netcdf file
+    complevel, engine: options for compression in netcdf file
 
     '''
 
@@ -745,7 +745,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opt
     ds.attrs = attrs
  
     # write to netcdf
-    comp = {'compression': compression, 'compression_opts': compression_opts}
+    comp = {'zlib': True, 'complevel': complevel}
     encoding = {var: comp for var in ds.data_vars}
     if outfile != None: ds[variables].to_netcdf(outfile,engine=engine,encoding=encoding)
     
