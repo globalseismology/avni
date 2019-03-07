@@ -290,7 +290,23 @@ def readprojections(type='radial'):
 
     return 
     
-def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True,buffer=False):
+def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True,buffer=True):
+    """
+    Input parameters:
+    ----------------
+  
+    model_dir: path to directory containing epix layer files
+    
+    output_dir: path to output directory
+        
+    setup_file: setup file containing metadata for the model
+           
+    n_hpar: number of unique horizontal parameterizations
+    
+    buffer: write to buffer instead of file for the intermediate step of the ascii file
+
+    """
+
     start_time  =  timeit.default_timer()  
     
     cfg_file = model_dir+'/'+setup_file
@@ -303,14 +319,17 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
     model_name = parser['metadata']['name']
     kernel_set = '{}'.format(parser['metadata']['kernel_set'])
       
-    print('... writing ASCII file')
+    if buffer:
+        print('... writing ASCII buffer')
+    else:
+        print('... writing ASCII file')
     asciibuffer = epix2ascii(model_dir=model_dir,setup_file=setup_file,output_dir=output_dir,n_hpar=n_hpar,write_zeros=write_zeros,buffer=buffer)
     elapsed  =  timeit.default_timer() - start_time
     print("........ evaluations took "+str(elapsed)+" s")
     if buffer:
-        print('... written ASCII file '+asciibuffer+'. evaluations took '+str(elapsed)+' s')
-    else:
         print('... read to ASCII buffer. evaluations took '+str(elapsed)+' s')
+    else:
+        print('... written ASCII file '+asciibuffer+'. evaluations took '+str(elapsed)+' s')
     ncfile = output_dir+'/{}.{}.rem3d.nc4'.format(model_name,kernel_set)
     print('... writing netcdf file '+ncfile)
     ds = ascii2xarray(asciibuffer,outfile=ncfile,setup_file=setup_file,compression_opts=9, engine='h5netcdf',compression='gzip')
@@ -326,11 +345,16 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
   
     epix_dir: path to directory containing epix layer files
     
+    setup_file: setup file containing metadata for the model
+
     output_file: name of rem3d format output file
         
     n_hpar:number of horizontal parameterizations (currently only handles 
            models with 1 horizontal parameterization, and with a constant pixel width)
            
+    checks: if True, checks if the metadata in setup_file is consistent with epix files
+
+    buffer: write to buffer instead of file for the intermediate step of the ascii file
     '''
     cfg_file = model_dir+'/'+setup_file
 
@@ -535,6 +559,10 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opt
         
     outfile: output netcdf file
     
+    setup_file: setup file containing metadata for the model
+    
+    compression_opts, engine, compression: options for compression in netcdf file
+
     '''
 
     model_dict = {}
@@ -719,7 +747,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opt
     # write to netcdf
     comp = {'compression': compression, 'compression_opts': compression_opts}
     encoding = {var: comp for var in ds.data_vars}
-    if outfile != None: ds.to_netcdf(outfile,engine=engine,encoding=encoding)
+    if outfile != None: ds[variables].to_netcdf(outfile,engine=engine,encoding=encoding)
     
     return ds
         
@@ -1160,6 +1188,7 @@ class model3d(object):
 #         desckern = []
 #         for key in data_keys:
 #             if 'topo' in key:
+#                 depth_range = key.split('topo')[1]
 #                 desckern.append(u'{}, {} km\n'.format(key,depth_range)
 #             else:
 #                 desckern.append(u'{}, {} - {} km\n'.format(key,deptop[ii],depbottom[ii])
