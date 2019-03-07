@@ -332,7 +332,7 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
         print('... written ASCII file '+asciibuffer+'. evaluations took '+str(elapsed)+' s')
     ncfile = output_dir+'/{}.{}.rem3d.nc4'.format(model_name,kernel_set)
     print('... writing netcdf file '+ncfile)
-    ds = ascii2xarray(asciibuffer,outfile=ncfile,setup_file=setup_file,compression_opts=9, engine='h5netcdf',compression='gzip')
+    ds = ascii2xarray(asciibuffer,outfile=ncfile,setup_file=setup_file)
     
     return ds
     
