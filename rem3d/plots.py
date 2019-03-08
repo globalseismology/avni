@@ -22,7 +22,6 @@ import multiprocessing
 from joblib import Parallel, delayed
 import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
-from netCDF4 import Dataset as netcdf #reading netcdf files
 import scipy.interpolate as spint
 from scipy.spatial import cKDTree
 import scipy.spatial.qhull as qhull
@@ -31,11 +30,12 @@ import time
 import progressbar
 import pickle
 import xarray as xr
+from six import string_types # to check if variable is string using isinstance
+
 # For polar sectionplot
 from matplotlib.transforms import Affine2D
 import mpl_toolkits.axisartist.floating_axes as floating_axes
 import mpl_toolkits.axisartist.angle_helper as angle_helper
-from netCDF4 import Dataset
 from matplotlib.projections import PolarAxes
 from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
 from matplotlib import gridspec # Relative size of subplots
@@ -670,37 +670,47 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
         aux_ax.plot(theta_arr, disc*np.ones(len(theta_arr)), 'k', linewidth=1,zorder=9)
     
     return ax1, aux_ax
+        
     
-def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd', tree= None, dbs_path='.', plottopo=False,numeval=50,downsampleetopo1=True, distnearthreshold=5.,stride=10,k=1):
-    """Get the topography transect.dbs_path should have filename. numeval is number of evaluations of topo/bathymetry along the transect. downsampleetopo1 if true samples every 3 points to get 0.5 deg before interpolation. distnearthreshold is the threshold for nearest points to consider for interpolation in km. """
+def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tree=None,dbs_path='.',numeval=50,stride=10,k=1):
+    """
+    Get the topography transect.
+    
+    Input Parameters:
+    ----------------
+    dbs_path: directory to location of filename. 
+    
+    tree: tree read from an earlier run.
+    
+    numeval: is number of evaluations of topo/bathymetry along the transect. 
+    
+    stride: is the downsampling before interpolation. 
+    
+    k: 1 returns the nearest point
+    """
 
     #read topography file
     dbs_path=tools.get_fullpath(dbs_path)
-    if os.path.isfile(dbs_path+'/'+filename):
-        f = Dataset(dbs_path+'/'+filename)
-    else:
-        raise ValueError("Error: Could not find file "+dbs_path+'/'+filename)
-    lons = f.variables['lon'][::stride]
-    lats = f.variables['lat'][::stride]
-    topo2d = f.variables['z'][::stride,::stride]
-
-    #Build the tree if none is provided
-    if tree is None:
-        treefile = '.'.join(filename.split('.')[:-1])+'.KDTree.pkl'
-        if os.path.isfile(dbs_path+'/'+treefile):
-            print('... Reading KDtree file '+treefile)
-            tree = pickle.load(open(dbs_path+'/'+treefile,'r'))
+    
+    # Get KD tree
+    if tree == None and isinstance(model,string_types):
+        treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.pkl'
+        ncfile = dbs_path+'/'+model
+        tree = tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=6371.)
+        #read values
+        if os.path.isfile(ncfile):
+            f = xr.open_dataset(ncfile)
         else:
-            print('... KDtree file '+treefile+' not found for interpolations. Building it')
-            lons2d,lats2d = np.meshgrid(lons,lats)        
-            rads2d = np.zeros(len(topo2d.flatten())) + 6371.0
-            #rlatlon = np.array(zip(rads2d.flatten(),lats2d.flatten(),lons2d.flatten()))
-            rlatlon = np.column_stack((rads2d.flatten(),lats2d.flatten(), lons2d.flatten()))
-
-            xyz = mapping.spher2cart(rlatlon)
-            tree = cKDTree(xyz)
-            pickle.dump(tree,open(dbs_path+'/'+treefile,'wb'))
-
+            raise ValueError("Error: Could not find file "+ncfile)
+        model = f.variables['z'][::stride,::stride]        
+        vals = model.data.flatten(order='C')
+    else:
+        #read topography file
+        try:
+            vals = model.data.flatten(order='C')
+        except:
+            raise ValueError('model in gettopotransect not a string or xarray')
+                    
     #find destination point
     lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
     interval=gcdelta*111325./(numeval-1) # interval in km
@@ -714,11 +724,10 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,filename='ETOPO1_Bed_g_gmt4.grd', 
     qpts_rlatlon = np.column_stack((qpts_rad,qpts_lat,qpts_lng))
     qpts_xyz = mapping.spher2cart(qpts_rlatlon)
     d,inds = tree.query(qpts_xyz,k=k)
-    vals = topo2d.flatten(order='C')[inds]
+    valselect = vals[inds]
     
-    f.close() #close netcdf file
     #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
-    return qpts_rlatlon,vals,tree
+    return valselect,model,tree
     
 def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     """Plot a section on the axis ax. """        
@@ -740,37 +749,77 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     return ax
     
 
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,f=None,filename='S40RTS_pixel_0.5x0.5.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path='.',numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
+def tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'],stride=10, radius_in_km = None):
+    """
+    Read or write a pickle interpolant for a grd file e.g. ETOPO1_Bed_g_gmt4.grd
+
+    Input Parameters:
+    ----------------
+
+    ncfile: netcdf format file e.g. topography
+    
+    stride: is the downsampling before interpolation. 
+    
+    radius_in_km: radius in kilometer where a 2D surface is valid. Ignores the 
+                    3rd field in lonlatdepth.Typically 6371km
+
+    lonlatdepth: variable name of the longitude, latitude, depth arrays
+    """
+
+    #read topography file
+    if os.path.isfile(ncfile):
+        f = xr.open_dataset(ncfile)
+    else:
+        raise ValueError("Error: Could not find file "+ncfile)
+    lon = f.variables[lonlatdepth[0]][::stride]
+    lat = f.variables[lonlatdepth[1]][::stride]
+    if radius_in_km == None:
+        dep = f.variables[lonlatdepth[2]][::stride]
+        rad = constants.R/1000. - dep
+    else:
+        rad = xr.IndexVariable('rad',[radius_in_km])
+    f.close() #close netcdf file
+    
+    #Build the tree if none is provided
+    if os.path.isfile(treefile):
+        print('... Reading KDtree file '+treefile)
+        tree = pickle.load(open(treefile,'r'))
+    else:
+        print('... KDtree file '+treefile+' not found for interpolations. Building it')
+        mgrid = np.meshgrid(lon,lat,rad)
+        rlatlon = np.column_stack((mgrid[2].flatten(),mgrid[1].flatten(), mgrid[0].flatten()))
+        xyz = mapping.spher2cart(rlatlon)
+        tree = cKDTree(xyz)
+        pickle.dump(tree,open(treefile,'wb'))
+    return tree
+
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path='.',numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
-    #read tomography file
-    #dbs_path=tools.get_fullpath(dbs_path)
-    #if os.path.isfile(dbs_path+'/'+filename):
-    #    #f = Dataset(dbs_path+'/'+filename)
-    #    f = xr.open_dataarray(dbs_path+'/'+filename)
-    #else:
-    #    raise ValueError("Error: Could not find file "+dbs_path+'/'+filename)    
-        
-    lon = f['lon']
-    lat = f['lat']
-    dep = f['depth']
-    rad = 6371.0 - dep
-    dvs = f.data
-
-    #Build the tree if none is provided
-    if tree is None:
-        treefile = '.'.join(filename.split('.')[:-1])+'.KDTree.pkl'
-        if os.path.isfile(dbs_path+'/'+treefile):
-            print('... Reading KDtree file '+treefile)
-            tree = pickle.load(open(dbs_path+'/'+treefile,'r'))
+    #read topography file
+    dbs_path=tools.get_fullpath(dbs_path)
+    
+    # Get KD tree
+    if tree == None and isinstance(model,string_types):
+        ds = xr.open_dataset(model)
+        treefile = dbs_path+'/'+ds.attrs['kernel_set']+'.KDTree.3D.pkl'
+        ncfile = dbs_path+'/'+model
+        tree = tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
+        #read values
+        if os.path.isfile(ncfile):
+            f = xr.open_dataset(ncfile)
         else:
-            print('... KDtree file '+treefile+' not found for interpolations. Building it')
-            mgrid = np.meshgrid(lon,lat,rad)
-            rlatlon = np.array(zip(mgrid[2].flatten(),mgrid[1].flatten(),mgrid[0].flatten()))
-            xyz = mapping.spher2cart(rlatlon)
-            tree = cKDTree(xyz)
-            pickle.dump(tree,open(dbs_path+'/'+treefile,'wb'))
-
+            raise ValueError("Error: Could not find file "+ncfile)
+        model = f.variables[parameter]      
+        f.close() #close netcdf file
+        vals = model.data.flatten()
+    else:
+        #read topography file
+        try:
+            vals = model.data.flatten()
+        except:
+            raise ValueError('model in gettopotransect not a string or xarray')
+    
     lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
     interval=gcdelta*111325./(numevalx-1) # interval in km
     radevalarr=np.linspace(radii[0],radii[1],numevalz) #radius arr in km
@@ -779,23 +828,23 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,f=None,filename='S40RTS_pixel_0.5
     if(len(coords) != numevalx):
         raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
     evalpoints=np.column_stack((radevalarr[0]*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
+    
     for radius in radevalarr[1:]:
         pointstemp = np.column_stack((radius*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
         evalpoints = np.row_stack((evalpoints,pointstemp))
-
+    
     coordstack = mapping.spher2cart(evalpoints)
     d,inds = tree.query(coordstack,k=k)
     npts_surf = coords.shape[0]
     if k == 1:
-        tomovals = dvs.flatten(order='F')[inds]
+        tomovals = vals[inds]
     else:
         w = 1.0 / d**2
-        tomovals = np.sum(w * dvs.flatten(order='F')[inds], axis = 1)/ np.sum(w, axis=1)
-    xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')     
-    f.close() #close netcdf file
-    return evalpoints,xsec.T,tree
+        tomovals = np.sum(w * vals[inds], axis = 1)/ np.sum(w, axis=1)
+    xsec = tomovals.reshape(npts_surf,len(radevalarr),order='C')     
+    return xsec.T,model,tree
 
-def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',modelname='S40RTS_pixel_0.5x0.5.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalt=50,numevalx=50,numevalz=50,k=1,topofile='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
+def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalt=50,numevalx=50,numevalz=50,k=1,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
     """Plot one section through the Earth through a pair of points.""" 
     
     # Specify theta such that it is symmetric
@@ -808,7 +857,8 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',modelname='S40RTS_pixel_
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
     if vexaggerate != 0:   
-        rlatlon,elev,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,filename=topofile, tree=topotree,dbs_path=dbs_path,plottopo=False,numeval=numevalt,downsampleetopo1=True,distnearthreshold    =5.,stride=10,k=1)
+        
+        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo, dbs_path=dbs_path,numeval=numevalt,stride=10,k=1)
         if min(elev)< 0.:
              extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
         else:
@@ -864,7 +914,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',modelname='S40RTS_pixel_
     except ValueError:
         cpalette=customcolorpalette(colorpalette)
         
-    junk,values,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,filename=modelname,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,k=k)
+    values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,k=k)
     interp_values=np.array(values)
     
     #interp_values=(interp_values-interp_values.mean()).reshape((n3dmodelinter,n3dmodelinter))
@@ -901,7 +951,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',modelname='S40RTS_pixel_
     plt.draw()
     if outfile is not None:
         fig1.savefig(outfile,dpi=100)
-    return topotree, modeltree
+    return topo,topotree,model,modeltree
 
 def plot1globalmap(epixarr,vmin,vmax,dbs_path='.',colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
     """Plot one global map""" 

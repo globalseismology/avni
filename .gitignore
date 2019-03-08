@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# netcdf hdf file
+*.nc
+*.nc4
+*.h5
+*.hdf5
+
 # All data files downloaded from remote REM3D server
 rem3d/files/*
 

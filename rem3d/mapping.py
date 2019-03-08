@@ -12,7 +12,6 @@ import codecs,json #printing output
 from joblib import Parallel, delayed
 import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
-from netCDF4 import Dataset as netcdf #reading netcdf files
 import scipy.interpolate as spint
 import scipy.spatial.qhull as qhull
 

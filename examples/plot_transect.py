@@ -50,17 +50,17 @@ def main():
     print("PLOTTING SECTION 1")
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
     delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
-    topo_tree,tomo_tree = plot1section(lat1,lng1,azep,delta,modelname=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=50,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=200,numevalt=50,k=8)
+    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=50,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=200,numevalt=50,k=1)
 
     ###### Example of a 180 degree transect without topography
     print("PLOTTING SECTION 2")
     lat1 = 0.;lng1 = 0.;azimuth = -30.;gcdelta = 180.
-    plot1section(lat1,lng1,azimuth,gcdelta,topotree=topo_tree,modeltree=tomo_tree,modelname=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=360,numevalz=360,k=8)
+    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=360,numevalz=360,k=1)
 
     ###### Example of a 360 degree transect without topography
     print("PLOTTING SECTION 3")
     lat1 = 0.;lng1 = 0.;azimuth = -45.;gcdelta = 360.
-    plot1section(lat1,lng1,azimuth,gcdelta,topotree=topo_tree,modeltree=tomo_tree,modelname=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=720,numevalz=720,k=8)
+    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=720,numevalz=720,k=1)
         
     return
 
