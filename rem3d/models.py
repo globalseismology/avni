@@ -724,28 +724,17 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         
         if stru_idx is not None:
             dep = rpar_list[stru_idx]
-            #data_array = xr.DataArray(np.zeros((len(dep),len(lon),len(lat))),
-            #                          dims = ['depth','longitude','latitude'],
-            #                          coords=[dep,lon,lat])
             data_array = xr.DataArray(np.zeros((len(dep),len(lat),len(lon))),
                                       dims = ['depth','latitude','longitude'],
                                       coords=[dep,lat,lon])
             for i,layer in enumerate(model_dict[variable]['layers']):
-                #TODO reorder data
-                #data_array[i,:,:] = np.reshape(model_dict[variable]['layers'][layer],
-                #                    (len(lon),len(lat)),order='F')
                 data_array[i,:,:] = np.reshape(model_dict[variable]['layers'][layer],
                                     (len(lat),len(lon)),order='C')
             ds[variable] = data_array
         else:
-            #data_array = xr.DataArray(np.zeros((len(lon),len(lat))),
-            #                          dims = ['longitude','latitude'],
-            #                          coords = [lon,lat])
             data_array = xr.DataArray(np.zeros((len(lat),len(lon))),
                                       dims = ['latitude','longitude'],
                                       coords = [lat,lon])
-            #data_array[:,:] = np.reshape(model_dict[variable]['layers'][0],
-            #                        (len(lon),len(lat)),order='F')
             data_array[:,:] = np.reshape(model_dict[variable]['layers'][0],
                                     (len(lat),len(lon)),order='C')
             ds[variable] = data_array
