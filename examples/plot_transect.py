@@ -9,6 +9,8 @@ import cPickle
 ################################ IMPORT REM3D MODULES   #####################################
 from rem3d.f2py import ddelazgc # geolib library from NSW
 from rem3d.plots import plot1section
+from rem3d.tools import get_fullpath
+
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
@@ -25,23 +27,18 @@ def main():
     parser.add_argument('-e', '--elev_exxagerate', type=float, default=50,
         help='Elevation exxageration for transect plots')
     parser.add_argument('-d', '--dbs_path', type=str, default='~/dbs',
-        help='Database path containing files like hotspots.pkl')
-    parser.add_argument('-b', '--base_path', type=str, default='.',
-        help='Base path containing FILE')   
+        help='Database path containing files like hotspots.pkl')  
     parser.add_argument('-c', '--num_cores', type=int, default=1,
         help='Number of cores to use')
     arg = parser.parse_args()
     
-    filename=arg.base_path+'/'+arg.file
-
-
     ##### Example of a regional transects
     # N. Chile    
     print("PLOTTING SECTION 1")
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
     delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
     
-    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=200,k=1)
+    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=300,k=1)
     
     #Japan
     lat1 = 34.;lng1 = 152.;lat2 = 40.;lng2 = 117.
