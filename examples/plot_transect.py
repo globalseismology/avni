@@ -22,7 +22,7 @@ def main():
         help='Lower bound for color scale saturation level (percent)')
     parser.add_argument('-i', '--elev_interval', type=float, default=50,
         help='Number of elevation points for transect plots')
-    parser.add_argument('-e', '--elev_exxagerate', type=float, default=0,
+    parser.add_argument('-e', '--elev_exxagerate', type=float, default=50,
         help='Elevation exxageration for transect plots')
     parser.add_argument('-d', '--dbs_path', type=str, default='~/dbs',
         help='Database path containing files like hotspots.pkl')
@@ -36,31 +36,34 @@ def main():
 
 
     ##### Example of a regional transects
-    #Japan
-#     lat1 = 34.;lng1 = 152.;lat2 = 40.;lng2 = 117.
-#     delta,azep,azst = delazgc(lat1,lng1,lat2,lng2)
-#     plot1section(lat1,lng1,azep,delta,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{P} / V_{P}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval)
-    
-    # Kermadec
-#     lat1 = -25.;lng1 = 191.;lat2 = -22.;lng2 = 160.
-#     delta,azep,azst = delazgc(lat1,lng1,lat2,lng2)
-#     plot1section(lat1,lng1,azep,delta,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{P} / V_{P}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval)
-
     # N. Chile    
     print("PLOTTING SECTION 1")
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
     delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
-    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=50,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=200,numevalt=50,k=1)
-
+    
+    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=filename,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=200,k=1)
+    
+    #Japan
+    lat1 = 34.;lng1 = 152.;lat2 = 40.;lng2 = 117.
+    delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
+    
+    plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,numevalx=200,numevalz=200,k=1)
+    
+    # Kermadec
+    lat1 = -25.;lng1 = 191.;lat2 = -22.;lng2 = 160.
+    delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
+    
+    plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,numevalx=200,numevalz=200,k=1)
+    
     ###### Example of a 180 degree transect without topography
     print("PLOTTING SECTION 2")
     lat1 = 0.;lng1 = 0.;azimuth = -30.;gcdelta = 180.
-    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=360,numevalz=360,k=1)
+    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],numevalx=360,numevalz=360,k=1)
 
     ###### Example of a 360 degree transect without topography
     print("PLOTTING SECTION 3")
     lat1 = 0.;lng1 = 0.;azimuth = -45.;gcdelta = 360.
-    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],nelevinter=arg.elev_interval,numevalx=720,numevalz=720,k=1)
+    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,dbs_path=arg.dbs_path,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,k=1)
         
     return
 

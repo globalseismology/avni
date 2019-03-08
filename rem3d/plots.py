@@ -844,7 +844,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     xsec = tomovals.reshape(npts_surf,len(radevalarr),order='C')     
     return xsec.T,model,tree
 
-def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalt=50,numevalx=50,numevalz=50,k=1,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
+def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalx=50,numevalz=50,k=1,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
     """Plot one section through the Earth through a pair of points.""" 
     
     # Specify theta such that it is symmetric
@@ -858,7 +858,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km
     extend_radius=0.
     if vexaggerate != 0:   
         
-        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo, dbs_path=dbs_path,numeval=numevalt,stride=10,k=1)
+        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,stride=10,k=1)
         if min(elev)< 0.:
              extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
         else:
