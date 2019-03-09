@@ -303,7 +303,7 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
     
     return ds
     
-def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True,buffer=False):
+def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=False,buffer=False):
     '''
     write a rem3d formatted ascii file from a directory containing epix files 
 
@@ -354,16 +354,19 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
     #find the number radial kernels
     epix_lengths = []
+    print(parser['parameters'])
     for parameter in parser['parameters']:
+        print(parameter)
         mod_type = parser['parameters'][parameter]['type']
+        par_folder = parser['parameters'][parameter]['folder']
 
         if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
         elif mod_type == 'topography':
-            topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
 
         epix_lengths.append(len(epix_files))
+    print(np.sum(epix_lengths))
     f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(np.sum(epix_lengths)))
 
     n_hpar = 1 #default is a single horizontal parameterization for all parameters
@@ -379,13 +382,14 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
         mod_type = parser['parameters'][parameter]['type']
         mod_desc = parser['parameters'][parameter]['shortname']
+        par_folder = parser['parameters'][parameter]['folder']
 
         if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
             epix_files.sort(key=tools.alphanum_key)
         elif mod_type == 'topography':
-            topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
+            #topo_folder = parser['parameters'][parameter]['folder']
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
         else:
             raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
 
@@ -482,13 +486,14 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         #epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
         mod_type = parser['parameters'][parameter]['type']
         mod_desc = parser['parameters'][parameter]['shortname']
+        par_folder = parser['parameters'][parameter]['folder']
 
         if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
             epix_files.sort(key=tools.alphanum_key)
         elif mod_type == 'topography':
-            topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
+            #topo_folder = parser['parameters'][parameter]['folder']
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
         else:
             raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
         epix_files.sort(key=tools.alphanum_key)
@@ -579,7 +584,6 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opt
     i = 0
     line = asciioutput.readline()
     while line:
-        print(line.strip())
         if i < nrad_krnl:
 
             variable = line.strip().split()[2].split(',')[0]
@@ -594,7 +598,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opt
                     rpar_list.append(rpar)
                     model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
                     var_idx += 1
-                    rpar = []
+                    #rpar = []
 
                 if len(rpar) > 0 and rpar in rpar_list:
                     rpar_list.append(rpar)
@@ -646,6 +650,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opt
 
     #read coefficients
     for variable in variables:
+        print(variable)
+        print(model_dict[variable])
         stru_idx = model_dict[variable]['rpar_idx']
         model_dict[variable]['layers'] = {}
 
@@ -685,28 +691,27 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',compression_opt
 
         #create dims arrays
         lon = np.arange((pxw/2.),360.,pxw)
-        for i in range(0,len(lon)):
-            if lon[i] >= 180.0:
-                lon[i] -= 360.0
+        #for i in range(0,len(lon)):
+        #    if lon[i] >= 180.0:
+        #        lon[i] -= 360.0
         lat = np.arange(-90.+(pxw/2.),90,pxw)
 
         stru_idx = model_dict[variable]['rpar_idx']
         if stru_idx is not None:
             dep = rpar_list[stru_idx]
-            data_array = xr.DataArray(np.zeros((len(dep),len(lon),len(lat))),
-                                      dims = ['depth','longitude','latitude'],
-                                      #dims = ['depth','latitude','longitude'],
-                                      coords=[dep,lon,lat])
+            data_array = xr.DataArray(np.zeros((len(dep),len(lat),len(lon))),
+                                      dims = ['depth','latitude','longitude'],
+                                      coords=[dep,lat,lon])
             for i,layer in enumerate(model_dict[variable]['layers']):
                 data_array[i,:,:] = np.reshape(model_dict[variable]['layers'][layer],
-                                    (len(lon),len(lat)),order='F')
+                                    (len(lat),len(lon)),order='C')
             ds[variable] = data_array
         else:
-            data_array = xr.DataArray(np.zeros((len(lon),len(lat))),
-                                      dims = ['longitude','latitude'],
-                                      coords = [lon,lat])
+            data_array = xr.DataArray(np.zeros((len(lat),len(lon))),
+                                      dims = ['latitude','longitude'],
+                                      coords = [lat,lon])
             data_array[:,:] = np.reshape(model_dict[variable]['layers'][0],
-                                    (len(lon),len(lat)),order='F')
+                                    (len(lat),len(lon)),order='C')
             ds[variable] = data_array
 
     #add attributes
