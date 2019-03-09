@@ -392,16 +392,19 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
     #find the number radial kernels
     epix_lengths = []
+    print(parser['parameters'])
     for parameter in parser['parameters']:
+        print(parameter)
         mod_type = parser['parameters'][parameter]['type']
+        par_folder = parser['parameters'][parameter]['folder']
 
         if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
         elif mod_type == 'topography':
-            topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
 
         epix_lengths.append(len(epix_files))
+    print(np.sum(epix_lengths))
     f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(np.sum(epix_lengths)))
 
     n_hpar = 1 #default is a single horizontal parameterization for all parameters
@@ -417,13 +420,14 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
         mod_type = parser['parameters'][parameter]['type']
         mod_desc = parser['parameters'][parameter]['shortname']
+        par_folder = parser['parameters'][parameter]['folder']
 
         if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
             epix_files.sort(key=tools.alphanum_key)
         elif mod_type == 'topography':
-            topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
+            #topo_folder = parser['parameters'][parameter]['folder']
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
         else:
             raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
 
@@ -524,13 +528,14 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         #epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
         mod_type = parser['parameters'][parameter]['type']
         mod_desc = parser['parameters'][parameter]['shortname']
+        par_folder = parser['parameters'][parameter]['folder']
 
         if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
             epix_files.sort(key=tools.alphanum_key)
         elif mod_type == 'topography':
-            topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+topo_folder+'/*'+parameter+'.epix')
+            #topo_folder = parser['parameters'][parameter]['folder']
+            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
         else:
             raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
         epix_files.sort(key=tools.alphanum_key)
@@ -596,6 +601,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
             break
         line = asciioutput.readline()
 
+
     #read variables and parameterizations
     variables = []
     rpar_list = []
@@ -612,7 +618,6 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     i = 0
     line = asciioutput.readline()
     while line:
-        print(line.strip())
         if i < nrad_krnl:
 
             variable = line.strip().split()[2].split(',')[0]
@@ -627,7 +632,6 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
                     rpar_list.append(rpar)
                     model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx 
                     var_idx += 1
-                    rpar = []
 
                 if len(rpar) > 0 and rpar in rpar_list:
                     rpar_list.append(rpar)
