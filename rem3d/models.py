@@ -391,12 +391,15 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     f_out.write(u'SCALING: {}\n'.format(scaling))
 
     #find the number radial kernels
-    epix_lengths = []
-    print(parser['parameters'])
+    epix_lengths = []; string = []
+    icount = 0 
     for parameter in parser['parameters']:
-        print(parameter)
         mod_type = parser['parameters'][parameter]['type']
         par_folder = parser['parameters'][parameter]['folder']
+        description = parser['parameters'][parameter]['description']
+        shortname = parser['parameters'][parameter]['shortname']
+        icount += 1
+        string.append(str(icount)+'. '+description+' ('+shortname+')')
 
         if mod_type == 'heterogeneity':
             epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
@@ -404,7 +407,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
 
         epix_lengths.append(len(epix_files))
-    print(np.sum(epix_lengths))
+    print('... read '+str(np.sum(epix_lengths))+' radial structure kernels of '+str(len(string))+' variables: \n'+'\n'.join(string))
     f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(np.sum(epix_lengths)))
 
     n_hpar = 1 #default is a single horizontal parameterization for all parameters
@@ -446,11 +449,11 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                                     
             # conduct checks
             if checks:
-                assert (parser['parameters'][parameter]['unit']==metadata['UNIT'])," in file "+epix_file
-                assert (parser['parameters'][parameter]['shortname'] == metadata['WHAT'])," in file "+epix_file
+                assert (parser['parameters'][parameter]['unit'].lower()==metadata['UNIT'].lower())," in file "+epix_file
+                assert (parser['parameters'][parameter]['shortname'].lower() == metadata['WHAT'].lower())," in file "+epix_file
                 #assert (parser['metadata']['reference1D']==metadata['REFMODEL'])," in file "+epix_file
                 assert (metadata['FORMAT']=='50')," in file "+epix_file
-                assert (metadata['BASIS']=='PIX')," in file "+epix_file
+                assert (metadata['BASIS'].lower()=='PIX'.lower())," in file "+epix_file
             
             if mod_type == 'heterogeneity':
                 for line in head:
