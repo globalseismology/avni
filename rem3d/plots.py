@@ -808,17 +808,16 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     
     # Get KD tree
     if tree == None and isinstance(model,string_types):
-        ds = xr.open_dataset(dbs_path+'/'+model)
-        treefile = dbs_path+'/'+ds.attrs['kernel_set']+'.KDTree.3D.pkl'
         ncfile = dbs_path+'/'+model
-        tree = tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
         #read values
         if os.path.isfile(ncfile):
-            f = xr.open_dataset(ncfile)
+            ds = xr.open_dataset(ncfile)
         else:
             raise ValueError("Error: Could not find file "+ncfile)
-        model = f.variables[parameter]      
-        f.close() #close netcdf file
+        treefile = dbs_path+'/'+ds.attrs['kernel_set']+'.KDTree.3D.pkl'
+        tree = tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
+        model = ds.variables[parameter]      
+        ds.close() #close netcdf file
         vals = model.data.flatten(order='C')
     else:
         #read topography file

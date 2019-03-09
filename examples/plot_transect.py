@@ -14,7 +14,7 @@ from rem3d.tools import get_fullpath
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
-    parser.add_argument('-m', '--file', type=str, default='S362ANI+M_kmps.nc',
+    parser.add_argument('-m', '--file', type=str, default='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',
         help='Model file')
     parser.add_argument('-p', '--parameter', type=str, default='vs',
         help='Parameter of interest')
@@ -33,12 +33,16 @@ def main():
     arg = parser.parse_args()
     
     ##### Example of a regional transects
-    # N. Chile    
     print("PLOTTING SECTION 1")
+    # Kermadec
+    lat1 = -25.;lng1 = 191.;lat2 = -22.;lng2 = 160.
+    delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
+    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='Kermadec.eps',numevalx=200,numevalz=300,k=1)
+    
+    # N. Chile    
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
     delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
-    
-    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=300,k=1)
+    plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.eps',numevalx=200,numevalz=200,k=1)
     
     #Japan
     lat1 = 34.;lng1 = 152.;lat2 = 40.;lng2 = 117.
@@ -46,11 +50,6 @@ def main():
     
     plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='Japan.eps',numevalx=200,numevalz=200,k=1)
     
-    # Kermadec
-    lat1 = -25.;lng1 = 191.;lat2 = -22.;lng2 = 160.
-    delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
-    
-    plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,dbs_path=arg.dbs_path,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='Kermadec.eps',numevalx=200,numevalz=200,k=1)
     
     ###### Example of a 180 degree transect without topography
     print("PLOTTING SECTION 2")

@@ -426,7 +426,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             # conduct checks
             if checks:
                 assert (parser['parameters'][parameter]['unit'].lower()==metadata['UNIT'].lower())," in file "+epix_file
-                assert (parser['parameters'][parameter]['shortname'].lower() == metadata['WHAT'].lower())," in file "+epix_file
+                assert (parser['parameters'][parameter]['shortname'].lower() == metadata['WHAT'].lower() or parser['parameters'][parameter]['description'].lower() == metadata['WHAT'].lower())," in file "+epix_file
                 #assert (parser['metadata']['reference1D']==metadata['REFMODEL'])," in file "+epix_file
                 assert (metadata['FORMAT']=='50')," in file "+epix_file
                 assert (metadata['BASIS'].lower()=='PIX'.lower())," in file "+epix_file
