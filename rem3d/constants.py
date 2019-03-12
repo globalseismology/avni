@@ -16,7 +16,7 @@ import pkgutil
 """
 download files
 """
-downloadpage = 'https://maurya.umd.edu/files'
+downloadpage = 'https://maurya.umd.edu/files/common'
 localfilefolder = 'files'
 
 """
