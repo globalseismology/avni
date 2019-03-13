@@ -16,6 +16,7 @@ import fortranformat as ff #reading/writing fortran formatted text
 from configobj import ConfigObj
 import xarray as xr
 from io import StringIO
+from copy import deepcopy
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools   
@@ -333,6 +334,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     buffer: write to buffer instead of file for the intermediate step of the ascii file
     '''
     cfg_file = model_dir+'/'+setup_file
+    ref_dict = {} #dictionary containing reference values
 
     if not os.path.isfile(cfg_file):
         raise IOError('No configuration file found.'\
@@ -396,6 +398,10 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
     k = 1
     for i, parameter in enumerate(parser['parameters']):
+        ref_dict[parameter] = {}
+        ref_dict[parameter]['ifremav'] = []
+        ref_dict[parameter]['refvalue'] = []
+        ref_dict[parameter]['average'] = []
 
         mod_type = parser['parameters'][parameter]['type']
         mod_desc = parser['parameters'][parameter]['shortname']
@@ -430,6 +436,11 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 #assert (parser['metadata']['reference1D']==metadata['REFMODEL'])," in file "+epix_file
                 assert (metadata['FORMAT']=='50')," in file "+epix_file
                 assert (metadata['BASIS'].lower()=='PIX'.lower())," in file "+epix_file
+
+            ref_dict[parameter]['ifremav'].append(np.float(metadata['IFREMAV']))
+            ref_dict[parameter]['refvalue'].append(np.float(metadata['REFVALUE']))
+            ref_dict[parameter]['average'].append(np.float(metadata['AVERAGE']))
+            ref_dict[parameter]['refmodel'] = metadata['REFMODEL']
             
             if mod_type == 'heterogeneity':
                 for line in head:
@@ -470,6 +481,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             #enforce longitudes from 0 to 360 to be consistent with xarray
             assert(min(f[:,1]) >= 0.)," longitudes need to be [0,360] "+epix_file
 
+
     #write horizontal parameterization
     f_out.write(u'HORIZONTAL PARAMETERIZATIONS: {}\n'.format(len(lats)))
     for i in range(0,len(lats)):
@@ -504,6 +516,13 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     k = 1
     for i, parameter in enumerate(parser['parameters']):
 
+        #TODO 
+        #--------------------------------------------------------------------------
+        #check if the reference value is negative. if so, make an instance of the 1D
+        #model class to read from
+        #--------------------------------------------------------------------------
+        #if ref_dict[parameter]['refvalue'][i] < 0:
+
         #epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
         mod_type = parser['parameters'][parameter]['type']
         mod_desc = parser['parameters'][parameter]['shortname']
@@ -525,6 +544,14 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             f = np.loadtxt(epix_file)
             print('writing coefficients for layer ', k)
             coefs = f[:,3]
+
+            #check ifremav. if it's 1, add in average
+            print(ref_dict[parameter]['ifremav'])
+            if ref_dict[parameter]['ifremav'][j] == 1:
+                coefs += refs_dict[parameter]['average'][j]
+            else:
+                print('ifremav =',ref_dict[parameter]['ifremav'][j], type(ref_dict[parameter]['ifremav'][j]))
+
             coefs_arr = np.reshape(coefs,shape,order='F')
             coefs = coefs_arr.flatten()
             f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(k,px_w))
@@ -713,14 +740,28 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
             for i,layer in enumerate(model_dict[variable]['layers']):
                 data_array[i,:,:] = np.reshape(model_dict[variable]['layers'][layer],
                                     (len(lat),len(lon)),order='C')
-            ds[variable] = data_array
         else:
             data_array = xr.DataArray(np.zeros((len(lat),len(lon))),
                                       dims = ['latitude','longitude'],
                                       coords = [lat,lon])
             data_array[:,:] = np.reshape(model_dict[variable]['layers'][0],
                                     (len(lat),len(lon)),order='C')
-            ds[variable] = data_array
+
+        #TODO
+        #-------------------------------------------------------------------------
+        #add reference values at each depth as metadata to the Data_Array
+        #for now, we initiate as an empty array
+        #-------------------------------------------------------------------------
+        if len(data_array.shape) == 3:
+            av_attrs = {}
+            av_depth = deepcopy(data_array.depth.values)
+            av_value = np.zeros(len(av_depth))
+            av_attrs['av_depth'] = av_depth
+            av_attrs['av_value'] = av_value
+            data_array.attrs = av_attrs
+
+        #add Data_Array object to Data_Set
+        ds[variable] = data_array
 
     #add attributes
     attrs = {}
