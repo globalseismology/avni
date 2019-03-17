@@ -171,20 +171,35 @@ class reference1D(object):
             icount = icount+1
             
             
-        #---- find discontinuities        
+        #---- try to find discontinuities        
         discfind = disc['delta']['radius'][np.abs(1221.5-disc['delta']['radius']/1000.)<25.]
-        if len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
-        disc['itopic'] = np.where(self.data['radius']==discfind[0])[0][1]
+        if len(discfind) <= 0: # not found
+            print("Warning: itopic not found")
+        elif len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
+        else:
+            disc['itopic'] = np.where(self.data['radius']==discfind[0])[0][1]
         
         discfind = disc['delta']['radius'][np.abs(3480.0-disc['delta']['radius']/1000.)<25.]
-        if len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
-        disc['itopoc'] = np.where(self.data['radius']==discfind[0])[0][1]
+        if len(discfind) <= 0: # not found
+            print("Warning: itopoc not found")
+        elif len(discfind) > 1: 
+            raise ValueError('get_discontinuity: multiple values within discontinuity limits')
+        else:
+            disc['itopoc'] = np.where(self.data['radius']==discfind[0])[0][1]
         
-        discfind = disc['delta']['radius'][np.abs(6368.0-disc['delta']['radius']/1000.)<0.1]
-        if len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
-        disc['itopcrust'] = np.where(self.data['radius']==discfind[0])[0][1]
+        ###   Top of crust
+        discfind = np.where(np.logical_and(self.data['vp']<7500.,self.data['vs']>0.))[0]
+        if len(discfind) > 0: disc['itopcrust'] = max(discfind) + 1
+        #discfind = disc['delta']['radius'][np.abs(6368.0-disc['delta']['radius']/1000.)<0.1]
+#         if len(discfind) <= 0: # not found
+#             print("Warning: itopcrust not found")
+#         elif len(discfind) > 1: 
+#             raise ValueError('get_discontinuity: multiple values within discontinuity limits')
+#         else:
+            #disc['itopcrust'] = np.where(self.data['radius']==discfind[0])[0][1]
         
-        disc['itopmantle'] = min(np.where(self.data['vp']<7500.)[0])
+        itopmantle = min(np.where(self.data['vp']<7500.)[0])
+        if itopmantle >0: disc['itopmantle'] = itopmantle
         
         self.metadata['discontinuities'] = disc
 
