@@ -20,32 +20,6 @@ from configobj import ConfigObj
 from . import constants
 from rem3d.f2py import vbspl
 #######################################################################################
-
-def getplanetconstants(planet='Earth', configfile = 'planets.ini'):
-    """
-    Read the constants from configfile to constants.py
-    """
-    
-    if not os.path.isfile(configfile):
-        raise IOError('No configuration file found: '+configfile)
-    else:
-        parser = ConfigObj(configfile)
-    
-    try:
-        parser_select = parser[planet]
-    except:
-        raise IOError('No planet '+planet+' found in file '+configfile)
-    constants.a_e = eval(parser_select['a_e']) # Equatorial radius
-    constants.GM = eval(parser_select['GM']) # Geocentric gravitational constant m^3s^-2
-    constants.G = eval(parser_select['G']) # Gravitational constant m^3kg^-1s^-2
-    constants.f = eval(parser_select['f']) #flattening
-    constants.omega = eval(parser_select['omega']) #Angular velocity in rad/s
-    constants.M_true = eval(parser_select['M_true']) # Solid Earth mass in kg
-    constants.I_true = eval(parser_select['I_true']) # Moment of inertia in m^2 kg
-    constants.R = eval(parser_select['R']) # Radius of the Earth in m
-    constants.rhobar = eval(parser_select['rhobar']) # Average density in kg/m^3
-    # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
-    constants.geoco = (1.0 - constants.f)**2.  
     
 def alphanum_key(s): 
     '''
@@ -336,4 +310,39 @@ def sanitised_input(prompt, type_=None, min_=None, max_=None, range_=None):
                                                                      range_[:-1])), 
                                                        str(range_[-1]))))) 
         else: 
-            return ui     
+            return ui  
+            
+def getplanetconstants(planet = constants.planetpreferred, configfile = get_configdir()+'/'+constants.planetconstants):
+    """
+    Read the constants from configfile relevant to a planet to constants.py
+    
+    Input parameters:
+    ----------------
+    planet: planet option from configfile
+    
+    configfile: all the planet configurations are in this file. 
+                Default option means read from tools.get_configdir()
+    
+    """
+        
+    if not os.path.isfile(configfile):
+        raise IOError('No configuration file found: '+configfile)
+    else:
+        parser = ConfigObj(configfile)
+    
+    try:
+        parser_select = parser[planet]
+    except:
+        raise IOError('No planet '+planet+' found in file '+configfile)
+    constants.a_e = eval(parser_select['a_e']) # Equatorial radius
+    constants.GM = eval(parser_select['GM']) # Geocentric gravitational constant m^3s^-2
+    constants.G = eval(parser_select['G']) # Gravitational constant m^3kg^-1s^-2
+    constants.f = eval(parser_select['f']) #flattening
+    constants.omega = eval(parser_select['omega']) #Angular velocity in rad/s
+    constants.M_true = eval(parser_select['M_true']) # Solid Earth mass in kg
+    constants.I_true = eval(parser_select['I_true']) # Moment of inertia in m^2 kg
+    constants.R = eval(parser_select['R']) # Radius of the Earth in m
+    constants.rhobar = eval(parser_select['rhobar']) # Average density in kg/m^3
+    # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
+    constants.geoco = (1.0 - constants.f)**2.  
+   

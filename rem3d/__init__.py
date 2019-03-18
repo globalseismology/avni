@@ -23,5 +23,4 @@ for importer, modname, ispkg in pkgutil.walk_packages(path=__path__, prefix=__na
     __import__(modname)
     
 # initialize the constants for planet Earth by default
-configdir = tools.get_configdir()
-tools.getplanetconstants(constants.planetpreferred,configdir+'/'+constants.planetconstants)
+tools.getplanetconstants('Earth')
