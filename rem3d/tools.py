@@ -289,6 +289,8 @@ def eval_vbspl(depths,knots):
         depths = np.asarray(depths)
     elif isinstance(depths, float):
         depths = np.asarray([depths])
+    elif isinstance(depths, int):
+        depths = np.asarray([float(depths)])
     else:
         raise TypeError('depths must be list or tuple, not %s' % type(depths))
 
@@ -373,6 +375,8 @@ def eval_splrem(radius, radius_range, nsplines):
         radius = np.asarray(radius)
     elif isinstance(radius, float):
         radius = np.asarray([radius])
+    elif isinstance(radius, int):
+        radius = np.asarray([float(radius)])
     else:
         raise TypeError('radius must be list or tuple, not %s' % type(depths))
 
@@ -417,11 +421,13 @@ def eval_polynomial(radius, radius_range, rnorm, coefficients = {'CONSTANT':0.,'
     """
         
     if isinstance(radius, (list,tuple,np.ndarray)):
-        radius = np.asarray(radius)
+        radiusin = np.asarray(radius)
     elif isinstance(radius, float):
-        radius = np.asarray([radius])
+        radiusin = np.asarray([radius])
+    elif isinstance(radius, int):
+        radiusin = np.asarray([float(radius)])
     else:
-        raise TypeError('radius must be list or tuple, not %s' % type(depths))
+        raise TypeError('radius must be list or tuple, not %s' % type(radius))
     
     # keys in coefficients should be acceptable
     choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
@@ -446,19 +452,24 @@ def eval_polynomial(radius, radius_range, rnorm, coefficients = {'CONSTANT':0.,'
     if len(radius_range) != 2 or not isinstance(radius_range, (list,tuple,np.ndarray)):
         raise TypeError('radius_range must be list , not %s' % type(radius_range))
 
-    for irad in range(len(radius)):
+    for irad in range(len(radiusin)):
         #Undefined if depth does not lie within the depth extents of knot points                      
-        if radius[irad] < min(radius_range) or radius[irad] > max(radius_range): 
+        if radiusin[irad] < min(radius_range) or radiusin[irad] > max(radius_range): 
             temp = 0.
         else:
-            rn=radius[irad]/rnorm                
+            rn=radiusin[irad]/rnorm                
             temp=rfnval['CONSTANT']+rfnval['LINEAR']*rn+rfnval['QUADRATIC']*rn**2+ rfnval['CUBIC']*rn**3
         
         if irad == 0:
-            if len(radius) == 1:
+            if len(radiusin) == 1:
                 vercof = temp
             else:
                 vercof = [temp]
         else:    
             vercof.append(temp)
+    # convert to appropriate type based on input
+    if isinstance(radius, np.ndarray):
+        vercof = np.array(vercof)
+    elif isinstance(radius, tuple):
+        vercof = tuple(vercof)
     return vercof
