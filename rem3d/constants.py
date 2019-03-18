@@ -12,7 +12,6 @@ import pkgutil
 #ureg = pint.UnitRegistry()
 #R = 6371000. * ureg.m    #Radius of the Earth in m
 
-
 """
 download files
 """
@@ -27,16 +26,8 @@ configfolder = 'config'
 """
 Mapping constants
 """
-a_e = 6378136.3   # Equatorial radius
-GM = 398600.4415E+9 # Geocentric gravitational constant m^3s^-2
-G = 6.67408E-11 # Gravitational constant m^3kg^-1s^-2
-f = 1./298.256415099 #flattening
-# correction for geographic-geocentric conversion: 0.993277 for 1/f=297
-geoco = (1.0 - f)**2.  
-omega = 7.292115E-5  #Angular velocity in rad/s
-M_true = 5.97236E+24  # Solid Earth mass in kg
-R = 6371000. # Radius of the Earth in m
-rhobar = 5513.59 # Average density in kg/m^3
+planetconstants = 'planets.ini'
+planetpreferred = 'Earth'
 
 """
 Color scales
