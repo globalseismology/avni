@@ -366,7 +366,7 @@ def eval_splrem(radius, radius_range, nsplines):
     Output:
     ------
     
-    vercof, dvercof: value of the spline coefficients at each depth and its derivative.
+    vercof, dvercof: value of the polynomial coefficients at each depth and derivative.
                       Both arrays have size (Nradius, Nsplines).
     
     """
@@ -397,7 +397,7 @@ def eval_splrem(radius, radius_range, nsplines):
     return vercof, dvercof
 
 
-def eval_polynomial(radius, radius_range, rnorm, coefficients = {'CONSTANT':0.,'LINEAR':0} ):
+def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     """
     Evaluate the cubic spline know with second derivative as 0 at end points.
     
@@ -408,7 +408,7 @@ def eval_polynomial(radius, radius_range, rnorm, coefficients = {'CONSTANT':0.,'
     
     radius_range: limits of the radius limits of the region
     
-    coefficients: polynomial coefficients to be used for calculation. Options are : TOP,
+    types: polynomial coefficients to be used for calculation. Options are : TOP,
                   TOP, BOTTOM, CONSTANT, LINEAR, QUADRATIC, CUBIC
     
     rnorm: normalization for radius, usually the radius of the planet
@@ -428,48 +428,61 @@ def eval_polynomial(radius, radius_range, rnorm, coefficients = {'CONSTANT':0.,'
         radiusin = np.asarray([float(radius)])
     else:
         raise TypeError('radius must be list or tuple, not %s' % type(radius))
-    
-    # keys in coefficients should be acceptable
-    choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
-    assert(np.all([key in choices for key in coefficients.keys()]))
-    npoly = len(coefficients.keys())
-    rfnval = {}
-    for choice in choices:
-        if choice in coefficients: #if the coefficient is defined, store in rfnval
-            rfnval[choice] = coefficients[choice]
-        else:
-            rfnval[choice] = 0.
-    # firstfine CONSTANT and linear from TOP and BOTTOM
-    rbot=radius_range[0]/rnorm
-    rtop=radius_range[1]/rnorm
-    findtopbot = np.any([key in ['BOTTOM','TOP'] for key in coefficients.keys()])
-    if findtopbot:
-        s1=rfnval['BOTTOM']-rfnval['TOP']-rfnval['QUADRATIC']*(rbot**2-rtop**2)-rfnval['CUBIC']*(rbot**3-rtop**3)
-        s1=s1/(rbot-rtop)
-        rfnval['LINEAR']=s1
-        rfnval['CONSTANT']=rfnval['TOP']-rfnval['LINEAR']*rtop- rfnval['QUADRATIC']*rtop**2-rfnval['CUBIC']*rtop**3
 
     if len(radius_range) != 2 or not isinstance(radius_range, (list,tuple,np.ndarray)):
         raise TypeError('radius_range must be list , not %s' % type(radius_range))
-
+    
+    # keys in coefficients should be acceptable
+    choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
+    assert(np.all([key in choices for key in types]))
+    npoly = len(types)
+    # firstfine CONSTANT and linear from TOP and BOTTOM
+    rbot=radius_range[0]/rnorm
+    rtop=radius_range[1]/rnorm
+    findtopbot = np.any([key in ['BOTTOM','TOP'] for key in types])
+    findconstantlinear = np.any([key in ['CONSTANT','LINEAR'] for key in types])
+    
+    if findtopbot and findconstantlinear: raise ValueError('Cannot have both BOTTOM/TOP and CONSTANT/LINEAR as types in eval_polynomial')
+    
     for irad in range(len(radiusin)):
         #Undefined if depth does not lie within the depth extents of knot points                      
         if radiusin[irad] < min(radius_range) or radiusin[irad] > max(radius_range): 
-            temp = 0.
+            temp = np.zeros(npoly)
+            dtemp = np.zeros(npoly)
         else:
-            rn=radiusin[irad]/rnorm                
-            temp=rfnval['CONSTANT']+rfnval['LINEAR']*rn+rfnval['QUADRATIC']*rn**2+ rfnval['CUBIC']*rn**3
-        
+            rn=radiusin[irad]/rnorm  
+            temp = np.zeros(npoly) 
+            dtemp = np.zeros(npoly)
+            for ii in range(npoly):
+                if findconstantlinear:
+                    if types[ii]=='CONSTANT':
+                        temp[ii]=1.
+                        dtemp[ii]=0.
+                    elif types[ii]=='LINEAR':
+                        temp[ii]=rn
+                        dtemp[ii]=1.
+                    elif types[ii]=='QUADRATIC':
+                        temp[ii]=rn**2
+                        dtemp[ii]=2.*rn
+                    elif types[ii]=='CUBIC':
+                        temp[ii]=rn**3
+                        dtemp[ii]=3.*rn**2
+                elif findtopbot:
+                    if types[ii]=='TOP':
+                        temp[ii] = 1.-(rn-rtop)/(rbot-rtop)
+                        dtemp[ii]= -1./(rbot-rtop)
+                    elif types[ii]=='BOTTOM':
+                        temp[ii] = (rn-rtop)/(rbot-rtop)
+                        dtemp[ii]= 1./(rbot-rtop)
+                    elif types[ii]=='QUADRATIC':
+                        temp[ii] = rn**2-rtop**2-(rn-rtop)*(rbot+rtop)
+                        dtemp[ii]=2.*rn - 1./(rbot+rtop)
+                    elif types[ii]=='CUBIC':
+                        temp[ii]=rn**3-rtop**3-(rn-rtop)*(rbot**3-rtop**3)/(rbot-rtop)
+                        dtemp[ii]=3.*rn**2 - 1.*(rbot**3-rtop**3)/(rbot-rtop)
         if irad == 0:
-            if len(radiusin) == 1:
-                vercof = temp
-            else:
-                vercof = [temp]
+            vercof = temp; dvercof = dtemp
         else:    
-            vercof.append(temp)
-    # convert to appropriate type based on input
-    if isinstance(radius, np.ndarray):
-        vercof = np.array(vercof)
-    elif isinstance(radius, tuple):
-        vercof = tuple(vercof)
-    return vercof
+            vercof = np.vstack([vercof,temp]) 
+            dvercof = np.vstack([dvercof,dtemp]) 
+    return vercof,dvercof
