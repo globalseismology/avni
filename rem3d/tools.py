@@ -436,7 +436,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
     assert(np.all([key in choices for key in types]))
     npoly = len(types)
-    # firstfine CONSTANT and linear from TOP and BOTTOM
+    # first find whether CONSTANT/LINEAR or TOP/BOTTOM
     rbot=radius_range[0]/rnorm
     rtop=radius_range[1]/rnorm
     findtopbot = np.any([key in ['BOTTOM','TOP'] for key in types])
