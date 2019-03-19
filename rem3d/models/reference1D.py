@@ -214,20 +214,27 @@ class reference1D(object):
             if isinstance(parameters,string_types): parameters = np.array([parameters]) 
             
             for ii in np.arange(parameters.size):
-                if 'SH-SV' in parameters[ii]:
-                    self.data=append_fields(self.data, parameters[ii], self.data['vsh'] - self.data['vsv'] , usemask=False)
-                elif 'PH-PV' in parameters[ii]:
-                    self.data=append_fields(self.data, parameters[ii], self.data['vph'] - self.data['vpv'] , usemask=False)
-                elif '(SH+SV)*0.5' in parameters[ii]:
-                    self.data=append_fields(self.data, parameters[ii], (self.data['vsh'] + self.data['vsv'])/2. , usemask=False)
-                elif '(PH+PV)*0.5' in parameters[ii]:
-                    self.data=append_fields(self.data, parameters[ii], (self.data['vph'] + self.data['vpv'])/2. , usemask=False)
-                elif 'dETA/ETA' in parameters[ii]:
-                    self.data=append_fields(self.data, parameters[ii], self.data['eta'] , usemask=False)
-                elif 'dRHO/RHO' in parameters[ii]:
-                    self.data=append_fields(self.data, parameters[ii], self.data['rho'] , usemask=False)                
+                if parameters[ii] in list(self.data.dtype.names):
+                    print('... parameter '+parameters[ii]+' already exists in '+self.name)
                 else:
-                    raise NotImplementedError('parameter ',parameters[ii],' is not currently implemented in reference1D.get_custom_parameter')
+                    if 'SH-SV' in parameters[ii]:
+                        self.data=append_fields(self.data, parameters[ii], self.data['vsh'] - self.data['vsv'] , usemask=False)
+                    elif 'as' in parameters[ii]:
+                        self.data=append_fields(self.data, parameters[ii], np.divide(self.data['vsh'] - self.data['vsv'],self.data['vs'],out=np.zeros_like(self.data['vs']), where= self.data['vs'] != 0.)*100. , usemask=False)
+                    elif 'PH-PV' in parameters[ii] or 'ap' in parameters[ii]:
+                        self.data=append_fields(self.data, parameters[ii], self.data['vph'] - self.data['vpv'] , usemask=False)
+                    elif 'ap' in parameters[ii]:
+                        self.data=append_fields(self.data, parameters[ii], np.divide(self.data['vph'] - self.data['vpv'],self.data['vp'],out=np.zeros_like(self.data['vp']), where= self.data['vp'] != 0.)*100. , usemask=False)
+                    elif '(SH+SV)*0.5' in parameters[ii]:
+                        self.data=append_fields(self.data, parameters[ii], (self.data['vsh'] + self.data['vsv'])/2. , usemask=False)
+                    elif '(PH+PV)*0.5' in parameters[ii]:
+                        self.data=append_fields(self.data, parameters[ii], (self.data['vph'] + self.data['vpv'])/2. , usemask=False)
+                    elif 'dETA/ETA' in parameters[ii]:
+                        self.data=append_fields(self.data, parameters[ii], self.data['eta'] , usemask=False)
+                    elif 'dRHO/RHO' in parameters[ii]:
+                        self.data=append_fields(self.data, parameters[ii], self.data['rho'] , usemask=False)                
+                    else:
+                        raise NotImplementedError('parameter ',parameters[ii],' is not currently implemented in reference1D.get_custom_parameter')
         else:
             raise ValueError('reference1D object is not allocated')
 
@@ -236,15 +243,24 @@ class reference1D(object):
         Get the values of a parameter at a given depth
         '''
         values=None
+        if isinstance(depth_in_km, (list,tuple,np.ndarray)):
+            depth_in_km = np.asarray(depth_in_km)
+        elif isinstance(depth_in_km, float):
+            depth_in_km = np.asarray([depth_in_km])
+        elif isinstance(depth_in_km, int):
+            depth_in_km = np.asarray([float(depth_in_km)])
+        else:
+            raise TypeError('depth_in_km must be list or tuple, not %s' % type(depth_in_km))
+
+
         if self.data is not None and self.__nlayers__ > 0:
             if parameter in self.data.dtype.names:
                 values = self.data[parameter]
                 depth_array = (constants.R - self.data['radius'])/1000. # in km
                 # Sort to make interpolation possible
                 indx = depth_array.argsort()
-                # convert to array for ease of looping
-                if isinstance(depth_in_km,float) or isinstance(depth_in_km,int): depth_in_km = np.array(depth_in_km) 
                 values = griddata(depth_array[indx], values[indx], depth_in_km, method=interpolation)
+                if len(depth_in_km)==1: values = values.item()
             else:
                 raise ValueError('parameter '+parameter+' not defined in array')
         else:

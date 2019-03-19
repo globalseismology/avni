@@ -17,9 +17,12 @@ from configobj import ConfigObj
 import xarray as xr
 from io import StringIO
 from copy import deepcopy
+import pint # For SI units
+ureg = pint.UnitRegistry()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from .. import tools   
+from .. import tools 
+from .reference1D import reference1D
 #######################################################################################
 
 def readepixfile(filename):
@@ -313,7 +316,7 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
     
     return ds
     
-def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True,buffer=False):
+def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True,buffer=False, onlyheaders=False):
     '''
     write a rem3d formatted ascii file from a directory containing epix files 
 
@@ -332,6 +335,8 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     checks: if True, checks if the metadata in setup_file is consistent with epix files
 
     buffer: write to buffer instead of file for the intermediate step of the ascii file
+    
+    onlyheaders: only write headers, not the coefficients
     '''
     cfg_file = model_dir+'/'+setup_file
     ref_dict = {} #dictionary containing reference values
@@ -410,9 +415,13 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         if mod_type == 'heterogeneity':
             epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
             epix_files.sort(key=tools.alphanum_key)
+            ref_dict[parameter]['depth_in_km'] = []
         elif mod_type == 'topography':
             #topo_folder = parser['parameters'][parameter]['folder']
             epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
+            depth = parser['parameters'][parameter]['depth']*ureg(parser['parameters'][parameter]['unit'])
+            depth.ito('km')
+            ref_dict[parameter]['depth_in_km'] = float(depth.magnitude)
         else:
             raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
 
@@ -426,7 +435,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 for line in f:
                     if line.startswith('#'):
                         head.append(line)
-                    for field in ['DEPTH','AVERAGE','IFREMAV','REFVALUE','REFMODEL','UNIT','WHAT','FORMAT','BASIS']:
+                    for field in ['DEPTH_IN_KM','AVERAGE','IFREMAV','REFVALUE','REFMODEL','UNIT','WHAT','FORMAT','BASIS']:
                         if field in line: metadata[field] = line.split(':')[1].split('\n')[0].lstrip().rstrip()
                                     
             # conduct checks
@@ -446,7 +455,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 for line in head:
                     if 'DEPTH_RANGE' in line: depth_range = line.split(':')[1].split('\n')[0] 
                 f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,mod_desc,depth_range))
-
+                ref_dict[parameter]['depth_in_km'].append( np.float(metadata['DEPTH_IN_KM']))
             elif mod_type == 'topography':
                 if checks: assert (float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']))," in file "+epix_file
                 depth_ref = parser['parameters'][parameter]['depth']
@@ -512,51 +521,55 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
             f_out.write(u'{:6.2f} {:6.2f} {:6.2f}\n'.format(lon_here,lat_here, px_here))
     
-    # write coefficients
-    k = 1
-    for i, parameter in enumerate(parser['parameters']):
+    
+    if not onlyheaders:
+        # write coefficients
+        k = 1
+        for i, parameter in enumerate(parser['parameters']):
+            #epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
+            mod_type = parser['parameters'][parameter]['type']
+            mod_desc = parser['parameters'][parameter]['shortname']
+            par_folder = parser['parameters'][parameter]['folder']
 
-        #TODO 
-        #--------------------------------------------------------------------------
-        #check if the reference value is negative. if so, make an instance of the 1D
-        #model class to read from
-        #--------------------------------------------------------------------------
-        #if ref_dict[parameter]['refvalue'][i] < 0:
-
-        #epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+parameter+'/*.epix')
-        mod_type = parser['parameters'][parameter]['type']
-        mod_desc = parser['parameters'][parameter]['shortname']
-        par_folder = parser['parameters'][parameter]['folder']
-
-        if mod_type == 'heterogeneity':
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
-            epix_files.sort(key=tools.alphanum_key)
-        elif mod_type == 'topography':
-            #topo_folder = parser['parameters'][parameter]['folder']
-            epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
-        else:
-            raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
-        epix_files.sort(key=tools.alphanum_key)
-
-        #write model coefficients
-        line = ff.FortranRecordWriter('(6E12.4)')
-        for j, epix_file in enumerate(epix_files):
-            f = np.loadtxt(epix_file)
-            print('writing coefficients for layer ', k)
-            coefs = f[:,3]
-
-            #check ifremav. if it's 1, add in average
-            print(ref_dict[parameter]['ifremav'])
-            if ref_dict[parameter]['ifremav'][j] == 1:
-                coefs += refs_dict[parameter]['average'][j]
+            if mod_type == 'heterogeneity':
+                epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
+                epix_files.sort(key=tools.alphanum_key)
+            elif mod_type == 'topography':
+                #topo_folder = parser['parameters'][parameter]['folder']
+                epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
             else:
-                print('ifremav =',ref_dict[parameter]['ifremav'][j], type(ref_dict[parameter]['ifremav'][j]))
+                raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
 
-            coefs_arr = np.reshape(coefs,shape,order='F')
-            coefs = coefs_arr.flatten()
-            f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(k,px_w))
-            f_out.write(line.write(coefs)+u'\n')
-            k += 1
+            # read the 1D model if any of the reference values are not defined
+            ifread1D = np.any(np.array(ref_dict[parameter]['refvalue'])<0.)
+            if ifread1D: 
+                ref1d = reference1D(ref_dict[parameter]['refmodel'])
+                if mod_type == 'heterogeneity': ref1d.get_custom_parameter(mod_desc)
+        
+            #write model coefficients
+            line = ff.FortranRecordWriter('(6E12.4)')
+            for j, epix_file in enumerate(epix_files):
+                f = np.loadtxt(epix_file)
+                print('writing coefficients for layer ', k)
+                coefs = f[:,3]
+            
+                #check if the reference value is negative. 
+                # if so, make an instance of the 1D
+                # model class to read from
+                if ref_dict[parameter]['refvalue'][j] < 0: 
+                    depth_in_km = ref_dict[parameter]['depth_in_km'][j]
+                    ref_dict[parameter]['refvalue'][j] = ref1d.evaluate_at_depth(depth_in_km,parameter=mod_desc)
+                    
+                #check ifremav. if it's 1, add in average
+                if ref_dict[parameter]['ifremav'][j] == 1:
+                    coefs += refs_dict[parameter]['average'][j]
+                    print('... adding average back to parameter '+parameter+' # '+str(j))
+
+                coefs_arr = np.reshape(coefs,shape,order='F')
+                coefs = coefs_arr.flatten()
+                f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(k,px_w))
+                f_out.write(line.write(coefs)+u'\n')
+                k += 1
     if buffer:
         f_out.seek(0)
         return f_out
