@@ -20,6 +20,7 @@ from copy import copy, deepcopy
 import struct
 import h5py
 import xarray as xr
+import traceback
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools   
@@ -164,22 +165,20 @@ class model3d(object):
     
         # Store in a dictionary
         metadata = {}
+        for key in ds.attrs.keys(): metadata[key] = ds.attrs[key]
         metadata['refmodel']=ds.attrs['reference1D']
         metadata['kerstr']=ds.attrs['kernel_set']
         metadata['nhorpar']=1
-        metadata['crust']=ds.attrs['crust']; metadata['null_model']=None
-        metadata['interpolant']=ds.attrs['interpolant_type'];
-        metadata['cite']=ds.attrs['cite']
-        metadata['shortcite']=ds.attrs['name']; metadata['scaling']=ds.attrs['scaling']
+        metadata['null_model']=None
+        metadata['interpolant']=ds.attrs['interpolant_type']
+        metadata['shortcite']=ds.attrs['name']
         metadata['ityphpar']=np.array([3])
         metadata['typehpar']=np.array(['PIXELS'], dtype='<U40')
         # check the pixel size
         pixlat = np.unique(np.ediff1d(np.array(ds.latitude)))
-        pixlon = np.unique(np.ediff1d(np.array(ds.longitude)))
-        pixlon = pixlon[np.where(pixlon>0.)]
-        assert(len(pixlat)==1)
-        assert(len(pixlon)==1)
-        assert(pixlat==pixlon)
+        pixlon = np.unique(np.ediff1d(np.array(ds.longitude)))        
+        assert(len(pixlat)==len(pixlon)==1),'only one pixel size allowed in xarray'
+        assert(pixlat.item()==pixlon.item()),'same pixel size in both lat and lon in xarray'
         metadata['hsplfile']=np.array([str(pixlat[0])+' X '+str(pixlat[0])], dtype='<U40')
         lenarr = len(ds.latitude)*len(ds.longitude)
         metadata['xsipix']=np.array([[pixlat[0] for ii in range(lenarr)]])
