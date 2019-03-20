@@ -792,15 +792,24 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
             av_attrs[keys] = parser['parameters'][variable][keys].decode('utf-8')
         # read the 1D model if any of the reference values are not defined
         av_attrs['refmodel'] = parser['metadata']['refmodel']
-        ref1d = reference1D(av_attrs['refmodel'])
+        
+        ifread1D = True
+        try: # try reading the 1D file in card format 
+            ref1d = reference1D(av_attrs['refmodel'])
+        except:
+            ifread1D = False
+
         
         if len(data_array.shape) == 3: # if 3-D variable
             # get the variable values
-            ref1d.get_custom_parameter(variable)
+            if ifread1D: ref1d.get_custom_parameter(variable)
             av_depth = deepcopy(data_array.depth.values)
             refvalue = []; avgvalue = []
             for depth in av_depth: 
-                refvalue.append(ref1d.evaluate_at_depth(depth,parameter=variable))
+                if ifread1D: 
+                    refvalue.append(ref1d.evaluate_at_depth(depth,parameter=variable))
+                else:
+                    refvalue.append(-999.0)
                 # select the appropriate map
                 mapval = data_array.sel(depth=depth)
                 # get the average
