@@ -25,7 +25,7 @@ import traceback
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools   
 from .. import plots 
-from .. import io 
+from .common import read3dmodelfile
 #######################################################################################
 
 # 3D model class
@@ -166,11 +166,8 @@ class model3d(object):
         # Store in a dictionary
         metadata = {}
         for key in ds.attrs.keys(): metadata[key] = ds.attrs[key]
-        metadata['refmodel']=ds.attrs['reference1D']
-        metadata['kerstr']=ds.attrs['kernel_set']
         metadata['nhorpar']=1
         metadata['null_model']=None
-        metadata['interpolant']=ds.attrs['interpolant_type']
         metadata['shortcite']=ds.attrs['name']
         metadata['ityphpar']=np.array([3])
         metadata['typehpar']=np.array(['PIXELS'], dtype='<U40')
@@ -342,7 +339,7 @@ class model3d(object):
                 except:
                     print('Warning: No name found for resolution '+str(ires)+', realization '+str(icase))
                 key = self.name+'/resolution_'+str(ires)+'/realization_'+str(icase)
-                io.store_sparse_hdf(hf,key,self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'])
+                tools.io.store_sparse_hdf(hf,key,self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'])
                 
         hf.close()
         
@@ -511,7 +508,7 @@ class model3d(object):
             h5f.attrs["neval"] = neval
             h5f.attrs["deptharr"] = deptharr
             h5f.attrs["refstrarr"] = refstrarr
-            io.store_numpy_hdf(h5f,'grid',grid)
+            tools.io.store_numpy_hdf(h5f,'grid',grid)
             h5f.attrs["model"] = np.string_(model)
             h5f.attrs["param"] = np.string_(lateral_basis)
             
@@ -519,14 +516,14 @@ class model3d(object):
                 for jj in np.arange(len(refstrarr)):
                     proj = h5f.create_group("projection/depth_"+str(ii)+ "/refstr_"+str(jj))
                     proj.attrs['refvalue']=refvalarr[ii,jj]
-                    io.store_sparse_hdf(h5f,"projection/depth_"+str(ii)+ "/refstr_"+str(jj),projarr[ii,jj])
+                    tools.io.store_sparse_hdf(h5f,"projection/depth_"+str(ii)+ "/refstr_"+str(jj),projarr[ii,jj])
             h5f.close()   
         else:
             print("....reading "+outfile)
             h5f = h5py.File(outfile,'r')
             ndp=h5f.attrs['ndp']; npx=h5f.attrs['npx']; nhorcum=h5f.attrs['nhorcum']
             neval=h5f.attrs['neval']; deptharr=h5f.attrs['deptharr']
-            refstrarr=h5f.attrs['refstrarr']; grid = io.load_numpy_hdf(h5f,'grid') 
+            refstrarr=h5f.attrs['refstrarr']; grid = tools.io.load_numpy_hdf(h5f,'grid') 
             xlat=grid['xlat']; xlon=grid['xlon']; area=grid['area']
             model=h5f.attrs['model']; param=h5f.attrs['param']
             
@@ -536,7 +533,7 @@ class model3d(object):
                 for jj in np.arange(len(refstrarr)):
                     proj = h5f["projection/depth_"+str(ii)+ "/refstr_"+str(jj)]
                     refvalarr[ii,jj] = proj.attrs['refvalue']
-                    projarr[ii,jj] = io.load_sparse_hdf(h5f,"projection/depth_"+str(ii)+ "/refstr_"+str(jj))
+                    projarr[ii,jj] = tools.io.load_sparse_hdf(h5f,"projection/depth_"+str(ii)+ "/refstr_"+str(jj))
             h5f.close()  
      
         # Write to a dictionary
