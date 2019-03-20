@@ -12,7 +12,7 @@ ureg = pint.UnitRegistry()
 """
 download files
 """
-downloadpage = 'https://maurya.umd.edu/files'
+downloadpage = 'https://maurya.umd.edu/files/common'
 localfilefolder = 'files'
 
 """
