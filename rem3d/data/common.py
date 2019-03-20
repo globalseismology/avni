@@ -17,8 +17,8 @@ from datetime import datetime
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 
-from . import constants
-from . import tools
+from .. import constants
+from .. import tools
 
 #######################################################################################
 

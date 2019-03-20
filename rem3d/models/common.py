@@ -17,6 +17,8 @@ from configobj import ConfigObj
 import xarray as xr
 from io import StringIO
 from copy import deepcopy
+import ntpath
+import warnings
 import pint # For SI units
 ureg = pint.UnitRegistry()
 
@@ -98,7 +100,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
         if line.startswith("DESC"): 
             idummy=int(line[4:line.index(':')])
-            if idummy >= maxkern: raise ValueError('number of radial kernels > maxkern ('+str(maxkern)+') : increase it in read3dmodelfile') 
+            if idummy >= maxkern: raise ValueError('number of radial kernels ('+str(idummy)+') > maxkern ('+str(maxkern)+') : increase it in read3dmodelfile') 
             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
             ifst,ilst=tools.firstnonspaceindex(substr)
             desckern[idummy-1]=substr[ifst:ilst]
@@ -297,7 +299,7 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
     else:
         parser = ConfigObj(cfg_file)
     model_name = parser['metadata']['name']
-    kernel_set = '{}'.format(parser['metadata']['kernel_set'])
+    kernel_set = '{}'.format(parser['metadata']['kerstr'])
       
     if buffer:
         print('... writing ASCII buffer')
@@ -348,14 +350,14 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         parser = ConfigObj(cfg_file)
 
     model_name = parser['metadata']['name']
-    ref_model = parser['metadata']['reference1D']
+    ref_model = parser['metadata']['refmodel']
     epix_folder = parser['metadata']['folder']
-    interpolant_type = parser['metadata']['interpolant_type']
+    interpolant = parser['metadata']['interpolant']
     cite = parser['metadata']['cite']
     crust = parser['metadata']['crust']
     forward_modeling = parser['metadata']['forward_modeling']
     scaling = parser['metadata']['scaling']
-    kernel_set = '{}'.format(parser['metadata']['kernel_set'])
+    kernel_set = '{}'.format(parser['metadata']['kerstr'])
 
     #write header
     outfile = output_dir+'/{}.{}.rem3d.ascii'.format(model_name,kernel_set)
@@ -367,7 +369,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     f_out.write(u'NAME: {}\n'.format(model_name))
     f_out.write(u'REFERENCE MODEL: {} \n'.format(ref_model))
     f_out.write(u'KERNEL SET: {}\n'.format(kernel_set))
-    f_out.write(u'INTERPOLANT: {}\n'.format(interpolant_type))
+    f_out.write(u'INTERPOLANT: {}\n'.format(interpolant))
     f_out.write(u'CITE: {}\n'.format(cite))
     if crust is not 'None': f_out.write(u'CRUST: {}\n'.format(crust))
     f_out.write(u'FORWARD MODELING: {}\n'.format(forward_modeling))
@@ -438,16 +440,33 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                                     
             # conduct checks
             if checks:
-                assert (parser['parameters'][parameter]['unit'].lower()==metadata['UNIT'].lower())," in file "+epix_file
-                assert (parameter.lower() == metadata['WHAT'].lower() or parser['parameters'][parameter]['description'].lower() == metadata['WHAT'].lower())," in file "+epix_file
-                #assert (parser['metadata']['reference1D']==metadata['REFMODEL'])," in file "+epix_file
+                assert (parser['parameters'][parameter]['unit'].lower()==metadata['UNIT'].lower())," in file "+epix_file                                
+
+                                               
+                if parameter.lower()!=metadata['WHAT'].lower()  or parser['parameters'][parameter]['description'].lower() == metadata['WHAT'].lower():
+                    warnings.warn("parameter or its description !=metadata['WHAT'] in file "+epix_file)
+                if parser['metadata']['refmodel'].lower()!=metadata['REFMODEL'].lower():
+                    warnings.warn("parser['parameters']['refmodel']!=metadata['REFMODEL'] in file "+epix_file)
                 assert (metadata['FORMAT']=='50')," in file "+epix_file
                 assert (metadata['BASIS'].lower()=='PIX'.lower())," in file "+epix_file
 
-            ref_dict[parameter]['ifremav'].append(np.float(metadata['IFREMAV']))
-            ref_dict[parameter]['refvalue'].append(np.float(metadata['REFVALUE']))
-            ref_dict[parameter]['average'].append(np.float(metadata['AVERAGE']))
-            ref_dict[parameter]['refmodel'] = metadata['REFMODEL']
+            # defaults if field not available in the epix file
+            try:
+                ref_dict[parameter]['ifremav'].append(np.float(metadata['IFREMAV']))
+            except:
+                ref_dict[parameter]['ifremav'].append(0.)
+            try:
+                ref_dict[parameter]['refvalue'].append(np.float(metadata['REFVALUE']))
+            except:
+                ref_dict[parameter]['refvalue'].append(-999.0)
+            try:
+                ref_dict[parameter]['average'].append(np.float(metadata['AVERAGE']))
+            except:
+                ref_dict[parameter]['average'].append(0.)
+            try:
+                ref_dict[parameter]['refmodel'] = metadata['REFMODEL']
+            except:
+                ref_dict[parameter]['refmodel'] = 'None'
             
             if mod_type == 'heterogeneity':
                 for line in head:
@@ -540,8 +559,11 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             # read the 1D model if any of the reference values are not defined
             ifread1D = np.any(np.array(ref_dict[parameter]['refvalue'])<0.)
             if ifread1D: 
-                ref1d = reference1D(ref_dict[parameter]['refmodel'])
-                if mod_type == 'heterogeneity': ref1d.get_custom_parameter(parameter)
+                try: # try reading the 1D file in card format 
+                    ref1d = reference1D(ref_dict[parameter]['refmodel'])
+                    if mod_type == 'heterogeneity': ref1d.get_custom_parameter(parameter)
+                except:
+                    ifread1D = False
         
             #write model coefficients
             line = ff.FortranRecordWriter('(6E12.4)')
@@ -553,7 +575,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 #check if the reference value is negative. 
                 # if so, make an instance of the 1D
                 # model class to read from
-                if ref_dict[parameter]['refvalue'][j] < 0: 
+                if ifread1D and ref_dict[parameter]['refvalue'][j] < 0: 
                     depth_in_km = ref_dict[parameter]['depth_in_km'][j]
                     ref_dict[parameter]['refvalue'][j] = ref1d.evaluate_at_depth(depth_in_km,parameter)
                     
@@ -618,7 +640,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         line = asciioutput.readline()
         
     # check that reference model is the same as parser
-    assert(ref_model == parser['metadata']['reference1D']),ref_model+' the reference model in '+asciioutput+' is not the same as reference1D in '+setup_file
+    assert(ref_model == parser['metadata']['refmodel']),ref_model+' the reference model in '+asciioutput+' is not the same as reference1D in '+setup_file
 
 
     #read variables and parameterizations
@@ -769,16 +791,25 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         for keys in parser['parameters'][variable].keys():
             av_attrs[keys] = parser['parameters'][variable][keys].decode('utf-8')
         # read the 1D model if any of the reference values are not defined
-        av_attrs['refmodel'] = parser['metadata']['reference1D']
-        ref1d = reference1D(av_attrs['refmodel'])
+        av_attrs['refmodel'] = parser['metadata']['refmodel']
+        
+        ifread1D = True
+        try: # try reading the 1D file in card format 
+            ref1d = reference1D(av_attrs['refmodel'])
+        except:
+            ifread1D = False
+
         
         if len(data_array.shape) == 3: # if 3-D variable
             # get the variable values
-            ref1d.get_custom_parameter(variable)
+            if ifread1D: ref1d.get_custom_parameter(variable)
             av_depth = deepcopy(data_array.depth.values)
             refvalue = []; avgvalue = []
             for depth in av_depth: 
-                refvalue.append(ref1d.evaluate_at_depth(depth,parameter=variable))
+                if ifread1D: 
+                    refvalue.append(ref1d.evaluate_at_depth(depth,parameter=variable))
+                else:
+                    refvalue.append(-999.0)
                 # select the appropriate map
                 mapval = data_array.sel(depth=depth)
                 # get the average

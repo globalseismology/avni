@@ -16,7 +16,7 @@ import scipy.interpolate as spint
 import scipy.spatial.qhull as qhull
 
 ############################### PLOTTING ROUTINES ################################        
-from .trigd import atand,tand
+from .tools.trigd import atand,tand
 from .f2py import ddelazgc # geolib library from NSW
 from . import constants
 ###############################
