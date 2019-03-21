@@ -25,6 +25,13 @@ def alphanum_key(s):
     '''
     return [int(c) if c.isdigit() else c for c in re.split('([0-9]+)', s)]
 
+def diffdict(first_dict,second_dict):
+    '''
+    helper tool to get difference in two dictionaries
+    '''
+    return { k : second_dict[k] for k in set(second_dict) - set(first_dict) }
+
+
 def krunge(n,x,h,y,f,m=0,phi=np.zeros(6),savey=np.zeros(6)):
     """
     some sort of integration or interpolation? x is 

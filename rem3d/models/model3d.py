@@ -148,8 +148,9 @@ class model3d(object):
 
         self.metadata['resolution_'+str(resolution)] = model['metadata']
         #rename the name field only if it is None
-        if self.name == None : self.name = ntpath.basename(modelfile)
+        if self.name == None : self.name = model['data']['name']
         self.description = "Read from "+modelfile
+        self.infile = modelfile
         self.type = 'rem3d'
         
         return 
@@ -162,7 +163,7 @@ class model3d(object):
         
         if (not os.path.isfile(nc4file)): raise IOError("Filename ("+nc4file+") does not exist")
         ds = xr.open_dataset(nc4file)
-    
+        
         # Store in a dictionary
         metadata = {}
         for key in ds.attrs.keys(): metadata[key] = ds.attrs[key]
@@ -249,8 +250,9 @@ class model3d(object):
         self.metadata['resolution_'+str(resolution)] = metadata
         
         #rename the name field only if it is None
-        if self.name == None : self.name = ntpath.basename(nc4file)
+        if self.name == None : self.name = metadata['name']
         self.description = "Read from "+nc4file
+        self.infile = nc4file
         self.type = 'rem3d'
         
 
@@ -299,7 +301,7 @@ class model3d(object):
         """
         Writes the model object to hdf5 file
         """
-        if hdffile == None: hdffile = self.name+'.h5'
+        if hdffile == None: hdffile = self.infile+'.h5'
         if overwrite:
             hf = h5py.File(hdffile, 'w')
         else:
@@ -342,6 +344,7 @@ class model3d(object):
                 tools.io.store_sparse_hdf(hf,key,self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'])
                 
         hf.close()
+        print('... written to '+hdffile)
         
             
     def coeff2modelarr(self,resolution=[0],realization=0):
