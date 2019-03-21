@@ -19,6 +19,7 @@ from io import StringIO
 from copy import deepcopy
 import ntpath
 import warnings
+import pandas as pd
 import pint # For SI units
 ureg = pint.UnitRegistry()
 
@@ -249,7 +250,7 @@ def read3dmodelfile(modelfile):
         metadata['xlospl']=np.array(xlospl); metadata['xraspl']=np.array(xraspl)
         
     model3d['data']={}
-    model3d['data']['coef']=np.array(coef)
+    model3d['data']['coef']=pd.DataFrame(coef)
     try:
         model3d['data']['name']=model_name
     except:

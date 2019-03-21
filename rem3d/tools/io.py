@@ -7,9 +7,19 @@ from builtins import *
 
 import sys,os
 import numpy as np
+import gc
 from scipy import sparse
+import h5py
 #######################################################################################    
-       
+     
+def close_h5py():    
+    for obj in gc.get_objects():   # Browse through ALL objects
+        if isinstance(obj, h5py.File):   # Just HDF5 files
+            try:
+                obj.close()
+            except:
+                pass # Was already closed
+              
 def store_sparse_hdf(h5f,varname,mat,compression="gzip"):
     """
     Store a csr matrix in HDF5

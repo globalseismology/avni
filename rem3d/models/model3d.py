@@ -19,6 +19,7 @@ import re
 from copy import copy, deepcopy
 import struct
 import h5py
+import pandas as pd
 import xarray as xr
 import traceback
 
@@ -46,19 +47,14 @@ class model3d(object):
             if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
             try:# try hdf5 for the whole ensemble
                 success1 = True
-                hf = h5py.File(file, 'r')
                 if kwargs:
-                    self.readhdf5(hf,**kwargs)
+                    self.readhdf5(file,**kwargs)
                 else:
-                    self.readhdf5(hf)
+                    self.readhdf5(file)
                 self.description = "Read from "+file
                 self.infile = file
-                hf.close()
             except: # try netcdf or ascii for a single model
-                try: #first close the hdf5 if opened with h5py above
-                    hf.close()
-                except NameError:
-                    hf = None
+                tools.close_h5py()#first close the hdf5 if opened with h5py above
                 success1 = False
                 var1 = traceback.format_exc()
                 try:
@@ -69,8 +65,7 @@ class model3d(object):
                 except:
                     print(var1)
             if not success1 and not success2: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
-            pdb.set_trace()
-            # get the kernel set
+            # get the kernel set for every resolution
             for resolution in self.metadata.keys():
                 self.metadata[resolution]['kernel_set'] = kernel_set(self.metadata[resolution])
                         
@@ -245,31 +240,31 @@ class model3d(object):
             
         ## create keys
         metadata['numvar']=len(data_keys)
-        metadata['varstr']=np.array(data_keys, dtype='<U40')
+        metadata['varstr']=np.array(data_keys, dtype='<U150')
         desckern = []; ivarkern = []; icount=0; coef=None
         for key in data_keys:
             icount = icount+1
             if 'topo' in key:
                 depth_range = key.split('topo')[1]
                 nlat, nlon = ds[key].shape
-                descstring = u'{}, {} km'.format(key,depth_range)
-                if coef == None:
-                    coef = sparse.csr_matrix(np.array(ds[key].transpose()).flatten())
-                else:
-                    coef = sparse.vstack([coef,sparse.csr_matrix(np.array(ds[key].transpose()).flatten())])
+                descstring = u'{}, delta, {} km'.format(key,depth_range)
+                try:
+                    coef = np.vstack([coef,ds[key].transpose().values.flatten()])
+                except:
+                    coef = ds[key].transpose().values.flatten()
                 desckern.append(descstring)
                 ivarkern.append(icount)
             else:
                 ndepth, nlat, nlon = ds[key].shape
                 for ii in range(len(deptop)):
-                    descstring = u'{}, {} - {} km'.format(key,deptop[ii],depbottom[ii])
-                    if coef == None:
-                        coef = sparse.csr_matrix(np.array(ds[key][ii].transpose()).flatten())
-                    else:
-                        coef = sparse.vstack([coef,sparse.csr_matrix(np.array(ds[key][ii].transpose()).flatten())])
+                    descstring = u'{}, boxcar, {} - {} km'.format(key,deptop[ii],depbottom[ii])
+                    try:
+                        coef = np.vstack([coef,ds[key][ii].transpose().values.flatten()])
+                    except:
+                        coef = ds[key][ii].transpose().values.flatten()
                     desckern.append(descstring)
                     ivarkern.append(icount)
-        metadata['desckern']=np.array(desckern, dtype='<U40')
+        metadata['desckern']=np.array(desckern, dtype='<U150')
         metadata['nmodkern']=len(desckern); metadata['ivarkern']=np.array(ivarkern)
         metadata['ihorpar']=np.ones(len(desckern),dtype = np.int)
         
@@ -279,7 +274,7 @@ class model3d(object):
 
         # store to the object        
         self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = ds.attrs['name']
-        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = coef
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = pd.DataFrame(coef)
         
         self.metadata['resolution_'+str(resolution)] = metadata
         
@@ -288,7 +283,7 @@ class model3d(object):
         self.type = 'rem3d'
         
 
-    def readhdf5(self,hf,query=None):
+    def readhdf5(self,file,query=None):
         """
         Reads a standard 3D model file from a hdf5 file
         
@@ -299,7 +294,8 @@ class model3d(object):
                 Choose from query hf.keys() if multiple ones are available
                 
         hf: hdf5 handle from h5py
-        """    
+        """  
+        hf = h5py.File(file, 'r')  
         if query is None:
             if len(hf.keys()) == 1: 
                 query = hf.keys()[0]
@@ -331,10 +327,10 @@ class model3d(object):
                 g2 = hf[query][resolution][case]
                 assert(g2.attrs['type']=='realization')
                 key = self.name+'/'+resolution+'/'+case
-                self.data[resolution][case]['coef'] = tools.io.load_sparse_hdf(hf,key) 
-                self.data[resolution][case]['name'] = g2.attrs['name']     
+                self.data[resolution][case]['coef'] = pd.read_hdf(file,key) 
+                self.data[resolution][case]['name'] = g2.attrs['name']    
+        hf.close()
         return   
-        
           
     def writehdf5(self, hdffile = None, overwrite = False):
         """
@@ -368,7 +364,8 @@ class model3d(object):
                         keyval = [n.encode('utf8') for n in keyval]
                         g2.attrs[key]=keyval
                 except:
-                    if keyval != None: g2.attrs[key]=keyval
+                    if keyval != None and key != 'kernel_set': 
+                        g2.attrs[key]=keyval
                     
             #now loop over every realization
             for icase in range(len(self.data['resolution_'+str(ires)])):
@@ -380,7 +377,7 @@ class model3d(object):
                 except:
                     print('Warning: No name found for resolution '+str(ires)+', realization '+str(icase))
                 key = self.name+'/resolution_'+str(ires)+'/realization_'+str(icase)
-                tools.io.store_sparse_hdf(hf,key,self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'])
+                self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'].to_hdf(hdffile, key=unicode(key),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,append=True)
                 
         hf.close()
         print('... written to '+hdffile)

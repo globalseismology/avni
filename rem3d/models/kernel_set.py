@@ -27,18 +27,20 @@ class kernel_set(object):
         self.metadata ={}
         self.data = {}
         self.name = dict['kerstr']
-        self.metadata['scaling'] = dict['scaling']
+        for var in ['desckern','scaling']:
+            try:
+                self.metadata[var] = dict[var]
+            except:
+                self.metadata[var] = None
         #self.metadata['forward_modeling'] = dict['forward_modeling']
-        self.metadata['desckern'] = dict['desckern']
-        pdb.set_trace()
         
-        names, types, attributes = radial_attributes(dict['desckern'])
-        for name in names:
-            radial_basis(name,type,attributes)
-        
-        #dict['varstr']
-        # intialize lateral basis
-        for ihor in range(dict['nhorpar']): 
-            lateral_basis(dict['typehpar'][ihor])
+#         names, types, attributes = radial_attributes(dict['desckern'])
+#         for name in names:
+#             radial_basis(name,type,attributes)
+#         
+#         #dict['varstr']
+#         # intialize lateral basis
+#         for ihor in range(dict['nhorpar']): 
+#             lateral_basis(dict['typehpar'][ihor])
             
             
