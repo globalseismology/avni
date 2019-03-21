@@ -737,13 +737,15 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     if np.min(elev)<0.:
         lowerlimit=6371.-np.min(elev)/1000.*vexaggerate
         elevplot2[elevplot2>0.]=0.
-        ax.fill_between(theta_range, lowerlimit*np.ones(len(theta_range)),lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,facecolor='aqua', alpha=0.5)
+        ax.fill_between(theta_range, lowerlimit*np.ones(len(theta_range)),lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,facecolor='aqua', alpha=0.5)      
+        ax.plot(theta_range,lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,'k',linewidth=0.5)
     else:
         lowerlimit=6371.
 
     # Grey for areas above sea level
     elevplot1[elevplot1<0.]=0.
     ax.fill_between(theta_range, lowerlimit*np.ones(len(theta_range)), lowerlimit*np.ones(len(theta_range))+elevplot1/1000.*vexaggerate, facecolor='grey', alpha=0.5)
+    ax.plot(theta_range,lowerlimit*np.ones(len(theta_range))+elevplot1/1000.*vexaggerate,'k',linewidth=0.5)
 
 #     title(phase, fontsize=20,loc='left')
     return ax

@@ -88,6 +88,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     while ii < len(lines):
         line=lines[ii]; ii=ii+1
         if line.startswith("REFERENCE MODEL:"): refmodel=line[16:].rstrip('\n').strip(' ')
+        if line.startswith("NAME:"): model_name=line[5:].rstrip('\n').strip(' ')
         if line.startswith("KERNEL SET:"): kerstr=line[12:].rstrip('\n').strip(' ')
         if line.startswith("NULL MODEL:"): 
             null_model=line[12:].rstrip('\n').strip(' ')
@@ -100,7 +101,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
         if line.startswith("DESC"): 
             idummy=int(line[4:line.index(':')])
-            if idummy >= maxkern: raise ValueError('number of radial kernels ('+str(idummy)+') > maxkern ('+str(maxkern)+') : increase it in read3dmodelfile') 
+            if idummy >= maxkern: raise ValueError('number of radial kernels > maxkern ('+str(maxkern)+') : increase it in read3dmodelfile') 
             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
             ifst,ilst=tools.firstnonspaceindex(substr)
             desckern[idummy-1]=substr[ifst:ilst]
@@ -242,7 +243,7 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
         metadata['xlospl']=xlospl; metadata['xraspl']=xraspl
         
     model3d['data']={}
-    model3d['data']['coef']=coef; model3d['data']['name']=ntpath.basename(modelfile)
+    model3d['data']['coef']=coef; model3d['data']['name']=model_name
     model3d['metadata']=metadata
     return model3d
     
@@ -629,6 +630,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     #read header
     line = asciioutput.readline()
     while line:
+        if 'NAME' in line:
+            model_name = line.split('NAME:')[1].strip()
         if 'REFERENCE MODEL' in line:
             ref_model = line.split('REFERENCE MODEL:')[1].strip()
         if 'KERNEL SET' in line:
@@ -798,7 +801,6 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
             ref1d = reference1D(av_attrs['refmodel'])
         except:
             ifread1D = False
-
         
         if len(data_array.shape) == 3: # if 3-D variable
             # get the variable values

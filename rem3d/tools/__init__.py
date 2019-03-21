@@ -18,4 +18,5 @@ from .xarray import *
 # bases or parameterization routines
 from .bases import *
 
-
+# spherical harmonic codes
+from .harmonics import *
