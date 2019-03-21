@@ -68,6 +68,12 @@ def writeepixfile(filename,epixarr,headers=['#BASIS:PIX','#FORMAT:50']):
 
     return 
 
+def radial_attributes(desckern):
+    """
+    Takes a list of kernel descriptions and returns the attributes to be used in 
+    radial_basis.py
+    """    
+    
 def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     """
     Reads a standard 3D model file. maxkern is the maximum number of radial kernels
@@ -243,7 +249,11 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
         metadata['xlospl']=xlospl; metadata['xraspl']=xraspl
         
     model3d['data']={}
-    model3d['data']['coef']=coef; model3d['data']['name']=model_name
+    model3d['data']['coef']=coef
+    try:
+        model3d['data']['name']=model_name
+    except:
+        model3d['data']['name']=ntpath.basename(modelfile)
     model3d['metadata']=metadata
     return model3d
     
@@ -643,7 +653,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         line = asciioutput.readline()
         
     # check that reference model is the same as parser
-    assert(ref_model == parser['metadata']['refmodel']),ref_model+' the reference model in '+asciioutput+' is not the same as reference1D in '+setup_file
+    assert(ref_model == parser['metadata']['refmodel']),ref_model+' the reference model in '+asciioutput+' is not the same as refmodel in '+setup_file
+    assert(krnl_set == parser['metadata']['kerstr']) ,krnl_set+' the kernel string in '+asciioutput+' is not the same as kerstr in '+setup_file
 
 
     #read variables and parameterizations

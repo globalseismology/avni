@@ -13,7 +13,9 @@ from datetime import date  #to give a timestamp to output and compare times
 import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-
+from .lateral_basis import lateral_basis
+from .radial_basis import radial_basis
+from .common import radial_attributes
 #######################################################################################
 
 # kernel set
@@ -21,14 +23,22 @@ class kernel_set(object):
     '''
     A class for kernel sets that define the G matrix for relating data d to model m, d=Gm
     '''
-
-    def __init__(self,parameters,radial_basis,lateral_basis,indices):
+    def __init__(self,dict):
         self.metadata ={}
         self.data = {}
-        self.name = None
-        self.type = None
-        self.refmodel = None
-        self.description = None
-        if file is not None: self.readfile(file)
-
-
+        self.name = dict['kerstr']
+        self.metadata['scaling'] = dict['scaling']
+        #self.metadata['forward_modeling'] = dict['forward_modeling']
+        self.metadata['desckern'] = dict['desckern']
+        pdb.set_trace()
+        
+        names, types, attributes = radial_attributes(dict['desckern'])
+        for name in names:
+            radial_basis(name,type,attributes)
+        
+        #dict['varstr']
+        # intialize lateral basis
+        for ihor in range(dict['nhorpar']): 
+            lateral_basis(dict['typehpar'][ihor])
+            
+            

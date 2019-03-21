@@ -26,6 +26,7 @@ import traceback
 from .. import tools   
 from .. import plots 
 from .common import read3dmodelfile
+from .kernel_set import kernel_set
 #######################################################################################
 
 # 3D model class
@@ -42,17 +43,35 @@ class model3d(object):
         self.description = None
         self.add_resolution(realization=True)
         if file is not None: 
+            if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
             try:# try hdf5 for the whole ensemble
+                success1 = True
+                hf = h5py.File(file, 'r')
                 if kwargs:
-                    self.readhdf5(file,**kwargs)
+                    self.readhdf5(hf,**kwargs)
                 else:
-                    self.readhdf5(file)
+                    self.readhdf5(hf)
+                self.description = "Read from "+file
+                self.infile = file
+                hf.close()
             except: # try netcdf or ascii for a single model
+                try: #first close the hdf5 if opened with h5py above
+                    hf.close()
+                except NameError:
+                    hf = None
+                success1 = False
                 var1 = traceback.format_exc()
-                if kwargs:
-                    self.read(file,resolution=0,realization=0,**kwargs)
-                else:
-                    self.read(file,resolution=0,realization=0)
+                try:
+                    if kwargs:
+                        success2 = self.read(file,resolution=0,realization=0,**kwargs)
+                    else:
+                        success2 = self.read(file,resolution=0,realization=0)
+                except:
+                    print(var1)
+            if not success1 and not success2: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
+            # get the kernel set
+            for resolution in self.metadata.keys():
+                self.metadata[resolution]['kernel_set'] = kernel_set(self.metadata[resolution])
                         
     def __str__(self):
         if self.name is not None:
@@ -60,7 +79,6 @@ class model3d(object):
         else:
             output = "No three-dimensional model has been read into this model3d instance yet"
         return output
-        
                 
     def __copy__(self):
         cls = self.__class__
@@ -110,6 +128,8 @@ class model3d(object):
         """
         Try reading the file into resolution/realization either as ascii, hdf5 or nc4
         """
+        if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
+        success = True
         try:# try ascii
             if kwargs:
                 self.readascii(file,resolution=resolution,realization=realization,**kwargs)
@@ -118,14 +138,26 @@ class model3d(object):
         except:
             var1 = traceback.format_exc()
             try: # try nc4
+                ds = xr.open_dataset(file)
                 if kwargs:
-                    self.readnc4(file,resolution=resolution,realization=realization,**kwargs)
+                    self.readnc4(ds,resolution=resolution,realization=realization,**kwargs)
                 else:
-                    self.readnc4(file,resolution=resolution,realization=realization)                    
+                    self.readnc4(ds,resolution=resolution,realization=realization)   
+                ds.close()                 
             except:
+                try: #first close the dataset if opened with xarray above
+                    ds.close()
+                except NameError:
+                    ds = None
                 var2 = traceback.format_exc()
                 print(var1)
                 print(var2)
+                success = False
+        if success:
+            self.description = "Read from "+file
+            self.infile = file
+        return success        
+        
 
     def readascii(self,modelfile,resolution=0,realization=0,**kwargs):
         """
@@ -154,14 +186,16 @@ class model3d(object):
         
         return 
         
-    def readnc4(self,nc4file,resolution=0,realization=0,**kwargs):
+    def readnc4(self,ds,resolution=0,realization=0,**kwargs):
         """
         Read netCDF4 file into a resolution and realization of model3D class.
         
-        """
+        Input Parameters:
+        -----------------
         
-        if (not os.path.isfile(nc4file)): raise IOError("Filename ("+nc4file+") does not exist")
-        ds = xr.open_dataset(nc4file)
+        ds: xarray Dataset handle
+        
+        """
         
         # Store in a dictionary
         metadata = {}
@@ -250,12 +284,10 @@ class model3d(object):
         
         #rename the name field only if it is None
         if self.name == None : self.name = metadata['name']
-        self.description = "Read from "+nc4file
-        self.infile = nc4file
         self.type = 'rem3d'
         
 
-    def readhdf5(self,hdffile,query=None):
+    def readhdf5(self,hf,query=None):
         """
         Reads a standard 3D model file from a hdf5 file
         
@@ -264,9 +296,9 @@ class model3d(object):
         
         query : if None, use the model available if only one is included. 
                 Choose from query hf.keys() if multiple ones are available
+                
+        hf: hdf5 handle from h5py
         """    
-        if (not os.path.isfile(hdffile)): raise IOError("Filename ("+hdffile+") does not exist")
-        hf = h5py.File(hdffile, 'r')
         if query is None:
             if len(hf.keys()) == 1: 
                 query = hf.keys()[0]
@@ -300,8 +332,6 @@ class model3d(object):
                 key = self.name+'/'+resolution+'/'+case
                 self.data[resolution][case]['coef'] = tools.io.load_sparse_hdf(hf,key) 
                 self.data[resolution][case]['name'] = g2.attrs['name']     
-        hf.close()
-        print('... read from to '+hdffile)
         return   
         
           

@@ -14,6 +14,7 @@ import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools   
+from .. import constants
 #######################################################################################
 
 # Vertical basis parameter class that defines an unique combination of functions, their radial parameterization and any scaling
@@ -37,7 +38,7 @@ class radial_basis(object):
         attributes: a dictionary containing variables used to define this particular type
                     e.g. knots for vbspl. Checked that these are defined using self.check.
     '''
-    def __init__(self,name,type,attributes={},depths_in_km=np.arange(0.,6371.+1.)):
+    def __init__(self,name,type,attributes={}):
         self.data = {}
         self.data['depths_in_km'] = None
         self.data['vercof'] = None
@@ -46,8 +47,6 @@ class radial_basis(object):
         self.metadata = {'name':name,'type':type,'attributes':attributes}
         # Check if all required atributes are available
         self.check()
-        # Evaluate the radial basis and store them in data
-        self.eval_radial(depths_in_km,store=True)
 
     def add_attribute(self,key,value):
         """
@@ -91,6 +90,8 @@ class radial_basis(object):
         ----------------
         
         depths_in_km: depths where the radial parameteriation needs to be evaluated. 
+        
+        store: store them in data
         """  
 
         if isinstance(depths_in_km, (list,tuple,np.ndarray)):
