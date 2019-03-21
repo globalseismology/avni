@@ -42,10 +42,17 @@ class model3d(object):
         self.description = None
         self.add_resolution(realization=True)
         if file is not None: 
-            if kwargs:
-                self.read(file,resolution=0,realization=0,**kwargs)
-            else:
-                self.read(file,resolution=0,realization=0)
+            try:# try hdf5 for the whole ensemble
+                if kwargs:
+                    self.readhdf5(file,**kwargs)
+                else:
+                    self.readhdf5(file)
+            except: # try netcdf or ascii for a single model
+                var1 = traceback.format_exc()
+                if kwargs:
+                    self.read(file,resolution=0,realization=0,**kwargs)
+                else:
+                    self.read(file,resolution=0,realization=0)
                         
     def __str__(self):
         if self.name is not None:
@@ -110,23 +117,15 @@ class model3d(object):
                 self.readascii(file,resolution=resolution,realization=realization)
         except:
             var1 = traceback.format_exc()
-            try:# try hdf5
+            try: # try nc4
                 if kwargs:
-                    self.readhdf5(file,resolution=resolution,realization=realization,**kwargs)
+                    self.readnc4(file,resolution=resolution,realization=realization,**kwargs)
                 else:
-                    self.readhdf5(file,resolution=resolution,realization=realization)
+                    self.readnc4(file,resolution=resolution,realization=realization)                    
             except:
                 var2 = traceback.format_exc()
-                try: # try nc4
-                    if kwargs:
-                        self.readnc4(file,resolution=resolution,realization=realization,**kwargs)
-                    else:
-                        self.readnc4(file,resolution=resolution,realization=realization)                    
-                except:
-                    var3 = traceback.format_exc()
-                    print(var1)
-                    print(var2)
-                    print(var3)
+                print(var1)
+                print(var2)
 
     def readascii(self,modelfile,resolution=0,realization=0,**kwargs):
         """
@@ -278,22 +277,31 @@ class model3d(object):
         # read mean model   
         for name,value in hf[query].attrs.items(): 
             try:
-                setattr(self, name,hf[query].attrs[name]) 
+                setattr(self, name,value) 
             except:
                 setattr(self, name,None) 
                         
         # loop over resolution
-        pdb.set_trace()
         if len(self.data) < len(hf[query].keys()):
             # add more resolutions
             for ii in range(len(hf[query].keys()) - len(self.data)): self.add_resolution()
         for resolution in hf[query].keys():
             g1 = hf[query][resolution]
+            assert(g1.attrs['type']=='resolution')
             for name,value in g1.attrs.items(): 
                 try:
-                    setattr(self, name,g1.attrs[name]) 
+                    self.metadata[resolution][name] = value
                 except:
-                    setattr(self, name,None) 
+                    self.metadata[resolution][name] = None
+            #now loop over every realization
+            for case in g1.keys():
+                g2 = hf[query][resolution][case]
+                assert(g2.attrs['type']=='realization')
+                key = self.name+'/'+resolution+'/'+case
+                self.data[resolution][case]['coef'] = tools.io.load_sparse_hdf(hf,key) 
+                self.data[resolution][case]['name'] = g2.attrs['name']     
+        hf.close()
+        print('... read from to '+hdffile)
         return   
         
           
