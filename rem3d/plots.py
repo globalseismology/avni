@@ -23,12 +23,10 @@ from joblib import Parallel, delayed
 import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 import scipy.interpolate as spint
-from scipy.spatial import cKDTree
 import scipy.spatial.qhull as qhull
 import itertools
 import time
 import progressbar
-import pickle
 import xarray as xr
 from six import string_types # to check if variable is string using isinstance
 
@@ -696,7 +694,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     if tree == None and isinstance(model,string_types):
         treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.stride'+str(stride)+'.pkl'
         ncfile = dbs_path+'/'+model
-        tree = tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=6371.)
+        tree = tools.tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=6371.)
         #read values
         if os.path.isfile(ncfile):
             f = xr.open_dataset(ncfile)
@@ -750,58 +748,6 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
 #     title(phase, fontsize=20,loc='left')
     return ax
     
-
-def tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'],stride=None, radius_in_km = None):
-    """
-    Read or write a pickle interpolant for a grd file e.g. ETOPO1_Bed_g_gmt4.grd
-
-    Input Parameters:
-    ----------------
-
-    ncfile: netcdf format file e.g. topography
-    
-    stride: is the downsampling before interpolation. 
-    
-    radius_in_km: radius in kilometer where a 2D surface is valid. Ignores the 
-                    3rd field in lonlatdepth.Typically 6371km
-
-    lonlatdepth: variable name of the longitude, latitude, depth arrays
-    """
-
-    #read topography file
-    if os.path.isfile(ncfile):
-        f = xr.open_dataset(ncfile)
-    else:
-        raise ValueError("Error: Could not find file "+ncfile)
-    if stride != None:
-        lon = f.variables[lonlatdepth[0]][::stride]
-        lat = f.variables[lonlatdepth[1]][::stride]
-    else:
-        lon = f.variables[lonlatdepth[0]]
-        lat = f.variables[lonlatdepth[1]]   
-    if radius_in_km == None:
-        if stride != None:
-            dep = f.variables[lonlatdepth[2]][::stride]
-        else:
-            dep = f.variables[lonlatdepth[2]]
-        rad = constants.R/1000. - dep
-    else:
-        rad = xr.IndexVariable('rad',[radius_in_km])
-    f.close() #close netcdf file
-    
-    #Build the tree if none is provided
-    if os.path.isfile(treefile):
-        print('... Reading KDtree file '+treefile)
-        tree = pickle.load(open(treefile,'r'))
-    else:
-        print('... KDtree file '+treefile+' not found for interpolations. Building it')
-        gridlat, gridrad, gridlon = np.meshgrid(lat.data,rad.data,lon.data)
-        rlatlon = np.column_stack((gridrad.flatten(order='C'),gridlat.flatten(order='C'), gridlon.flatten(order='C')))
-        xyz = mapping.spher2cart(rlatlon)
-        tree = cKDTree(xyz)
-        pickle.dump(tree,open(treefile,'wb'))
-    return tree
-
 def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path='.',numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
@@ -817,7 +763,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
         else:
             raise ValueError("Error: Could not find file "+ncfile)
         treefile = dbs_path+'/'+ds.attrs['kernel_set']+'.KDTree.3D.pkl'
-        tree = tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
+        tree = tools.tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
         model = ds.variables[parameter]      
         ds.close() #close netcdf file
         vals = model.data.flatten(order='C')

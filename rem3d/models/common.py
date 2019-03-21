@@ -74,7 +74,7 @@ def radial_attributes(desckern):
     radial_basis.py
     """    
     
-def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
+def read3dmodelfile(modelfile):
     """
     Reads a standard 3D model file. maxkern is the maximum number of radial kernels
     and maxcoeff is the maximum number of corresponding lateral basis functions.
@@ -83,10 +83,8 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     """    
     if (not os.path.isfile(modelfile)): raise IOError("Filename ("+modelfile+") does not exist")
 
-    desckern=np.zeros(maxkern, dtype='U40')
-    ihorpar=np.zeros(maxkern, dtype=int)
-    coef=np.zeros([maxcoeff,maxkern], dtype=float)
     #defaults
+    desckern=[];ihorpar=[]
     refmodel = None; kerstr = None; crust = None; null_model= None
     interpolant = None; cite = None; shortcite = None; scaling = None
     with open(modelfile) as f: lines = f.readlines()
@@ -105,18 +103,21 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
         if line.startswith("CRUST:"): crust=line[7:].rstrip('\n').strip(' ')
         if line.startswith("SCALING:"): scaling=line[9:].rstrip('\n').strip(' ')
         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
+        
+        # search for parmaterization
+        foundsplines = False; foundharmonics = False; foundpixels = False              
         if line.startswith("DESC"): 
             idummy=int(line[4:line.index(':')])
-            if idummy >= maxkern: raise ValueError('number of radial kernels > maxkern ('+str(maxkern)+') : increase it in read3dmodelfile') 
             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
             ifst,ilst=tools.firstnonspaceindex(substr)
-            desckern[idummy-1]=substr[ifst:ilst]
+            desckern.append(substr[ifst:ilst])
         if line.startswith("HORIZONTAL PARAMETERIZATIONS:"): 
             nhorpar = int(line[29:].rstrip('\n'))
             typehpar=np.zeros(nhorpar, dtype='U40')
             ityphpar=np.zeros(nhorpar, dtype=int)
             ncoefhor=np.zeros(nhorpar, dtype=int)
             hsplfile=np.zeros(nhorpar, dtype='U40')
+            coef=[[] for i in range(nmodkern)]
         if line.startswith("HPAR"):     
             idummy=int(line[4:line.index(':')])
             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
@@ -130,7 +131,8 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
                 lmax = int(substr[21:].rstrip('\n'))
                 lmaxhor[idummy-1]=lmax
                 ncoefhor[idummy-1]=(lmax+1)**2
-            elif substr[ifst:ifst+18] == 'SPHERICAL SPLINES,':                
+                foundharmonics = True
+            elif substr[ifst:ifst+18] == 'SPHERICAL SPLINES,': 
                 ifst1=ifst+18
                 ifst=len(substr)
                 ilst=len(substr)
@@ -143,19 +145,22 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
                 typehpar[idummy-1]='SPHERICAL SPLINES'
                 ncoefhor[idummy-1]=ncoef
                 
-                # initialize
-                if ncoef > maxcoeff: raise ValueError('ncoef ('+str(ncoef)+') > maxcoeff ('+str(maxcoeff)+') : increase it in read3dmodelfile') 
-                ixlspl=np.zeros([maxcoeff,nhorpar], dtype=int)
-                xlaspl=np.zeros([maxcoeff,nhorpar], dtype=float)
-                xlospl=np.zeros([maxcoeff,nhorpar], dtype=float)
-                xraspl=np.zeros([maxcoeff,nhorpar], dtype=float)
+                # initialize if found first time
+                if not foundsplines:
+                    ixlspl=[[] for i in range(nhorpar)]
+                    xlaspl=[[] for i in range(nhorpar)]
+                    xlospl=[[] for i in range(nhorpar)]
+                    xraspl=[[] for i in range(nhorpar)]
                 
                 # specific variables
                 for jj in range(ncoef):
                     arr=lines[ii].rstrip('\n').split(); ii=ii+1
-                    ixlspl[jj,idummy-1]=int(arr[0]); xlaspl[jj,idummy-1]=arr[1]
-                    xlospl[jj,idummy-1]=arr[2]; xraspl[jj,idummy-1]=arr[3]
-            elif substr[ifst:ifst+7] == 'PIXELS,':                
+                    ixlspl[idummy-1].append(int(arr[0]))
+                    xlaspl[idummy-1].append(float(arr[1]))
+                    xlospl[idummy-1].append(float(arr[2]))
+                    xraspl[idummy-1].append(float(arr[3]))
+                foundsplines = True        
+            elif substr[ifst:ifst+7] == 'PIXELS,':  
                 ifst1=ifst+7
                 ifst=len(substr)
                 ilst=len(substr)
@@ -169,30 +174,33 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
                 ncoefhor[idummy-1]=ncoef
                 
                 # initialize
-                if ncoef > maxcoeff: raise ValueError('ncoef ('+str(ncoef)+') > maxcoeff ('+str(maxcoeff)+') : increase it in read3dmodelfile') 
-                xlapix=np.zeros([maxcoeff,nhorpar], dtype=float) # center latitude
-                xlopix=np.zeros([maxcoeff,nhorpar], dtype=float) # center longitude
-                xsipix=np.zeros([maxcoeff,nhorpar], dtype=float) #size of pixel
-
+                if not foundsplines:
+                    xlapix=[[] for i in range(nhorpar)]
+                    xlopix=[[] for i in range(nhorpar)]
+                    xsipix=[[] for i in range(nhorpar)]
+                
                 # specific variables
                 for jj in range(ncoef):
                     arr=lines[ii].rstrip('\n').split(); ii=ii+1
-                    xlopix[jj,idummy-1]=arr[0]; xlapix[jj,idummy-1]=arr[1]
-                    xsipix[jj,idummy-1]=arr[2]
+                    xlopix[idummy-1].append(float(arr[0]))
+                    xlapix[idummy-1].append(float(arr[1]))
+                    xsipix[idummy-1].append(float(arr[2]))
+                foundpixels = True              
             else:
                 raise ValueError('Undefined parameterization type - '+substr[ifst:ilst])
         if line.startswith("STRU"):
             idummy=int(line[4:line.index(':')])
             ihor=int(line[line.index(':')+1:].rstrip('\n'))
-            ihorpar[idummy-1]=ihor
+            ihorpar.append(ihor)
             ncoef=ncoefhor[ihor-1]
             for jj in range(int(ncoef/6)):
                 arr=lines[ii].rstrip('\n').split(); ii=ii+1
-                coef[jj*6:(jj+1)*6,idummy-1]=[float(i) for i in arr]
+                #coef[jj*6:(jj+1)*6,idummy-1]=[float(i) for i in arr]
+                for i in arr: coef[idummy-1].append(float(i))
             remain = ncoef % 6    
             if remain > 0: 
                 arr=lines[ii].rstrip('\n').split(); ii=ii+1
-                coef[(jj+1)*6:(jj+1)*6+remain,idummy-1]=[float(i) for i in arr]
+                for val in arr: coef[idummy-1].append(float(val))
     # Store the variables
     numvar=0; varstr=np.zeros(nmodkern, dtype='U40')
     ivarkern=np.zeros(nmodkern)
@@ -214,10 +222,9 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
             ivarkern[ii]=numvar
 
     # Save the relevant portions
-    desckern = desckern[:nmodkern]
-    ihorpar = ihorpar[:nmodkern]
+    desckern = np.array(desckern)
+    ihorpar = np.array(ihorpar)
     varstr = varstr[:numvar]
-    coef = coef[:max(ncoefhor),:nmodkern].transpose() # to get it in a kernel * coeff format
     ncoefcum = np.cumsum([ncoefhor[ihor-1] for ihor in ihorpar])
     
     # Store in a dictionary
@@ -235,21 +242,14 @@ def read3dmodelfile(modelfile,maxkern=300,maxcoeff=6000):
     if 'SPHERICAL HARMONICS' in typehpar:
         metadata['lmaxhor']=lmaxhor
     elif 'PIXELS' in typehpar:
-        xsipix = xsipix[:max(ncoefhor),:].transpose() 
-        xlapix = xlapix[:max(ncoefhor),:].transpose() 
-        xlopix = xlopix[:max(ncoefhor),:].transpose() 
-        metadata['xsipix']=xsipix; metadata['xlapix']=xlapix
-        metadata['xlopix']=xlopix  
+        metadata['xsipix']=np.array(xsipix); metadata['xlapix']=np.array(xlapix)
+        metadata['xlopix']=np.array(xlopix)  
     elif 'SPHERICAL SPLINES' in typehpar:
-        ixlspl = ixlspl[:max(ncoefhor),:].transpose() 
-        xlaspl = xlaspl[:max(ncoefhor),:].transpose() 
-        xlospl = xlospl[:max(ncoefhor),:].transpose() 
-        xraspl = xraspl[:max(ncoefhor),:].transpose() 
-        metadata['ixlspl']=ixlspl; metadata['xlaspl']=xlaspl
-        metadata['xlospl']=xlospl; metadata['xraspl']=xraspl
+        metadata['ixlspl']=np.array(ixlspl); metadata['xlaspl']=np.array(xlaspl)
+        metadata['xlospl']=np.array(xlospl); metadata['xraspl']=np.array(xraspl)
         
     model3d['data']={}
-    model3d['data']['coef']=coef
+    model3d['data']['coef']=np.array(coef)
     try:
         model3d['data']['name']=model_name
     except:
@@ -401,7 +401,10 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         elif mod_type == 'topography':
             epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
 
-        epix_lengths.append(len(epix_files))
+        if len(epix_files)>0:
+            epix_lengths.append(len(epix_files))
+        else:
+            raise IOError('no files found for parameter '+parameter+' of type '+mod_type)
     print('... read '+str(np.sum(epix_lengths))+' radial structure kernels of '+str(len(string))+' variables: \n'+'\n'.join(string))
     f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(np.sum(epix_lengths)))
 
@@ -482,12 +485,12 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             if mod_type == 'heterogeneity':
                 for line in head:
                     if 'DEPTH_RANGE' in line: depth_range = line.split(':')[1].split('\n')[0] 
-                f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,parameter,depth_range))
+                f_out.write(u'DESC  {:3.0f}: {}, boxcar, {} km\n'.format(k,parameter,depth_range))
                 ref_dict[parameter]['depth_in_km'].append( np.float(metadata['DEPTH_IN_KM']))
             elif mod_type == 'topography':
                 if checks: assert (float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']))," in file "+epix_file
                 depth_ref = parser['parameters'][parameter]['depth']
-                f_out.write(u'DESC  {:3.0f}: {}, {} km\n'.format(k,parameter,depth_ref))
+                f_out.write(u'DESC  {:3.0f}: {}, delta, {} km\n'.format(k,parameter,depth_ref))
             
             # now read the data
             f = np.loadtxt(epix_file)
@@ -606,7 +609,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     else:
         return outfile
 
-def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, engine='netcdf4'):
+def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, engine='netcdf4', writenc4 = True):
     '''
     write an xarrary dataset from a rem3d formatted ascii file
 
@@ -620,6 +623,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     setup_file: setup file containing metadata for the model
     
     complevel, engine: options for compression in netcdf file
+    
+    writenc4: write a netcdf4 file, if True
 
     '''
 
@@ -635,6 +640,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     try: #attempt buffer
         asciioutput.seek(0)
     except:
+        if outfile == None: outfile = asciioutput+'.nc4'
         asciioutput = open(asciioutput,'r')
         
     #read header
@@ -695,8 +701,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
                     rpar = []
                 
             try:
-                rpar_start = float(line.strip().split()[3])
-                rpar_end = float(line.strip().split()[5])
+                rpar_start = float(line.strip().split(',')[-1].split('-')[0].strip('km'))
+                rpar_end = float(line.strip().split(',')[-1].split('-')[1].strip('km'))
                 rpar.append((rpar_start + rpar_end)/2.)
             except IndexError:
                 model_dict[variable]['rpar_idx'] = None
@@ -766,6 +772,12 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
                  line = asciioutput.readline()
                  for coef in line.strip().split():
                      layer_coefs.append(float(coef))
+            # if not a multiple of 6, add remainder        
+            remain = nlines % 6    
+            if remain > 0: 
+                line = asciioutput.readline()
+                for coef in line.strip().split(): 
+                    layer_coefs.append(float(coef))
 
             model_dict[variable]['layers'][i] = layer_coefs
 
@@ -844,7 +856,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     # write to netcdf
     comp = {'zlib': True, 'complevel': complevel}
     encoding = {var: comp for var in ds.data_vars}
-    if outfile != None: ds.to_netcdf(outfile,engine=engine,encoding=encoding)
+    if writenc4 and outfile != None: ds.to_netcdf(outfile,engine=engine,encoding=encoding)
     
     return ds
         

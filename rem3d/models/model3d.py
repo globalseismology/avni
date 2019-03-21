@@ -69,6 +69,7 @@ class model3d(object):
                 except:
                     print(var1)
             if not success1 and not success2: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
+            pdb.set_trace()
             # get the kernel set
             for resolution in self.metadata.keys():
                 self.metadata[resolution]['kernel_set'] = kernel_set(self.metadata[resolution])
@@ -175,7 +176,7 @@ class model3d(object):
             model=read3dmodelfile(modelfile)
         
         self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = model['data']['name']
-        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = sparse.csr_matrix(model['data']['coef'])
+        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = model['data']['coef']
 
         self.metadata['resolution_'+str(resolution)] = model['metadata']
         #rename the name field only if it is None
