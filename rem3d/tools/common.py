@@ -261,5 +261,6 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
     constants.I_true = eval(parser_select['I_true']) # Moment of inertia in m^2 kg
     constants.R = eval(parser_select['R']) # Radius of the Earth in m
     constants.rhobar = eval(parser_select['rhobar']) # Average density in kg/m^3
+    constants.deg2km = eval(parser_select['deg2km']) #length of 1 degree in km
     # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
     constants.geoco = (1.0 - constants.f)**2.  

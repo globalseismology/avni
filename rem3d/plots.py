@@ -29,7 +29,6 @@ import time
 import progressbar
 import xarray as xr
 from six import string_types # to check if variable is string using isinstance
-
 # For polar sectionplot
 from matplotlib.transforms import Affine2D
 import mpl_toolkits.axisartist.floating_axes as floating_axes
@@ -507,28 +506,28 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
     """plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
     
     # Calculate intermediate points    
-    lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*111325.)
-    interval=gcdelta*111325./(numdegticks-1) # interval in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*111325.,interval))
+    lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2km)
+    interval=gcdelta*constants.deg2km/(numdegticks-1) # interval in km
+    coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2km,interval))
 
     # Center lat lon based on azimuth
     if gcdelta > 350.:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,45.*111325.)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,45.*constants.deg2km)
     elif gcdelta >= 180. and gcdelta <= 350.:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*111325.)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*constants.deg2km)
     else:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*111325.)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*constants.deg2km)
         
     # Choose what to do based on projection
     if projection=='ortho':
         m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l')
     else:
         # center left lat/lon, then left crnr
-        latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*111325./2.)
-        llcrnrlat,llcrnrlon=mapping.getDestinationLatLong(latcenleft,loncenleft,180.,height*111325./2.)
+        latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*constants.deg2km/2.)
+        llcrnrlat,llcrnrlon=mapping.getDestinationLatLong(latcenleft,loncenleft,180.,height*constants.deg2km/2.)
         # center right lat/lon, then left crnr
-        latcenright,loncenright=mapping.getDestinationLatLong(lat_0,lon_0,90.,width*111325./2.)
-        urcrnrlat,urcrnrlon=mapping.getDestinationLatLong(latcenright,loncenright,0.,height*111325./2.)
+        latcenright,loncenright=mapping.getDestinationLatLong(lat_0,lon_0,90.,width*constants.deg2km/2.)
+        urcrnrlat,urcrnrlon=mapping.getDestinationLatLong(latcenright,loncenright,0.,height*constants.deg2km/2.)
 
         m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l',llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat, urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
         # draw parallels and meridians.
@@ -553,9 +552,9 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
     if gcdelta < 180.:
         m.drawgreatcircle(lon1, lat1, lon2, lat2,color='k',linewidth=3.)
     elif gcdelta == 180.:
-        latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*111325.)
-        latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*111325.)
-#         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*111325.)
+        latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*constants.deg2km)
+        latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*constants.deg2km)
+#         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*constants.deg2km)
         lonextent,latextent=m([lonextent1,lonextent2],[latextent1,latextent2])
         m.plot(lonextent,latextent,color='k',linewidth=3.)
     return m
@@ -710,9 +709,9 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
             raise ValueError('model in gettopotransect not a string or xarray')
                     
     #find destination point
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
-    interval=gcdelta*111325./(numeval-1) # interval in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km)
+    interval=gcdelta*constants.deg2km/(numeval-1) # interval in km
+    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km,interval))
 
     #query tree for topography
     qpts_lng = np.linspace(lng1,lng2,len(coords))
@@ -762,7 +761,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
             ds = xr.open_dataset(ncfile)
         else:
             raise ValueError("Error: Could not find file "+ncfile)
-        treefile = dbs_path+'/'+ds.attrs['kernel_set']+'.KDTree.3D.pkl'
+        treefile = dbs_path+'/'+ds.attrs['kerstr']+'.KDTree.3D.pkl'
         tree = tools.tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
         model = ds.variables[parameter]      
         ds.close() #close netcdf file
@@ -773,10 +772,10 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
             vals = model.data.flatten(order='C')
         except:
             raise ValueError('model in gettopotransect not a string or xarray')
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
-    interval=gcdelta*111325./(numevalx-1) # interval in km
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km)
+    interval=gcdelta*constants.deg2km/(numevalx-1) # interval in km
     radevalarr=np.linspace(radii[0],radii[1],numevalz) #radius arr in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*111325.,interval))
+    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km,interval))
         
     if(len(coords) != numevalx):
         raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
@@ -801,7 +800,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km
     """Plot one section through the Earth through a pair of points.""" 
     
     # Specify theta such that it is symmetric
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*111325.)
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km)
     if gcdelta==180. or gcdelta==360.:
         theta=[0.,gcdelta]
     else:
@@ -860,6 +859,8 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km
 #     grid_x, grid_y = np.mgrid[theta[0]:theta[1]:200j,3480.:6346.6:200j]
     #grid_x, grid_y = np.meshgrid(np.linspace(theta[0],theta[1],n3dmodelinter),np.linspace(radii[0],radii[1],n3dmodelinter))
     grid_x, grid_y = np.meshgrid(np.linspace(theta[0],theta[1],numevalx),np.linspace(radii[0],radii[1],numevalz))
+    zoom = 10
+    grid_x_zoom, grid_y_zoom = np.meshgrid(np.linspace(theta[0],theta[1],numevalx*zoom),np.linspace(radii[0],radii[1],numevalz*zoom))
 
     # Get the color map
     try:
@@ -872,9 +873,21 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
-#     im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
     im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
     # add a colorbar
+    #levels = MaxNLocator(nbins=colorcontour).tick_values(interp_values.min(), interp_values.max())
+    #dx = (theta[1]-theta[0])/(numevalx-1); dy = (radii[1]-radii[0])/(numevalz-1)  
+    # tried controurf below but did not make things better than pcolormesh
+#     xy = mapping.polar2cart(np.vstack([grid_y.flatten(),grid_x.flatten()]).T)
+#     xy_zoom = mapping.polar2cart(np.vstack([grid_y_zoom.flatten(),grid_x_zoom.flatten()]).T)    
+#     
+#     grid_x_plot = xy_zoom[:,1].reshape(grid_x_zoom.shape)
+#     grid_y_plot = xy_zoom[:,0].reshape(grid_y_zoom.shape)
+#     interp_zoom = spint.griddata(xy,interp_values.flatten(),(grid_y_plot, grid_x_plot), method='cubic')
+#     im = aux_ax1.contourf(grid_x_zoom,
+#                   grid_y_zoom, interp_zoom, levels=bounds,
+#                   cmap=cpalette.name,vmin=vmin, vmax=vmax)
+#                   
     if colorlabel is not None:
 #         cb = plt.colorbar(im,orientation='vertical',fraction=0.05,pad=0.05)
 #         cb.set_label(colorlabel)

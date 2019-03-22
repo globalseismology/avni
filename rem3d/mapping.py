@@ -93,6 +93,23 @@ def spher2cart(rlatlon):
     xyz[:,2] = rlatlon[:,0]*np.cos(np.pi/180.*colatitude)
     return xyz 
 
+def polar2cart(rtheta):
+    """
+    Convert from polar to cartesian coordinates
+    """
+    xy = np.zeros(rtheta.shape)
+    xy[:,0] = rtheta[:,0]*np.cos(np.pi/180.*rtheta[:,1])
+    xy[:,1] = rtheta[:,0]*np.sin(np.pi/180.*rtheta[:,1])
+    return xy
+
+def cart2polar(xy):
+    """
+    Convert from polar to cartesian coordinates
+    """
+    rtheta = np.zeros(xy.shape)
+    rtheta[:,0] = np.sqrt(np.power(xy[:,1],2)+np.power(xy[:,1],2))
+    rtheta[:,1] = np.arctan2(xy[:,1],xy[:,0]) * 180 / np.pi
+    return xy
  
 def getDestinationLatLong(lat,lng,azimuth,distance):
     '''returns the lat an long of destination point 
