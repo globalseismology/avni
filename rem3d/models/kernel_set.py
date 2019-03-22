@@ -33,7 +33,7 @@ class kernel_set(object):
                 self.metadata[var] = dict[var]
             except:
                 self.metadata[var] = None
-        pdb.set_trace()        
+        #pdb.set_trace()        
 #         names, types, attributes = radial_attributes(dict['desckern'])
 #         for name in names:
 #             radial_basis(name,type,attributes)

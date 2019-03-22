@@ -19,9 +19,9 @@ import re
 from copy import copy, deepcopy
 import struct
 import h5py
-import pandas as pd
 import xarray as xr
 import traceback
+import pandas as pd
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools   
@@ -47,14 +47,19 @@ class model3d(object):
             if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
             try:# try hdf5 for the whole ensemble
                 success1 = True
+                hf = h5py.File(file, 'r')
                 if kwargs:
-                    self.readhdf5(file,**kwargs)
+                    self.readhdf5(hf,**kwargs)
                 else:
-                    self.readhdf5(file)
+                    self.readhdf5(hf)
                 self.description = "Read from "+file
                 self.infile = file
+                hf.close()
             except: # try netcdf or ascii for a single model
-                tools.close_h5py()#first close the hdf5 if opened with h5py above
+                try: #first close the hdf5 if opened with h5py above
+                    hf.close()
+                except NameError:
+                    hf = None
                 success1 = False
                 var1 = traceback.format_exc()
                 try:
@@ -65,7 +70,7 @@ class model3d(object):
                 except:
                     print(var1)
             if not success1 and not success2: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
-            # get the kernel set for every resolution
+            # get the kernel set
             for resolution in self.metadata.keys():
                 self.metadata[resolution]['kernel_set'] = kernel_set(self.metadata[resolution])
                         
@@ -283,7 +288,7 @@ class model3d(object):
         self.type = 'rem3d'
         
 
-    def readhdf5(self,file,query=None):
+    def readhdf5(self,hf,query=None):
         """
         Reads a standard 3D model file from a hdf5 file
         
@@ -294,8 +299,7 @@ class model3d(object):
                 Choose from query hf.keys() if multiple ones are available
                 
         hf: hdf5 handle from h5py
-        """  
-        hf = h5py.File(file, 'r')  
+        """    
         if query is None:
             if len(hf.keys()) == 1: 
                 query = hf.keys()[0]
@@ -326,21 +330,22 @@ class model3d(object):
             for case in g1.keys():
                 g2 = hf[query][resolution][case]
                 assert(g2.attrs['type']=='realization')
-                key = self.name+'/'+resolution+'/'+case
-                self.data[resolution][case]['coef'] = pd.read_hdf(file,key) 
-                self.data[resolution][case]['name'] = g2.attrs['name']    
-        hf.close()
+                kerstr = self.metadata[resolution]['kerstr']
+                key = self.name+'/'+kerstr+'/'+resolution+'/'+case
+                self.data[resolution][case]['coef'] = pd.DataFrame(tools.io.load_numpy_hdf(hf,key))
+                self.data[resolution][case]['name'] = g2.attrs['name']     
         return   
+        
           
-    def writehdf5(self, hdffile = None, overwrite = False):
+    def writehdf5(self, outfile = None, overwrite = False):
         """
         Writes the model object to hdf5 file
         """
-        if hdffile == None: hdffile = self.infile+'.h5'
+        if outfile == None: outfile = self.infile+'.h5'
         if overwrite:
-            hf = h5py.File(hdffile, 'w')
+            hf = h5py.File(outfile, 'w')
         else:
-            hf = h5py.File(hdffile, 'a')
+            hf = h5py.File(outfile, 'a')
         g1 = hf.require_group(self.name)
         
         if self.name != None: g1.attrs['name']=self.name
@@ -376,11 +381,14 @@ class model3d(object):
                     g3.attrs['name']=name
                 except:
                     print('Warning: No name found for resolution '+str(ires)+', realization '+str(icase))
+                # write the data array in the appropriate position
+                kerstr = self.metadata['resolution_'+str(ires)]['kerstr']
                 key = self.name+'/resolution_'+str(ires)+'/realization_'+str(icase)
-                self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'].to_hdf(hdffile, key=unicode(key),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,append=True)
-                
+                out = tools.df2nparray(self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'])
+                tools.io.store_numpy_hdf(hf,key,out)
+                                
         hf.close()
-        print('... written to '+hdffile)
+        print('... written to '+outfile)
         
             
     def coeff2modelarr(self,resolution=[0],realization=0):

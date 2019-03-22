@@ -31,6 +31,15 @@ def diffdict(first_dict,second_dict):
     '''
     return { k : second_dict[k] for k in set(second_dict) - set(first_dict) }
 
+def df2nparray(dataframe):
+    '''
+    helper tool to return the named numpy array of the pandas dataframe
+    '''
+    columns = {}
+    for ii in range(dataframe.shape[1]): columns[ii] = str(ii)
+    dataframe.rename(columns = columns,inplace=True)
+    ra = dataframe.to_records(index=False)
+    return np.asarray(ra)
 
 def krunge(n,x,h,y,f,m=0,phi=np.zeros(6),savey=np.zeros(6)):
     """

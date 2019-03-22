@@ -10,6 +10,7 @@ import numpy as np
 import gc
 from scipy import sparse
 import h5py
+import pdb
 #######################################################################################    
      
 def close_h5py():    
@@ -69,7 +70,7 @@ def load_sparse_hdf(h5f,varname):
     m = sparse.csr_matrix(tuple(pars[:3]), shape=pars[3])
     return m
             
-def store_numpy_hdf(h5f,varname,array,compression="gzip"):
+def store_numpy_hdf(h5f,varname,array,compression="gzip", compression_opts=9):
     """
     Store a named numpy array in HDF5
 
@@ -92,18 +93,19 @@ def store_numpy_hdf(h5f,varname,array,compression="gzip"):
         arr_original = load_numpy_hdf(h5f,varname)
         arr_write = np.hstack([arr_original,array])
         del(h5f[varname])
-    except KeyError:
+        print('Warning: appending to existing field: '+varname)
+    except:
         arr_write = array
 
     # Write the file
-    h5f.create_dataset(varname+'/fields',data=fields,compression=compression)
+    h5f.create_dataset(varname+'/fields',data=fields,compression=compression, compression_opts=compression_opts)
     for field in fields: 
         # if string, change to utf for python2/3 compatibility
         if arr_write[field].dtype.kind == 'S' or arr_write[field].dtype.kind == 'U':
             outarr=np.array(arr_write[field].tolist(),dtype='a'+str(arr_write[field].dtype.itemsize))
-            h5f.create_dataset(varname+'/columns/'+field, data=outarr,compression=compression)
+            h5f.create_dataset(varname+'/columns/'+field, data=outarr,compression=compression, compression_opts=compression_opts)
         else:
-            h5f.create_dataset(varname+'/columns/'+field, data=arr_write[field], compression=compression)
+            h5f.create_dataset(varname+'/columns/'+field, data=arr_write[field], compression=compression, compression_opts=compression_opts)
 
 def load_numpy_hdf(h5f,varname):
     """
@@ -123,7 +125,7 @@ def load_numpy_hdf(h5f,varname):
     names = [name.decode('utf-8') for name in h5f[varname]['fields'].value]
     formats = [h5f[varname]['columns'][field].dtype.kind+ str(h5f[varname]['columns'][field].dtype.itemsize) for field in names]
     dt = {'names':names, 'formats':formats}
-    output = np.zeros(h5f[varname]['columns'][names[0]].value.shape[0], dtype=dt)
+    output = np.zeros(h5f[varname]['columns'][names[0]].value.shape, dtype=dt)
     for field in names:
         output[field]=h5f[varname]['columns'][field].value
     return output
