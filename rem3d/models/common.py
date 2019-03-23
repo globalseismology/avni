@@ -115,8 +115,8 @@ def read3dmodelfile(modelfile):
         if line.startswith("HORIZONTAL PARAMETERIZATIONS:"): 
             nhorpar = int(line[29:].rstrip('\n'))
             typehpar=np.zeros(nhorpar, dtype='U40')
-            ityphpar=np.zeros(nhorpar, dtype=int)
-            ncoefhor=np.zeros(nhorpar, dtype=int)
+            ityphpar=np.zeros(nhorpar, dtype=np.int)
+            ncoefhor=np.zeros(nhorpar, dtype=np.int)
             hsplfile=np.zeros(nhorpar, dtype='U40')
             coef=[[] for i in range(nmodkern)]
         if line.startswith("HPAR"):     
@@ -125,7 +125,7 @@ def read3dmodelfile(modelfile):
             ifst,ilst=tools.firstnonspaceindex(substr)
             if substr[ifst:ifst+20] == 'SPHERICAL HARMONICS,':
                 # initialize
-                lmaxhor=np.zeros(nhorpar, dtype=int)
+                lmaxhor=np.zeros(nhorpar, dtype=np.int)
                 
                 ityphpar[idummy-1]=1
                 typehpar[idummy-1]='SPHERICAL HARMONICS'
@@ -242,10 +242,10 @@ def read3dmodelfile(modelfile):
 
     if 'SPHERICAL HARMONICS' in typehpar:
         metadata['lmaxhor']=lmaxhor
-    elif 'PIXELS' in typehpar:
+    if 'PIXELS' in typehpar:
         metadata['xsipix']=np.array(xsipix); metadata['xlapix']=np.array(xlapix)
         metadata['xlopix']=np.array(xlopix)  
-    elif 'SPHERICAL SPLINES' in typehpar:
+    if 'SPHERICAL SPLINES' in typehpar:
         metadata['ixlspl']=np.array(ixlspl); metadata['xlaspl']=np.array(xlaspl)
         metadata['xlospl']=np.array(xlospl); metadata['xraspl']=np.array(xraspl)
         

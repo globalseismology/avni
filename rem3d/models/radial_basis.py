@@ -66,7 +66,7 @@ class radial_basis(object):
         Checks that object contains all attributes required for evaluating a 
         particular basis set.
         """
-        if self.metadata['type'] is 'vbspl':
+        if self.metadata['type'] in ['vbspl','variable splines']:
             for key in ['knots']:
                 try:
                     knots = self.metadata['attributes'][key]
@@ -102,7 +102,7 @@ class radial_basis(object):
             raise TypeError('depths must be list or tuple, not %s' % type(depths_in_km))
 
         # compute the radial parameteriation in specific depths
-        if self.metadata['type'] is 'vbspl':
+        if self.metadata['type'] in ['vbspl','variable splines']:        
             knots = self.metadata['attributes']['knots']
             vercof, dvercof = tools.eval_vbspl(depths,knots)
         else:

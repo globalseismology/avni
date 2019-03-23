@@ -389,7 +389,19 @@ class model3d(object):
                                 
         hf.close()
         print('... written to '+outfile)
+
+    def evaluate_at_point(self,latitude,longitude,depth,parameter='vs',interpolated=True): 
+        """
+        Evaluate the mode at a location (latitude, longitude,depth)
         
+        Input Parameters:
+        ----------------
+        
+        parameter: variable whose value will be returned
+        
+        interpolated: If True, use KDTree from a predefined grid. If False, evaluated 
+                      exactly using kernel_set instance.
+        """           
             
     def coeff2modelarr(self,resolution=[0],realization=0):
         """

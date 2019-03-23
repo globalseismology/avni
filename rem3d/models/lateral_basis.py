@@ -13,7 +13,7 @@ from datetime import date  #to give a timestamp to output and compare times
 import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-
+from ..f2py import splcon
 #######################################################################################
 # Horizontal basis parameter class that defines an unique combination of parameters, their radial parameterization and any scaling
 # 3D model class
@@ -22,12 +22,13 @@ class lateral_basis(object):
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.
     '''
-    def __init__(self, name, type):
+    def __init__(self, name, type, attributes = {}):
         """
         types : 'epix','ylm','sh','wavelet','slepians'
         """
         self.proj = {}
-        self.metadata = {'name':name,'type':type,'attributes':{}}
+        self.name = name
+        self.metadata = {'type':type,'attributes':attributes}
 
     def addtypes(self, names, types):
         """
@@ -73,8 +74,10 @@ class lateral_basis(object):
         """
         Evaluate radial basis at a depth interpolated from existing projection matrices.
         """    
+        ncon,icon,con = splcon(lat,lon,self.metadata['attributes']['ncoefhor'],self.metadata['attributes']['xlaspl'],self.metadata['attributes']['xlospl'],self.metadata['attributes']['xraspl'])
+        
 
-    def project_lateral(self,lat,lon):
+    def project_lateral(self,lateral_basis):
         """
         Project from current horizontal basis to another orthogonal basis 
         and return the coefficients.

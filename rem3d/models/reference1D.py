@@ -65,52 +65,50 @@ class reference1D(object):
             setattr(result, k, deepcopy(v, memo))
         return result
             
-    def read(self,file,fmt='card'):
+    def read(self,file):
         '''
         Read a card deck file used in OBANI. Other formats not ready yet
         '''
-        if fmt=='card':
-            names=['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
-            formats=[np.float for ii in range(len(names))]
-            modelarr = np.genfromtxt(file,dtype=None,comments='#',skip_header=3,
-            names=names)
-            # Add depth assuming model describes from Earth center to surface
-            names.append('depth'); formats.append(np.float)
-            modelarr=append_fields(modelarr, 'depth', constants.R - modelarr['radius'], usemask=False)
-            self.metadata['attributes'] = names
-            self.metadata['description'] = 'Read from '+file
-            self.metadata['filename'] = file
-            self.name = ntpath.basename(file)
-        else:
-            raise NotImplementedError('model format ',fmt,' is not currently implemented in reference1D.read')
-
+        try:
+            self.readcards(file)
+        except:
+            raise NotImplementedError('model format is not currently implemented in reference1D.read')
+        
+        
+    def readcards(self,file, fields=['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']):
+        
+        formats=[np.float for ii in range(len(fields))]
+        modelarr = np.genfromtxt(file,dtype=None,comments='#',skip_header=3,names=fields)
+        # Add depth assuming model describes from Earth center to surface
+        fields.append('depth'); formats.append(np.float)
+        modelarr=append_fields(modelarr, 'depth', constants.R - modelarr['radius'], usemask=False)
+        self.metadata['attributes'] = fields
+        self.metadata['description'] = 'Read from '+file
+        self.metadata['filename'] = file
+        self.name = ntpath.basename(file)
         self.__nlayers__ = len(modelarr['radius'])
         # Create data array
-        Model1D_Attr = np.dtype([(native_str(names[ii]),formats[ii]) for ii in range(len(names))])
+        Model1D_Attr = np.dtype([(native_str(fields[ii]),formats[ii]) for ii in range(len(fields))])
         self.data = np.zeros(self.__nlayers__,dtype=Model1D_Attr)
-        self.data['radius'] = modelarr['radius']
-        self.data['depth'] = modelarr['depth']
-        self.data['rho'] = modelarr['rho']
-        self.data['vpv'] = modelarr['vpv']
-        self.data['vsv'] = modelarr['vsv']
-        self.data['Qkappa'] = modelarr['Qkappa']
-        self.data['Qmu'] = modelarr['Qmu']
-        self.data['vph'] = modelarr['vph']
-        self.data['vsh'] = modelarr['vsh']
-        self.data['eta'] = modelarr['eta']
-        self.radius_max = np.max(self.data['radius'])
-        
+        for key in modelarr.dtype.names: self.data[key] = modelarr[key]
+        self.radius_max = np.max(self.data['radius'])        
 
     def get_Love_elastic(self):
         '''
         Get the Love parameters and Voigt averaged elastic properties with depth
         
         A,C,N,L,F: anisotropy elastic Love parameters
+        
         kappa: bulk modulus
+        
         mu: shear modulus
+        
         vphi: bulk sound velocity
+        
         xi: shear anisotropy ratio
+        
         phi: P anisotropy ratio
+        
         Zs, Zp: S and P impedances
         '''
         if self.data is not None and self.__nlayers__ > 0:
@@ -146,8 +144,10 @@ class reference1D(object):
         
         Returns a structure self.metadata['disc'] that has three arrays:
         
-        delta: containing absolute difference in attributes between smaller/larger radii 
+        delta: containing absolute difference in attributes between smaller/larger radii
+         
         average: containing absolute average attributes between smaller/larger radii
+        
         contrasts: containing contrast in attributes (in %)
         '''
         
