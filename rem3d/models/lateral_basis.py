@@ -14,6 +14,7 @@ import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from ..f2py import splcon
+from .. import tools  
 #######################################################################################
 # Horizontal basis parameter class that defines an unique combination of parameters, their radial parameterization and any scaling
 # 3D model class
@@ -22,13 +23,14 @@ class lateral_basis(object):
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.
     '''
-    def __init__(self, name, type, attributes = {}):
+    def __init__(self, name, type, metadata = {}):
         """
         types : 'epix','ylm','sh','wavelet','slepians'
         """
-        self.proj = {}
+        self.data = {}
         self.name = name
-        self.metadata = {'type':type,'attributes':attributes}
+        self.type = type
+        self.metadata = metadata
 
     def addtypes(self, names, types):
         """
@@ -70,12 +72,25 @@ class lateral_basis(object):
             #nhorcum = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
 
         
-    def eval_lateral(self,lat,lon):
+    def eval_lateral(self,lat,lon,store=False):
         """
         Evaluate radial basis at a depth interpolated from existing projection matrices.
         """    
-        ncon,icon,con = splcon(lat,lon,self.metadata['attributes']['ncoefhor'],self.metadata['attributes']['xlaspl'],self.metadata['attributes']['xlospl'],self.metadata['attributes']['xraspl'])
-        
+        if self.type == 'SPHERICAL SPLINES':
+            horcof = tools.eval_splcon(lat,lon,self.metadata['xlaspl'],self.metadata['xlospl'],self.metadata['xraspl'])
+        elif self.type == 'SPHERICAL HARMONICS':
+            horcof = tools.eval_ylm(lat,lon, self.metadata['lmaxhor'])
+        elif self.type == 'PIXELS':
+            horcof = tools.eval_pixel(lat,lon, self.metadata['xlapix'],self.metadata['xlopix'],self.metadata['xsipix'])
+        else:
+            raise NotImplementedError(self.type+' has not been implemented in lateral_basis.eval_lateral')
+
+        if store:
+            self.data['latitude'] = lat
+            self.data['longitude'] = lon
+            self.data['horcof'] = horcof
+        else:
+            return horcof
 
     def project_lateral(self,lateral_basis):
         """

@@ -7,9 +7,12 @@ from builtins import *
 import pkgutil
 import numpy as np
 from collections import Counter
+import pdb
+from scipy import sparse
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from rem3d.f2py import vbspl,dbsplrem
+from rem3d.f2py import vbspl,dbsplrem,ylm
+from .trigd import sind,cosd,acosd
 #######################################################################################
    
 def eval_vbspl(depths,knots):
@@ -28,7 +31,6 @@ def eval_vbspl(depths,knots):
     
     vercof, dvercof: value of the spline coefficients at each depth and its derivative.
                       Both arrays have size (Ndepth, Nknots).
-    
     """
     if isinstance(knots, (list,tuple,np.ndarray)):
         knots = np.asarray(knots)
@@ -119,7 +121,6 @@ def eval_splrem(radius, radius_range, nsplines):
     
     vercof, dvercof: value of the polynomial coefficients at each depth and derivative.
                       Both arrays have size (Nradius, Nsplines).
-    
     """
         
     if isinstance(radius, (list,tuple,np.ndarray)):
@@ -168,7 +169,6 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     ------
     
     vercof : value of the polynomial coefficients at each depth, size (Nradius).
-    
     """
         
     if isinstance(radius, (list,tuple,np.ndarray)):
@@ -237,3 +237,207 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
             vercof = np.vstack([vercof,temp]) 
             dvercof = np.vstack([dvercof,dtemp]) 
     return vercof,dvercof
+    
+def eval_splcon(latitude,longitude,xlaspl,xlospl,xraspl):
+    """
+    Evaluate the continuous lateral splines.
+    
+    Input parameters:
+    ----------------
+    
+    latitude,longitude: location queried
+        
+    xlaspl,xlospl,xraspl: loocation and radius of splines
+        
+    Output:
+    ------
+    
+    horcof : value of the horizontal coefficents at each location. 
+             Size of numpy array is [len(latitude) X ncoefhor]
+    """
+                
+    if isinstance(latitude, (list,tuple,np.ndarray)):
+        latitude = np.asarray(latitude)
+    elif isinstance(latitude, float):
+        latitude = np.asarray([latitude])
+    elif isinstance(latitude, int):
+        latitude = np.asarray([float(latitude)])
+    else:
+        raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
+        
+    if isinstance(longitude, (list,tuple,np.ndarray)):
+        longitude = np.asarray(longitude)
+    elif isinstance(longitude, float):
+        longitude = np.asarray([longitude])
+    elif isinstance(longitude, int):
+        longitude = np.asarray([float(longitude)])
+    else:
+        raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
+    assert(len(latitude) == len(longitude)),'latitude and longitude should be of same length' 
+    assert(len(xlaspl) == len(xlospl) == len(xraspl)),'xlaspl,xlospl and xraspl should be of same length' 
+
+    ncoefhor = len(xlaspl)
+    values = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
+    for iloc in range(len(latitude)):
+        lat = latitude[iloc]
+        lon = longitude[iloc]
+        #--- make lon go from 0-360
+        if lon<0.: lon=lon+360.
+        xlospl[np.where(xlospl<0.)]=xlospl[np.where(xlospl<0.)]+360.
+        ncon,icon,con = splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl) 
+        rowind = iloc*np.ones(ncon)
+        colind = []
+        for ii in range(ncon): colind.append(icon[ii]-1)
+        colind = np.array(colind)
+        # update values
+        values = values + sparse.csr_matrix((con[:ncon], (rowind, colind)), shape=(len(latitude),ncoefhor)) 
+    return values
+
+def splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl):
+    ncon=0;con=[];icon=[]
+    for iver in range(ncoefhor):
+        if lat>xlaspl[iver]-2.*xraspl[iver]: 
+            if lat<xlaspl[iver]+2.*xraspl[iver]:
+                dd=sind(xlaspl[iver])*sind(lat)
+                dd=dd+cosd(xlaspl[iver])*cosd(lat)*cosd(lon-xlospl[iver])
+                dd=acosd(dd)
+                if dd <= xraspl[iver]*2.:
+                    ncon=ncon+1
+                    icon.append(iver)
+                    rn=dd/xraspl[iver]
+                    dr=rn-1.
+                    if rn <= 1.:
+                        con.append((0.75*rn-1.5)*(rn**2)+1.)
+                    elif rn > 1.:
+                        con.append(((-0.25*dr+0.75)*dr-0.75)*dr+0.25)
+                    else:
+                        con.append(0.)
+    con=np.array(con);icon=np.array(icon)
+    return ncon,icon,con
+    
+def eval_ylm(latitude,longitude,lmaxhor):
+    """
+    Evaluate spherical harmonics.
+    
+    Input parameters:
+    ----------------
+    
+    latitude,longitude: location queried
+    
+    lmaxhor: maximum spherical harmonic degree
+        
+    Output:
+    ------
+    
+    horcof : value of the horizontal coefficents at each location. 
+             Size of numpy array is [len(latitude) X ((lmaxhor+1)^2)]
+    """
+                
+    if isinstance(latitude, (list,tuple,np.ndarray)):
+        latitude = np.asarray(latitude)
+    elif isinstance(latitude, float):
+        latitude = np.asarray([latitude])
+    elif isinstance(latitude, int):
+        latitude = np.asarray([float(latitude)])
+    else:
+        raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
+        
+    if isinstance(longitude, (list,tuple,np.ndarray)):
+        longitude = np.asarray(longitude)
+    elif isinstance(longitude, float):
+        longitude = np.asarray([longitude])
+    elif isinstance(longitude, int):
+        longitude = np.asarray([float(longitude)])
+    else:
+        raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
+    
+    assert(len(latitude) == len(longitude)),'latitude and longitude should be of same length' 
+    ncoefhor = np.power(lmaxhor+1,2) # numpye of coefficients upto Lmax
+    if len(latitude)>1:
+        horcof = np.zeros((len(latitude),ncoefhor))
+    else:
+        horcof = np.zeros(ncoefhor)
+    for iloc in range(len(latitude)):
+        lat = latitude[iloc]
+        lon = longitude[iloc]
+        #--- make lon go from 0-360
+        if lon<0.: lon=lon+360.
+        # wk1,wk2,wk3 are legendre polynomials of size Lmax+1
+        # ylmcof is the value of Ylm
+        ylmcof,wk1,wk2,wk3 = ylm(lat,lon,lmaxhor,ncoefhor,lmaxhor+1) 
+        pdb.set_trace()
+        for ii in range(ncoefhor):
+            if len(latitude)>1:
+                horcof[iloc,ii]=ylmcof[ii]
+            else:
+                horcof[ii]=ylmcof[ii]
+    return horcof
+
+def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
+    """
+    Evaluate spherical harmonics.
+    
+    Input parameters:
+    ----------------
+    
+    latitude,longitude: location queried
+    
+    xlapix,xlopix,xsipix: loocation and size of pixels
+        
+    Output:
+    ------
+    
+    horcof : value of the horizontal coefficents at each location. 
+             Size of numpy array is [len(latitude) X len(xsipix)]
+    """
+                
+    if isinstance(latitude, (list,tuple,np.ndarray)):
+        latitude = np.asarray(latitude)
+    elif isinstance(latitude, float):
+        latitude = np.asarray([latitude])
+    elif isinstance(latitude, int):
+        latitude = np.asarray([float(latitude)])
+    else:
+        raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
+        
+    if isinstance(longitude, (list,tuple,np.ndarray)):
+        longitude = np.asarray(longitude)
+    elif isinstance(longitude, float):
+        longitude = np.asarray([longitude])
+    elif isinstance(longitude, int):
+        longitude = np.asarray([float(longitude)])
+    else:
+        raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
+    
+    assert(len(latitude) == len(longitude)),'latitude and longitude should be of same length' 
+    assert(len(xlapix) == len(xlopix) == len(xsipix)),'xlapix,xlopix,xsipix should be of same length' 
+    if len(np.unique(xsipix)) > 1:
+        strout=''
+        for ii in range(len(np.unique(xsipix))): strout = strout+', '+str(np.unique(xsipix)[ii])
+        print('Warning: multiple pixel sizes in the PIXEL basis fir evaluation in bases.eval_pixel. Sizes are ')
+        
+    labo = xlapix-xsipix/2.; lato = xlapix+xsipix/2.
+    lole = xlopix-xsipix/2.; lori = xlopix+xsipix/2.
+    lori[np.where(lori<0.)]=lori[np.where(lori<0.)]+360.
+    lole[np.where(lole<0.)]=lole[np.where(lole<0.)]+360.
+    lori[np.where(lori>360.)]=lori[np.where(lori>360.)]-360.
+    lole[np.where(lole>360.)]=lole[np.where(lole>360.)]-360.
+    if len(latitude)>1:
+        horcof = np.zeros((len(latitude),len(xsipix)))
+    else:
+        horcof = np.zeros(len(xsipix))
+    for iloc in range(len(latitude)):
+        lat = latitude[iloc]
+        lon = longitude[iloc]
+        #--- make lon go from 0-360
+        if lon<0.: lon=lon+360.
+        # check if the location lies within pixel
+        findindex = np.intersect1d(np.intersect1d(np.where(lat<lato), np.where(lat>=labo)),np.intersect1d(np.where(lon<lori), np.where(lon>=lole)))
+        pdb.set_trace()
+        if len(latitude)>1:
+            horcof[iloc,findindex]=1.
+        else:
+            horcof[findindex]=1.
+    return horcof
+
+

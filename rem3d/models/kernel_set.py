@@ -56,16 +56,17 @@ class kernel_set(object):
         lateral=[]
         for ihor in range(self.metadata['nhorpar']):
             type = self.metadata['typehpar'][ihor]
-            attributes = {}
-            attributes['ncoefhor']=dict['ncoefhor'][ihor]
+            metadata = {}
+            metadata['ncoefhor']=dict['ncoefhor'][ihor]
             if 'SPHERICAL HARMONICS' in type:
-                attributes['lmaxhor'] = dict['lmaxhor'][ihor]
+                metadata['lmaxhor'] = dict['lmaxhor'][ihor]
             elif 'PIXELS' in type:
                 for field in ['xsipix','xlapix','xlopix']:
-                    attributes[field] = np.array(dict[field][ihor], order = 'F')
+                    metadata[field] = np.array(dict[field][ihor], order = 'F')
             elif 'SPHERICAL SPLINES' in type:
                 for field in ['ixlspl','xlaspl','xlospl','xraspl']:
-                    attributes[field] = np.array(dict[field][ihor], order = 'F')
-            pdb.set_trace()
+                    metadata[field] = np.array(dict[field][ihor], order = 'F')
+            #pdb.set_trace()
             #ncon,icon,con = splcon(0.,0.,attributes['ncoefhor'],attributes['xlaspl'],attributes['xlospl'],attributes['xraspl'])
-            lateral.append(lateral_basis(name='HPAR'+str(ihor+1), type = type, attributes=attributes))
+            lateral.append(lateral_basis(name='HPAR'+str(ihor+1), type = type, metadata=metadata))
+        self.data['lateral_basis']=lateral

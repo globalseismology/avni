@@ -184,6 +184,7 @@ class model3d(object):
         self.description = "Read from "+modelfile
         self.infile = modelfile
         self.type = 'rem3d'
+        self.refmodel = model['metadata']['refmodel']
         
         return 
         
