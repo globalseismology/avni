@@ -13,7 +13,6 @@ from datetime import date  #to give a timestamp to output and compare times
 import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from ..f2py import splcon
 from .. import tools  
 #######################################################################################
 # Horizontal basis parameter class that defines an unique combination of parameters, their radial parameterization and any scaling

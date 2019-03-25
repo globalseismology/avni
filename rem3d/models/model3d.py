@@ -425,16 +425,16 @@ class model3d(object):
         # Loop over resolution levels, adding coefficients 
         for ir in range(len(resolution)): 
             try:
-                coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef'].toarray()
+                coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef']
             # Loop over all kernel basis
                 for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])): 
                     # number of coefficients for this radial kernel
                     ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
                     # first radial kernel and first tesselation level
                     if ii == 0 and ir == 0: 
-                        modelarr=coefficients[ii,:ncoef]
+                        modelarr = coefficients.iloc[ii][:ncoef].values                        
                     else:
-                        modelarr=np.append(modelarr,coefficients[ii,:ncoef]) 
+                        modelarr=np.append(modelarr,coefficients.iloc[ii][:ncoef].values) 
             except AttributeError: # 
                 raise ValueError('resolution '+str(resolution[ir])+' and realization '+str(realization)+' not filled up yet.')
         modelarr = sparse.csr_matrix(modelarr) # Convert to sparse matrix
@@ -605,25 +605,62 @@ class model3d(object):
         projection['model']=model; projection['param']=lateral_basis         
         return projection
 
-    def getprojmatrix(self,to_name='epix',depths = [30.,50.]):
+    def getprojmatrix(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5',resolution=0):
         """
         Get the projection matrix from a lateral basis to another and for particular depths  
         """    
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
         
-        # Get the radial projection file
-        projfile,exists = tools.get_projections(type='radial')
+        if isinstance(latitude, (list,tuple,np.ndarray)):
+            latitude = np.asarray(latitude)
+        elif isinstance(latitude, float):
+            latitude = np.asarray([latitude])
+        elif isinstance(latitude, int):
+            latitude = np.asarray([float(latitude)])
+        else:
+            raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
+        if isinstance(longitude, (list,tuple,np.ndarray)):
+            longitude = np.asarray(longitude)
+        elif isinstance(longitude, float):
+            longitude = np.asarray([longitude])
+        elif isinstance(longitude, int):
+            longitude = np.asarray([float(longitude)])
+        else:
+            raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
+        if isinstance(depth_in_km, (list,tuple,np.ndarray)):
+            depth_in_km = np.asarray(depth_in_km)
+        elif isinstance(depth_in_km, float):
+            depth_in_km = np.asarray([depth_in_km])
+        elif isinstance(latitude, int):
+            depth_in_km = np.asarray([float(depth_in_km)])
+        else:
+            raise TypeError('depth_in_km must be list or tuple, not %s' % type(depth_in_km))            
+        assert(len(latitude)==len(longitude)==len(depth_in_km)),'latitude, longitude and depth_in_km should be of same length'       
         
-        pdb.set_trace()
+        # Get the radial projection file
+        kernel = self.metadata['resolution_'+str(resolution)]['kernel_set']
+
+        for iloc in range(len(latitude)):
+            lat = latitude[iloc]
+            lon = longitude[iloc]
+            dep = depth_in_km[iloc]
+            if iloc == 0:
+                projarr = kernel.getprojection(lat,lon,dep,parameter)
+            else:
+                projarr = sparse.vstack([projarr,kernel.getprojection(lat,lon,dep,parameter)])
+        
         
      
         # Write to a dictionary
         projection = {}
-        projection['ndp']=ndp; projection['npx']=npx; projection['nhorcum']=nhorcum; 
-        projection['neval']=neval; projection['deptharr']=deptharr; projection['refstrarr']=refstrarr
-        projection['xlat']=xlat; projection['xlon']=xlon; projection['area']=area
-        projection['refvalarr']=refvalarr; projection['projarr']=projarr       
-        projection['model']=model; projection['param']=lateral_basis         
+        projection['projarr']=projarr 
+        projection['ndp']=len(depth_in_km)
+        
+#         projection['ndp']=ndp; projection['npx']=npx; projection['nhorcum']=nhorcum; 
+#         projection['neval']=neval; projection['deptharr']=deptharr; projection['refstrarr']=refstrarr
+#         projection['xlat']=xlat; projection['xlon']=xlon; projection['area']=area
+#         projection['refvalarr']=refvalarr;       
+#         projection['model']=model; projection['param']=lateral_basis         
         return projection
 
 

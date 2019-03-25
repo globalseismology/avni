@@ -38,13 +38,14 @@ class radial_basis(object):
         attributes: a dictionary containing variables used to define this particular type
                     e.g. knots for vbspl. Checked that these are defined using self.check.
     '''
-    def __init__(self,name,type,attributes={}):
+    def __init__(self,name,type,metadata={}):
         self.data = {}
         self.data['depths_in_km'] = None
         self.data['vercof'] = None
         self.data['dvercof'] = None
-        self.metadata = {}
-        self.metadata = {'name':name,'type':type,'attributes':attributes}
+        self.name = name
+        self.type = type
+        self.metadata = metadata
         # Check if all required atributes are available
         self.check()
 
@@ -59,22 +60,29 @@ class radial_basis(object):
         
         value: values corresponding to the key
         """
-        self.metadata['attributes'][key] = value
+        self.metadata[key] = value
         
     def check(self):
         """
         Checks that object contains all attributes required for evaluating a 
         particular basis set.
         """
-        if self.metadata['type'] in ['vbspl','variable splines']:
+        if self.type in ['vbspl','variable splines']:
             for key in ['knots']:
                 try:
-                    knots = self.metadata['attributes'][key]
+                    knots = self.metadata[key]
                 except:
-                    print('Current attributes : ',self.metadata['attributes'].keys())
-                    raise KeyError('Attribute '+key+' missing for radial basis type '+self.metadata['type'])
+                    print('Current attributes : ',self.metadata.keys())
+                    raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
+        elif self.type in ['delta','dirac delta']:
+            for key in ['info']:
+                try:
+                    knots = self.metadata[key]
+                except:
+                    print('Current attributes : ',self.metadata.keys())
+                    raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
         else:
-            raise TypeError('metadata type note defined in eval_radial %s' % self.metadata['type'])
+            raise TypeError('metadata type note defined in eval_radial %s' % self.type)
         
     
     def readprojfile(self,projfile):
@@ -96,17 +104,20 @@ class radial_basis(object):
 
         if isinstance(depths_in_km, (list,tuple,np.ndarray)):
             depths = np.asarray(depths_in_km)
-        elif isinstance(depths, float):
+        elif isinstance(depths_in_km, float):
             depths = np.asarray([depths_in_km])
         else:
             raise TypeError('depths must be list or tuple, not %s' % type(depths_in_km))
 
         # compute the radial parameteriation in specific depths
-        if self.metadata['type'] in ['vbspl','variable splines']:        
-            knots = self.metadata['attributes']['knots']
+        if self.type in ['vbspl','variable splines']:        
+            knots = self.metadata['knots']
             vercof, dvercof = tools.eval_vbspl(depths,knots)
+        elif self.type in ['delta','dirac delta']:     
+            vercof = np.ones(len(depths))
+            dvercof = np.zeros(len(depths))
         else:
-            raise TypeError('metadata type note defined in eval_radial %s' % self.metadata['type'])
+            raise TypeError('metadata type not defined in eval_radial %s' % self.type)
             
         # Store if needed
         if store:

@@ -353,10 +353,7 @@ def eval_ylm(latitude,longitude,lmaxhor):
     
     assert(len(latitude) == len(longitude)),'latitude and longitude should be of same length' 
     ncoefhor = np.power(lmaxhor+1,2) # numpye of coefficients upto Lmax
-    if len(latitude)>1:
-        horcof = np.zeros((len(latitude),ncoefhor))
-    else:
-        horcof = np.zeros(ncoefhor)
+    horcof = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
     for iloc in range(len(latitude)):
         lat = latitude[iloc]
         lon = longitude[iloc]
@@ -365,12 +362,10 @@ def eval_ylm(latitude,longitude,lmaxhor):
         # wk1,wk2,wk3 are legendre polynomials of size Lmax+1
         # ylmcof is the value of Ylm
         ylmcof,wk1,wk2,wk3 = ylm(lat,lon,lmaxhor,ncoefhor,lmaxhor+1) 
-        pdb.set_trace()
-        for ii in range(ncoefhor):
-            if len(latitude)>1:
-                horcof[iloc,ii]=ylmcof[ii]
-            else:
-                horcof[ii]=ylmcof[ii]
+        rowind = iloc*np.ones(ncoefhor)
+        colind = np.arange(ncoefhor)
+        # update values
+        horcof = horcof + sparse.csr_matrix((ylmcof, (rowind, colind)), shape=(len(latitude),ncoefhor)) 
     return horcof
 
 def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
@@ -422,22 +417,29 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
     lole[np.where(lole<0.)]=lole[np.where(lole<0.)]+360.
     lori[np.where(lori>360.)]=lori[np.where(lori>360.)]-360.
     lole[np.where(lole>360.)]=lole[np.where(lole>360.)]-360.
-    if len(latitude)>1:
-        horcof = np.zeros((len(latitude),len(xsipix)))
-    else:
-        horcof = np.zeros(len(xsipix))
+    horcof = sparse.csr_matrix((len(latitude),len(xsipix))) # empty matrix
     for iloc in range(len(latitude)):
         lat = latitude[iloc]
         lon = longitude[iloc]
         #--- make lon go from 0-360
         if lon<0.: lon=lon+360.
         # check if the location lies within pixel
-        findindex = np.intersect1d(np.intersect1d(np.where(lat<lato), np.where(lat>=labo)),np.intersect1d(np.where(lon<lori), np.where(lon>=lole)))
-        pdb.set_trace()
-        if len(latitude)>1:
-            horcof[iloc,findindex]=1.
+        if lat != 90.:
+            latfind = np.intersect1d(np.where(lat<lato), np.where(lat>=labo))
         else:
-            horcof[findindex]=1.
+            latfind = np.intersect1d(np.where(lat<=lato), np.where(lat>=labo))
+        if lon != 360.:
+            lonfind = np.intersect1d(np.where(lon<lori), np.where(lon>=lole))
+        else:
+            lonfind = np.intersect1d(np.where(lon<=lori), np.where(lon>=lole))
+        findindex = np.intersect1d(latfind,lonfind)
+        
+        rowind = iloc*np.ones_like(findindex)
+        values = np.ones_like(findindex,dtype=np.float)
+        colind = np.array(findindex)
+        # update values
+        horcof = horcof + sparse.csr_matrix((values, (rowind, colind)), shape=(len(latitude),len(xsipix))) 
+
     return horcof
 
 

@@ -204,7 +204,7 @@ def read3dmodelfile(modelfile):
                 for val in arr: coef[idummy-1].append(float(val))
     # Store the variables
     numvar=0; varstr=np.zeros(nmodkern, dtype='U40')
-    ivarkern=np.zeros(nmodkern)
+    ivarkern=np.zeros(nmodkern,dtype=np.int)
     for ii in np.arange(nmodkern):
         string=desckern[ii]
         #pdb.set_trace()
