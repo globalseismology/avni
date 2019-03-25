@@ -6,8 +6,11 @@ from builtins import *
 import scipy.constants
 import pdb    #for the debugger pdb.set_trace()
 import pkgutil
-import pint # For SI units
-ureg = pint.UnitRegistry()
+
+### Add units like this in future releases
+#import pint # For SI units
+#ureg = pint.UnitRegistry()
+#R = 6371000. * ureg.m    #Radius of the Earth in m
 
 """
 download files
@@ -23,8 +26,8 @@ configfolder = 'config'
 """
 Mapping constants
 """
-geoco = 0.993277    #correction for geographic-geocentric conversion
-R = 6371000. * ureg.m    #Radius of the Earth in m
+planetconstants = 'planets.ini'
+planetpreferred = 'Earth'
 
 """
 Color scales
@@ -232,5 +235,11 @@ colorscale = {
 	 following Lekic and Romanowicz, EPSL, 2011',\
 'RGB': [ (0.89411765, 0.10588235, 0.10980392), (0.77254902, 0.49411765, 0.10980392),
          (0.50588235, 0.2627451 , 0.10980392), (0.56470588, 0.54901961, 0.54509804),
-         (0.37254902, 0.59607843, 0.18039216), (0.21960784, 0.49411765, 0.7254902)]}
+         (0.37254902, 0.59607843, 0.18039216), (0.21960784, 0.49411765, 0.7254902)]},
+'rem3d-vote': {'name': 'rem3d-vote','description': \
+	'REM3D color scale for voting of tomographic models \
+	 following Lekic and Romanowicz, EPSL, 2011',\
+'RGB': [(0.2265625 , 0.33203125, 0.6328125 ),(0.25390625, 0.47265625, 0.7265625 ),
+        (0.44140625, 0.80078125, 0.859375  ),(0.94921875, 0.91015625, 0.24609375),
+        (0.9453125 , 0.57421875, 0.1875    ),(0.91796875, 0.13671875, 0.1796875 )]}
 }

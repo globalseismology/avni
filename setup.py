@@ -86,7 +86,7 @@ else:
 
 f90_dir='rem3d/f2py'
 packagelist=['rem3d']
-#for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
+for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
 
 
 # write short description
@@ -152,7 +152,7 @@ metadata = dict(name = 'rem3d',
                 install_requires=['fortranformat','joblib','progressbar2',
                 'requests','future','msgpack','argparse','configobj','pint'],
                 data_files=[('rem3d', ['README.md']),
-                ('rem3d/config',['rem3d/config/attributes.ini'])],
+                ('rem3d/config',['rem3d/config/attributes.ini','rem3d/config/planets.ini'])],
                 keywords = ['earth-science','earth-observation','earthquake',
                 'earth','earthquake-data','geology','geophysics',
                 'geophysical-inversions','seismology','seismic-inversion',

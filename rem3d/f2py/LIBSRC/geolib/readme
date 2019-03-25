@@ -1,0 +1,26 @@
+# First change the subroutines to contain f2py comments on the input and output variables e.g. in delazgc.f
+#Cf2py intent(in) eplat,eplong,stlat,stlong
+#Cf2py intent(out) delta,azep,azst
+
+
+# create the module that is in PYTHONPATH
+set MYBIN=~/mybin/F2PY
+set outbin=geolib
+# creat statis libraries for LD_LIBRARY_PATH
+set MYLIB=~/mylib/F2PY
+set outlib=libgeo.so
+# Then compile using the following
+gfortran -shared -O2 -ffixed-line-length-none -o $MYLIB/$outlib -fPIC ddelazgc.f
+
+f2py -c --fcompiler=gfortran -L$MYLIB -I. -lgeo -m $outbin delazgc.f
+mv -f $outbin.so $MYBIN
+
+
+#f2py -c NSW/LIBSRC/geolib/delazgc.f -c NSW/LIBSRC/geolib/ddelazgc.f -m geolib
+#f2py -c INV/src/drspln.f INV/src/drsple.f -m invlib
+  
+
+# Check if the variables are correct using:
+# ipython
+# import geolib as gl
+# print gl.ddelazgc.__doc__

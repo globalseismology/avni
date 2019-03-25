@@ -12,18 +12,12 @@ import codecs,json #printing output
 from joblib import Parallel, delayed
 import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
-from netCDF4 import Dataset as netcdf #reading netcdf files
 import scipy.interpolate as spint
 import scipy.spatial.qhull as qhull
-import itertools
-import time
-import progressbar
-import pint # For SI units
-ureg = pint.UnitRegistry()
 
 ############################### PLOTTING ROUTINES ################################        
-from .trigd import atand,tand
-from .f2py import delazgc # geolib library from NSW
+from .tools.trigd import atand,tand
+from .f2py import ddelazgc # geolib library from NSW
 from . import constants
 ###############################
         
@@ -67,13 +61,13 @@ def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
         elon=eplon
         slat=atand(geoco*tand(stlat))
         slon=stlon
-        delta,azep,azst = delazgc(elat,elon,slat,slon)    
+        delta,azep,azst = ddelazgc(elat,elon,slat,slon)    
     else:    
         raise ValueError("get_distaz only takes list or floats")
     return delta,azep,azst
 
 def delazgc_helper(args):
-    return delazgc(*args)
+    return ddelazgc(*args)
     
 def cart2spher(xyz):
     """Convert from cartesian to spherical coordinates
@@ -99,13 +93,30 @@ def spher2cart(rlatlon):
     xyz[:,2] = rlatlon[:,0]*np.cos(np.pi/180.*colatitude)
     return xyz 
 
+def polar2cart(rtheta):
+    """
+    Convert from polar to cartesian coordinates
+    """
+    xy = np.zeros(rtheta.shape)
+    xy[:,0] = rtheta[:,0]*np.cos(np.pi/180.*rtheta[:,1])
+    xy[:,1] = rtheta[:,0]*np.sin(np.pi/180.*rtheta[:,1])
+    return xy
+
+def cart2polar(xy):
+    """
+    Convert from polar to cartesian coordinates
+    """
+    rtheta = np.zeros(xy.shape)
+    rtheta[:,0] = np.sqrt(np.power(xy[:,1],2)+np.power(xy[:,1],2))
+    rtheta[:,1] = np.arctan2(xy[:,1],xy[:,0]) * 180 / np.pi
+    return xy
  
 def getDestinationLatLong(lat,lng,azimuth,distance):
     '''returns the lat an long of destination point 
     given the start lat, long, aziuth, and distance (in meters)'''
     R = constants.R #Radius of the Earth in m
     brng = radians(azimuth) #Bearing is degrees converted to radians.
-    d = distance * ureg.m #Distance m 
+    d = distance #Distance m 
     lat1 = radians(lat) #Current dd lat point converted to radians
     lon1 = radians(lng) #Current dd long point converted to radians
     lat2 = asin(sin(lat1) * cos(d/R) + cos(lat1)* sin(d/R)* cos(brng))
@@ -160,11 +171,10 @@ http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-
     bary = np.einsum('njk,nk->nj', temp[:, :d, :], delta)
     return vertices, np.hstack((bary, 1 - bary.sum(axis=1, keepdims=True)))
 
-  
 def interpolate(values, vtx, wts, fill_value=np.nan):
     """An interpolated values is computed for that grid point, using the barycentric coordinates, and the values of the function at the vertices of the enclosing simplex. From:
-    http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids"""
+    http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids"""    
     ret = np.einsum('nj,nj->n', np.take(values, vtx), wts)
     ret[np.any(wts < 0, axis=1)] = fill_value
-    return ret    
-
+    return ret
+ 
