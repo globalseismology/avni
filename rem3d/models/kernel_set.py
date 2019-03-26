@@ -92,9 +92,9 @@ class kernel_set(object):
                     radial[variable].append(radial_basis(name=radker, type = 'dirac delta', metadata=metadata))
                 elif 'boxcar' in radker:
                     found = True
-                    range = radker.split(',')[-1]
-                    metadata['depthtop'] = float(range.split('-')[0])
-                    metadata['depthbottom'] = float(range.split('-')[1].split('km')[0])
+                    depthrange = radker.split(',')[-1]
+                    metadata['depthtop'] = float(depthrange.split('-')[0])
+                    metadata['depthbottom'] = float(depthrange.split('-')[1].split('km')[0])
                     radial[variable].append(radial_basis(name=radker, type = 'boxcar', metadata=metadata))
                 if not found: raise ValueError('information not found for '+radker)
         self.data['radial_basis']=radial
