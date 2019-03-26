@@ -123,11 +123,11 @@ class radial_basis(object):
         elif self.type in ['delta','dirac delta']:     
             vercof = np.ones(len(depths))
             dvercof = np.zeros(len(depths))
-        elif self.type in ['delta','dirac delta']: 
+        elif self.type in ['boxcar','constant']: 
             rtop = constants.R/1000. - self.metadata['depthtop']  
             rbottom = constants.R/1000. - self.metadata['depthbottom']  
             rquery = constants.R/1000. - depths_in_km
-            vercof, dvercof = tools.eval_polynomial(depths_in_km,[rbottom,rtop],constants.R/1000.,types = ['CONSTANT'])
+            vercof, dvercof = tools.eval_polynomial(rquery,[rbottom,rtop],constants.R/1000.,types = ['CONSTANT'])
         else:
             raise TypeError('metadata type not defined in eval_radial %s' % self.type)
             
