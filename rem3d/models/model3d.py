@@ -678,13 +678,13 @@ class model3d(object):
         return projection
 
 
-    def getprojtimesmodel(self,projection,variable,depth,realization=0):
+    def getprojtimesmodel(self,projection,variable,depth,resolution=0,realization=0):
         """
         Projection matrix multiplied by model ensemble. Choses the nearest depth available for the projection.
         """    
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
-        modelarr = self.coeff2modelarr(realization=realization)
+        modelarr = self.coeff2modelarr(resolution=resolution,realization=realization)
         # Select appropriate arrays from projection matrix, read from file
         projarr = projection['projarr']; refstrarr = projection['refstrarr']; deptharr = projection['deptharr']  
     
@@ -719,7 +719,7 @@ class model3d(object):
         return
 
 
-    def plotslices(self,lateral_basis='pixel1',dbs_path='~/dbs',x=0,percent_or_km='%',colormin = -6.,colormax=6.,depth=None):
+    def plotslices(self,lateral_basis='pixel1',dbs_path='~/dbs',x=0,percent_or_km='%',colormin = -6.,colormax=6.,depth=None,resolution=0,realization=0):
         """
         Plots interactively a model slice of a variable at a given depth till an 
         invalid depth is input by the user
@@ -734,7 +734,7 @@ class model3d(object):
                                                    instead of interactive input
         """    
         # Select appropriate modelarray m
-        modelarr = self.coeff2modelarr() # convert to modelarr of d = G*m
+        modelarr = self.coeff2modelarr(resolution=resolution,realization=realization) # convert to modelarr of d = G*m
     
         # Select appropriate arrays from projection matrix, read from file
         projection = self.readprojmatrix(lateral_basis)
