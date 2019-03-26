@@ -22,6 +22,7 @@ import h5py
 import xarray as xr
 import traceback
 import pandas as pd
+from six import string_types # to check if variable is string using isinstance
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools   
@@ -404,7 +405,7 @@ class model3d(object):
                       exactly using kernel_set instance.
         """           
             
-    def coeff2modelarr(self,resolution=[0],realization=0):
+    def coeff2modelarr(self,resolution=0,realization=0):
         """
         Convert the coeffiecient matrix from the file to a sparse model array. Add
         up all the resolutions if a list is provided.
@@ -419,7 +420,9 @@ class model3d(object):
         
         if isinstance(resolution, (list,tuple,np.ndarray)):
             resolution = np.asarray(resolution)
-        else:
+        elif isinstance(resolution, int):
+            resolution = np.asarray([resolution])
+        else:        
             raise TypeError('resolution must be function or array, not %s' % type(resolution))
             
         # Loop over resolution levels, adding coefficients 
@@ -605,7 +608,7 @@ class model3d(object):
         projection['model']=model; projection['param']=lateral_basis         
         return projection
 
-    def getprojmatrix(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5',resolution=0):
+    def projection(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5',resolution=0):
         """
         Get the projection matrix from a lateral basis to another and for particular depths  
         """    
@@ -634,28 +637,39 @@ class model3d(object):
         elif isinstance(latitude, int):
             depth_in_km = np.asarray([float(depth_in_km)])
         else:
-            raise TypeError('depth_in_km must be list or tuple, not %s' % type(depth_in_km))            
+            raise TypeError('depth_in_km must be list or tuple, not %s' % type(depth_in_km))  
+        if isinstance(parameter, (list,tuple,np.ndarray)):
+            parameter = np.asarray(parameter)
+        elif isinstance(parameter,string_types):
+            parameter = np.asarray([parameter])
+        else:
+            raise TypeError('parameter must be list or tuple, not %s' % type(parameter))            
+        assert(len(latitude)==len(longitude)==len(depth_in_km)),'latitude, longitude and depth_in_km should be of same length' 
+                       
         assert(len(latitude)==len(longitude)==len(depth_in_km)),'latitude, longitude and depth_in_km should be of same length'       
         
         # Get the radial projection file
         kernel = self.metadata['resolution_'+str(resolution)]['kernel_set']
 
-        for iloc in range(len(latitude)):
-            lat = latitude[iloc]
-            lon = longitude[iloc]
-            dep = depth_in_km[iloc]
-            if iloc == 0:
-                projarr = kernel.getprojection(lat,lon,dep,parameter)
-            else:
-                projarr = sparse.vstack([projarr,kernel.getprojection(lat,lon,dep,parameter)])
+        # loop through parameter and append the projection for each location
+        refstrarr=[]
+        for param in parameter:
+            for iloc in range(len(latitude)):
+                lat = latitude[iloc]
+                lon = longitude[iloc]
+                dep = depth_in_km[iloc]
+                if iloc == 0:
+                    projarr = kernel.getprojection(lat,lon,dep,param)
+                else:
+                    projarr = sparse.vstack([projarr,kernel.getprojection(lat,lon,dep,param)])
+                refstrarr.append(param)
         
-        
-     
         # Write to a dictionary
         projection = {}
         projection['projarr']=projarr 
         projection['ndp']=len(depth_in_km)
-        
+        projection['deptharr']=depth_in_km
+        projection['refstrarr']=np.array(refstrarr)
 #         projection['ndp']=ndp; projection['npx']=npx; projection['nhorcum']=nhorcum; 
 #         projection['neval']=neval; projection['deptharr']=deptharr; projection['refstrarr']=refstrarr
 #         projection['xlat']=xlat; projection['xlon']=xlon; projection['area']=area

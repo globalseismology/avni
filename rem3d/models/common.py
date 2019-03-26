@@ -713,7 +713,6 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         if i == nrad_krnl: 
             #read number of horizontal parameterizations
             nhpar = int(line.strip().split()[-1])
-            nhpar = line.strip().split()[-1]
             break
             
     # check that information on variables in ascii file exists in setup.cfg
@@ -816,7 +815,11 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         #-------------------------------------------------------------------------
         av_attrs = {}
         for keys in parser['parameters'][variable].keys():
-            av_attrs[keys] = parser['parameters'][variable][keys].decode('utf-8')
+            if (sys.version_info > (3, 0)):
+                av_attrs[keys] = parser['parameters'][variable][keys]
+            else:
+                av_attrs[keys] = parser['parameters'][variable][keys].decode('utf-8')
+            
         # read the 1D model if any of the reference values are not defined
         av_attrs['refmodel'] = parser['metadata']['refmodel']
         
@@ -851,7 +854,10 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     #Add overall attributes
     attrs = {}
     for key in parser['metadata'].keys():
-        attrs[key] = parser['metadata'][key].decode('utf-8')
+        if (sys.version_info > (3, 0)):
+            attrs[key] = parser['metadata'][key]
+        else:
+            attrs[key] = parser['metadata'][key].decode('utf-8')
     ds.attrs = attrs
  
     # write to netcdf
