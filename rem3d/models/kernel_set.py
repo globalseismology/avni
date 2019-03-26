@@ -46,7 +46,7 @@ class kernel_set(object):
         
     def extract_lateral(self,dict):
         lateral=[]
-        for ihor in range(self.metadata['nhorpar']):
+        for ihor in np.arange(self.metadata['nhorpar']):
             type = self.metadata['typehpar'][ihor]
             metadata = {}
             metadata['ncoefhor']=dict['ncoefhor'][ihor]
@@ -68,18 +68,18 @@ class kernel_set(object):
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
         for variable in dict['varstr']: #loop over all variables, grabbing
             radial[variable]=[]
-            findrad = np.array([(ii, dict['desckern'][ii]) for ii in range(len(dict['desckern'])) if variable in dict['desckern'][ii]],dtype=dt)
+            findrad = np.array([(ii, dict['desckern'][ii]) for ii in np.arange(len(dict['desckern'])) if variable in dict['desckern'][ii]],dtype=dt)
             metadata = {};found = False
-            types = np.unique([findrad['kernel'][ii].split(',')[-2].strip() for ii in range(len(findrad))])
+            types = np.unique([findrad['kernel'][ii].split(',')[-2].strip() for ii in np.arange(len(findrad))])
             assert(len(types) == 1),'only one type is allowed'
             
-            for jj in range(len(findrad)):
+            for jj in np.arange(len(findrad)):
                 radker = findrad['kernel'][jj]
                 metadata = {}; 
                 found = False
                 if 'variable splines' in radker or 'vbspl' in radker:
                     found = True
-                    metadata['knots'] = [float(findrad['kernel'][ii].split(',')[-1].split('km')[0]) for ii in range(len(findrad))]
+                    metadata['knots'] = [float(findrad['kernel'][ii].split(',')[-1].split('km')[0]) for ii in np.arange(len(findrad))]
                     metadata['index'] = jj
                     radial[variable].append(radial_basis(name=radker, type = 'variable splines', metadata=metadata))
                     
@@ -88,6 +88,12 @@ class kernel_set(object):
                     metadata['info'] = radker.split(',')[-1]
                     metadata['index'] = 0
                     radial[variable].append(radial_basis(name=radker, type = 'dirac delta', metadata=metadata))
+                elif 'boxcar' in radker:
+                    found = True
+                    range = radker.split(',')[-1]
+                    metadata['depthtop'] = float(range.split('-')[0])
+                    metadata['depthbottom'] = float(range.split('-')[1].split('km')[0])
+                    radial[variable].append(radial_basis(name=radker, type = 'boxcar', metadata=metadata))
                 if not found: raise ValueError('information not found for '+radker)
         self.data['radial_basis']=radial
         
@@ -96,11 +102,14 @@ class kernel_set(object):
         
         # select the radial kernels for this parameter
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
-        findrad = np.array([(ii, self.metadata['desckern'][ii]) for ii in range(len(self.metadata['desckern'])) if parameter in self.metadata['desckern'][ii]],dtype=dt)
+        findrad = np.array([(ii, self.metadata['desckern'][ii]) for ii in np.arange(len(self.metadata['desckern'])) if parameter in self.metadata['desckern'][ii]],dtype=dt)
 
         # select corresponding lateral bases
         lateral_basis = self.data['lateral_basis']
-        lateral_select = lateral_basis[self.metadata['ihorpar']-1][findrad['index']]
+        try:
+            lateral_select = lateral_basis[self.metadata['ihorpar']-1][findrad['index']]
+        except:
+            raise ValueError('ihorpar needs to be defined for a kernel set. The HPAR for each radial kernel')
  
         #make sure only one variable is selected based on parameter input
         variables = np.unique(self.metadata['varstr'][self.metadata['ivarkern']-1][findrad['index']])
@@ -111,7 +120,7 @@ class kernel_set(object):
         #initialize a projection matrix
         proj = sparse.csr_matrix((1,self.metadata['ncoefcum'][-1]))
         # loop over all radial kernels that belong to this parameter and add up
-        for ii in range(len(radial_select)):
+        for ii in np.arange(len(radial_select)):
             # start and end of indices to write to
             indend = self.metadata['ncoefcum'][findrad['index'][ii]]-1
             if findrad['index'][ii] == 0:
