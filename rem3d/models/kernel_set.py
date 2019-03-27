@@ -90,7 +90,7 @@ class kernel_set(object):
                     found = True
                     metadata['info'] = radker.split(',')[-1]
                     radial[variable].append(radial_basis(name=radker, type = 'dirac delta', metadata=metadata))
-                elif 'boxcar' in radker:
+                elif 'boxcar' in radker or 'constant' in radker:
                     found = True
                     depthrange = radker.split(',')[-1]
                     metadata['depthtop'] = float(depthrange.split('-')[0])
@@ -136,7 +136,6 @@ class kernel_set(object):
             vercof, dvercof = radial_select[ii].eval_radial(depth_in_km)
             proj=proj+sparse.csr_matrix( (horcof.data*vercof,horcof.indices+indstart,horcof.indptr), shape=(1,self.metadata['ncoefcum'][-1]))
         return proj
-        
-        
+                
         
         

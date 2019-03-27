@@ -693,7 +693,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     if tree == None and isinstance(model,string_types):
         treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.stride'+str(stride)+'.pkl'
         ncfile = dbs_path+'/'+model
-        tree = tools.tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=6371.)
+        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=6371.)
         #read values
         if os.path.isfile(ncfile):
             f = xr.open_dataset(ncfile)
@@ -717,11 +717,8 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     qpts_lng = np.linspace(lng1,lng2,len(coords))
     qpts_lat = np.linspace(lat1,lat2,len(coords))
     qpts_rad = np.linspace(6371.0,6371.0,len(coords))
-    #qpts_rlatlon = np.array(zip(qpts_rad,qpts_lat,qpts_lng))
-    qpts_rlatlon = np.column_stack((qpts_rad,qpts_lat,qpts_lng))
-    qpts_xyz = mapping.spher2cart(qpts_rlatlon)
-    d,inds = tree.query(qpts_xyz,k=k)
-    valselect = vals[inds]
+    # get the interpolation
+    valselect = tools.querytree3D(tree,qpts_lat,qpts_lng,qpts_rad,vals,k=k)
     
     #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
     return valselect,model,tree
@@ -762,7 +759,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
         else:
             raise ValueError("Error: Could not find file "+ncfile)
         treefile = dbs_path+'/'+ds.attrs['kerstr']+'.KDTree.3D.pkl'
-        tree = tools.tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
+        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
         model = ds.variables[parameter]      
         ds.close() #close netcdf file
         vals = model.data.flatten(order='C')
@@ -780,20 +777,15 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     if(len(coords) != numevalx):
         raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
     evalpoints=np.column_stack((radevalarr[0]*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
-    
     for radius in radevalarr[1:]:
         pointstemp = np.column_stack((radius*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
         evalpoints = np.row_stack((evalpoints,pointstemp))
     
-    coordstack = mapping.spher2cart(evalpoints)
-    d,inds = tree.query(coordstack,k=k)
-    npts_surf = coords.shape[0]
-    if k == 1:
-        tomovals = vals[inds]
-    else:
-        w = 1.0 / d**2
-        tomovals = np.sum(w * vals[inds], axis = 1)/ np.sum(w, axis=1)
-    xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')     
+    # get the interpolation
+    npts_surf = len(coords)
+    tomovals = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,k=k)
+    xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')  
+    
     return xsec.T,model,tree
 
 def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalx=50,numevalz=50,k=1,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):

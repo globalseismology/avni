@@ -815,7 +815,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         #-------------------------------------------------------------------------
         av_attrs = {}
         for keys in parser['parameters'][variable].keys():
-            if (sys.version_info > (3, 0)):
+            if (sys.version_info[:2] > (3, 0)):
                 av_attrs[keys] = parser['parameters'][variable][keys]
             else:
                 av_attrs[keys] = parser['parameters'][variable][keys].decode('utf-8')
@@ -854,7 +854,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     #Add overall attributes
     attrs = {}
     for key in parser['metadata'].keys():
-        if (sys.version_info > (3, 0)):
+        if (sys.version_info[:2] > (3, 0)):
             attrs[key] = parser['metadata'][key]
         else:
             attrs[key] = parser['metadata'][key].decode('utf-8')

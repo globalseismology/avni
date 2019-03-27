@@ -46,12 +46,10 @@ def creation_date(path_to_file):
         return datetime.utcfromtimestamp(os.path.getctime(path_to_file))
     else:
         stat = os.stat(path_to_file)
-        try:
-            return datetime.utcfromtimestamp(stat.st_birthtime)
-        except AttributeError:
-            # We're probably on Linux. No easy way to get creation dates here,
-            # so we'll settle for when its content was last modified.
-            return datetime.utcfromtimestamp(stat.st_mtime)
+        # We're probably on Linux. No easy way to get creation dates here,
+        # so we'll settle for when its content was last modified.
+    return datetime.utcfromtimestamp(stat.st_mtime)
+
 
 def update_file(file):
     """
@@ -80,7 +78,7 @@ def update_file(file):
         print(".... Downloading "+file+" from "+url+" to "+localfile)
         r = requests.get(url, allow_redirects=True)
         open(localfile, 'wb').write(r.content)
-
+        print(".... Download completed")
     return
 
     

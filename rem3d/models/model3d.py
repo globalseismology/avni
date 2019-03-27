@@ -23,10 +23,12 @@ import xarray as xr
 import traceback
 import pandas as pd
 from six import string_types # to check if variable is string using isinstance
+import time
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools   
 from .. import plots 
+from .. import constants
 from .common import read3dmodelfile
 from .kernel_set import kernel_set
 #######################################################################################
@@ -392,7 +394,7 @@ class model3d(object):
         hf.close()
         print('... written to '+outfile)
 
-    def evaluate_at_point(self,latitude,longitude,depth,parameter='vs',interpolated=True): 
+    def evaluate_at_point(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None): 
         """
         Evaluate the mode at a location (latitude, longitude,depth)
         
@@ -404,7 +406,80 @@ class model3d(object):
         interpolated: If True, use KDTree from a predefined grid. If False, evaluated 
                       exactly using kernel_set instance.
         """           
+        if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
+        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        
+        if isinstance(resolution, (list,tuple,np.ndarray)):
+            resolution = np.asarray(resolution)
+        elif isinstance(resolution, int):
+            resolution = np.asarray([resolution])
+        else:        
+            raise TypeError('resolution must be function or array, not %s' % type(resolution))
+        if isinstance(latitude, (list,tuple,np.ndarray)):
+            latitude = np.asarray(latitude)
+        elif isinstance(latitude, float):
+            latitude = np.asarray([latitude])
+        elif isinstance(latitude, int):
+            latitude = np.asarray([float(latitude)])
+        else:
+            raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
+        if isinstance(longitude, (list,tuple,np.ndarray)):
+            longitude = np.asarray(longitude)
+        elif isinstance(longitude, float):
+            longitude = np.asarray([longitude])
+        elif isinstance(longitude, int):
+            longitude = np.asarray([float(longitude)])
+        else:
+            raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
+        if isinstance(depth_in_km, (list,tuple,np.ndarray)):
+            depth_in_km = np.asarray(depth_in_km)
+        elif isinstance(depth_in_km, float):
+            depth_in_km = np.asarray([depth_in_km])
+        elif isinstance(latitude, int):
+            depth_in_km = np.asarray([float(depth_in_km)])
+        else:
+            raise TypeError('depth_in_km must be list or tuple, not %s' % type(depth_in_km))  
             
+        #compute for each resolution
+        for res in resolution:
+            if not interpolated:
+                # get the projection matrix
+                project = self.projection(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res)
+                modelarr = self.coeff2modelarr(resolution=res,realization=realization)
+                predsparse = project['projarr']*modelarr
+                values = predsparse.data
+                
+            else:
+                if tree==None:
+                    kerstr = self.metadata['resolution_'+str(res)]['kerstr']
+                    treefile = kerstr+'.KDTree.3D.pkl'
+                    #check that the horizontal param is pixel based
+
+                    kernel_set = self.metadata['resolution_'+str(res)]['kernel_set']
+                    xlopix = self.metadata['resolution_'+str(res)]['xlopix'][0]
+                    xlapix = self.metadata['resolution_'+str(res)]['xlapix'][0]
+                    depths = self.getpixeldepths(res,parameter)
+                    depth_in_km = np.array([])
+                    for depth in depths: depth_in_km = np.append(depth_in_km,np.ones_like(xlopix)*depth)
+                    xlapix = np.repeat(xlapix,len(depths))
+                    xlapix = np.repeat(xlopix,len(depths))
+                    tree = tools.tree3D(treefile,xlapix,xlapix,constants.R/1000. - depth_in_km)
+                # get the interpolation
+                values = tools.querytree3D(tree,latitude,longitude,depth_in_km,qpts_rad,vals,k=k)
+                
+        return values
+
+    def getpixeldepths(self,resolution,parameter):
+        typehpar = self.metadata['resolution_'+str(resolution)]['typehpar']
+        assert(len(typehpar) == 1),'only one type of horizontal parameterization allowed'
+        for type in typehpar: assert(type == 'PIXELS'),'for interpolation with tree3D'
+        kernel_set = self.metadata['resolution_'+str(resolution)]['kernel_set']
+        kernel_param = kernel_set.data['radial_basis'][parameter]
+        depths = []
+        for radker in kernel_param:
+            depths.append((radker.metadata['depthtop']+radker.metadata['depthbottom'])/2.)
+        return np.asarray(depths)
+        
     def coeff2modelarr(self,resolution=0,realization=0):
         """
         Convert the coeffiecient matrix from the file to a sparse model array. Add
@@ -429,19 +504,25 @@ class model3d(object):
         for ir in range(len(resolution)): 
             try:
                 coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef']
-            # Loop over all kernel basis
-                for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])): 
-                    # number of coefficients for this radial kernel
-                    ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
-                    # first radial kernel and first tesselation level
-                    if ii == 0 and ir == 0: 
-                        modelarr = coefficients.iloc[ii][:ncoef].values                        
-                    else:
-                        modelarr=np.append(modelarr,coefficients.iloc[ii][:ncoef].values) 
-            except AttributeError: # 
+                #if modelarr is already made use it
+                try:
+                    modelarr = self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr']
+                except:
+                    # Loop over all kernel basis
+                    for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])): 
+                        # number of coefficients for this radial kernel
+                        ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
+                        # first radial kernel and first tesselation level
+                        if ii == 0 and ir == 0: 
+                            modelarr = coefficients.iloc[ii][:ncoef]                        
+                        else:
+                            modelarr = modelarr.append(coefficients.iloc[ii][:ncoef],ignore_index=True) 
+                    # Convert to sparse matrix
+                    # take the transpose to make dot products easy 
+                    modelarr = sparse.csr_matrix(modelarr).transpose() 
+                    self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr'] = modelarr 
+            except AttributeError: 
                 raise ValueError('resolution '+str(resolution[ir])+' and realization '+str(realization)+' not filled up yet.')
-        modelarr = sparse.csr_matrix(modelarr) # Convert to sparse matrix
-        modelarr = modelarr.T # take the transpose to make dot products easy 
         return modelarr
         
     def getradialattributes(self,parserfile='attributes.ini'):

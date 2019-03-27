@@ -9,6 +9,7 @@ import numpy as np
 import xarray as xr
 from scipy.spatial import cKDTree
 import pickle
+import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .trigd import sind
@@ -16,7 +17,31 @@ from ..mapping import spher2cart
 from .. import constants
 #######################################################################################
 
-def tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'],stride=None, radius_in_km = None):
+def tree3D(treefile,latitude,longitude,radius_in_km):
+    #Build the tree if none is provided
+    if os.path.isfile(treefile):
+        print('... Reading KDtree file '+treefile)
+        tree = pickle.load(open(treefile,'r'))
+    else:
+        print('... KDtree file '+treefile+' not found for interpolations. Building it')
+        rlatlon = np.column_stack((radius_in_km.flatten(order='C'),latitude.flatten(order='C'), longitude.flatten(order='C')))
+        xyz = spher2cart(rlatlon)
+        tree = cKDTree(xyz)
+        pickle.dump(tree,open(treefile,'wb'))
+    return tree
+
+def querytree3D(tree,latitude,longitude,radius_in_km,values,k=1):    
+    evalpoints = np.column_stack((radius_in_km,latitude,longitude))
+    coordstack = spher2cart(evalpoints)
+    d,inds = tree.query(coordstack,k=k)
+    if k == 1:
+        interp = values[inds]
+    else:
+        w = 1.0 / d**2
+        interp = np.sum(w * values[inds], axis = 1)/ np.sum(w, axis=1)
+    return interp 
+    
+def ncfile2tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'],stride=None, radius_in_km = None):
     """
     Read or write a pickle interpolant with KDTree
 
@@ -54,17 +79,9 @@ def tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'],stride
         rad = xr.IndexVariable('rad',[radius_in_km])
     f.close() #close netcdf file
     
-    #Build the tree if none is provided
-    if os.path.isfile(treefile):
-        print('... Reading KDtree file '+treefile)
-        tree = pickle.load(open(treefile,'r'))
-    else:
-        print('... KDtree file '+treefile+' not found for interpolations. Building it')
-        gridlat, gridrad, gridlon = np.meshgrid(lat.data,rad.data,lon.data)
-        rlatlon = np.column_stack((gridrad.flatten(order='C'),gridlat.flatten(order='C'), gridlon.flatten(order='C')))
-        xyz = spher2cart(rlatlon)
-        tree = cKDTree(xyz)
-        pickle.dump(tree,open(treefile,'wb'))
+    # get the tree 
+    gridlat, gridrad, gridlon = np.meshgrid(lat.data,rad.data,lon.data)
+    tree = tree3D(treefile,gridlat,gridlon,gridrad)
     return tree
 
 
