@@ -56,7 +56,6 @@ def writeepixfile(filename,epixarr,headers=['#BASIS:PIX','#FORMAT:50']):
 
     filename : Name of the file containing four columns
               (latitude, longitude, pixel_size, value)
-
     """
     #combine headers
     header=''
@@ -409,8 +408,6 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     print('... read '+str(np.sum(epix_lengths))+' radial structure kernels of '+str(len(string))+' variables: \n'+'\n'.join(string))
     f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(np.sum(epix_lengths)))
 
-    n_hpar = 1 #default is a single horizontal parameterization for all parameters
-
     stru_indx = []
     stru_list = []
     lats = []
@@ -534,25 +531,15 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             px_w = pxs[i][0]
 
         shape = (int(180.0/px_w),int(360.0/px_w))
-        lats_arr = np.reshape(lats,shape,order='F')
-        lons_arr = np.reshape(lons,shape,order='F')
-        px_w_arr = np.reshape(pxs,shape,order='F')
+        f_out.write(u'HPAR   {}: PIXELS,  {:3.2f} X {:3.2f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats[i])))
 
-        lats_ = lats_arr.flatten()
-        lons_ = lons_arr.flatten()
-        pxs_ = px_w_arr.flatten()
-
-        f_out.write(u'HPAR   {}: PIXELS,  {:3.2f} X {:3.2f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats_)))
-
-        assert (np.all(sorted(np.unique(lons_))==np.unique(lons_)))
-        assert (np.all(sorted(np.unique(lats_))==np.unique(lats_)))
-        for j in range(0,len(lats_)):
-            lon_here = lons_[j]
-            lat_here = lats_[j]
-            px_here = pxs_[j]
-
+        assert (np.all(sorted(np.unique(lons))==np.unique(lons)))
+        assert (np.all(sorted(np.unique(lats))==np.unique(lats)))
+        for j in range(len(lats[i])):
+            lon_here = lons[i][j]
+            lat_here = lats[i][j]
+            px_here = pxs[i][j]
             f_out.write(u'{:6.2f} {:6.2f} {:6.2f}\n'.format(lon_here,lat_here, px_here))
-    
     
     if not onlyheaders:
         # write coefficients
@@ -598,9 +585,6 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 if ref_dict[parameter]['ifremav'][j] == 1:
                     coefs += refs_dict[parameter]['average'][j]
                     print('... adding average back to parameter '+parameter+' # '+str(j))
-
-                coefs_arr = np.reshape(coefs,shape,order='F')
-                coefs = coefs_arr.flatten()
                 f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(k,px_w))
                 f_out.write(line.write(coefs)+u'\n')
                 k += 1
@@ -641,7 +625,11 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     try: #attempt buffer
         asciioutput.seek(0)
     except:
-        if outfile == None: outfile = asciioutput+'.nc4'
+        if outfile == None: 
+            try:
+                outfile = asciioutput.split('.ascii')[0]+'.nc4'
+            except:
+                outfile = asciioutput+'.nc4'
         asciioutput = open(asciioutput,'r')
         
     #read header
@@ -718,7 +706,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     # check that information on variables in ascii file exists in setup.cfg
     for var in variables: assert(var in parser['parameters'].keys()),var+' not found as shortname in '+setup_file
 
-    for i in range(0,nhpar):
+    for i in range(nhpar):
 
         lons = []
         lats = []
@@ -742,8 +730,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
             lons.append(float(line.strip().split()[0]))
             lats.append(float(line.strip().split()[1]))
             pxwd.append(float(line.strip().split()[2]))
-
-    hpar_list.append([lons,lats,pxwd])
+        
+        hpar_list.append([lons,lats,pxwd])
 
     #read coefficients
     for variable in variables:
@@ -781,19 +769,26 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
 
             model_dict[variable]['layers'][i] = layer_coefs
 
+    ifread1D = True
+    try: # try reading the 1D file in card format 
+        ref1d = reference1D(parser['metadata']['refmodel'])
+    except:
+        ifread1D = False
+            
     #open xarray dataset
     ds = xr.Dataset()
 
     #make DataArrays for each variable, and add to the dataset
+    area = None # calculate area the first time around
     for variable in variables:
         hpar_idx = model_dict[variable]['hpar_idx'] 
-        pxw = hpar_list[hpar_idx][2][0]
-        print(variable,': PXW', pxw)
+        lon = np.unique(hpar_list[hpar_idx][0])
+        lat = np.unique(hpar_list[hpar_idx][1])
+        pxw = np.unique(hpar_list[hpar_idx][2])
+        assert(len(pxw)==1),'only 1 pixel size allowed'
+        print(variable,': PXW', pxw[0])
 
         #create dims arrays
-        lon = np.arange((pxw/2.),360.,pxw)
-        lat = np.arange(-90.+(pxw/2.),90,pxw)
-
         stru_idx = model_dict[variable]['rpar_idx']
         
         if stru_idx is not None:
@@ -803,13 +798,13 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
                                       coords=[dep,lat,lon])
             for i,layer in enumerate(model_dict[variable]['layers']):
                 data_array[i,:,:] = np.reshape(model_dict[variable]['layers'][layer],
-                                    (len(lat),len(lon)),order='C')
+                                    (len(lat),len(lon)),order='F')
         else:
             data_array = xr.DataArray(np.zeros((len(lat),len(lon))),
                                       dims = ['latitude','longitude'],
                                       coords = [lat,lon])
             data_array[:,:] = np.reshape(model_dict[variable]['layers'][0],
-                                    (len(lat),len(lon)),order='C')
+                                    (len(lat),len(lon)),order='F')
         #-------------------------------------------------------------------------
         #add reference values at each depth as metadata to the Data_Array
         #-------------------------------------------------------------------------
@@ -823,29 +818,25 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         # read the 1D model if any of the reference values are not defined
         av_attrs['refmodel'] = parser['metadata']['refmodel']
         
-        ifread1D = True
-        try: # try reading the 1D file in card format 
-            ref1d = reference1D(av_attrs['refmodel'])
-        except:
-            ifread1D = False
-        
         if len(data_array.shape) == 3: # if 3-D variable
             # get the variable values
             if ifread1D: ref1d.get_custom_parameter(variable)
             av_depth = deepcopy(data_array.depth.values)
             refvalue = []; avgvalue = []
             for depth in av_depth: 
-                if ifread1D: 
-                    refvalue.append(ref1d.evaluate_at_depth(depth,parameter=variable))
-                else:
-                    refvalue.append(-999.0)
+                if ifread1D: refvalue.append(ref1d.evaluate_at_depth(depth,parameter=variable))
                 # select the appropriate map
                 mapval = data_array.sel(depth=depth)
-                # get the average
-                globalav,area,percentarea = tools.MeanDataArray(mapval)
+                # get the average, use an earlier evaluation of area if possible
+                globalav,area,percentarea = tools.MeanDataArray(mapval,area=area)
                 avgvalue.append(globalav)    
-            av_attrs['refvalue'] = np.array(refvalue)
+            if ifread1D: av_attrs['refvalue'] = np.array(refvalue)
             av_attrs['average'] = np.array(avgvalue)
+        else:
+            # get the average, use an earlier evaluation of area if possible
+            globalav,area,percentarea = tools.MeanDataArray(data_array,area=area)
+            av_attrs['average'] = globalav
+            av_attrs['depth'] = float(av_attrs['depth'])
             
         #add Data_Array object to Data_Set
         data_array.attrs = av_attrs

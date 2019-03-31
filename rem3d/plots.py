@@ -220,7 +220,7 @@ def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
     if ifglobal: m.set_global()    # set global extent
     return m
 
-def plot_hotspots(m, dbs_path = '.', lon360 = False, **kwargs):
+def plot_hotspots(m, dbs_path = tools.get_filedir(), lon360 = False, **kwargs):
     """
     Reads hotspots.pkl from dbs_path and plots on to map index m 
 
@@ -258,7 +258,7 @@ def plot_hotspots(m, dbs_path = '.', lon360 = False, **kwargs):
         m.scatter(x, y)
     return    
 
-def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transform', 'trench'],**kwargs):
+def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes=['ridge', 'transform', 'trench'],**kwargs):
     """
     Plots different types of tectonic plates
     
@@ -310,7 +310,7 @@ def plot_plates(m, dbs_path = '.', lon360 = False, boundtypes=['ridge', 'transfo
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
     
@@ -417,9 +417,10 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
         
         # grid the data.
         val = spint.griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)    
-        s = m.transform_scalar(val,lon,lat, 1000, 500)
-        im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
-        #im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True)
+        #s = m.transform_scalar(val,lon,lat, 1000, 500)
+        #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+        im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+
     else: 
         grid_spacing = spacing_lat
         # Create a grid
@@ -438,11 +439,12 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
                 array = np.asarray(X[0,:])
                 ilon = (np.abs(array - valarray['lon'][i])).argmin()
                 array = np.asarray(Y[:,0])
-                ilat = (np.abs(array - valarray['lat'][i])).argmin()                
-                
+                ilat = (np.abs(array - valarray['lat'][i])).argmin()                                
             val[ilat,ilon] = valarray['val'][i]
-        s = m.transform_scalar(val,lon,lat, 1000, 500)
-        im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+        #s = m.transform_scalar(val,lon,lat, 1000, 500)
+        #im=m.pcolormesh(grid_x,grid_y,s,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
+        im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+        #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
     # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
     plot_plates(m, dbs_path=dbs_path, color='w', linewidth=1.5)
@@ -478,7 +480,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path='.',colorlabel=None,colorticks=True
             plt.setp(cbarytks, visible=False)
     return m    
     
-def backgroundmap(ax,dbs_path='.',platescolor='r', **kwargs):
+def backgroundmap(ax,dbs_path=tools.get_filedir(),platescolor='r', **kwargs):
     """plots a background map of a 3D model on axis ax. kwargs are arguments for Basemap"""
     
     # set up map
@@ -502,7 +504,7 @@ def backgroundmap(ax,dbs_path='.',platescolor='r', **kwargs):
     m.drawmapboundary(linewidth=1.5)    
     return m
 
-def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,height=50.,dbs_path='.',platescolor='r',numdegticks=7,hotspots=False):
+def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,height=50.,dbs_path=tools.get_filedir(),platescolor='r',numdegticks=7,hotspots=False):
     """plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
     
     # Calculate intermediate points    
@@ -669,7 +671,7 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
     return ax1, aux_ax
         
     
-def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tree=None,dbs_path='.',numeval=50,stride=10,k=1):
+def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tree=None,dbs_path=tools.get_filedir(),numeval=50,stride=10,k=1):
     """
     Get the topography transect.
     
@@ -693,7 +695,8 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     if tree == None and isinstance(model,string_types):
         treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.stride'+str(stride)+'.pkl'
         ncfile = dbs_path+'/'+model
-        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=6371.)
+        if not os.path.isfile(ncfile): code = data.update_file(model)
+        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=constants.R/1000.)
         #read values
         if os.path.isfile(ncfile):
             f = xr.open_dataset(ncfile)
@@ -716,7 +719,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     #query tree for topography
     qpts_lng = np.linspace(lng1,lng2,len(coords))
     qpts_lat = np.linspace(lat1,lat2,len(coords))
-    qpts_rad = np.linspace(6371.0,6371.0,len(coords))
+    qpts_rad = np.linspace(constants.R/1000.,constants.R/1000.,len(coords))
     # get the interpolation
     valselect = tools.querytree3D(tree,qpts_lat,qpts_lng,qpts_rad,vals,k=k)
     
@@ -729,12 +732,12 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     elevplot2=np.array(elev)
     # Blue for areas below sea level
     if np.min(elev)<0.:
-        lowerlimit=6371.-np.min(elev)/1000.*vexaggerate
+        lowerlimit=constants.R/1000.-np.min(elev)/1000.*vexaggerate
         elevplot2[elevplot2>0.]=0.
         ax.fill_between(theta_range, lowerlimit*np.ones(len(theta_range)),lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,facecolor='aqua', alpha=0.5)      
         ax.plot(theta_range,lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,'k',linewidth=0.5)
     else:
-        lowerlimit=6371.
+        lowerlimit=constants.R/1000.
 
     # Grey for areas above sea level
     elevplot1[elevplot1<0.]=0.
@@ -744,7 +747,7 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
 #     title(phase, fontsize=20,loc='left')
     return ax
     
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path='.',numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
     #get full path
@@ -753,6 +756,10 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     # Get KD tree
     if tree == None and isinstance(model,string_types):
         ncfile = dbs_path+'/'+model
+        if not os.path.isfile(ncfile): 
+            print('... Downloading Earth model '+model+' from REM3D servers')
+            data.update_file(model)
+            print('... Download completed.')
         #read values
         if os.path.isfile(ncfile):
             ds = xr.open_dataset(ncfile)
@@ -788,7 +795,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     
     return xsec.T,model,tree
 
-def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalx=50,numevalz=50,k=1,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
+def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalx=50,numevalz=50,k=1,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
     """Plot one section through the Earth through a pair of points.""" 
     
     # Specify theta such that it is symmetric
@@ -907,7 +914,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path='.',model='S362ANI+M.BOX25km
         fig1.savefig(outfile,dpi=100)
     return topo,topotree,model,modeltree
 
-def plot1globalmap(epixarr,vmin,vmax,dbs_path='.',colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
+def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
     """Plot one global map""" 
     fig=plt.figure() 
     ax=fig.add_subplot(1,1,1)
@@ -919,7 +926,7 @@ def plot1globalmap(epixarr,vmin,vmax,dbs_path='.',colorpalette='rainbow2',projec
     fig.savefig(modelname+outformat,dpi=300)
     return 
 
-def plot1hitmap(hitfile,dbs_path='.',projection='robin',lat_0=0,lon_0=150,colorcontour=[0,25,100,250,400,600,800,1000,1500,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000],colorpalette='Blues',outformat='.pdf',ifshow=True):
+def plot1hitmap(hitfile,dbs_path=tools.get_filedir(),projection='robin',lat_0=0,lon_0=150,colorcontour=[0,25,100,250,400,600,800,1000,1500,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000],colorpalette='Blues',outformat='.pdf',ifshow=True):
     """Plot one hitcount map""" 
     fig=plt.figure() 
     ax=fig.add_subplot(1,1,1)

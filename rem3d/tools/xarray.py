@@ -15,6 +15,7 @@ import pdb
 from .trigd import sind
 from ..mapping import spher2cart
 from .. import constants
+from .common import precision_and_scale
 #######################################################################################
 
 def tree3D(treefile,latitude,longitude,radius_in_km):
@@ -141,16 +142,15 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
         latdim = 'col'
     else:
         raise ValueError('dimensions should be data.shape[0] == 0.5*data.shape[1]')
-    for irow in range(len(data.coords[rowvar])):
-        arearow = []
+    areaarray = np.zeros(data.shape)        
+    if latdim == 'row':
+        for irow in range(len(data.coords[rowvar])):
+            ifind = int((90.0-0.5*dlat-data.coords[rowvar][irow].item())/dlat)
+            areaarray[ifind,:]=area[ifind]
+    elif latdim == 'col':
         for icol in range(len(data.coords[colvar])):
-            if latdim == 'row':
-                arearow.append(area[irow])
-                totarea=totarea+area[irow]
-            elif latdim == 'col':
-                arearow.append(area[icol])
-                totarea=totarea+area[icol]
-        areaarray.append(arearow)
+            ifind = int((90.0-0.5*dlat-data.coords[colvar][icol].item())/dlat)
+            areaarray[:,ifind]=area[ifind]
         
     # drop the variables for weights
     drops = [var for var in data.coords.keys() if var not in [latname,lonname]]
@@ -190,9 +190,17 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
     # take weights
     # drop the variables for weights
     drops = [var for var in data.coords.keys() if var not in [latname,lonname]]
-    area  = AreaDataArray(data.drop(drops),latname,lonname)    
-    totarea = np.sum(area.values)
-    percentglobal = round(totarea/(4.*np.pi)*100.,3)
+    try:
+        totarea = np.sum(area.values)
+    except:# if area does not exist, evaluate it
+        area = AreaDataArray(data.drop(drops),latname,lonname)
+        totarea = np.sum(area.values)
+    percentglobal = np.round(totarea/(4.*np.pi)*100.,3)
     weighted = area*data
-    average = np.mean(weighted.values)    
+    # find the precision of data to round the average to
+    max_precision = 0
+    for val in data.drop(drops).values.flatten():
+        numdigits, precision = precision_and_scale(val)
+        if precision > max_precision: max_precision = precision
+    average = np.round(np.sum(weighted.values)/totarea,decimals=max_precision)
     return average,area,percentglobal

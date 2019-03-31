@@ -136,6 +136,3 @@ class kernel_set(object):
             vercof, dvercof = radial_select[ii].eval_radial(depth_in_km)
             proj=proj+sparse.csr_matrix( (horcof.data*vercof,horcof.indices+indstart,horcof.indptr), shape=(1,self.metadata['ncoefcum'][-1]))
         return proj
-                
-        
-        
