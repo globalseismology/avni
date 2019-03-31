@@ -68,7 +68,11 @@ class kernel_set(object):
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
         for variable in dict['varstr']: #loop over all variables, grabbing
             radial[variable]=[]
-            findrad = np.array([(ii, dict['desckern'][ii]) for ii in np.arange(len(dict['desckern'])) if variable in dict['desckern'][ii]],dtype=dt)
+            
+            ivarfind =np.where(self.metadata['varstr']==variable)[0]
+            assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set'
+            findrad = np.array([(ii, dict['desckern'][ii]) for ii in np.arange(len(dict['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
+
             metadata = {};found = False
             types = np.unique([findrad['kernel'][ii].split(',')[-2].strip() for ii in np.arange(len(findrad))])
             assert(len(types) == 1),'only one type is allowed'
@@ -80,19 +84,17 @@ class kernel_set(object):
                 if 'variable splines' in radker or 'vbspl' in radker:
                     found = True
                     metadata['knots'] = [float(findrad['kernel'][ii].split(',')[-1].split('km')[0]) for ii in np.arange(len(findrad))]
-                    metadata['index'] = jj
                     radial[variable].append(radial_basis(name=radker, type = 'variable splines', metadata=metadata))
                     
                 elif 'delta' in radker or 'dirac delta' in radker:
                     found = True
                     metadata['info'] = radker.split(',')[-1]
-                    metadata['index'] = 0
                     radial[variable].append(radial_basis(name=radker, type = 'dirac delta', metadata=metadata))
-                elif 'boxcar' in radker:
+                elif 'boxcar' in radker or 'constant' in radker:
                     found = True
-                    range = radker.split(',')[-1]
-                    metadata['depthtop'] = float(range.split('-')[0])
-                    metadata['depthbottom'] = float(range.split('-')[1].split('km')[0])
+                    depthrange = radker.split(',')[-1]
+                    metadata['depthtop'] = float(depthrange.split('-')[0])
+                    metadata['depthbottom'] = float(depthrange.split('-')[1].split('km')[0])
                     radial[variable].append(radial_basis(name=radker, type = 'boxcar', metadata=metadata))
                 if not found: raise ValueError('information not found for '+radker)
         self.data['radial_basis']=radial
@@ -102,7 +104,9 @@ class kernel_set(object):
         
         # select the radial kernels for this parameter
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
-        findrad = np.array([(ii, self.metadata['desckern'][ii]) for ii in np.arange(len(self.metadata['desckern'])) if parameter in self.metadata['desckern'][ii]],dtype=dt)
+        ivarfind =np.where(self.metadata['varstr']==parameter)[0]
+        assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set'
+        findrad = np.array([(ii, self.metadata['desckern'][ii]) for ii in np.arange(len(self.metadata['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
 
         # select corresponding lateral bases
         lateral_basis = self.data['lateral_basis']
@@ -130,10 +134,5 @@ class kernel_set(object):
             
             horcof = lateral_select[ii].eval_lateral(latitude,longitude)
             vercof, dvercof = radial_select[ii].eval_radial(depth_in_km)
-            index = radial_select[ii].metadata['index']
-            proj=proj+sparse.csr_matrix( (horcof.data,horcof.indices+indstart,horcof.indptr), shape=(1,self.metadata['ncoefcum'][-1]))
+            proj=proj+sparse.csr_matrix( (horcof.data*vercof,horcof.indices+indstart,horcof.indptr), shape=(1,self.metadata['ncoefcum'][-1]))
         return proj
-        
-        
-        
-        

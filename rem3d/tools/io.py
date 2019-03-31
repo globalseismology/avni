@@ -122,7 +122,7 @@ def load_numpy_hdf(h5f,varname):
     ----------
     output : named numpy array
     """       
-    if (sys.version_info > (3, 0)):
+    if (sys.version_info[:2] > (3, 0)):
         names = h5f[varname]['fields'].value
     else:
         names = [name.decode('utf-8') for name in h5f[varname]['fields'].value]

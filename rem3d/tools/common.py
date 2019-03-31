@@ -17,7 +17,24 @@ from .. import constants
 from rem3d.f2py import vbspl,dbsplrem
 from .trigd import sind
 #######################################################################################
-    
+ 
+def precision_and_scale(x):
+    """
+    Returns precision and scale of a float
+    """
+    max_digits = 14
+    int_part = np.int(abs(x))
+    magnitude = 1 if int_part == 0 else np.int(np.log10(int_part)) + 1
+    if magnitude >= max_digits:
+        return (magnitude, 0)
+    frac_part = abs(x) - int_part
+    multiplier = 10 ** (max_digits - magnitude)
+    frac_digits = multiplier + np.int(multiplier * frac_part + 0.5)
+    while frac_digits % 10 == 0:
+        frac_digits /= 10
+    scale = np.int(np.log10(frac_digits))
+    return (magnitude + scale, scale)
+        
 def alphanum_key(s): 
     '''
     helper tool to sort lists in ascending numerical order (natural sorting),
@@ -272,4 +289,10 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
     constants.rhobar = eval(parser_select['rhobar']) # Average density in kg/m^3
     constants.deg2km = eval(parser_select['deg2km']) #length of 1 degree in km
     # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
-    constants.geoco = (1.0 - constants.f)**2.  
+    try:
+        temp = constants.geoco
+        print('... Initialized rem3d module with constants for '+planet+' from '+parser_select['cite'])
+        constants.geoco = (1.0 - constants.f)**2.  
+    except AttributeError:
+        constants.geoco = (1.0 - constants.f)**2.  
+

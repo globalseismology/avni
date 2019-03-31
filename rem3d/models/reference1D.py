@@ -214,9 +214,7 @@ class reference1D(object):
             if isinstance(parameters,string_types): parameters = np.array([parameters]) 
             
             for ii in np.arange(parameters.size):
-                if parameters[ii] in list(self.data.dtype.names):
-                    print('... parameter '+parameters[ii]+' already exists in '+self.name)
-                else:
+                if parameters[ii] not in list(self.data.dtype.names):
                     if 'SH-SV' in parameters[ii]:
                         self.data=append_fields(self.data, parameters[ii], self.data['vsh'] - self.data['vsv'] , usemask=False)
                     elif 'as' in parameters[ii]:

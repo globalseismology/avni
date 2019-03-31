@@ -188,6 +188,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     assert(np.all([key in choices for key in types]))
     npoly = len(types)
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
+    assert(np.all(np.sort(radius_range)==radius_range)),'radius_range needs to be sorted'
     rbot=radius_range[0]/rnorm
     rtop=radius_range[1]/rnorm
     findtopbot = np.any([key in ['BOTTOM','TOP'] for key in types])
@@ -197,7 +198,8 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     
     for irad in range(len(radiusin)):
         #Undefined if depth does not lie within the depth extents of knot points                      
-        if radiusin[irad] < min(radius_range) or radiusin[irad] > max(radius_range): 
+        if radiusin[irad] <= min(radius_range) or radiusin[irad] > max(radius_range): 
+            # <= so that the boundary depth belongs to only one radial kernel
             temp = np.zeros(npoly)
             dtemp = np.zeros(npoly)
         else:

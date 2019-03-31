@@ -23,10 +23,12 @@ import xarray as xr
 import traceback
 import pandas as pd
 from six import string_types # to check if variable is string using isinstance
-
+import time
+if (sys.version_info[:2] < (3, 0)): input = raw_input
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools   
 from .. import plots 
+from .. import constants
 from .common import read3dmodelfile
 from .kernel_set import kernel_set
 #######################################################################################
@@ -219,7 +221,8 @@ class model3d(object):
         metadata['xlapix'] = np.zeros([1,lenarr])
         metadata['xlopix'] = np.zeros([1,lenarr])  
         # get data keys
-        data_keys = ds.data_vars.keys()
+        data_keys = []
+        for key,val in ds.data_vars.items(): data_keys.append(key)
         indx = 0   
         idep = 0     
         if len(ds.dims) == 3:
@@ -256,9 +259,9 @@ class model3d(object):
                 nlat, nlon = ds[key].shape
                 descstring = u'{}, delta, {} km'.format(key,depth_range)
                 try:
-                    coef = np.vstack([coef,ds[key].transpose().values.flatten()])
+                    coef = np.vstack([coef,ds[key].values.flatten()])
                 except:
-                    coef = ds[key].transpose().values.flatten()
+                    coef = ds[key].values.flatten()
                 desckern.append(descstring)
                 ivarkern.append(icount)
             else:
@@ -266,9 +269,9 @@ class model3d(object):
                 for ii in range(len(deptop)):
                     descstring = u'{}, boxcar, {} - {} km'.format(key,deptop[ii],depbottom[ii])
                     try:
-                        coef = np.vstack([coef,ds[key][ii].transpose().values.flatten()])
+                        coef = np.vstack([coef,ds[key][ii].values.flatten()])
                     except:
-                        coef = ds[key][ii].transpose().values.flatten()
+                        coef = ds[key][ii].values.flatten()
                     desckern.append(descstring)
                     ivarkern.append(icount)
         metadata['desckern']=np.array(desckern, dtype='<U150')
@@ -392,7 +395,7 @@ class model3d(object):
         hf.close()
         print('... written to '+outfile)
 
-    def evaluate_at_point(self,latitude,longitude,depth,parameter='vs',interpolated=True): 
+    def evaluate_at_point(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None): 
         """
         Evaluate the mode at a location (latitude, longitude,depth)
         
@@ -404,7 +407,80 @@ class model3d(object):
         interpolated: If True, use KDTree from a predefined grid. If False, evaluated 
                       exactly using kernel_set instance.
         """           
+        if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
+        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        
+        if isinstance(resolution, (list,tuple,np.ndarray)):
+            resolution = np.asarray(resolution)
+        elif isinstance(resolution, int):
+            resolution = np.asarray([resolution])
+        else:        
+            raise TypeError('resolution must be function or array, not %s' % type(resolution))
+        if isinstance(latitude, (list,tuple,np.ndarray)):
+            latitude = np.asarray(latitude)
+        elif isinstance(latitude, float):
+            latitude = np.asarray([latitude])
+        elif isinstance(latitude, int):
+            latitude = np.asarray([float(latitude)])
+        else:
+            raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
+        if isinstance(longitude, (list,tuple,np.ndarray)):
+            longitude = np.asarray(longitude)
+        elif isinstance(longitude, float):
+            longitude = np.asarray([longitude])
+        elif isinstance(longitude, int):
+            longitude = np.asarray([float(longitude)])
+        else:
+            raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
+        if isinstance(depth_in_km, (list,tuple,np.ndarray)):
+            depth_in_km = np.asarray(depth_in_km)
+        elif isinstance(depth_in_km, float):
+            depth_in_km = np.asarray([depth_in_km])
+        elif isinstance(latitude, int):
+            depth_in_km = np.asarray([float(depth_in_km)])
+        else:
+            raise TypeError('depth_in_km must be list or tuple, not %s' % type(depth_in_km))  
             
+        #compute for each resolution
+        for res in resolution:
+            if not interpolated:
+                # get the projection matrix
+                project = self.projection(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res)
+                modelarr = self.coeff2modelarr(resolution=res,realization=realization)
+                predsparse = project['projarr']*modelarr
+                values = predsparse.data
+                
+            else:
+                if tree==None:
+                    kerstr = self.metadata['resolution_'+str(res)]['kerstr']
+                    treefile = kerstr+'.KDTree.3D.pkl'
+                    #check that the horizontal param is pixel based
+
+                    kernel_set = self.metadata['resolution_'+str(res)]['kernel_set']
+                    xlopix = self.metadata['resolution_'+str(res)]['xlopix'][0]
+                    xlapix = self.metadata['resolution_'+str(res)]['xlapix'][0]
+                    depths = self.getpixeldepths(res,parameter)
+                    depth_in_km = np.array([])
+                    for depth in depths: depth_in_km = np.append(depth_in_km,np.ones_like(xlopix)*depth)
+                    xlapix = np.repeat(xlapix,len(depths))
+                    xlapix = np.repeat(xlopix,len(depths))
+                    tree = tools.tree3D(treefile,xlapix,xlapix,constants.R/1000. - depth_in_km)
+                # get the interpolation
+                values = tools.querytree3D(tree,latitude,longitude,depth_in_km,qpts_rad,vals,k=k)
+                
+        return values
+
+    def getpixeldepths(self,resolution,parameter):
+        typehpar = self.metadata['resolution_'+str(resolution)]['typehpar']
+        assert(len(typehpar) == 1),'only one type of horizontal parameterization allowed'
+        for type in typehpar: assert(type == 'PIXELS'),'for interpolation with tree3D'
+        kernel_set = self.metadata['resolution_'+str(resolution)]['kernel_set']
+        kernel_param = kernel_set.data['radial_basis'][parameter]
+        depths = []
+        for radker in kernel_param:
+            depths.append((radker.metadata['depthtop']+radker.metadata['depthbottom'])/2.)
+        return np.asarray(depths)
+        
     def coeff2modelarr(self,resolution=0,realization=0):
         """
         Convert the coeffiecient matrix from the file to a sparse model array. Add
@@ -429,19 +505,25 @@ class model3d(object):
         for ir in range(len(resolution)): 
             try:
                 coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef']
-            # Loop over all kernel basis
-                for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])): 
-                    # number of coefficients for this radial kernel
-                    ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
-                    # first radial kernel and first tesselation level
-                    if ii == 0 and ir == 0: 
-                        modelarr = coefficients.iloc[ii][:ncoef].values                        
-                    else:
-                        modelarr=np.append(modelarr,coefficients.iloc[ii][:ncoef].values) 
-            except AttributeError: # 
+                #if modelarr is already made use it
+                try:
+                    modelarr = self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr']
+                except:
+                    # Loop over all kernel basis
+                    for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])): 
+                        # number of coefficients for this radial kernel
+                        ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
+                        # first radial kernel and first tesselation level
+                        if ii == 0 and ir == 0: 
+                            modelarr = coefficients.iloc[ii][:ncoef]                        
+                        else:
+                            modelarr = modelarr.append(coefficients.iloc[ii][:ncoef],ignore_index=True) 
+                    # Convert to sparse matrix
+                    # take the transpose to make dot products easy 
+                    modelarr = sparse.csr_matrix(modelarr).transpose() 
+                    self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr'] = modelarr 
+            except AttributeError: 
                 raise ValueError('resolution '+str(resolution[ir])+' and realization '+str(realization)+' not filled up yet.')
-        modelarr = sparse.csr_matrix(modelarr) # Convert to sparse matrix
-        modelarr = modelarr.T # take the transpose to make dot products easy 
         return modelarr
         
     def getradialattributes(self,parserfile='attributes.ini'):
@@ -678,13 +760,13 @@ class model3d(object):
         return projection
 
 
-    def getprojtimesmodel(self,projection,variable,depth,realization=0):
+    def getprojtimesmodel(self,projection,variable,depth,resolution=0,realization=0):
         """
         Projection matrix multiplied by model ensemble. Choses the nearest depth available for the projection.
         """    
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
-        modelarr = self.coeff2modelarr(realization=realization)
+        modelarr = self.coeff2modelarr(resolution=resolution,realization=realization)
         # Select appropriate arrays from projection matrix, read from file
         projarr = projection['projarr']; refstrarr = projection['refstrarr']; deptharr = projection['deptharr']  
     
@@ -718,8 +800,7 @@ class model3d(object):
                 print(".... written "+filename)
         return
 
-
-    def plotslices(self,lateral_basis='pixel1',dbs_path='~/dbs',x=0,percent_or_km='%',colormin = -6.,colormax=6.,depth=None):
+    def plotslices(self,lateral_basis='pixel1',dbs_path='~/dbs',x=0,percent_or_km='%',colormin = -6.,colormax=6.,depth=None,resolution=0,realization=0):
         """
         Plots interactively a model slice of a variable at a given depth till an 
         invalid depth is input by the user
@@ -733,16 +814,22 @@ class model3d(object):
         x,percent_or_km, colormin,colormax,depth : plotting options for jupyter 
                                                    instead of interactive input
         """    
-        # Select appropriate modelarray m
-        modelarr = self.coeff2modelarr() # convert to modelarr of d = G*m
-    
-        # Select appropriate arrays from projection matrix, read from file
-        projection = self.readprojmatrix(lateral_basis)
-        projarr = projection['projarr']; refstrarr = projection['refstrarr']; deptharr = projection['deptharr']  
-        xlat = projection['xlat']; xlon = projection['xlon']
-    
+        if not isinstance(resolution, int): raise TypeError('resolution must be an integer, not %s' % type(resolution))
+        if not isinstance(realization, int): raise TypeError('realization must be an integer, not %s' % type(realization))
+
+        
+        typehpar = self.metadata['resolution_'+str(resolution)]['typehpar']
+        if len(typehpar) != 1 or typehpar[0] != 'PIXELS': raise ValueError('Slices can only be made for pixel paramterization')
+            
+        # Select appropriate arrays from projection matrix, read from file        
+        lat = self.metadata['resolution_'+str(resolution)]['xlapix'][0]
+        lon = self.metadata['resolution_'+str(resolution)]['xlopix'][0]
+
+        refstrarr = self.metadata['resolution_'+str(resolution)]['varstr']
         # select models based on parameter and depth desired
         new_figure='y'  # flag for done
+        colormin = -6.
+        colormax = 6.
         while (new_figure =='y' or new_figure == 'Y'):
             plt.ion()
             fig=plt.figure() 
@@ -755,47 +842,68 @@ class model3d(object):
             flag=0  # flag for depth
             while (flag < subploty*subplotx):
                 flag=flag+1
+                ifplot =True
                 try:
                     for ii in np.arange(len(refstrarr)): print(ii,refstrarr[ii])
                     try:
                         x = int(input("Select variable to plot - default is 0:"))
                     except (ValueError,EOFError):
                         x = x
-                    try:
-                        depth = float(input("Select depth - select any value for topography ["+str(min(deptharr))+"-"+str(max(deptharr))+"] :"))
-                    except (ValueError,EOFError):
-                        if depth is None:
-                            depth = min(deptharr)
+                    
+                    if 'topo' in refstrarr[x]:
+                        #find the radial kernels for this paramter
+                        kerfind = np.where(self.metadata['resolution_'+str(resolution)]['ivarkern']==x+1)[0]
+                        if len(kerfind) == 1:
+                            modelarray = self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'].iloc[kerfind[0]]
                         else:
-                            depth = depth
-                    if depth < min(deptharr) or depth > max(deptharr):
-                        flag=flag-1
+                            flag=flag-1
+                            ifplot =False
                     else:
-                        modeleselect,_ = self.getprojtimesmodel(projection,variable=refstrarr[x],depth=depth)
+                        # get the depths available for this parameter
+                        deptharr = self.getpixeldepths(resolution,refstrarr[x])
+                        #depth differences and get depth extents
+                        depdiff = np.ediff1d(deptharr)
+                        deptop = np.copy(deptharr)
+                        depbottom = np.copy(deptharr)
+                        for ii in range(len(depdiff)-2):
+                            deptop[ii] = deptop[ii] - (2.*depdiff[ii]-depdiff[ii+1])/2.
+                            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii]-depdiff[ii+1])/2.
+                        for ii in range(len(depdiff),len(depdiff)-3,-1):
+                            deptop[ii] = deptop[ii] - (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+                            depbottom[ii] = depbottom[ii]+ (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+                    
                         try:
-                            percent_or_km = input("Is the value in percentage or km or percentage -default is % [km/%]:")
-                        except (EOFError):
-                            percent_or_km = percent_or_km
-                        if percent_or_km == '': percent_or_km = '%'                            
-                        if percent_or_km == '%': 
-                            modelarray = modeleselect.toarray().flatten()*100. # In Percent assuming elastic parameters
+                            depth = float(input("Select depth - select any value for topography ["+str(round(min(deptop),2))+"-"+str(round(max(depbottom),2))+"] :"))
+                        except (ValueError,EOFError):
+                            if depth is None:
+                                depth = min(deptharr)
+                            else:
+                                depth = depth
+                        if depth < min(deptop) or depth > max(depbottom):
+                            flag=flag-1
+                            ifplot =False
                         else:
-                            modelarray = modeleselect.toarray().flatten()
+                            #find the radial kernels for this paramter
+                            kerfind = np.where(self.metadata['resolution_'+str(resolution)]['ivarkern']==x+1)[0]
+                            #evaluate at all points
+                            ind = np.where(np.logical_and(depth>deptop, depth<=depbottom))[0][0]
+                            modelarray = self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'].iloc[kerfind[ind]]
 
+                    if ifplot:
                         # Get limits for colorbar
                         try: 
-                            colorstr = input("Input two values for minimum and maximum values of colorbar - default is -6 6:")
+                            colorstr = input("Input two values for minimum and maximum values of colorbar - default is "+str(colormin)+" "+str(colormax)+":")
                             colormin,colormax = float(colorstr.split()[0]),float(colorstr.split()[1])
                         except (ValueError,IndexError,EOFError):
                             colormin = colormin; colormax=colormax
             
                         # Plot the model
-                        test = np.vstack((xlat,xlon,modelarray)).transpose()
+                        test = np.vstack((lat,lon,modelarray)).transpose()
                         dt = {'names':['lat', 'lon', 'val'], 'formats':[np.float, np.float, np.float]}
                         plotmodel = np.zeros(len(test), dtype=dt)
                         plotmodel['lat'] = test[:,0]; plotmodel['lon'] = test[:,1]; plotmodel['val'] = test[:,2]
                         ax=fig.add_subplot(subploty,subplotx,flag)
-                        plots.globalmap(ax,plotmodel,colormin,colormax,dbs_path=dbs_path, colorlabel='Anomaly '+'(in '+percent_or_km+')' if percent_or_km!='' else 'Anomaly', grid=[30.,90.],gridwidth=0,projection='robin',lat_0=0, lon_0=150., colorpalette='rem3d',colorcontour=21)
+                        plots.globalmap(ax,plotmodel,colormin,colormax,dbs_path=dbs_path, colorlabel='Anomaly', grid=[30.,90.],gridwidth=0,projection='robin',lat_0=0, lon_0=150., colorpalette='rem3d',colorcontour=21)
                         ax.set_title(refstrarr[x]+' at '+str(depth)+' km.' if 'Topo' not in refstrarr[x] and 'topo' not in refstrarr[x] else refstrarr[x])
                         fig.canvas.draw() 
                 except SyntaxError:
