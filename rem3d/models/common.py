@@ -31,24 +31,44 @@ from .reference1D import reference1D
 def readepixfile(filename):
     """Read .epix file format from a file.
 
-    Parameters
+    Parameters:
     ----------
 
     filename : Name of the file containing four columns
               (latitude, longitude, pixel_size, value)
-
+              
+    fields: metadata fields that are stored in a dictionary, if available
+    
+    Output:
+    ------
+    
+    epixarr: array containing lat, lon, pixel size and value
+    
+    metadata: metadata fields from input fields if specified
+    
+    comments: all other comments except lines containing metadata
     """
 
-    currentdir=os.getcwd()
     try:
         f = open(filename, 'r')
         epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['lat','lon','pixsize','val'])
     except IOError:
-        raise IOError("File (",filename,") does not exist in the current directory - ",currentdir)
-
-    return epixarr
+        raise IOError("File (",filename,") cannot be read.")
+        
+    #read header and store basic metadata
+    metadata = {}
+    comments = []
+    with open(filename) as f:
+        for line in f:
+            if line.startswith('#'):
+                if ':' in line: 
+                    field = line.split(':')[0].split('#')[1].lstrip().rstrip()
+                    metadata[field] = line.split(':')[1].split('\n')[0].lstrip().rstrip()
+                else:
+                    comments.append(line.split('\n')[0].lstrip().rstrip())
+    return epixarr,metadata,comments
     
-def writeepixfile(filename,epixarr,headers=['#BASIS:PIX','#FORMAT:50']):
+def writeepixfile(filename,epixarr,metadata={'BASIS':'PIX','FORMAT':'50'},comments=[]):
     """Write .epix file format from a named array.
 
     Parameters
@@ -56,15 +76,21 @@ def writeepixfile(filename,epixarr,headers=['#BASIS:PIX','#FORMAT:50']):
 
     filename : Name of the file containing four columns
               (latitude, longitude, pixel_size, value)
+              
+    metadata: metadata fields from input fields if specified
+    
+    comments: all other comments except lines containing metadata
     """
     #combine headers
     header=''
-    for hh in headers: header=header+'\n'+hh
-    currentdir=os.getcwd()
+    for key in sorted(metadata.keys()): header=header+'#'+key+':'+metadata[key]+'\n'
+    if len(comments) != 0: 
+        for comment in comments: header = header+comment+'\n'
+    header = header[:-1] # to get rid of the last \n in header
     try:
         np.savetxt(filename, epixarr, fmt='%8.3f %8.3f %8.3f  %+12.7e',header=header,comments='')
     except :
-        raise ValueError("File (",filename,") cannot be written in the current directory - ",currentdir)
+        raise IOError("File (",filename,") cannot be written.")
 
     return 
 

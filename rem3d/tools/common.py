@@ -195,6 +195,17 @@ def get_filedir(module='rem3d',checkwrite=True,makedir=True):
             os.makedirs(filedir)        
     return filedir
 
+def get_cptdir(module='rem3d',checkwrite=True,makedir=True):
+    """
+    Get the directory with color palettes. Make a new directory if doesn't exist (makedir==True)
+    """
+    filedir = get_filedir(module=module,checkwrite=checkwrite,makedir=makedir)
+    cptdir = filedir+'/'+constants.cptfolder
+    if checkwrite and makedir: 
+        if not os.path.exists(cptdir):
+            os.makedirs(cptdir)        
+    return cptdir
+
 def get_configdir(module='rem3d',checkwrite=True,makedir=True):
     """
     Get the directory containing configuration files. 

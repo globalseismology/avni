@@ -24,6 +24,11 @@ configuration folder
 configfolder = 'config'
 
 """
+color palette folder
+"""
+cptfolder = 'CPT'
+
+"""
 Mapping constants
 """
 planetconstants = 'planets.ini'
