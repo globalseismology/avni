@@ -142,12 +142,12 @@ def calculateBearing(lat1,lng1,lat2,lng2):
     bearing = (degrees(atan2(dLong, dPhi)) + 360.0) % 360.0;
     return bearing
 
-def getintermediateLatLong(lat1,lng1,azimuth,gcdeltakm,interval):
+def getintermediateLatLong(lat1,lng1,azimuth,gcdelta,interval):
     '''returns every coordinate pair inbetween two coordinate 
-    pairs given the desired interval. gcdeltakm and interval is great cirle dist in km'''
+    pairs given the desired interval. gcdelta and interval is great cirle dist in m'''
 #     d = getPathLength(lat1,lng1,lat2,lng2)
-    remainder, dist = modf((gcdeltakm / interval))
-    lat2,lng2=getDestinationLatLong(lat1,lng1,azimuth,gcdeltakm)
+    remainder, dist = modf((gcdelta / interval))
+    lat2,lng2=getDestinationLatLong(lat1,lng1,azimuth,gcdelta)
     counter = float(interval)
     coords = []
     coords.append([lat1,lng1])

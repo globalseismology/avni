@@ -508,28 +508,28 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
     """plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
     
     # Calculate intermediate points    
-    lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2km)
-    interval=gcdelta*constants.deg2km/(numdegticks-1) # interval in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2km,interval))
+    lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2m)
+    interval=gcdelta*constants.deg2m/(numdegticks-1) # interval in km
+    coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2m,interval))
 
     # Center lat lon based on azimuth
     if gcdelta > 350.:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,45.*constants.deg2km)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,45.*constants.deg2m)
     elif gcdelta >= 180. and gcdelta <= 350.:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*constants.deg2km)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*constants.deg2m)
     else:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*constants.deg2km)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*constants.deg2m)
         
     # Choose what to do based on projection
     if projection=='ortho':
         m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l')
     else:
         # center left lat/lon, then left crnr
-        latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*constants.deg2km/2.)
-        llcrnrlat,llcrnrlon=mapping.getDestinationLatLong(latcenleft,loncenleft,180.,height*constants.deg2km/2.)
+        latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*constants.deg2m/2.)
+        llcrnrlat,llcrnrlon=mapping.getDestinationLatLong(latcenleft,loncenleft,180.,height*constants.deg2m/2.)
         # center right lat/lon, then left crnr
-        latcenright,loncenright=mapping.getDestinationLatLong(lat_0,lon_0,90.,width*constants.deg2km/2.)
-        urcrnrlat,urcrnrlon=mapping.getDestinationLatLong(latcenright,loncenright,0.,height*constants.deg2km/2.)
+        latcenright,loncenright=mapping.getDestinationLatLong(lat_0,lon_0,90.,width*constants.deg2m/2.)
+        urcrnrlat,urcrnrlon=mapping.getDestinationLatLong(latcenright,loncenright,0.,height*constants.deg2m/2.)
 
         m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l',llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat, urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
         # draw parallels and meridians.
@@ -554,9 +554,9 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
     if gcdelta < 180.:
         m.drawgreatcircle(lon1, lat1, lon2, lat2,color='k',linewidth=3.)
     elif gcdelta == 180.:
-        latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*constants.deg2km)
-        latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*constants.deg2km)
-#         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*constants.deg2km)
+        latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*constants.deg2m)
+        latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*constants.deg2m)
+#         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*constants.deg2m)
         lonextent,latextent=m([lonextent1,lonextent2],[latextent1,latextent2])
         m.plot(lonextent,latextent,color='k',linewidth=3.)
     return m
@@ -712,16 +712,17 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
             raise ValueError('model in gettopotransect not a string or xarray')
                     
     #find destination point
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km)
-    interval=gcdelta*constants.deg2km/(numeval-1) # interval in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km,interval))
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    interval=gcdelta*constants.deg2m/(numeval-1) # interval in m
+    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
 
     #query tree for topography
-    qpts_lng = np.linspace(lng1,lng2,len(coords))
-    qpts_lat = np.linspace(lat1,lat2,len(coords))
-    qpts_rad = np.linspace(constants.R/1000.,constants.R/1000.,len(coords))
+    evalpoints=np.column_stack((constants.R/1000.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
+    
+    pdb.set_trace()
+
     # get the interpolation
-    valselect = tools.querytree3D(tree,qpts_lat,qpts_lng,qpts_rad,vals,k=k)
+    valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,k=k)
     
     #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
     return valselect,model,tree
@@ -747,7 +748,7 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
 #     title(phase, fontsize=20,loc='left')
     return ax
     
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,k=3):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
     #get full path
@@ -765,7 +766,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
             ds = xr.open_dataset(ncfile)
         else:
             raise ValueError("Error: Could not find file "+ncfile)
-        treefile = dbs_path+'/'+ds.attrs['kerstr']+'.KDTree.3D.pkl'
+        treefile = dbs_path+'/'+constants.planetpreferred+'.'+ds.attrs['kerstr']+'.KDTree.3D.pkl'
         tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
         model = ds.variables[parameter]      
         ds.close() #close netcdf file
@@ -776,10 +777,10 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
             vals = model.data.flatten(order='C')
         except:
             raise ValueError('model in gettopotransect not a string or xarray')
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km)
-    interval=gcdelta*constants.deg2km/(numevalx-1) # interval in km
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    interval=gcdelta*constants.deg2m/(numevalx-1) # interval in km
     radevalarr=np.linspace(radii[0],radii[1],numevalz) #radius arr in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km,interval))
+    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
         
     if(len(coords) != numevalx):
         raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
@@ -799,7 +800,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
     """Plot one section through the Earth through a pair of points.""" 
     
     # Specify theta such that it is symmetric
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km)
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
     if gcdelta==180. or gcdelta==360.:
         theta=[0.,gcdelta]
     else:

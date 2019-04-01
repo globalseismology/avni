@@ -15,24 +15,31 @@ import pdb
 from .trigd import sind
 from ..mapping import spher2cart
 from .. import constants
-from .common import precision_and_scale
+from .common import precision_and_scale,convert2nparray
 #######################################################################################
 
 def tree3D(treefile,latitude,longitude,radius_in_km):
+    latitude = convert2nparray(latitude)
+    longitude = convert2nparray(longitude)
+    radius_in_km = convert2nparray(radius_in_km)
+
     #Build the tree if none is provided
     if os.path.isfile(treefile):
         print('... Reading KDtree file '+treefile)
         tree = pickle.load(open(treefile,'r'))
     else:
         print('... KDtree file '+treefile+' not found for interpolations. Building it')
-        rlatlon = np.column_stack((radius_in_km.flatten(order='C'),latitude.flatten(order='C'), longitude.flatten(order='C')))
+        rlatlon = np.column_stack((radius_in_km.flatten(),latitude.flatten(), longitude.flatten()))
         xyz = spher2cart(rlatlon)
         tree = cKDTree(xyz)
         pickle.dump(tree,open(treefile,'wb'))
     return tree
 
 def querytree3D(tree,latitude,longitude,radius_in_km,values,k=1):    
-    evalpoints = np.column_stack((radius_in_km,latitude,longitude))
+    latitude = convert2nparray(latitude)
+    longitude = convert2nparray(longitude)
+    radius_in_km = convert2nparray(radius_in_km)
+    evalpoints = np.column_stack((radius_in_km.flatten(),latitude.flatten(), longitude.flatten()))
     coordstack = spher2cart(evalpoints)
     d,inds = tree.query(coordstack,k=k)
     if k == 1:
@@ -56,7 +63,7 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth']
     radius_in_km: radius in kilometer when a 2D surface is valid. Ignores the 
                     3rd field in lonlatdepth.Typically 6371km for Earth
 
-    lonlatdepth: variable name of the longitude, latitude, depth arrays
+    lonlatdepth: variable name of the longitude, latitude, depth (in km) arrays
     """
 
     #read topography file

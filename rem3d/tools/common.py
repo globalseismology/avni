@@ -11,13 +11,36 @@ import numpy as np
 import pdb
 import re
 from configobj import ConfigObj
+from six import string_types # to check if variable is string using isinstance
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
 from rem3d.f2py import vbspl,dbsplrem
 from .trigd import sind
 #######################################################################################
- 
+
+def convert2nparray(value,int2float = True):
+    """
+    Converts input value to a float numpy array
+    
+    int2float: convert integer to floats, if true
+    """
+    if isinstance(value, (list,tuple,np.ndarray)):
+        outvalue = np.asarray(value)
+    elif isinstance(value, float):
+        outvalue = np.asarray([value])
+    elif isinstance(value, int):
+        if int2float:
+            outvalue = np.asarray([float(value)])
+        else:
+            outvalue = np.asarray([value])
+    elif isinstance(value,string_types):
+        outvalue = np.asarray([value])
+    else:
+        raise TypeError('input must be list or tuple, not %s' % type(value))
+    return outvalue
+
+
 def precision_and_scale(x):
     """
     Returns precision and scale of a float
@@ -288,6 +311,7 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
     constants.R = eval(parser_select['R']) # Radius of the Earth in m
     constants.rhobar = eval(parser_select['rhobar']) # Average density in kg/m^3
     constants.deg2km = eval(parser_select['deg2km']) #length of 1 degree in km
+    constants.deg2m = constants.deg2km * 1000. #length of 1 degree in m
     # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
     try:
         temp = constants.geoco

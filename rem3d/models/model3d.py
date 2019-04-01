@@ -22,7 +22,6 @@ import h5py
 import xarray as xr
 import traceback
 import pandas as pd
-from six import string_types # to check if variable is string using isinstance
 import time
 if (sys.version_info[:2] < (3, 0)): input = raw_input
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -410,36 +409,11 @@ class model3d(object):
         if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
         
-        if isinstance(resolution, (list,tuple,np.ndarray)):
-            resolution = np.asarray(resolution)
-        elif isinstance(resolution, int):
-            resolution = np.asarray([resolution])
-        else:        
-            raise TypeError('resolution must be function or array, not %s' % type(resolution))
-        if isinstance(latitude, (list,tuple,np.ndarray)):
-            latitude = np.asarray(latitude)
-        elif isinstance(latitude, float):
-            latitude = np.asarray([latitude])
-        elif isinstance(latitude, int):
-            latitude = np.asarray([float(latitude)])
-        else:
-            raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
-        if isinstance(longitude, (list,tuple,np.ndarray)):
-            longitude = np.asarray(longitude)
-        elif isinstance(longitude, float):
-            longitude = np.asarray([longitude])
-        elif isinstance(longitude, int):
-            longitude = np.asarray([float(longitude)])
-        else:
-            raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
-        if isinstance(depth_in_km, (list,tuple,np.ndarray)):
-            depth_in_km = np.asarray(depth_in_km)
-        elif isinstance(depth_in_km, float):
-            depth_in_km = np.asarray([depth_in_km])
-        elif isinstance(latitude, int):
-            depth_in_km = np.asarray([float(depth_in_km)])
-        else:
-            raise TypeError('depth_in_km must be list or tuple, not %s' % type(depth_in_km))  
+        # convert to numpy arrays
+        latitude = tools.convert2nparray(latitude)
+        longitude = tools.convert2nparray(longitude)
+        depth_in_km = tools.convert2nparray(depth_in_km)
+        resolution = tools.convert2nparray(resolution,int2float=False)
             
         #compute for each resolution
         for res in resolution:
@@ -494,12 +468,8 @@ class model3d(object):
         if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
         
-        if isinstance(resolution, (list,tuple,np.ndarray)):
-            resolution = np.asarray(resolution)
-        elif isinstance(resolution, int):
-            resolution = np.asarray([resolution])
-        else:        
-            raise TypeError('resolution must be function or array, not %s' % type(resolution))
+        # convert to numpy arrays
+        resolution = tools.convert2nparray(resolution,int2float=False)
             
         # Loop over resolution levels, adding coefficients 
         for ir in range(len(resolution)): 
@@ -696,36 +666,12 @@ class model3d(object):
         """    
         if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
         
-        if isinstance(latitude, (list,tuple,np.ndarray)):
-            latitude = np.asarray(latitude)
-        elif isinstance(latitude, float):
-            latitude = np.asarray([latitude])
-        elif isinstance(latitude, int):
-            latitude = np.asarray([float(latitude)])
-        else:
-            raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
-        if isinstance(longitude, (list,tuple,np.ndarray)):
-            longitude = np.asarray(longitude)
-        elif isinstance(longitude, float):
-            longitude = np.asarray([longitude])
-        elif isinstance(longitude, int):
-            longitude = np.asarray([float(longitude)])
-        else:
-            raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
-        if isinstance(depth_in_km, (list,tuple,np.ndarray)):
-            depth_in_km = np.asarray(depth_in_km)
-        elif isinstance(depth_in_km, float):
-            depth_in_km = np.asarray([depth_in_km])
-        elif isinstance(latitude, int):
-            depth_in_km = np.asarray([float(depth_in_km)])
-        else:
-            raise TypeError('depth_in_km must be list or tuple, not %s' % type(depth_in_km))  
-        if isinstance(parameter, (list,tuple,np.ndarray)):
-            parameter = np.asarray(parameter)
-        elif isinstance(parameter,string_types):
-            parameter = np.asarray([parameter])
-        else:
-            raise TypeError('parameter must be list or tuple, not %s' % type(parameter))            
+        # convert to numpy arrays
+        latitude = tools.convert2nparray(latitude)
+        longitude = tools.convert2nparray(longitude)
+        depth_in_km = tools.convert2nparray(depth_in_km)
+        parameter = tools.convert2nparray(parameter)
+                   
         assert(len(latitude)==len(longitude)==len(depth_in_km)),'latitude, longitude and depth_in_km should be of same length' 
                        
         assert(len(latitude)==len(longitude)==len(depth_in_km)),'latitude, longitude and depth_in_km should be of same length'       
