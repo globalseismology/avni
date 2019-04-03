@@ -38,157 +38,11 @@ from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedL
 from matplotlib import gridspec # Relative size of subplots
 
 ####################       IMPORT OWN MODULES     ######################################
-from . import mapping
-from . import tools
-from . import data
-from . import constants
-########################      GENERIC   ################################################                       
-
-def updatefont(fontsize=15,fontname='sans-serif',ax=None): 
-    """
-    Updates the font type and sizes globally or for a particular axis handle
-    
-    Parameters
-    ----------
-    
-    ax :  figure axis handle
-    
-    fontsize,fontname : font parameters
-    
-    Return:
-    ----------
-    
-    ax : updated axis handle if ax is not None
-    
-    """
-    if ax is None:
-        plt.rcParams["font.family"] = fontname
-        plt.rcParams["font.size"] = fontsize
-    else:
-        for item in (ax.get_xticklabels() + ax.get_yticklabels()):
-            item.set_fontsize(fontsize)
-            item.set_fontname(fontname)
-        for item in ([ax.xaxis.label, ax.yaxis.label]):
-            item.set_fontsize(fontsize+2)
-            item.set_fontname(fontname)
-        ax.title.set_fontsize(fontsize+3)
-        ax.title.set_fontname(fontname)
-    return ax if ax is not None else None
-                    
-def standardcolorpalette(name='rem3d'):
-    """
-    Get a custom REM3D color palette from constants.py
-    
-    Parameters
-    ----------
-    
-    name : color palette name that will be used elsewhere
-           if name ends in '_r', use the reversed color scale.    
-    reverse: if the colors need to be reversed from those provided.
-    
-    """
-    if name.endswith('_r'):
-        RGBoption = name.split('_r')[0]
-        RGBlist=constants.colorscale[RGBoption]['RGB'][::-1]
-    else:
-        RGBoption = name
-        RGBlist=constants.colorscale[RGBoption]['RGB']
-    custom_cmap = mcolors.LinearSegmentedColormap.from_list(name, RGBlist,N=len(RGBlist))
-    cmx.register_cmap(name=custom_cmap.name, cmap=custom_cmap)
-    return custom_cmap    
-    
-def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm',colorcontour=20):
-    """gets the value of color for a given palette"""
-    jet = cm = cmx.get_cmap(palette) 
-    #cNorm  = mcolors.Normalize(vmin=xmin, vmax=xmax)
-    bounds = np.linspace(xmin,xmax,colorcontour+1)
-    cNorm = mcolors.BoundaryNorm(bounds,cm.N)
-    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=palette)
-    colorVal = scalarMap.to_rgba(val)
-    return colorVal
-
-def grayify_cmap(cmap):
-    """Return a grayscale version of the colormap"""
-    cmap = cm = get_cmap(cmap)
-    colors = cmap(np.arange(cmap.N))
-    
-    # convert RGBA to perceived greyscale luminance
-    # cf. http://alienryderflex.com/hsp.html
-    RGB_weight = [0.299, 0.587, 0.114]
-    luminance = np.sqrt(np.dot(colors[:, :3] ** 2, RGB_weight))
-    colors[:, :3] = luminance[:, np.newaxis]
-    
-    return cmap.from_list(cmap.name + "_gray", colors, cmap.N)
-
-def make_colormap(seq,name='CustomMap'):
-    """Return a LinearSegmentedColormap
-    seq: a sequence of floats and RGB-tuples. The floats should be increasing
-    and in the interval (0,1).
-    """
-    seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
-    cdict = {'red': [], 'green': [], 'blue': []}
-    for i, item in enumerate(seq):
-        if isinstance(item, float):
-            r1, g1, b1 = seq[i - 1]
-            r2, g2, b2 = seq[i + 1]
-            cdict['red'].append([item, r1, r2])
-            cdict['green'].append([item, g1, g2])
-            cdict['blue'].append([item, b1, b2])
-    return mcolors.LinearSegmentedColormap(name, cdict)
-
-def getcolorlist(cptfile):
-    """Get a tuple for colorlist from a cptfile"""
-    currentdir=os.getcwd()
-    try: 
-        f = open(cptfile, 'r')
-    except IOError:
-        raise ValueError("File ("+cptfile+") does not exist in the current directory - "+currentdir)
-    cptarr=np.genfromtxt(cptfile, dtype=None,comments="#")
-    colorlist=[]
-    for irow in np.arange(len(cptarr)): 
-        tups=cptarr[irow][1]/255.,cptarr[irow][2]/255.,cptarr[irow][3]/255.
-        val=(cptarr[irow][4]-cptarr[0][4])/(cptarr[len(cptarr)-1][0]-cptarr[0][4])
-        if irow==1:
-            colorlist.append(tups)
-        elif irow > 1 and irow < len(cptarr)-1:
-            colorlist.append(tups)    
-            colorlist.append(val)    
-            colorlist.append(tups)    
-    return colorlist
-    
-def customcolorpalette(name='bk',cptfolder='~/CPT',colorlist=None,colormax=2.,middlelimit=0.5,ifgraytest=0):
-    """Used to return preset color palettes from cptfolder. ifgraytest test how the figure looks in gray scale. (-colormax,colormax) are the limits of the colorbar. zerolimit is the limit to which the middle color (e.g. grey) will extend on either side of colorttmax mid. """
-    c = mcolors.ColorConverter().to_rgb    
-    if name=='r_lgrey_b':
-        colorlist=[c('blue'), c('lightgray'), (2.*colormax-2.*middlelimit)/(4.*colormax), c('lightgray'),c('lightgray'), (2.*colormax+2.*middlelimit)/(4.*colormax), c('lightgray'),c('red'), 1., c('red')]
-    elif name=='bk':
-        cptfolder=tools.get_fullpath(cptfolder)
-        if os.path.isfile(cptfolder+'/bk1_0.cpt_'):
-            colorlist=getcolorlist(cptfolder+'/bk1_0.cpt_')
-        else:
-            raise ValueError("Error: Could not find file "+cptfolder+'/bk1_0.cpt_')
-    elif name=='hit1':
-        cptfolder=tools.get_fullpath(cptfolder)
-        if os.path.isfile(cptfolder+'/hit1.cpt_'):
-            colorlist=getcolorlist(cptfolder+'/hit1.cpt_')
-        else:
-            raise ValueError("Could not find file "+cptfolder+'/hit1.cpt_')           
-    elif name=='yuguinv':
-        cptfolder=tools.get_fullpath(cptfolder)
-        if os.path.isfile(cptfolder+'/yu1_2inv.new.cpt_'):
-            colorlist=getcolorlist(cptfolder+'/yu1_2inv.new.cpt_')
-        else:
-            raise ValueError("Could not find file "+cptfolder+'/yu1_2inv.new.cpt_')           
-        
-    if colorlist is None: raise ValueError("No colorlist found")
-    custom_cmap = make_colormap(colorlist,name)
-    cmx.register_cmap(name=custom_cmap.name, cmap=custom_cmap)
-    palette=custom_cmap.name
-    
-    if ifgraytest==1:
-        palette=grayify_cmap(palette)
-        
-    return custom_cmap    
+from .. import mapping
+from .. import tools
+from .. import data
+from .. import constants
+from .common import standardcolorpalette
                 
 ############################### PLOTTING ROUTINES ################################        
 def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
@@ -508,28 +362,28 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
     """plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
     
     # Calculate intermediate points    
-    lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2km)
-    interval=gcdelta*constants.deg2km/(numdegticks-1) # interval in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2km,interval))
+    lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2m)
+    interval=gcdelta*constants.deg2m/(numdegticks-1) # interval in km
+    coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2m,interval))
 
     # Center lat lon based on azimuth
     if gcdelta > 350.:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,45.*constants.deg2km)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,45.*constants.deg2m)
     elif gcdelta >= 180. and gcdelta <= 350.:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*constants.deg2km)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*constants.deg2m)
     else:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*constants.deg2km)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*constants.deg2m)
         
     # Choose what to do based on projection
     if projection=='ortho':
         m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l')
     else:
         # center left lat/lon, then left crnr
-        latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*constants.deg2km/2.)
-        llcrnrlat,llcrnrlon=mapping.getDestinationLatLong(latcenleft,loncenleft,180.,height*constants.deg2km/2.)
+        latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*constants.deg2m/2.)
+        llcrnrlat,llcrnrlon=mapping.getDestinationLatLong(latcenleft,loncenleft,180.,height*constants.deg2m/2.)
         # center right lat/lon, then left crnr
-        latcenright,loncenright=mapping.getDestinationLatLong(lat_0,lon_0,90.,width*constants.deg2km/2.)
-        urcrnrlat,urcrnrlon=mapping.getDestinationLatLong(latcenright,loncenright,0.,height*constants.deg2km/2.)
+        latcenright,loncenright=mapping.getDestinationLatLong(lat_0,lon_0,90.,width*constants.deg2m/2.)
+        urcrnrlat,urcrnrlon=mapping.getDestinationLatLong(latcenright,loncenright,0.,height*constants.deg2m/2.)
 
         m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l',llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat, urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
         # draw parallels and meridians.
@@ -554,9 +408,9 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
     if gcdelta < 180.:
         m.drawgreatcircle(lon1, lat1, lon2, lat2,color='k',linewidth=3.)
     elif gcdelta == 180.:
-        latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*constants.deg2km)
-        latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*constants.deg2km)
-#         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*constants.deg2km)
+        latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*constants.deg2m)
+        latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*constants.deg2m)
+#         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*constants.deg2m)
         lonextent,latextent=m([lonextent1,lonextent2],[latextent1,latextent2])
         m.plot(lonextent,latextent,color='k',linewidth=3.)
     return m
@@ -712,16 +566,17 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
             raise ValueError('model in gettopotransect not a string or xarray')
                     
     #find destination point
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km)
-    interval=gcdelta*constants.deg2km/(numeval-1) # interval in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km,interval))
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    interval=gcdelta*constants.deg2m/(numeval-1) # interval in m
+    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
 
     #query tree for topography
-    qpts_lng = np.linspace(lng1,lng2,len(coords))
-    qpts_lat = np.linspace(lat1,lat2,len(coords))
-    qpts_rad = np.linspace(constants.R/1000.,constants.R/1000.,len(coords))
+    evalpoints=np.column_stack((constants.R/1000.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
+    
+    pdb.set_trace()
+
     # get the interpolation
-    valselect = tools.querytree3D(tree,qpts_lat,qpts_lng,qpts_rad,vals,k=k)
+    valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,k=k)
     
     #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
     return valselect,model,tree
@@ -747,7 +602,7 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
 #     title(phase, fontsize=20,loc='left')
     return ax
     
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,k=1):
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,k=3):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
     #get full path
@@ -765,7 +620,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
             ds = xr.open_dataset(ncfile)
         else:
             raise ValueError("Error: Could not find file "+ncfile)
-        treefile = dbs_path+'/'+ds.attrs['kerstr']+'.KDTree.3D.pkl'
+        treefile = dbs_path+'/'+constants.planetpreferred+'.'+ds.attrs['kerstr']+'.KDTree.3D.pkl'
         tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'])
         model = ds.variables[parameter]      
         ds.close() #close netcdf file
@@ -776,10 +631,10 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
             vals = model.data.flatten(order='C')
         except:
             raise ValueError('model in gettopotransect not a string or xarray')
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km)
-    interval=gcdelta*constants.deg2km/(numevalx-1) # interval in km
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    interval=gcdelta*constants.deg2m/(numevalx-1) # interval in km
     radevalarr=np.linspace(radii[0],radii[1],numevalz) #radius arr in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km,interval))
+    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
         
     if(len(coords) != numevalx):
         raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
@@ -795,11 +650,11 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     
     return xsec.T,model,tree
 
-def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='bk',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalx=50,numevalz=50,k=1,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
+def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalx=50,numevalz=50,k=1,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
     """Plot one section through the Earth through a pair of points.""" 
     
     # Specify theta such that it is symmetric
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2km)
+    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
     if gcdelta==180. or gcdelta==360.:
         theta=[0.,gcdelta]
     else:
@@ -865,7 +720,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
     try:
         cpalette = plt.get_cmap(colorpalette)
     except ValueError:
-        cpalette=customcolorpalette(colorpalette)
+        cpalette=standardcolorpalette(colorpalette)
         
     interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,k=k)
     
