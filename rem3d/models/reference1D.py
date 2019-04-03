@@ -21,10 +21,12 @@ from matplotlib import gridspec # Relative size of subplots
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
 from copy import copy, deepcopy
 from collections import Counter
+import traceback
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import plots 
 from .. import constants
+from rem3d.f2py import getbullen
 #######################################################################################
 # 1D model class
 
@@ -43,6 +45,7 @@ class reference1D(object):
             self.read(file)
             self.get_Love_elastic()
             self.get_discontinuity()
+            self.get_mineralogical()
     
     def __str__(self):
         if self.data is not None and self.__nlayers__ > 0:
@@ -70,13 +73,15 @@ class reference1D(object):
         Read a card deck file used in OBANI. Other formats not ready yet
         '''
         try:
-            self.readcards(file)
+            self.readmineoscards(file)
         except:
+            var1 = traceback.format_exc()
+            print(var1)
             raise NotImplementedError('model format is not currently implemented in reference1D.read')
         
         
-    def readcards(self,file, fields=['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']):
-        
+    def readmineoscards(self,file):
+        fields=['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
         formats=[np.float for ii in range(len(fields))]
         modelarr = np.genfromtxt(file,dtype=None,comments='#',skip_header=3,names=fields)
         # Add depth assuming model describes from Earth center to surface
@@ -113,7 +118,7 @@ class reference1D(object):
         '''
         if self.data is not None and self.__nlayers__ > 0:
             # Add metadata
-            self.metadata['attributes'].append(['A','C','N','L','F','vp','vs','vphi','xi','phi','Zp','Zs'])
+            for field in ['A','C','N','L','F','vp','vs','vphi','xi','phi','Zp','Zs']: self.metadata['attributes'].append(field)
             
             # Add data fields
             self.data=append_fields(self.data, 'A', self.data['rho']*self.data['vph']**2 , usemask=False)
@@ -134,7 +139,37 @@ class reference1D(object):
             self.data=append_fields(self.data, 'Zs', self.data['vs']*self.data['rho'], usemask=False)
         else:
             raise ValueError('reference1D object is not allocated')
-
+            
+    def get_mineralogical(self):
+        '''
+        Get the Love parameters and Voigt averaged elastic properties with depth
+        
+        gravity: gavity at each depth
+        
+        Brunt-vaisala Frequency: Used for Bullen's parameter
+        
+        Bullen: Bullen's parameter
+        
+        pressure: pressure at each depth
+        '''
+        if self.data is not None and self.__nlayers__ > 0:
+            if constants.planetpreferred == 'Earth':
+                file = self.metadata['filename']
+                layers = self.__nlayers__
+                grav,vaisala,bullen,pressure = getbullen(file,layers)
+                # Add metadata
+                for field in ['gravity','brunt-vaisala','Bullen','pressure']: self.metadata['attributes'].append(field)
+            
+                # Add data fields
+                self.data=append_fields(self.data, 'gravity', grav, usemask=False)
+                self.data=append_fields(self.data, 'brunt-vaisala', vaisala, usemask=False)
+                self.data=append_fields(self.data, 'Bullen', bullen, usemask=False)
+                self.data=append_fields(self.data, 'pressure', pressure, usemask=False)
+            else:
+                print('Warning: mineralogical parameters not evaluated for '+constants.planetpreferred)
+        else:
+            raise ValueError('reference1D object is not allocated')
+            
     def get_discontinuity(self):
         '''
         Get values, average values and contrasts at discontinuities

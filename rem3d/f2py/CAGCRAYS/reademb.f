@@ -1,4 +1,4 @@
-      subroutine reademb(lu,ml,nl,xb,xt,nlev,iflu,iani,ierr)
+      subroutine reademb(lu,ml,nl,xb,xt,nlev,iflu,iani,capom,capg,ierr)
       implicit double precision (a-h,o-z)
       real*8 xb(ml)
       real*8 xt(ml)
@@ -9,8 +9,8 @@ c
       include 'emcommonb.h'
 c
       dimension y(3),y1(3),y2(3),y3(3),ydot(3)
-      parameter (capom=7.292115d-5)
-      parameter (capg=6.6723d-11)
+c      parameter (capom=7.292115d-5)
+c      parameter (capg=6.6723d-11)
       parameter (twopi=6.2831853072)
 c
       read(lu,"(a)") emtitle
@@ -47,7 +47,7 @@ c
         vsisolev(iemlev)=dsqrt(xn/v2)*0.001d0
 	bigklev(iemlev)=xkapa
       enddo
-      write(6,"('number of levels defined:',2i5)") n,numemlev
+c      write(6,"('number of levels defined:',2i5)") n,numemlev
 c
 c---- spline the variables
 c
@@ -81,11 +81,11 @@ c
       ibotlev(numemreg)=ibotprev
       itoplev(numemreg)=numemlev
 c
-      write(6,"('found ',i3,' regions')") numemreg
-      do iemreg=1,numemreg
-        write(6,"(i3,':',i4,i4,f12.4,f12.4)") iemreg,ibotlev(iemreg),
-     #     itoplev(iemreg),radlev(ibotlev(iemreg)),radlev(itoplev(iemreg))
-      enddo
+c      write(6,"('found ',i3,' regions')") numemreg
+c      do iemreg=1,numemreg
+c        write(6,"(i3,':',i4,i4,f12.4,f12.4)") iemreg,ibotlev(iemreg),
+c     #     itoplev(iemreg),radlev(ibotlev(iemreg)),radlev(itoplev(iemreg))
+c      enddo
 c
 c---- find the inner-core boundary (top layer in inner core),
 c---- the outer-core boundary (top layer in outer core),
@@ -111,15 +111,15 @@ c
         endif
         if(vpvlev(itoplev(iemreg)).gt.7.5d0.and.
      #     vpvlev(ibotlev(iemreg+1)).lt.7.5d0) then
-        write(6,"(i4,2f10.4)") iemreg,vpvlev(itoplev(iemreg)),vpvlev(ibotlev(iemreg+1))
+c        write(6,"(i4,2f10.4)") iemreg,vpvlev(itoplev(iemreg)),vpvlev(ibotlev(iemreg+1))
             itopmantle=itoplev(iemreg)
         endif
       enddo
-      write(6,"('top level in inner core:',2i4)") nic,itopic
-      write(6,"('top level in outer core:',2i4)") noc,itopoc
-      write(6,"('top level in lower mantle (670):',i4,f10.4)") i670,6371.d0-radlev(i670)
-      write(6,"('top level in transition zone (400):',i4,f10.1)") i400,6371.d0-radlev(i400)
-      write(6,"('top level in mantle    :',2i4)") moho,itopmantle
+C     write(6,"('top level in inner core:',2i4)") nic,itopic
+C     write(6,"('top level in outer core:',2i4)") noc,itopoc
+C     write(6,"('top level in lower mantle (670):',i4,f10.4)") i670,6371.d0-radlev(i670)
+C     write(6,"('top level in transition zone (400):',i4,f10.1)") i400,6371.d0-radlev(i400)
+C     write(6,"('top level in mantle    :',2i4)") moho,itopmantle
 c
       do iemreg=1,numemreg
         xb(iemreg)=radlev(ibotlev(iemreg))
@@ -228,13 +228,13 @@ c
         go to 1100
 c
   100 continue
-      write(6,"('ell,eta,rhob',3g15.5)") elllev(numemlev),eta2lev(numemlev),y(3)
+c      write(6,"('ell,eta,rhob',3g15.5)") elllev(numemlev),eta2lev(numemlev),y(3)
 c
 c---- scaling for ellipticity
 c
       const=2.5d0*(capom**2)*3.d0/
      #         (2.d0*twopi*capg*y(3)*1000.d0*elllev(numemlev)*(eta2lev(numemlev)+2.d0))
-      write(6,"('const',g15.5)") const 
+c      write(6,"('const',g15.5)") const 
       do ilev=1,numemlev
         elllev(ilev)=elllev(ilev)*const
       enddo
@@ -250,7 +250,7 @@ c
       call drspln(1,numemlev,radlev,elllev,ellspl,work)
       call drspln(1,numemlev,radlev,eta2lev,eta2spl,work)
       call drspln(1,numemlev,radlev,gravlev,gravspl,work)
-      write(6,"('ell:',g15.5)") elllev(numemlev),1.d0/elllev(numemlev)
+c      write(6,"('ell:',g15.5)") elllev(numemlev),1.d0/elllev(numemlev)
 c
 c---- integrate to get the pressure, starting from CoE.
 c

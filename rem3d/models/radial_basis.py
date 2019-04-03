@@ -109,12 +109,8 @@ class radial_basis(object):
         store: store them in data
         """  
 
-        if isinstance(depths_in_km, (list,tuple,np.ndarray)):
-            depths = np.asarray(depths_in_km)
-        elif isinstance(depths_in_km, float):
-            depths = np.asarray([depths_in_km])
-        else:
-            raise TypeError('depths must be list or tuple, not %s' % type(depths_in_km))
+        # convert to numpy arrays
+        depths = tools.convert2nparray(depths_in_km)
 
         # compute the radial parameteriation in specific depths
         if self.type in ['vbspl','variable splines']:        
@@ -124,10 +120,15 @@ class radial_basis(object):
             vercof = np.ones(len(depths))
             dvercof = np.zeros(len(depths))
         elif self.type in ['boxcar','constant']: 
-            rtop = constants.R/1000. - self.metadata['depthtop']  
-            rbottom = constants.R/1000. - self.metadata['depthbottom']  
-            rquery = constants.R/1000. - depths_in_km
-            vercof, dvercof = tools.eval_polynomial(rquery,[rbottom,rtop],constants.R/1000.,types = ['CONSTANT'])
+            # convert to numpy arrays
+            depthtop = tools.convert2nparray(self.metadata['depthtop'])
+            depthbottom = tools.convert2nparray(self.metadata['depthbottom'])
+
+            rtop = constants.R/1000. - depthtop
+            rbottom = constants.R/1000. - depthbottom 
+            rquery = constants.R/1000. - depths
+            rrange = np.vstack((rbottom,rtop)).T
+            vercof, dvercof = tools.eval_polynomial(rquery,rrange,constants.R/1000.,types = ['CONSTANT'])
         else:
             raise TypeError('metadata type not defined in eval_radial %s' % self.type)
             

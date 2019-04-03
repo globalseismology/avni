@@ -421,6 +421,7 @@ class model3d(object):
                 # get the projection matrix
                 project = self.projection(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res)
                 modelarr = self.coeff2modelarr(resolution=res,realization=realization)
+                pdb.set_trace()
                 predsparse = project['projarr']*modelarr
                 values = predsparse.data
                 
@@ -541,7 +542,7 @@ class model3d(object):
 
         return 
             
-    def readprojmatrix(self,lateral_basis):
+    def readprojfortran(self,lateral_basis):
         """
         Reads Projection matrix created by plot_3dmod_pm. 
         lateral_basis can be M362 or pixel1
@@ -717,6 +718,7 @@ class model3d(object):
         projarr = projection['projarr']; refstrarr = projection['refstrarr']; deptharr = projection['deptharr']  
     
         varindex = np.where(refstrarr==variable)[0]
+        if len(varindex) == 0: raise ValueError('no projection found for variable '+variable)
         absdiff=abs(deptharr-depth)
         # Find the nearest depth
         depindex = absdiff.argmin()

@@ -13,6 +13,7 @@ from scipy import sparse
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from rem3d.f2py import vbspl,dbsplrem,ylm
 from .trigd import sind,cosd,acosd
+from .common import convert2nparray
 #######################################################################################
    
 def eval_vbspl(depths,knots):
@@ -38,14 +39,8 @@ def eval_vbspl(depths,knots):
     else:
         raise TypeError('knots must be list or tuple, not %s' % type(knots))
         
-    if isinstance(depths, (list,tuple,np.ndarray)):
-        depths = np.asarray(depths)
-    elif isinstance(depths, float):
-        depths = np.asarray([depths])
-    elif isinstance(depths, int):
-        depths = np.asarray([float(depths)])
-    else:
-        raise TypeError('depths must be list or tuple, not %s' % type(depths))
+    # convert to numpy arrays
+    depths = convert2nparray(depths)
 
     # find repeated values
     repeats = [item for item, count in Counter(knots).items() if count > 1]
@@ -123,14 +118,8 @@ def eval_splrem(radius, radius_range, nsplines):
                       Both arrays have size (Nradius, Nsplines).
     """
         
-    if isinstance(radius, (list,tuple,np.ndarray)):
-        radius = np.asarray(radius)
-    elif isinstance(radius, float):
-        radius = np.asarray([radius])
-    elif isinstance(radius, int):
-        radius = np.asarray([float(radius)])
-    else:
-        raise TypeError('radius must be list or tuple, not %s' % type(depths))
+    # convert to numpy arrays
+    radius = convert2nparray(radius)
 
     if len(radius_range) != 2 or not isinstance(radius_range, (list,tuple,np.ndarray)):
         raise TypeError('radius_range must be list , not %s' % type(radius_range))
@@ -171,24 +160,19 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     vercof : value of the polynomial coefficients at each depth, size (Nradius).
     """
         
-    if isinstance(radius, (list,tuple,np.ndarray)):
-        radiusin = np.asarray(radius)
-    elif isinstance(radius, float):
-        radiusin = np.asarray([radius])
-    elif isinstance(radius, int):
-        radiusin = np.asarray([float(radius)])
-    else:
-        raise TypeError('radius must be list or tuple, not %s' % type(radius))
+    # convert to numpy arrays
+    radiusin = convert2nparray(radius)
+    radius_range = convert2nparray(radius_range)
 
-    if len(radius_range) != 2 or not isinstance(radius_range, (list,tuple,np.ndarray)):
+    if radius_range.shape[1] != 2 or not isinstance(radius_range, (list,tuple,np.ndarray)):
         raise TypeError('radius_range must be list , not %s' % type(radius_range))
     
     # keys in coefficients should be acceptable
     choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
     assert(np.all([key in choices for key in types]))
-    npoly = len(types)
+    npoly = len(radius_range)*len(types)
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
-    assert(np.all(np.sort(radius_range)==radius_range)),'radius_range needs to be sorted'
+    for ii in range(len(radius_range)): assert(np.all(np.sort(radius_range[ii])==radius_range[ii])),'radius_range needs to be sorted'
     rbot=radius_range[0]/rnorm
     rtop=radius_range[1]/rnorm
     findtopbot = np.any([key in ['BOTTOM','TOP'] for key in types])
@@ -197,42 +181,46 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     if findtopbot and findconstantlinear: raise ValueError('Cannot have both BOTTOM/TOP and CONSTANT/LINEAR as types in eval_polynomial')
     
     for irad in range(len(radiusin)):
-        #Undefined if depth does not lie within the depth extents of knot points                      
-        if radiusin[irad] <= min(radius_range) or radiusin[irad] > max(radius_range): 
-            # <= so that the boundary depth belongs to only one radial kernel
-            temp = np.zeros(npoly)
-            dtemp = np.zeros(npoly)
-        else:
-            rn=radiusin[irad]/rnorm  
-            temp = np.zeros(npoly) 
-            dtemp = np.zeros(npoly)
-            for ii in range(npoly):
-                if findconstantlinear:
-                    if types[ii]=='CONSTANT':
-                        temp[ii]=1.
-                        dtemp[ii]=0.
-                    elif types[ii]=='LINEAR':
-                        temp[ii]=rn
-                        dtemp[ii]=1.
-                    elif types[ii]=='QUADRATIC':
-                        temp[ii]=rn**2
-                        dtemp[ii]=2.*rn
-                    elif types[ii]=='CUBIC':
-                        temp[ii]=rn**3
-                        dtemp[ii]=3.*rn**2
-                elif findtopbot:
-                    if types[ii]=='TOP':
-                        temp[ii] = 1.-(rn-rtop)/(rbot-rtop)
-                        dtemp[ii]= -1./(rbot-rtop)
-                    elif types[ii]=='BOTTOM':
-                        temp[ii] = (rn-rtop)/(rbot-rtop)
-                        dtemp[ii]= 1./(rbot-rtop)
-                    elif types[ii]=='QUADRATIC':
-                        temp[ii] = rn**2-rtop**2-(rn-rtop)*(rbot+rtop)
-                        dtemp[ii]=2.*rn - 1./(rbot+rtop)
-                    elif types[ii]=='CUBIC':
-                        temp[ii]=rn**3-rtop**3-(rn-rtop)*(rbot**3-rtop**3)/(rbot-rtop)
-                        dtemp[ii]=3.*rn**2 - 1.*(rbot**3-rtop**3)/(rbot-rtop)
+        temp = np.zeros(npoly)
+        dtemp = np.zeros(npoly)
+        for irange in range(len(radius_range)):
+            #Undefined if depth does not lie within the depth extents of knot points                      
+            if radiusin[irad] <= min(radius_range[irange]) or radiusin[irad] > max(radius_range[irange]): 
+                # <= so that the boundary depth belongs to only one radial kernel
+                for itype in range(len(types)):
+                    ii = irange*len(types)+itype
+                    temp[ii]=0.
+                    dtemp[ii]=0.
+            else:
+                rn=radiusin[irad]/rnorm  
+                for itype in range(len(types)):
+                    ii = irange*len(types)+itype
+                    if findconstantlinear:
+                        if types[itype]=='CONSTANT':
+                            temp[ii]=1.
+                            dtemp[ii]=0.
+                        elif types[itype]=='LINEAR':
+                            temp[ii]=rn
+                            dtemp[ii]=1.
+                        elif types[itype]=='QUADRATIC':
+                            temp[ii]=rn**2
+                            dtemp[ii]=2.*rn
+                        elif types[itype]=='CUBIC':
+                            temp[ii]=rn**3
+                            dtemp[ii]=3.*rn**2
+                    elif findtopbot:
+                        if types[itype]=='TOP':
+                            temp[ii] = 1.-(rn-rtop)/(rbot-rtop)
+                            dtemp[ii]= -1./(rbot-rtop)
+                        elif types[itype]=='BOTTOM':
+                            temp[ii] = (rn-rtop)/(rbot-rtop)
+                            dtemp[ii]= 1./(rbot-rtop)
+                        elif types[itype]=='QUADRATIC':
+                            temp[ii] = rn**2-rtop**2-(rn-rtop)*(rbot+rtop)
+                            dtemp[ii]=2.*rn - 1./(rbot+rtop)
+                        elif types[itype]=='CUBIC':
+                            temp[ii]=rn**3-rtop**3-(rn-rtop)*(rbot**3-rtop**3)/(rbot-rtop)
+                            dtemp[ii]=3.*rn**2 - 1.*(rbot**3-rtop**3)/(rbot-rtop)
         if irad == 0:
             vercof = temp; dvercof = dtemp
         else:    
@@ -289,7 +277,7 @@ def eval_splcon(latitude,longitude,xlaspl,xlospl,xraspl):
         ncon,icon,con = splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl) 
         rowind = iloc*np.ones(ncon)
         colind = []
-        for ii in range(ncon): colind.append(icon[ii]-1)
+        for ii in range(ncon): colind.append(icon[ii])
         colind = np.array(colind)
         # update values
         values = values + sparse.csr_matrix((con[:ncon], (rowind, colind)), shape=(len(latitude),ncoefhor)) 

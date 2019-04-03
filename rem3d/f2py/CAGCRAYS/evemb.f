@@ -18,7 +18,7 @@ c
 c---- calculate the Brunt-Vaisala frquency and Bullen parameter
 c
       rhosi=rho*1000.
-      rhoder=drspleder(ifilev,ilalev,radlev,rholev,rhospl,rad)
+      rhoder=drspleder(maxlev,ifilev,ilalev,radlev,rholev,rhospl,rad)
       vaisala=-grav*rhoder/rhosi-rhosi*grav**2/bigk
 c
       if(vaisala.ne.0..and.grav.ne.0.) then

@@ -17,6 +17,7 @@ from scipy import sparse
 from .lateral_basis import lateral_basis
 from .radial_basis import radial_basis
 from .common import radial_attributes
+from .. import tools
 #######################################################################################
 
 # kernel set
@@ -91,21 +92,24 @@ class kernel_set(object):
                     metadata['info'] = radker.split(',')[-1]
                     radial[variable].append(radial_basis(name=radker, type = 'dirac delta', metadata=metadata))
                 elif 'boxcar' in radker or 'constant' in radker:
-                    found = True
-                    depthrange = radker.split(',')[-1]
-                    metadata['depthtop'] = float(depthrange.split('-')[0])
-                    metadata['depthbottom'] = float(depthrange.split('-')[1].split('km')[0])
+                    found = True                    
+                    metadata['depthtop'] = [float(findrad['kernel'][ii].split(',')[-1].split('-')[0]) for ii in np.arange(len(findrad))]
+                    metadata['depthbottom'] = [float(findrad['kernel'][ii].split(',')[-1].split('-')[1].split('km')[0]) for ii in np.arange(len(findrad))]
                     radial[variable].append(radial_basis(name=radker, type = 'boxcar', metadata=metadata))
                 if not found: raise ValueError('information not found for '+radker)
         self.data['radial_basis']=radial
         
     def getprojection(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5'):
         
-        
+        pdb.set_trace()
+        # all the parameter options
+        stringsum = self.metadata['varstr'][0]
+        for stri in self.metadata['varstr'][1:]: stringsum= stringsum+', '+stri
+
         # select the radial kernels for this parameter
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
         ivarfind =np.where(self.metadata['varstr']==parameter)[0]
-        assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set'
+        assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set among: '+stringsum 
         findrad = np.array([(ii, self.metadata['desckern'][ii]) for ii in np.arange(len(self.metadata['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
 
         # select corresponding lateral bases
@@ -117,8 +121,7 @@ class kernel_set(object):
  
         #make sure only one variable is selected based on parameter input
         variables = np.unique(self.metadata['varstr'][self.metadata['ivarkern']-1][findrad['index']])
-        assert(len(variables) == 1),'only one parameter can be selected in eval_kernel_set'
-        # select radial bases for this variable
+        assert(len(variables) == 1),'only one parameter, not '+str(len(variables))+', can be selected in eval_kernel_set from: '+stringsum        # select radial bases for this variable
         radial_select = self.data['radial_basis'][variables[0]]
         
         #initialize a projection matrix
@@ -134,5 +137,7 @@ class kernel_set(object):
             
             horcof = lateral_select[ii].eval_lateral(latitude,longitude)
             vercof, dvercof = radial_select[ii].eval_radial(depth_in_km)
-            proj=proj+sparse.csr_matrix( (horcof.data*vercof,horcof.indices+indstart,horcof.indptr), shape=(1,self.metadata['ncoefcum'][-1]))
+            # convert to numpy arrays
+            vercof = tools.convert2nparray(vercof)
+            proj=proj+sparse.csr_matrix( (horcof.data*vercof[ii],horcof.indices+indstart,horcof.indptr), shape=(1,self.metadata['ncoefcum'][-1]))
         return proj
