@@ -156,13 +156,13 @@ class reference1D(object):
             if constants.planetpreferred == 'Earth':
                 file = self.metadata['filename']
                 layers = self.__nlayers__
-                grav,vaisala,bullen,pressure = getbullen(file,layers)
+                grav,vaisala,bullen,pressure = getbullen(file,layers,constants.omega,constants.G)
                 # Add metadata
                 for field in ['gravity','brunt-vaisala','Bullen','pressure']: self.metadata['attributes'].append(field)
             
                 # Add data fields
                 self.data=append_fields(self.data, 'gravity', grav, usemask=False)
-                self.data=append_fields(self.data, 'brunt-vaisala', vaisala, usemask=False)
+                self.data=append_fields(self.data, 'Brunt-Vaisala', vaisala, usemask=False)
                 self.data=append_fields(self.data, 'Bullen', bullen, usemask=False)
                 self.data=append_fields(self.data, 'pressure', pressure, usemask=False)
             else:
