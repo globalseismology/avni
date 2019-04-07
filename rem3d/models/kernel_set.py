@@ -101,7 +101,6 @@ class kernel_set(object):
         
     def getprojection(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5'):
         
-        pdb.set_trace()
         # all the parameter options
         stringsum = self.metadata['varstr'][0]
         for stri in self.metadata['varstr'][1:]: stringsum= stringsum+', '+stri
@@ -109,7 +108,7 @@ class kernel_set(object):
         # select the radial kernels for this parameter
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
         ivarfind =np.where(self.metadata['varstr']==parameter)[0]
-        assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set among: '+stringsum 
+        assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set among: '+stringsum+'. Only '+str(len(ivarfind))+' found for parameter '+parameter
         findrad = np.array([(ii, self.metadata['desckern'][ii]) for ii in np.arange(len(self.metadata['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
 
         # select corresponding lateral bases
@@ -133,11 +132,11 @@ class kernel_set(object):
             if findrad['index'][ii] == 0:
                 indstart = 0
             else:
-                indstart = self.metadata['ncoefcum'][findrad['index'][ii]-1]-1
-            
-            horcof = lateral_select[ii].eval_lateral(latitude,longitude)
+                indstart = self.metadata['ncoefcum'][findrad['index'][ii]-1]
             vercof, dvercof = radial_select[ii].eval_radial(depth_in_km)
             # convert to numpy arrays
             vercof = tools.convert2nparray(vercof)
-            proj=proj+sparse.csr_matrix( (horcof.data*vercof[ii],horcof.indices+indstart,horcof.indptr), shape=(1,self.metadata['ncoefcum'][-1]))
+            if vercof[ii] != 0.:
+                horcof = lateral_select[ii].eval_lateral(latitude,longitude)
+                proj=proj+sparse.csr_matrix( (horcof.data*vercof[ii],horcof.indices+indstart,horcof.indptr), shape=(1,self.metadata['ncoefcum'][-1]))
         return proj

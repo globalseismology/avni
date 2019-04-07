@@ -146,7 +146,7 @@ class reference1D(object):
         
         gravity: gavity at each depth
         
-        Brunt-vaisala Frequency: Used for Bullen's parameter
+        Brunt-Vaisala Frequency: Used for Bullen's parameter
         
         Bullen: Bullen's parameter
         
@@ -158,7 +158,7 @@ class reference1D(object):
                 layers = self.__nlayers__
                 grav,vaisala,bullen,pressure = getbullen(file,layers,constants.omega,constants.G)
                 # Add metadata
-                for field in ['gravity','brunt-vaisala','Bullen','pressure']: self.metadata['attributes'].append(field)
+                for field in ['gravity','Brunt-Vaisala','Bullen','pressure']: self.metadata['attributes'].append(field)
             
                 # Add data fields
                 self.data=append_fields(self.data, 'gravity', grav, usemask=False)

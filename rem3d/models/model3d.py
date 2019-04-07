@@ -72,9 +72,12 @@ class model3d(object):
                 except:
                     print(var1)
             if not success1 and not success2: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
-            # get the kernel set
+            # try to get the kernel set
             for resolution in self.metadata.keys():
-                self.metadata[resolution]['kernel_set'] = kernel_set(self.metadata[resolution])
+                try:
+                    self.metadata[resolution]['kernel_set'] = kernel_set(self.metadata[resolution])
+                except:
+                    print('Warning: Kernelset could not initialized for'+str(resolution))
                         
     def __str__(self):
         if self.name is not None:
@@ -419,12 +422,10 @@ class model3d(object):
         for res in resolution:
             if not interpolated:
                 # get the projection matrix
-                project = self.projection(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res)
+                project = self.calculateproj(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res)
                 modelarr = self.coeff2modelarr(resolution=res,realization=realization)
-                pdb.set_trace()
                 predsparse = project['projarr']*modelarr
                 values = predsparse.data
-                
             else:
                 if tree==None:
                     kerstr = self.metadata['resolution_'+str(res)]['kerstr']
@@ -542,7 +543,7 @@ class model3d(object):
 
         return 
             
-    def readprojfortran(self,lateral_basis):
+    def readprojbinary(self,lateral_basis):
         """
         Reads Projection matrix created by plot_3dmod_pm. 
         lateral_basis can be M362 or pixel1
@@ -661,7 +662,7 @@ class model3d(object):
         projection['model']=model; projection['param']=lateral_basis         
         return projection
 
-    def projection(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5',resolution=0):
+    def calculateproj(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5',resolution=0):
         """
         Get the projection matrix from a lateral basis to another and for particular depths  
         """    
@@ -707,7 +708,7 @@ class model3d(object):
         return projection
 
 
-    def getprojtimesmodel(self,projection,variable,depth,resolution=0,realization=0):
+    def projslices(self,projection,variable,depth,resolution=0,realization=0):
         """
         Projection matrix multiplied by model ensemble. Choses the nearest depth available for the projection.
         """    
@@ -726,6 +727,53 @@ class model3d(object):
             print ("No unique depth found in the projection matrix. Choosing the nearest available depth "+str(deptharr[depindex]))
         modelselect=projarr[depindex,varindex[0]]*modelarr    
         return modelselect,deptharr[depindex]
+        
+    def reparameterize(self, model3d,resolution=0,realization=0):
+        """
+        Inverts for new coefficients in self.data from the coefficients in model3d class
+        """
+        if type(model3d).__name__ != 'model3d': raise ValueError('input model class should be a model3d instance')
+        
+        # Get the radial projection file
+        selfmeta = self.metadata['resolution_'+str(resolution)]
+        newmeta = model3d.metadata['resolution_'+str(resolution)]
+        selfkernel = selfmeta['kernel_set']
+        newkernel = newmeta['kernel_set']
+        
+        # get the projection matrix for each variable in self
+        dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
+        for variable in selfmeta['varstr']:
+            ivarfind =np.where(selfmeta['varstr']==variable)[0]
+            assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set'
+            findvar = selfmeta['varstr'][ivarfind[0]]
+            findrad = np.array([(ii, selfmeta['desckern'][ii]) for ii in np.arange(len(selfmeta['ivarkern'])) if ivarfind[0]+1 == selfmeta['ivarkern'][ii]],dtype=dt)
+            
+            # find the corresponding radial kernels in newmeta
+            ivarfind2 =np.where(newmeta['varstr']==variable)[0]
+            pdb.set_trace()
+            if len(ivarfind2) != 1: 
+                stringout = ''
+                for ii in range(len(newmeta['varstr'])): stringout=stringout+str(ii)+'. '+newmeta['varstr'][ii]+'\n'
+                print('')
+                print(stringout)
+                try:
+                    x = int(input('Warning: no unique corresponding variable found for '+variable+'. Select one index from above: - default is 1:'))
+                except (ValueError,EOFError):
+                    x = 1
+                ivarfind2 = np.array([x])
+            findvar2 = newmeta['varstr'][ivarfind2[0]]
+            findrad2 = np.array([(ii, newmeta['desckern'][ii]) for ii in np.arange(len(newmeta['ivarkern'])) if ivarfind2[0]+1 == newmeta['ivarkern'][ii]],dtype=dt)
+            
+            pdb.set_trace()
+            # calculate the projection matrix for all locations
+            longitude = selfmeta['xlopix'][0]; latitude = selfmeta['xlapix'][0]
+            radialinfo = selfkernel.data['radial_basis'][variable][0].metadata
+            depth_in_km = np.average(np.array([radialinfo['depthtop'],radialinfo['depthbottom']]),axis=0)
+            # loop over depths and append the projection matrices
+            proj = model3d.calculateproj(latitude=np.tile(latitude,len(depth_in_km)),longitude=np.tile(longitude,len(depth_in_km)),depth_in_km=np.repeat(depth_in_km,len(latitude)),parameter=findvar2,resolution=resolution)
+                
+            pdb.set_trace()
+       
 
     def printsplinefiles(self):
         """
