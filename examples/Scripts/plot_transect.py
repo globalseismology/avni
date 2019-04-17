@@ -4,7 +4,6 @@ Usage import """
 
 import sys,os
 import argparse #parsing arguments
-import cPickle
 
 ################################ IMPORT REM3D MODULES   #####################################
 from rem3d.f2py import ddelazgc # geolib library from NSW
