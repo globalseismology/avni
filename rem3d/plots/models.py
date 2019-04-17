@@ -351,7 +351,7 @@ def backgroundmap(ax,dbs_path=tools.get_filedir(),platescolor='r', **kwargs):
     # the continents will be drawn on top.
     m.drawmapboundary(fill_color='white')
     # fill continents, set lake color same as ocean color.
-    m.fillcontinents(color='lightgray',lake_color='white')
+    m.fillcontinents(color='darkgray',lake_color='white')
     # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
     plot_plates(m, dbs_path=dbs_path, color=platescolor, linewidth=1.)
@@ -363,12 +363,13 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
     
     # Calculate intermediate points    
     lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2m)
-    interval=gcdelta*constants.deg2m/(numdegticks-1) # interval in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2m,interval))
+    if numdegticks != 0 :
+        interval=gcdelta*constants.deg2m/(numdegticks-1) # interval in km
+        coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2m,interval))
 
     # Center lat lon based on azimuth
     if gcdelta > 350.:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,45.*constants.deg2m)
+        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth-90.,90.*constants.deg2m)
     elif gcdelta >= 180. and gcdelta <= 350.:
         lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*constants.deg2m)
     else:
@@ -397,22 +398,23 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
 
     if hotspots: plot_hotspots(m, dbs_path=tools.get_fullpath(dbs_path), s=30, color='lightgreen', edgecolor='k')
 
-    if gcdelta > 350.:
-        dotsstart_x,dotsstart_y=m(coords[0:1][:,1],coords[0:1][:,0])
-        m.scatter(dotsstart_x,dotsstart_y,s=50,zorder=10,facecolor='orange',edgecolor='k')
-    dotsstart_x,dotsstart_y=m(coords[1:2][:,1],coords[1:2][:,0])
-    dots_x,dots_y=m(coords[2:-1][:,1],coords[2:-1][:,0])
-    m.scatter(dots_x,dots_y,s=50,zorder=10,facecolor='w',edgecolor='k')
-    m.scatter(dotsstart_x,dotsstart_y,s=50,zorder=10,facecolor='m',edgecolor='k')
-    dotsall_x,dotsall_y=m(coords[:,1],coords[:,0])
-    if gcdelta < 180.:
-        m.drawgreatcircle(lon1, lat1, lon2, lat2,color='k',linewidth=3.)
-    elif gcdelta == 180.:
-        latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*constants.deg2m)
-        latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*constants.deg2m)
-#         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*constants.deg2m)
-        lonextent,latextent=m([lonextent1,lonextent2],[latextent1,latextent2])
-        m.plot(lonextent,latextent,color='k',linewidth=3.)
+    if numdegticks != 0 :
+        if gcdelta > 350.:
+            dotsstart_x,dotsstart_y=m(coords[0:1][:,1],coords[0:1][:,0])
+            m.scatter(dotsstart_x,dotsstart_y,s=50,zorder=10,facecolor='orange',edgecolor='k')
+        dotsstart_x,dotsstart_y=m(coords[1:2][:,1],coords[1:2][:,0])
+        dots_x,dots_y=m(coords[2:-1][:,1],coords[2:-1][:,0])
+        m.scatter(dots_x,dots_y,s=50,zorder=10,facecolor='w',edgecolor='k')
+        m.scatter(dotsstart_x,dotsstart_y,s=50,zorder=10,facecolor='m',edgecolor='k')
+        dotsall_x,dotsall_y=m(coords[:,1],coords[:,0])
+        if gcdelta < 180.:
+            m.drawgreatcircle(lon1, lat1, lon2, lat2,color='k',linewidth=3.)
+        elif gcdelta == 180.:
+            latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*constants.deg2m)
+            latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*constants.deg2m)
+    #         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*constants.deg2m)
+            lonextent,latextent=m([lonextent1,lonextent2],[latextent1,latextent2])
+            m.plot(lonextent,latextent,color='k',linewidth=3.)
     return m
     
 def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,4371.,4871.,5371.,5871.,6346.6],r_labels = ['CMB',' ','2000',' ','1000',' ','Moho'],fontsize=12):
@@ -515,7 +517,7 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
     theta_arr = np.linspace(theta[0],theta[1])
     disc_arr=[5961.,5721.]
     for disc in disc_arr:
-        aux_ax.plot(theta_arr, disc*np.ones(len(theta_arr)),'k--', linewidth=1.5,zorder=10)
+        aux_ax.plot(theta_arr, disc*np.ones(len(theta_arr)),linestyle='dashed',color = 'lightgrey',linewidth=1.2,zorder=10)
     # Surface ICB CMB
     #     disc_arr=[6371.,3480.,1215.]
     disc_arr=[6346.6,3480.]
@@ -573,8 +575,6 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     #query tree for topography
     evalpoints=np.column_stack((constants.R/1000.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
     
-    pdb.set_trace()
-
     # get the interpolation
     valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,k=k)
     
@@ -655,30 +655,40 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
     
     # Specify theta such that it is symmetric
     lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
-    if gcdelta==180. or gcdelta==360.:
+    if gcdelta==180.:
         theta=[0.,gcdelta]
+    elif gcdelta==360.:
+        intersection,antipode = mapping.intersection([lat1,lng1],azimuth,[0.,0.],90.)
+        # shift the plot by the distance between equator and antipode
+        # This shift is needed to sync with the inset figure in ortho projection
+        delta_i,azep,azst = mapping.get_distaz(lat1,lng1,intersection[0],intersection[1])
+        delta_a,azep,azst = mapping.get_distaz(lat1,lng1,antipode[0],antipode[1])
+        # ortho projection usually takes the nearest point as the rightmost point
+        delta = min(delta_i,delta_a)
+        theta=[delta,gcdelta+delta]
     else:
         theta=[90.-gcdelta/2.,90.+gcdelta/2.]
     theta_range=np.linspace(theta[0],theta[1],nelevinter)
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
     if vexaggerate != 0:   
-        
         elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,stride=10,k=1)
         if min(elev)< 0.:
-             extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
+            extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
         else:
-             extend_radius=max(elev)*vexaggerate/1000.
+            extend_radius=max(elev)*vexaggerate/1000.
     
     # Start plotting
-    fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
+    fig = plt.figure(figsize=(figuresize[0],figuresize[1]))
     if gcdelta < 360.0:
-        gs = gridspec.GridSpec(1, 2, width_ratios=width_ratios) 
+        gs = gridspec.GridSpec(1, 2, width_ratios=width_ratios,figure=fig) 
         fig.subplots_adjust(wspace=0.3, left=0.05, right=0.95)
-        ax=plt.subplot(gs[0])
+        ax=fig.add_subplot(gs[0])
     elif gcdelta == 360.0:
-        ax=fig.add_axes([0.268,0.307,0.375,0.375])
-        gs = gridspec.GridSpec(1, 1) 
+        #ax=fig.add_axes([0.268,0.307,0.375,0.375])
+        gs = gridspec.GridSpec(1, 1,figure=fig) 
+        #ax = fig.add_subplot(gs[0])
+        ax=fig.add_axes([0.317,0.30,0.39,0.39])
         ax.set_aspect('equal')
     else:
         raise ValueError("gcdelta > 360.0")
@@ -686,21 +696,25 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
     fig.patch.set_facecolor('white')
     
     ####### Inset map
-    if gcdelta > 180.:
+    if gcdelta == 360.:
+        insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=0)
         numdegticks=13
-        insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
-    elif gcdelta >= 30. and gcdelta <=180:
-        numdegticks=7
-        insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
-    else:    
-        numdegticks=7
-        width=gcdelta*1.2
-        height=gcdelta*1.2
-        insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='merc',dbs_path=dbs_path,width=width,height=height,numdegticks=numdegticks)
+    else:
+        if gcdelta > 270.:
+            numdegticks=13
+            insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
+        elif gcdelta >= 30. and gcdelta <=270:
+            numdegticks=7
+            insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
+        else:    
+            numdegticks=7
+            width=gcdelta*1.2
+            height=gcdelta*1.2
+            insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='merc',dbs_path=dbs_path,width=width,height=height,numdegticks=numdegticks)
     ###### Actual cross-section
     if gcdelta < 360.0:
         ax1, aux_ax1 = setup_axes(fig, gs[1], theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
-    elif gcdelta ==360.0:
+    elif gcdelta == 360.0:
         ax1, aux_ax1 = setup_axes(fig, gs[0], theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
     ax1.set_aspect('equal')
     aux_ax1.set_aspect('equal')
@@ -713,8 +727,8 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
 #     grid_x, grid_y = np.mgrid[theta[0]:theta[1]:200j,3480.:6346.6:200j]
     #grid_x, grid_y = np.meshgrid(np.linspace(theta[0],theta[1],n3dmodelinter),np.linspace(radii[0],radii[1],n3dmodelinter))
     grid_x, grid_y = np.meshgrid(np.linspace(theta[0],theta[1],numevalx),np.linspace(radii[0],radii[1],numevalz))
-    zoom = 10
-    grid_x_zoom, grid_y_zoom = np.meshgrid(np.linspace(theta[0],theta[1],numevalx*zoom),np.linspace(radii[0],radii[1],numevalz*zoom))
+    #zoom = 10
+    #grid_x_zoom, grid_y_zoom = np.meshgrid(np.linspace(theta[0],theta[1],numevalx*zoom),np.linspace(radii[0],radii[1],numevalz*zoom))
 
     # Get the color map
     try:
@@ -746,7 +760,11 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
 #         cb = plt.colorbar(im,orientation='vertical',fraction=0.05,pad=0.05)
 #         cb.set_label(colorlabel)
         # Set colorbar, aspect ratio
-        cbar = plt.colorbar(im, alpha=0.05, aspect=12, shrink=0.4,norm=norm, spacing='proportional', ticks=bounds, boundaries=bounds,extendrect=True)
+        if gcdelta == 360.0:
+            cbaxes = fig.add_axes([0.75, 0.3, 0.015, 0.4]) 
+            cbar = plt.colorbar(im, alpha=0.05, aspect=12, shrink=0.4,norm=norm, spacing='proportional', ticks=bounds, boundaries=bounds,extendrect=True,cax=cbaxes)
+        else:
+            cbar = plt.colorbar(im, alpha=0.05, aspect=12, shrink=0.4,norm=norm, spacing='proportional', ticks=bounds, boundaries=bounds,extendrect=True)
         cbar.solids.set_edgecolor('face')
         # Remove colorbar container frame
 #         cbar.outline.set_visible(False)
@@ -763,10 +781,11 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
 #         plt.setp(cbarytks, visible=False)
 
     fig1 = plt.gcf()
-    plt.show()
-    plt.draw()
     if outfile is not None:
-        fig1.savefig(outfile,dpi=100)
+        fig1.savefig(outfile,dpi=300)
+    else:
+        plt.show()
+        plt.draw()
     return topo,topotree,model,modeltree
 
 def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):

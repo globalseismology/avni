@@ -17,9 +17,130 @@ import scipy.spatial.qhull as qhull
 
 ############################### PLOTTING ROUTINES ################################        
 from .tools.trigd import atand,tand
+from .tools.common import convert2nparray
 from .f2py import ddelazgc # geolib library from NSW
 from . import constants
 ###############################
+ 
+def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
+    """
+    Get the intersection of two great circle paths. Input can either be
+    point and bearings or two sets of points
+    
+    if c1 & c2 are great circles through start and end points 
+    (or defined by start point + bearing),
+    then candidate intersections are simply c1 X c2 & c2 x c1
+    most of the work is deciding correct intersection point to select! 
+    if bearing is given, that determines which intersection, 
+    if both paths are defined by start/end points, take closer intersection
+    https://www.movable-type.co.uk/scripts/latlong-vectors.html#intersection
+    
+    Input Parameters:
+    ----------------
+    
+    path1start: Location of start point of a curve in [latitude, longitude]
+    
+    path1brngEnd: End point either in terms of a bearing (float/int) or location
+    
+    path2start: Similar to path1start for the second curve
+    
+    path2brngEnd: Similar to path1brngEnd for the second curve
+    
+    Return:
+    ------
+    
+    intersection: preferred intersection of the two curves based on the input
+    
+    antipode: antipode of the intersection where the great-circle curves meet as well
+    
+    """
+    # find out what the types are 
+    # c1 & c2 are vectors defining great circles through start & end points
+    # p X c gives initial bearing vector
+    if isinstance(path1brngEnd, (float,int)):
+        path1def = 'bearing' # path 1 defined by endpoint
+        p1end = spher2cart(getDestinationLatLong(path1start[0],path1start[1],path1brngEnd,180.))
+    else:
+        path1def = 'endpoint' #path 1 defined by initial bearing
+        p1end = path1brngEnd
+    if isinstance(path2brngEnd, (float,int)):
+        path2def = 'bearing'
+        p2end = spher2cart(getDestinationLatLong(path2start[0],path2start[1],path2brngEnd,180.))
+    else:
+        path2def = 'endpoint'
+        p2end = path2brngEnd
+    case = path1def + '+' + path2def
+
+    # convert to spherical coordinates
+    p1 = spher2cart(path1start)
+    p2 = spher2cart(path2start)
+        
+
+    # Get normal to planes containing great circles
+    # np.cross product of vector to each point from the origin
+    N1 = np.cross(p1, p1end)
+    N2 = np.cross(p2, p2end)
+
+    # Find line of intersection between two planes
+    L = np.cross(N1, N2)
+
+    # Find two intersection points
+    X1 = L / np.sqrt(L[0]**2 + L[1]**2 + L[2]**2)
+    X2 = -X1
+    
+    # convert back to spherical
+    i1 = cart2spher(X1)[1:]
+    i2 = cart2spher(X2)[1:]
+       
+    # selection of intersection point depends on 
+    # how paths are defined (bearings or endpoints)
+    if case == 'bearing+bearing':
+        #if NXp1.i1 is +ve, the initial bearing is towards i1
+        # otherwise towards antipodal i2
+        dir1 = np.sign(np.dot(np.cross(N1,p1),X1)) #c1Xp1.X1 +ve means p1 bearing points to X1
+        dir2 = np.sign(np.dot(np.cross(N2,p2),X1)) #c2Xp2.X1 +ve means p2 bearing points to X1
+        if dir1 + dir2 == 2: # dir1, dir2 both +ve, 1 & 2 both pointing to X1
+            intersection = i1
+            antipode = i2
+        elif dir1 + dir2 == -2: #dir1, dir2 both -ve, 1 & 2 both pointing to X2
+            intersection = i2
+            antipode = i1
+        elif dir1 + dir2 == 0:  
+            # dir1, dir2 opposite; intersection is at further-away intersection point  
+            # take opposite intersection from mid-point of p1 & p2 [is this always true?]
+            if np.dot(p1+p2,X1) > 0 :
+                intersection = i2
+                antipode = i1
+            else:
+                intersection = i1
+                antipode = i2
+    elif  case == 'bearing+endpoint':  #use bearing c1 X p1       
+        dir1 = np.sign(np.dot(np.cross(N1,p1),X1)) #c1Xp1.X1 +ve means p1 bearing points to X1
+        if dir1 > 0:
+            intersection = i1
+            antipode = i2
+        else:
+            intersection = i2
+            antipode = i1    
+    elif  case == 'endpoint+bearing': #use bearing c2 X p2
+        dir2 = np.sign(np.dot(np.cross(N2,p2),X1)) #c2Xp2.X1 +ve means p2 bearing points to X1
+        if dir2 > 0:
+            intersection = i1
+            antipode = i2
+        else:
+            intersection = i2
+            antipode = i1   
+    elif case == 'endpoint+endpoint': #select nearest intersection to mid-point of all points
+        mid = p1+p2+p1end+p2end
+        if np.dot(mid,X1) > 0 :
+            intersection = i1
+            antipode = i2
+        else:
+            intersection = i2
+            antipode = i1        
+           
+    return intersection,antipode
+
         
 def midpoint(lat1, lon1, lat2, lon2):
     """Get the mid-point from positions in geographic coordinates.Input values as degrees"""
@@ -73,43 +194,80 @@ def cart2spher(xyz):
     """Convert from cartesian to spherical coordinates
     http://www.geom.uiuc.edu/docs/reference/CRC-formulas/node42.html
     """
+    xyz = convert2nparray(xyz)
     rlatlon = np.zeros(xyz.shape)
-    xy = xyz[:,0]**2 + xyz[:,1]**2
-    rlatlon[:,0] = np.sqrt(xy + xyz[:,2]**2)
-#     ptsnew[:,4] = np.arctan2(np.sqrt(xy), xyz[:,2]) # for elevation angle defined from Z-axis down
-    #ptsnew[:,4] = np.arctan2(xyz[:,2], np.sqrt(xy)) # for elevation angle defined from XY-plane up
-    rlatlon[:,1] = np.arctan2(xyz[:,2], np.sqrt(xy))/np.pi*180. # latitude
-    rlatlon[:,2] = np.arctan2(xyz[:,1], xyz[:,0])/np.pi*180.
+    if xyz.ndim == 2:
+        xy = xyz[:,0]**2 + xyz[:,1]**2
+        rlatlon[:,0] = np.sqrt(xy + xyz[:,2]**2)
+    #     ptsnew[:,4] = np.arctan2(np.sqrt(xy), xyz[:,2]) # for elevation angle defined from Z-axis down
+        #ptsnew[:,4] = np.arctan2(xyz[:,2], np.sqrt(xy)) # for elevation angle defined from XY-plane up
+        rlatlon[:,1] = np.arctan2(xyz[:,2], np.sqrt(xy))/np.pi*180. # latitude
+        rlatlon[:,2] = np.arctan2(xyz[:,1], xyz[:,0])/np.pi*180.
+    elif xyz.ndim == 1:
+        xy = xyz[0]**2 + xyz[1]**2
+        rlatlon[0] = np.sqrt(xy + xyz[2]**2)
+        rlatlon[1] = np.arctan2(xyz[2], np.sqrt(xy))/np.pi*180. # latitude
+        rlatlon[2] = np.arctan2(xyz[1], xyz[0])/np.pi*180.
+    else:
+        raise ValueError('dimension of xyz should be 1 or 2')
     return rlatlon
  
 def spher2cart(rlatlon):
     """Convert from spherical to cartesian coordinates
     http://www.geom.uiuc.edu/docs/reference/CRC-formulas/node42.html
     """
-    xyz = np.zeros(rlatlon.shape)
-    colatitude=90.-rlatlon[:,1]
-    xyz[:,0] = rlatlon[:,0]*np.cos(np.pi/180.*rlatlon[:,2])*np.sin(np.pi/180.*colatitude)
-    xyz[:,1] = rlatlon[:,0]*np.sin(np.pi/180.*rlatlon[:,2])*np.sin(np.pi/180.*colatitude)
-    xyz[:,2] = rlatlon[:,0]*np.cos(np.pi/180.*colatitude)
+    rlatlon = convert2nparray(rlatlon)
+    if rlatlon.ndim == 2:
+        # assumes unit sphere if r is not provided
+        if rlatlon.shape[1] == 2: rlatlon = np.insert(rlatlon,0,1.,axis=1)
+        colatitude=90.-rlatlon[:,1]
+        xyz = np.zeros(rlatlon.shape)
+        xyz[:,0] = rlatlon[:,0]*np.cos(np.pi/180.*rlatlon[:,2])*np.sin(np.pi/180.*colatitude)
+        xyz[:,1] = rlatlon[:,0]*np.sin(np.pi/180.*rlatlon[:,2])*np.sin(np.pi/180.*colatitude)
+        xyz[:,2] = rlatlon[:,0]*np.cos(np.pi/180.*colatitude)
+    elif rlatlon.ndim == 1:
+        # assumes unit sphere if r is not provided
+        if len(rlatlon) == 2: rlatlon = np.insert(rlatlon,0,1.)
+        colatitude=90.-rlatlon[1]
+        xyz = np.zeros(rlatlon.shape)
+        xyz[0] = rlatlon[0]*np.cos(np.pi/180.*rlatlon[2])*np.sin(np.pi/180.*colatitude)
+        xyz[1] = rlatlon[0]*np.sin(np.pi/180.*rlatlon[2])*np.sin(np.pi/180.*colatitude)
+        xyz[2] = rlatlon[0]*np.cos(np.pi/180.*colatitude)
+    else:
+        raise ValueError('dimension of rlatlon should be 1 or 2')
     return xyz 
 
 def polar2cart(rtheta):
     """
     Convert from polar to cartesian coordinates
     """
+    rtheta = convert2nparray(rtheta)
     xy = np.zeros(rtheta.shape)
-    xy[:,0] = rtheta[:,0]*np.cos(np.pi/180.*rtheta[:,1])
-    xy[:,1] = rtheta[:,0]*np.sin(np.pi/180.*rtheta[:,1])
+    if rtheta.ndim == 2:
+        xy[:,0] = rtheta[:,0]*np.cos(np.pi/180.*rtheta[:,1])
+        xy[:,1] = rtheta[:,0]*np.sin(np.pi/180.*rtheta[:,1])
+    elif rtheta.ndim == 1:
+        xy[0] = rtheta[0]*np.cos(np.pi/180.*rtheta[1])
+        xy[1] = rtheta[0]*np.sin(np.pi/180.*rtheta[1])
+    else:
+        raise ValueError('dimension of rtheta should be 1 or 2')
     return xy
 
 def cart2polar(xy):
     """
     Convert from polar to cartesian coordinates
     """
+    xy = convert2nparray(xy)
     rtheta = np.zeros(xy.shape)
-    rtheta[:,0] = np.sqrt(np.power(xy[:,1],2)+np.power(xy[:,1],2))
-    rtheta[:,1] = np.arctan2(xy[:,1],xy[:,0]) * 180 / np.pi
-    return xy
+    if xy.ndim == 2:
+        rtheta[:,0] = np.sqrt(np.power(xy[:,1],2)+np.power(xy[:,1],2))
+        rtheta[:,1] = np.arctan2(xy[:,1],xy[:,0]) * 180 / np.pi
+    elif xy.ndim == 1:
+        rtheta[0] = np.sqrt(np.power(xy[1],2)+np.power(xy[1],2))
+        rtheta[1] = np.arctan2(xy[1],xy[0]) * 180 / np.pi
+    else:
+        raise ValueError('dimension of xy should be 1 or 2')    
+    return rtheta
  
 def getDestinationLatLong(lat,lng,azimuth,distance):
     '''returns the lat an long of destination point 
