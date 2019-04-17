@@ -26,7 +26,7 @@ def tree3D(treefile,latitude,longitude,radius_in_km):
     #Build the tree if none is provided
     if os.path.isfile(treefile):
         print('... Reading KDtree file '+treefile)
-        tree = pickle.load(open(treefile,'r'))
+        tree = pickle.load(open(treefile,'rb'))
     else:
         print('... KDtree file '+treefile+' not found for interpolations. Building it')
         rlatlon = np.column_stack((radius_in_km.flatten(),latitude.flatten(), longitude.flatten()))

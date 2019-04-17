@@ -14,6 +14,7 @@ import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 import scipy.interpolate as spint
 import scipy.spatial.qhull as qhull
+if (sys.version_info[:2] < (3, 0)): range = xrange
 
 ############################### PLOTTING ROUTINES ################################        
 from .tools.trigd import atand,tand
@@ -309,7 +310,7 @@ def getintermediateLatLong(lat1,lng1,azimuth,gcdelta,interval):
     counter = float(interval)
     coords = []
     coords.append([lat1,lng1])
-    for distance in xrange(0,int(dist)):
+    for distance in range(0,int(dist)):
         coord = getDestinationLatLong(lat1,lng1,azimuth,counter)
         counter = counter + float(interval)
         coords.append(coord)
