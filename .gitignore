@@ -119,4 +119,5 @@ ENV/
 *.csph
 *.m~
 *.eps
+*.png
 *.pdf
