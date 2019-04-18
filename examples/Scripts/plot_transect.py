@@ -4,6 +4,7 @@ Usage import """
 
 import sys,os
 import argparse #parsing arguments
+import pdb
 
 ################################ IMPORT REM3D MODULES   #####################################
 from rem3d.f2py import ddelazgc # geolib library from NSW
@@ -17,18 +18,18 @@ def main():
         help='Model file')
     parser.add_argument('-p', '--parameter', type=str, default='vs',
         help='Parameter of interest')
-    parser.add_argument('-u', '--upper_bound', type=float, default=1.0,
+    parser.add_argument('-u', '--upper_bound', type=float, default=2.0,
         help='Upper bound for color scale saturation level (percent)')
-    parser.add_argument('-l', '--lower_bound', type=float, default=-1.0,
+    parser.add_argument('-l', '--lower_bound', type=float, default=-2.0,
         help='Lower bound for color scale saturation level (percent)')
     parser.add_argument('-t', '--colorcontour', type=int, default=20,
         help='color contour levels')
-    parser.add_argument('-i', '--elev_interval', type=float, default=50,
+    parser.add_argument('-i', '--elev_interval', type=float, default=100,
         help='Number of elevation points for transect plots')
     parser.add_argument('-e', '--elev_exxagerate', type=float, default=50,
         help='Elevation exxageration for transect plots')
-    parser.add_argument('-c', '--num_cores', type=int, default=1,
-        help='Number of cores to use')
+    parser.add_argument('-o', '--output', action='store_true',
+        help='Save the figures in files')
     arg = parser.parse_args()
     
     ##### Example of a regional transects
@@ -36,31 +37,50 @@ def main():
     # Kermadec
     lat1 = -25.;lng1 = 191.;lat2 = -22.;lng2 = 160.
     delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
-    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='Kermadec.png',numevalx=200,numevalz=300,k=1,colorcontour=arg.colorcontour)
+    if arg.output: 
+        outfile = 'Kermadec.png'
+    else:
+        outfile = None
+    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',outfile=outfile,vexaggerate=arg.elev_exxagerate,nelevinter=arg.elev_interval,colorcontour=arg.colorcontour)
     
     # N. Chile    
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
     delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
-    plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='NorthChile.png',numevalx=200,numevalz=200,k=1,colorcontour=arg.colorcontour)
+    if arg.output: 
+        outfile = 'NorthChile.png'
+    else:
+        outfile = None    
+    plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,nelevinter=arg.elev_interval,outfile=outfile,colorcontour=arg.colorcontour)
     
     #Japan
     lat1 = 34.;lng1 = 152.;lat2 = 40.;lng2 = 117.
-    delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
-    
-    plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,width_ratios=[1,2],nelevinter=arg.elev_interval,outfile='Japan.png',numevalx=200,numevalz=200,k=1,colorcontour=arg.colorcontour)
+    delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)   
+    if arg.output: 
+        outfile = 'Japan.png'
+    else:
+        outfile = None
+    plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=arg.elev_exxagerate,nelevinter=arg.elev_interval,outfile=outfile,colorcontour=arg.colorcontour)
     
     
     ###### Example of a 180 degree transect without topography
     print("PLOTTING SECTION 2")
     lat1 = 0.;lng1 = 0.;azimuth = -30.;gcdelta = 180.
-    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=360,numevalz=360,k=1,outfile='transect180.png',colorcontour=arg.colorcontour)
+    if arg.output: 
+        outfile = 'transect180.png'
+    else:
+        outfile = None           
+    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=360,numevalz=360,outfile=outfile,colorcontour=arg.colorcontour)
 
     ###### Example of a 360 degree transect without topography
     print("PLOTTING SECTION 3")
     lat1 = 0.;lng1 = 0.;azimuth = -45.;gcdelta = 360.
-    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,k=1,outfile='transect360.png',colorcontour=arg.colorcontour)
+    if arg.output: 
+        outfile = 'transect360.png'
+    else:
+        outfile = None           
+    plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,outfile=outfile,colorcontour=arg.colorcontour)
     
-# plot1section(lat1,lng1,azimuth,gcdelta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,k=1,colorcontour=arg.colorcontour)
+# plot1section(lat1,lng1,azimuth,gcdelta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,colorcontour=arg.colorcontour)
 
         
     return

@@ -604,7 +604,7 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
 #     title(phase, fontsize=20,loc='left')
     return ax
     
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,k=3):
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,k=10):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
     #get full path
@@ -652,7 +652,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     
     return xsec.T,model,tree
 
-def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=50,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 2],numevalx=50,numevalz=50,k=1,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
+def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 3],numevalx=200,numevalz=300,k=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
     """Plot one section through the Earth through a pair of points.""" 
     
     # Specify theta such that it is symmetric
@@ -684,7 +684,7 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
     fig = plt.figure(figsize=(figuresize[0],figuresize[1]))
     if gcdelta < 360.0:
         gs = gridspec.GridSpec(1, 2, width_ratios=width_ratios,figure=fig) 
-        fig.subplots_adjust(wspace=0.3, left=0.05, right=0.95)
+        fig.subplots_adjust(wspace=0.01, left=0.05, right=0.95)
         ax=fig.add_subplot(gs[0])
     elif gcdelta == 360.0:
         #ax=fig.add_axes([0.268,0.307,0.375,0.375])
@@ -710,9 +710,9 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
             insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
         else:    
             numdegticks=7
-            width=gcdelta*1.2
-            height=gcdelta*1.2
-            insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='merc',dbs_path=dbs_path,width=width,height=height,numdegticks=numdegticks)
+            width=gcdelta*1.4
+            height=gcdelta*1.4
+            insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='aea',dbs_path=dbs_path,width=width,height=height,numdegticks=numdegticks)
     ###### Actual cross-section
     if gcdelta < 360.0:
         ax1, aux_ax1 = setup_axes(fig, gs[1], theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
@@ -782,12 +782,13 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
 #         cbarytks = plt.getp(cbar.ax.axes, 'yticklines')
 #         plt.setp(cbarytks, visible=False)
 
-    fig1 = plt.gcf()
     if outfile is not None:
-        fig1.savefig(outfile,dpi=300)
+        fig.savefig(outfile,dpi=300)
     else:
         plt.show()
         plt.draw()
+    plt.close('all')
+    
     return topo,topotree,model,modeltree
 
 def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
