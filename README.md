@@ -4,9 +4,9 @@
 
 ## About
 
-REM3D is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has modules in MATLAB, C and Fortran as well.
+REM3D is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has modules in C and Fortran as well.
 
-Homepage: [rem3d.org](https://maurya.umd.edu)
+Homepage: [rem3d.org](http://rem3d.org)
 
 Documentation: readthedocs [html](http://rem3d.readthedocs.io), [pdf](https://media.readthedocs.org/pdf/rem3d/latest/rem3d.pdf)  
 
@@ -18,10 +18,8 @@ Contact the REM3D team at info@rem3d.org with any questions or suggestions.
 
 REM3D needs the following python modules installed in the system.
 * Python 2.7.x or Python 3.4+
-* Python modules:
-  NumPy, SciPy, Matplotlib, Basemap, Pandas, netCDF4
+* Python modules: NumPy, SciPy, Matplotlib, Basemap, Pandas, netCDF4
   
-Users may also want to install MATLAB for some codes. We have tested our versions on MATLAB 2015.
 
 ## Getting Started
 
@@ -29,27 +27,40 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Basic Installation
 
-1. Install the [Anaconda Python Distribution](https://www.continuum.io/downloads). We recommend the 64-bit Python 2.7 version. 
-2. Install some mapping toolboxes (pandas, Basemap and its data) with the following options to add topography at all resolutions:
-`conda install -c anaconda pandas`
-`conda install -c anaconda netcdf4`
-`conda install -c conda-forge basemap`
-`conda install -c conda-forge basemap-data-hires`
-3. Install the stable version of REM3D and its additional dependencies with `pip install rem3d`. 
+1. Install the [Anaconda Python Distribution](https://www.continuum.io/downloads). We recommend the 64-bit Python 3.7 version. 
+2. Create a new environment for REM3D and activate it  
+`conda create --name rem3d --clone base`  
+Activate the environment using  
+`source $CONDA_ROOT/etc/profile.d/conda.csh`  
+`conda activate rem3d`  
+where `CONDA_ROOT` is the location of Anaconda directory (e.g. `/home/user/anaconda3`)
+
+2. Install some mapping toolboxes (Basemap and its data) with the following options to add topography at all resolutions:  
+`conda install netcdf4`  
+`conda install -c conda-forge basemap`  
+`conda install -c conda-forge basemap-data-hires`  
+Basemap installation may give errors for the PROJ4 library. We have found it useful to specify the location of the library using the following in our .tcshrc shell configuration
+`setenv PROJ_LIB $CONDA_PREFIX/share/proj`  
+where `CONDA_PREFIX` is the location of Anaconda installation, which should be automatically initialized with step 2.  
+3. Install the stable version of REM3D and its additional dependencies with  
+`pip install rem3d` 
 
 ### Advanced installation (for developers)
 
 If you want to use REM3D's development routines, you will need to do the following additional steps. This assumes that you have a free account at <https://github.com>
 
-1. Create an account on our [Web site](https://maurya.umd.edu/login/register) and request access rights from [here](https://maurya.umd.edu/join-us/github).
-2. Please accept the invitation through e-mail. Clone the development branch REM3D git repository and the appro from the terminal `git clone -b devel https://username:password@github.com/globalseismology/rem3d.git`. This will create a directory that contains a folder call `rem3d`.
-3. Install REM3D module by opening a terminal window, navigating to `rem3d` directory and entering
-`pip install -e . --user`. This lets you to keep working on files inside the Github folder without recompiling the codes..
+1. Create an account on our [Web site](http://rem3d.org/login/register) and request access rights from [here](http://rem3d.org/join-us/github).
+2. Please accept the invitation through e-mail. Clone the development branch REM3D git repository and the from the terminal  
+`git clone -b devel https://username:password@github.com/globalseismology/rem3d.git`  
+This will create a directory that contains a folder called `rem3d`.
+3. Install REM3D module by opening a terminal window, navigating to `rem3d` directory and entering  
+`pip install -e . --user`  
+This lets you to keep working on files inside the Github folder without recompiling the codes.
 
 ## Start Here
 
 To begin, the user may want to look at these examples to begin to understand
-what tools are available in REM3D and how values are calculated. Such examples are available in the [examples](examples) folder.
+what tools are available in REM3D and how values are calculated. Such examples are available as [Jupyter Notebooks](examples/Notebooks) and [Shell scripts](examples/Scripts).
 
 ## About scripting in Python
 
@@ -84,6 +95,4 @@ This project is licensed under the GNU GPL v3 or newer - see the [LICENSE](LICEN
 
 ## Acknowledgments
 
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
+* Funded by the National Science Foundation and the David and Lucile Packard Foundation

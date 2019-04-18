@@ -35,6 +35,8 @@ def main():
     projection=arg.projection; vmin = arg.lower_bound; vmax = arg.upper_bound
     if projection=='ortho':
         rem3d.plots.globalmap(ax,latlonval,vmin,vmax,grid=[30.,30.],gridwidth=1,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorpalette='rem3d')
+    elif projection=='robin':
+        rem3d.plots.globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lon_0=150,colorpalette='rem3d')
     else:
         rem3d.plots.globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorpalette='rem3d')
     ax.set_title('Depth : '+metadata['DEPTH_RANGE']+' km')

@@ -204,7 +204,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
     else:
-        m = Basemap(ax=ax,projection='robin', lat_0=0, lon_0=150, resolution='c')
+        m = Basemap(ax=ax,projection='robin', lon_0=150, resolution='c')
     clip_path = m.drawmapboundary()
     m.drawcoastlines(linewidth=1.5)
     # draw parallels and meridians.
@@ -355,7 +355,7 @@ def backgroundmap(ax,dbs_path=tools.get_filedir(),platescolor='r', **kwargs):
     # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
     plot_plates(m, dbs_path=dbs_path, color=platescolor, linewidth=1.)
-    m.drawmapboundary(linewidth=1.5)    
+    m.drawmapboundary(linewidth=1.)    
     return m
 
 def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,height=50.,dbs_path=tools.get_filedir(),platescolor='r',numdegticks=7,hotspots=False):
@@ -427,9 +427,11 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
     # The argument is an approximate number of grids.
 #     theta_grid_locator = angle_helper.LocatorD(numdegticks)
 
-    theta_grid_locator=FixedLocator(np.arange(theta[0], theta[1], numdegticks))
+    # Stopped using this as is not needed for the plots. Also gives error with some 
+    # matplotlib versions
+    #theta_grid_locator=FixedLocator(np.arange(theta[0], theta[1], numdegticks))
     # And also use an appropriate formatter:
-    theta_tick_formatter = angle_helper.FormatterDMS()
+    #theta_tick_formatter = angle_helper.FormatterDMS()
 
     # set up number of ticks for the r-axis
 #     r_grid_locator = MaxNLocator(7)
@@ -442,10 +444,10 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
     # the extremes are passed to the function
     grid_helper = floating_axes.GridHelperCurveLinear(tr,
                                 extremes=(theta[0], theta[1], radius[0], radius[1]),
-                                grid_locator1=theta_grid_locator,
                                 grid_locator2=r_grid_locator,
-                                tick_formatter1=theta_tick_formatter,
-                                tick_formatter2=r_tick_formatter,
+                                tick_formatter2=r_tick_formatter
+                                #grid_locator1=theta_grid_locator,
+                                #tick_formatter1=theta_tick_formatter
                                 )
     
     ax1 = floating_axes.FloatingSubplot(fig, rect, grid_helper=grid_helper)

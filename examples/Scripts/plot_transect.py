@@ -59,6 +59,9 @@ def main():
     print("PLOTTING SECTION 3")
     lat1 = 0.;lng1 = 0.;azimuth = -45.;gcdelta = 360.
     plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,k=1,outfile='transect360.png',colorcontour=arg.colorcontour)
+    
+# plot1section(lat1,lng1,azimuth,gcdelta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,k=1,colorcontour=arg.colorcontour)
+
         
     return
 
