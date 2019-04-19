@@ -655,7 +655,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     
     return xsec.T,model,tree
 
-def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=50,width_ratios=[1,3],numevalx=200,numevalz=300,k=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None):
+def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=50,width_ratios=[1,3],numevalx=200,numevalz=300,k=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,hotspots=False,plates=False):
     """Plot one section through the Earth through a pair of points.""" 
 
     # Specify theta such that it is symmetric
@@ -738,6 +738,9 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     aux_ax1.set_aspect('equal')
         #ax1, aux_ax1 = setup_axes(fig, fig.add_axes([0,1,0,1]), theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
 
+    # plot hotspots if within a distance threshold
+    #if hotspots:
+        
     if vexaggerate != 0:
         aux_ax1=plottopotransect(aux_ax1,theta_range,elev,vexaggerate=vexaggerate)
 

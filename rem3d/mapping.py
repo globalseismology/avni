@@ -10,7 +10,8 @@ import numpy as np #for numerical analysis
 import multiprocessing
 import codecs,json #printing output
 from joblib import Parallel, delayed
-import pdb    #for the debugger pdb.set_trace()
+from pygeodesy.sphericalNvector import LatLon
+import pdb    #for the debugger 
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 import scipy.interpolate as spint
 import scipy.spatial.qhull as qhull
@@ -161,6 +162,8 @@ def midpoint(lat1, lon1, lat2, lon2):
            sqrt((cos(lat1) + bx) * (cos(lat1) \
            + bx) + by**2))
     lon3 = lon1 + atan2(by, cos(lat1) + bx)
+    
+    
 
     return [round(degrees(lat3), 2), round(degrees(lon3), 2)]
 
@@ -188,6 +191,7 @@ def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
         delta,azep,azst = ddelazgc(elat,elon,slat,slon)    
     else:    
         raise ValueError("get_distaz only takes list or floats")
+    
     return delta,azep,azst
 
 def delazgc_helper(args):
@@ -276,16 +280,11 @@ def getDestinationLatLong(lat,lng,azimuth,distance):
     '''returns the lat an long of destination point 
     given the start lat, long, aziuth, and distance (in meters)'''
     R = constants.R #Radius of the Earth in m
-    brng = radians(azimuth) #Bearing is degrees converted to radians.
     d = distance #Distance m 
-    lat1 = radians(lat) #Current dd lat point converted to radians
-    lon1 = radians(lng) #Current dd long point converted to radians
-    lat2 = asin(sin(lat1) * cos(d/R) + cos(lat1)* sin(d/R)* cos(brng))
-    lon2 = lon1 + atan2(sin(brng) * sin(d/R)* cos(lat1), cos(d/R)- sin(lat1)* sin(lat2))
-    #convert back to degrees
-    lat2 = degrees(lat2)
-    lon2 = degrees(lon2)
-    return[lat2, lon2]
+    if lng > 180.: lng = lng -360.
+    start = LatLon(lat,lng)
+    end = start.destination(d,azimuth,R)
+    return[end.lat, end.lon]
 
 def calculateBearing(lat1,lng1,lat2,lng2):
     '''calculates the azimuth in degrees from start point to end point'''
@@ -301,6 +300,7 @@ def calculateBearing(lat1,lng1,lat2,lng2):
          else:
              dLong = (2.0 * pi + dLong)
     bearing = (degrees(atan2(dLong, dPhi)) + 360.0) % 360.0;
+    
     return bearing
 
 def getintermediateLatLong(lat1,lng1,azimuth,gcdelta,interval):
