@@ -89,6 +89,9 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
     X1 = L / np.sqrt(L[0]**2 + L[1]**2 + L[2]**2)
     X2 = -X1
     
+    #Check if correct
+    if np.any(np.isnan(X1)): raise ValueError('not found an intersection point between ',path1start,' with azimuth ',path1brngEnd,' and ', path2start, ' with azimuth ',path2brngEnd)
+    
     # convert back to spherical
     i1 = cart2spher(X1)[1:]
     i2 = cart2spher(X2)[1:]
@@ -101,46 +104,45 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
         dir1 = np.sign(np.dot(np.cross(N1,p1),X1)) #c1Xp1.X1 +ve means p1 bearing points to X1
         dir2 = np.sign(np.dot(np.cross(N2,p2),X1)) #c2Xp2.X1 +ve means p2 bearing points to X1
         if dir1 + dir2 == 2: # dir1, dir2 both +ve, 1 & 2 both pointing to X1
-            intersection = i1
+            intersect = i1
             antipode = i2
         elif dir1 + dir2 == -2: #dir1, dir2 both -ve, 1 & 2 both pointing to X2
-            intersection = i2
+            intersect = i2
             antipode = i1
         elif dir1 + dir2 == 0:  
             # dir1, dir2 opposite; intersection is at further-away intersection point  
             # take opposite intersection from mid-point of p1 & p2 [is this always true?]
             if np.dot(p1+p2,X1) > 0 :
-                intersection = i2
+                intersect = i2
                 antipode = i1
             else:
-                intersection = i1
+                intersect = i1
                 antipode = i2
     elif  case == 'bearing+endpoint':  #use bearing c1 X p1       
         dir1 = np.sign(np.dot(np.cross(N1,p1),X1)) #c1Xp1.X1 +ve means p1 bearing points to X1
         if dir1 > 0:
-            intersection = i1
+            intersect = i1
             antipode = i2
         else:
-            intersection = i2
+            intersect = i2
             antipode = i1    
     elif  case == 'endpoint+bearing': #use bearing c2 X p2
         dir2 = np.sign(np.dot(np.cross(N2,p2),X1)) #c2Xp2.X1 +ve means p2 bearing points to X1
         if dir2 > 0:
-            intersection = i1
+            intersect = i1
             antipode = i2
         else:
-            intersection = i2
+            intersect = i2
             antipode = i1   
     elif case == 'endpoint+endpoint': #select nearest intersection to mid-point of all points
         mid = p1+p2+p1end+p2end
         if np.dot(mid,X1) > 0 :
-            intersection = i1
+            intersect = i1
             antipode = i2
         else:
-            intersection = i2
+            intersect = i2
             antipode = i1        
-           
-    return intersection,antipode
+    return intersect,antipode
 
         
 def midpoint(lat1, lon1, lat2, lon2):

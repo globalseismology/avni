@@ -12,12 +12,30 @@ import pdb
 import re
 from configobj import ConfigObj
 from six import string_types # to check if variable is string using isinstance
+import ntpath
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
 from rem3d.f2py import vbspl,dbsplrem
 from .trigd import sind
 #######################################################################################
+
+def stage(file,overwrite=False):
+    """
+    Stages a file in the rem3d file directories for testing
+    """
+    filedir = get_filedir()
+    if not os.path.isfile(file): raise IOError(file+' not found')
+    outlink = filedir+'/'+ntpath.basename(file)
+    try:
+        os.symlink(file, outlink)
+    except OSError:
+        if overwrite:
+            os.unlink(outlink)
+            os.symlink(file, outlink)
+        else:
+            print('Warning: a link to file '+ntpath.basename(file)+' exists within REM3D. Use overwrite=True to overwrite the staged link.')
+    return
 
 def convert2nparray(value,int2float = True):
     """

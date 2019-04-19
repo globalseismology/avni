@@ -334,7 +334,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
             plt.setp(cbarytks, visible=False)
     return m    
     
-def backgroundmap(ax,dbs_path=tools.get_filedir(),platescolor='r', **kwargs):
+def backgroundmap(ax,dbs_path=tools.get_filedir(),plates='r',oceans='w',continents='darkgray', boundary='k',**kwargs):
     """plots a background map of a 3D model on axis ax. kwargs are arguments for Basemap"""
     
     # set up map
@@ -349,13 +349,12 @@ def backgroundmap(ax,dbs_path=tools.get_filedir(),platescolor='r', **kwargs):
     # draw a boundary around the map, fill the background.
     # this background will end up being the ocean color, since
     # the continents will be drawn on top.
-    m.drawmapboundary(fill_color='white')
+    m.drawmapboundary(fill_color=oceans,color=boundary)
     # fill continents, set lake color same as ocean color.
-    m.fillcontinents(color='darkgray',lake_color='white')
+    m.fillcontinents(color=continents,lake_color=oceans)
     # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
-    plot_plates(m, dbs_path=dbs_path, color=platescolor, linewidth=1.)
-    m.drawmapboundary(linewidth=1.)    
+    plot_plates(m, dbs_path=dbs_path, color=plates, linewidth=1.)
     return m
 
 def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,height=50.,dbs_path=tools.get_filedir(),platescolor='r',numdegticks=7,hotspots=False):
@@ -377,7 +376,11 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
         
     # Choose what to do based on projection
     if projection=='ortho':
-        m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l')
+        if gcdelta == 360.:
+            boundary = 'w'
+        else:
+            boundary = 'k'
+        m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l',boundary=boundary)
     else:
         # center left lat/lon, then left crnr
         latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*constants.deg2m/2.)
@@ -504,13 +507,13 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
     # plot the degree increments at 6371 km, always on top (large zorder)
     degticks=np.linspace(theta[0],theta[1],numdegticks)
     if theta[1]-theta[0]>350.:
-        degticks0=degticks[0:1] #color first tick in magenta
+        degticks0=degticks[0:1] #color first tick in orange
         aux_ax.scatter(degticks0,6346.6*np.ones(len(degticks0)),s=50,clip_on=False,zorder=10,facecolor='orange',edgecolor='k')
 
-        degticksstart=degticks[1:2] #color first tick in magenta
+        degticksstart=degticks[1:2] #color second tick in magenta
         degticks=degticks[2:-1] # do not not plot the first and last 2 ticks
     else:
-        degticksstart=degticks[1:2] #color first tick in magenta
+        degticksstart=degticks[1:2] #color second tick in magenta
         degticks=degticks[2:-1] # do not not plot the first and last 2 ticks
     aux_ax.scatter(degticks,6346.6*np.ones(len(degticks)),s=50,clip_on=False,zorder=10,facecolor='w',edgecolor='k')
     aux_ax.scatter(degticksstart,6346.6*np.ones(len(degticksstart)),s=50,clip_on=False,zorder=10,facecolor='m',edgecolor='k')
@@ -652,21 +655,34 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     
     return xsec.T,model,tree
 
-def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',parameter='vs',modeltree=None,vmin=None,vmax=None, colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=150,figuresize=[8,4],width_ratios=[1, 3],numevalx=200,numevalz=300,k=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,outfile=None):
+def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=50,width_ratios=[1,3],numevalx=200,numevalz=300,k=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None):
     """Plot one section through the Earth through a pair of points.""" 
-    
+
     # Specify theta such that it is symmetric
     lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
     if gcdelta==180.:
         theta=[0.,gcdelta]
     elif gcdelta==360.:
-        intersection,antipode = mapping.intersection([lat1,lng1],azimuth,[0.,0.],90.)
-        # shift the plot by the distance between equator and antipode
-        # This shift is needed to sync with the inset figure in ortho projection
-        delta_i,azep,azst = mapping.get_distaz(lat1,lng1,intersection[0],intersection[1])
-        delta_a,azep,azst = mapping.get_distaz(lat1,lng1,antipode[0],antipode[1])
-        # ortho projection usually takes the nearest point as the rightmost point
-        delta = min(delta_i,delta_a)
+        # if the start point in (0,0), ortho plot decides orientation based on quadrant
+        if lat1==0 and lng1==0:
+            if azimuth < 0.: azimuth = 360. + azimuth
+            if azimuth < 90 or azimuth == 360.:
+                quadrant = 0
+            elif azimuth >= 90 and azimuth < 180.:
+                quadrant = 1
+            elif azimuth >= 180 and azimuth < 270.:
+                quadrant = 2
+            elif azimuth >= 270 and azimuth < 360.:
+                quadrant = 3
+            delta = quadrant*90.
+        else:
+            intersection,antipode = mapping.intersection([lat1,lng1],azimuth,[0.,0.],90.)
+            # shift the plot by the distance between equator and antipode
+            # This shift is needed to sync with the inset figure in ortho projection
+            delta_i,azep,azst = mapping.get_distaz(lat1,lng1,intersection[0],intersection[1])
+            delta_a,azep,azst = mapping.get_distaz(lat1,lng1,antipode[0],antipode[1])
+            # ortho projection usually takes the nearest point as the rightmost point
+            delta = min(delta_i,delta_a)
         theta=[delta,gcdelta+delta]
     else:
         theta=[90.-gcdelta/2.,90.+gcdelta/2.]
@@ -681,7 +697,6 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
             extend_radius=max(elev)*vexaggerate/1000.
     
     # Start plotting
-    fig = plt.figure(figsize=(figuresize[0],figuresize[1]))
     if gcdelta < 360.0:
         gs = gridspec.GridSpec(1, 2, width_ratios=width_ratios,figure=fig) 
         fig.subplots_adjust(wspace=0.01, left=0.05, right=0.95)
@@ -690,15 +705,16 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
         #ax=fig.add_axes([0.268,0.307,0.375,0.375])
         gs = gridspec.GridSpec(1, 1,figure=fig) 
         #ax = fig.add_subplot(gs[0])
-        ax=fig.add_axes([0.317,0.30,0.39,0.39])
+        ax=fig.add_axes([0.307,0.29,0.41,0.41])
         ax.set_aspect('equal')
     else:
         raise ValueError("gcdelta > 360.0")
 
-    fig.patch.set_facecolor('white')
+    #fig.patch.set_facecolor('white')
     
     ####### Inset map
     if gcdelta == 360.:
+        # do not plot ticks on a 360 degree plot,so numdegticks=0. But do so for main plot
         insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=0)
         numdegticks=13
     else:
@@ -781,14 +797,22 @@ def plot1section(lat1,lng1,azimuth,gcdelta,dbs_path=tools.get_filedir(),model='S
         # Remove color bar tick lines, while keeping the tick labels
 #         cbarytks = plt.getp(cbar.ax.axes, 'yticklines')
 #         plt.setp(cbarytks, visible=False)
+    return fig,topo,topotree,model,modeltree
 
+
+def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,figuresize=[8,4],outfile=None,**kwargs):
+    """Plot one section through the Earth through a pair of points.""" 
+    
+    fig = plt.figure(figsize=(figuresize[0],figuresize[1]))
+    if kwargs:
+        fig,topo,topotree,model,modeltree = section(fig,latitude,longitude,azimuth,gcdelta,model,parameter,**kwargs)
+    else:
+        fig,topo,topotree,model,modeltree = section(fig,latitude,longitude,azimuth,gcdelta,model,parameter)
     if outfile is not None:
         fig.savefig(outfile,dpi=300)
     else:
         plt.show()
-        plt.draw()
     plt.close('all')
-    
     return topo,topotree,model,modeltree
 
 def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):

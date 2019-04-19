@@ -73,7 +73,7 @@ def main():
 
     ###### Example of a 360 degree transect without topography
     print("PLOTTING SECTION 3")
-    lat1 = 0.;lng1 = 0.;azimuth = -45.;gcdelta = 360.
+    lat1 = 0.;lng1 = 150.;azimuth = 90.;gcdelta = 360.    
     if arg.output: 
         outfile = 'transect360.png'
     else:
