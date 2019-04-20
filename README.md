@@ -4,7 +4,7 @@
 
 ## About
 
-REM3D is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has modules in C and Fortran as well.
+REM3D is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has legacy routines in C and Fortran as well, which are interfaced with Python subroutines.
 
 Homepage: [rem3d.org](http://rem3d.org)
 
@@ -12,7 +12,7 @@ Documentation: readthedocs [html](http://rem3d.readthedocs.io), [pdf](https://me
 
 Source code: [github](https://github.com/globalseismology/rem3d) 
 
-Contact the REM3D team at info@rem3d.org with any questions or suggestions.
+Contact the REM3D team at info@rem3d.org with any questions or suggestions. A core team maintains the public repository and releases versions after extensive testing; if you do not see activity on Github, that does not mean improvements are not underway!
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/110c5a409f60485f83d442b8834eba2c)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=globalseismology/rem3d&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.com/globalseismology/rem3d.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=master)](https://travis-ci.com/globalseismology/rem3d) [![codecov](https://codecov.io/gh/globalseismology/rem3d/branch/master/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/rem3d) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![PyPI version](https://badge.fury.io/py/rem3d.svg)](https://badge.fury.io/py/rem3d) [![Gitter](https://badges.gitter.im/rem3d/community.svg)](https://gitter.im/rem3d/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rem3d.svg?style=popout)
 
@@ -107,3 +107,4 @@ This project is licensed under the GNU GPL v3 or newer - see the [LICENSE](LICEN
 ## Acknowledgments
 
 * Funded by the National Science Foundation and the David and Lucile Packard Foundation
+* Style and documentation of this repository is influenced by other open-source repositories such as [SPECFEM3D](https://github.com/geodynamics/specfem3d) and [Burnman](https://github.com/geodynamics/burnman). 
