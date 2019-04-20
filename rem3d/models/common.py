@@ -84,7 +84,7 @@ def writeepixfile(filename,epixarr,metadata={'BASIS':'PIX','FORMAT':'50'},commen
     #combine headers
     header=''
     for key in sorted(metadata.keys()): header=header+'#'+key+':'+metadata[key]+'\n'
-    if comments != None: 
+    if comments is not None:
         for comment in comments: header = header+comment+'\n'
     header = header[:-1] # to get rid of the last \n in header
     try:

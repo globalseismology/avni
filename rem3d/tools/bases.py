@@ -172,7 +172,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     if not np.all([key in choices for key in types]): raise AssertionError()
     npoly = len(radius_range)*len(types)
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
-    for ii in range(len(radius_range)): 
+    for ii in range(len(radius_range)):
         if not np.all(np.sort(radius_range[ii])==radius_range[ii]): raise AssertionError('radius_range needs to be sorted')
     rbot=radius_range[0]/rnorm
     rtop=radius_range[1]/rnorm
@@ -247,23 +247,9 @@ def eval_splcon(latitude,longitude,xlaspl,xlospl,xraspl):
              Size of numpy array is [len(latitude) X ncoefhor]
     """
                 
-    if isinstance(latitude, (list,tuple,np.ndarray)):
-        latitude = np.asarray(latitude)
-    elif isinstance(latitude, float):
-        latitude = np.asarray([latitude])
-    elif isinstance(latitude, int):
-        latitude = np.asarray([float(latitude)])
-    else:
-        raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
-        
-    if isinstance(longitude, (list,tuple,np.ndarray)):
-        longitude = np.asarray(longitude)
-    elif isinstance(longitude, float):
-        longitude = np.asarray([longitude])
-    elif isinstance(longitude, int):
-        longitude = np.asarray([float(longitude)])
-    else:
-        raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
+    latitude = convert2nparray(latitude)
+    longitude = convert2nparray(longitude)
+    
     if not len(latitude) == len(longitude): raise AssertionError('latitude and longitude should be of same length')
     if not len(xlaspl) == len(xlospl) == len(xraspl): raise AssertionError('xlaspl,xlospl and xraspl should be of same length')
 
@@ -324,25 +310,10 @@ def eval_ylm(latitude,longitude,lmaxhor):
              Size of numpy array is [len(latitude) X ((lmaxhor+1)^2)]
     """
                 
-    if isinstance(latitude, (list,tuple,np.ndarray)):
-        latitude = np.asarray(latitude)
-    elif isinstance(latitude, float):
-        latitude = np.asarray([latitude])
-    elif isinstance(latitude, int):
-        latitude = np.asarray([float(latitude)])
-    else:
-        raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
-        
-    if isinstance(longitude, (list,tuple,np.ndarray)):
-        longitude = np.asarray(longitude)
-    elif isinstance(longitude, float):
-        longitude = np.asarray([longitude])
-    elif isinstance(longitude, int):
-        longitude = np.asarray([float(longitude)])
-    else:
-        raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
+    latitude = convert2nparray(latitude)
+    longitude = convert2nparray(longitude)
     
-    assert(len(latitude) == len(longitude)),'latitude and longitude should be of same length' 
+    if not len(latitude) == len(longitude): raise AssertionError('latitude and longitude should be of same length')
     ncoefhor = np.power(lmaxhor+1,2) # numpye of coefficients upto Lmax
     horcof = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
     for iloc in range(len(latitude)):
@@ -377,23 +348,8 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
              Size of numpy array is [len(latitude) X len(xsipix)]
     """
                 
-    if isinstance(latitude, (list,tuple,np.ndarray)):
-        latitude = np.asarray(latitude)
-    elif isinstance(latitude, float):
-        latitude = np.asarray([latitude])
-    elif isinstance(latitude, int):
-        latitude = np.asarray([float(latitude)])
-    else:
-        raise TypeError('latitude must be list or tuple, not %s' % type(latitude))
-        
-    if isinstance(longitude, (list,tuple,np.ndarray)):
-        longitude = np.asarray(longitude)
-    elif isinstance(longitude, float):
-        longitude = np.asarray([longitude])
-    elif isinstance(longitude, int):
-        longitude = np.asarray([float(longitude)])
-    else:
-        raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
+    latitude = convert2nparray(latitude)
+    longitude = convert2nparray(longitude)
     
     if not len(latitude) == len(longitude): raise AssertionError('latitude and longitude should be of same length') 
     if not len(xlapix) == len(xlopix) == len(xsipix): raise AssertionError('xlapix,xlopix,xsipix should be of same length')

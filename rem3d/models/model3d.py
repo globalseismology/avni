@@ -447,7 +447,7 @@ class model3d(object):
 
     def getpixeldepths(self,resolution,parameter):
         typehpar = self.metadata['resolution_'+str(resolution)]['typehpar']
-       if not len(typehpar) == 1: raise AssertionError('only one type of horizontal parameterization allowed')
+        if not len(typehpar) == 1: raise AssertionError('only one type of horizontal parameterization allowed')
         for type in typehpar: 
             if not type == 'PIXELS': raise AssertionError('for interpolation with tree3D')
         kernel_set = self.metadata['resolution_'+str(resolution)]['kernel_set']

@@ -28,7 +28,7 @@ class lateral_basis(object):
         self.data = {}
         self.name = name
         self.type = type
-        if metadata is None:   
+        if metadata is None:
             self.metadata = {}
         else:
             self.metadata = metadata
