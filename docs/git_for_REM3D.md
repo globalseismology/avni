@@ -84,7 +84,7 @@ One-time configuration for each repository
 
 -   Clone the repository on your machine
 
-        $ git clone -b devel https://username:password@github.com/globalseismology/rem3d.git
+        $ git clone -b devel https://username:password@github.com/geodynamics/rem3d.git
 
 -   Checkout the `devel` branch
 

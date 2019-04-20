@@ -10,7 +10,7 @@ Table of Contents
 Use *issues* to discuss intended modifications
 --------------------------------------------------
 
-GitHub provides a [system](https://github.com/globalseismology/rem3d/issues) to track issues. It should be a central place to monitor REM3D evolution. In particular:
+GitHub provides a [system](https://github.com/geodynamics/rem3d/issues) to track issues. It should be a central place to monitor REM3D evolution. In particular:
 
 -   report bug as they occur
 

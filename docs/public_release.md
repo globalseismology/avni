@@ -1,7 +1,7 @@
 Public Release Workflow
 -----------------------
 
-The `master` branch tracks the publicly open repository `https://github.com/geodynamics/rem3d`. The workflow for every public release involves getting all edits done in `public` based on a subset of codes selected from `devel`. Once `public` is tested and ready, an admin pushes it downstream to `master`, squashes all comments and tags it:
+The `master` branch on `https://github.com/globalseismology/rem3d` tracks the publicly open repository `https://github.com/geodynamics/rem3d`. The workflow for every public release involves getting all edits done in `public` based on a subset of codes selected from `devel`. Once `public` is tested and ready, an admin pushes it downstream to `master`, squashes all comments and tags it:
 `git checkout master`  
 `git merge --squash public`  
 `git commit -m "1.0.0"`  
