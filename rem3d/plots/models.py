@@ -361,18 +361,18 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
     """plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
     
     # Calculate intermediate points    
-    lat2,lon2=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2m)
+    lat2,lon2=mapping.getDestination(lat1,lon1,azimuth,gcdelta*constants.deg2m)
     if numdegticks != 0 :
         interval=gcdelta*constants.deg2m/(numdegticks-1) # interval in km
-        coords=np.array(mapping.getintermediateLatLong(lat1,lon1,azimuth,gcdelta*constants.deg2m,interval))
+        coords=np.array(mapping.getIntermediate(lat1,lon1,azimuth,gcdelta*constants.deg2m,interval))
 
     # Center lat lon based on azimuth
     if gcdelta > 350.:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth-90.,90.*constants.deg2m)
+        lat_0,lon_0=mapping.getDestination(lat1,lon1,azimuth-90.,90.*constants.deg2m)
     elif gcdelta >= 180. and gcdelta <= 350.:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,90.*constants.deg2m)
+        lat_0,lon_0=mapping.getDestination(lat1,lon1,azimuth,90.*constants.deg2m)
     else:
-        lat_0,lon_0=mapping.getDestinationLatLong(lat1,lon1,azimuth,gcdelta/2.*constants.deg2m)
+        lat_0,lon_0=mapping.getDestination(lat1,lon1,azimuth,gcdelta/2.*constants.deg2m)
         
     # Choose what to do based on projection
     if projection=='ortho':
@@ -383,11 +383,11 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
         m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l',boundary=boundary)
     else:
         # center left lat/lon, then left crnr
-        latcenleft,loncenleft=mapping.getDestinationLatLong(lat_0,lon_0,-90.,width*constants.deg2m/2.)
-        llcrnrlat,llcrnrlon=mapping.getDestinationLatLong(latcenleft,loncenleft,180.,height*constants.deg2m/2.)
+        latcenleft,loncenleft=mapping.getDestination(lat_0,lon_0,-90.,width*constants.deg2m/2.)
+        llcrnrlat,llcrnrlon=mapping.getDestination(latcenleft,loncenleft,180.,height*constants.deg2m/2.)
         # center right lat/lon, then left crnr
-        latcenright,loncenright=mapping.getDestinationLatLong(lat_0,lon_0,90.,width*constants.deg2m/2.)
-        urcrnrlat,urcrnrlon=mapping.getDestinationLatLong(latcenright,loncenright,0.,height*constants.deg2m/2.)
+        latcenright,loncenright=mapping.getDestination(lat_0,lon_0,90.,width*constants.deg2m/2.)
+        urcrnrlat,urcrnrlon=mapping.getDestination(latcenright,loncenright,0.,height*constants.deg2m/2.)
 
         m=backgroundmap(ax,tools.get_fullpath(dbs_path),projection=projection, lat_0=lat_0, lon_0=lon_0, resolution='l',llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat, urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat)
         # draw parallels and meridians.
@@ -413,9 +413,9 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
         if gcdelta < 180.:
             m.drawgreatcircle(lon1, lat1, lon2, lat2,color='k',linewidth=3.)
         elif gcdelta == 180.:
-            latextent1,lonextent1=mapping.getDestinationLatLong(lat1,lon1,azimuth,1.*constants.deg2m)
-            latextent2,lonextent2=mapping.getDestinationLatLong(lat1,lon1,azimuth,178.*constants.deg2m)
-    #         latextent2,lonextent2=mapping.getDestinationLatLong(lat_0,lon_0,180.+azimuth,89.*constants.deg2m)
+            latextent1,lonextent1=mapping.getDestination(lat1,lon1,azimuth,1.*constants.deg2m)
+            latextent2,lonextent2=mapping.getDestination(lat1,lon1,azimuth,178.*constants.deg2m)
+    #         latextent2,lonextent2=mapping.getDestination(lat_0,lon_0,180.+azimuth,89.*constants.deg2m)
             lonextent,latextent=m([lonextent1,lonextent2],[latextent1,latextent2])
             m.plot(lonextent,latextent,color='k',linewidth=3.)
     return m
@@ -573,9 +573,9 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
             raise ValueError('model in gettopotransect not a string or xarray')
                     
     #find destination point
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
     interval=gcdelta*constants.deg2m/(numeval-1) # interval in m
-    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
+    coords=np.array(mapping.getIntermediate(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
 
     #query tree for topography
     evalpoints=np.column_stack((constants.R/1000.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
@@ -636,10 +636,10 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
             vals = model.data.flatten(order='C')
         except:
             raise ValueError('model in gettopotransect not a string or xarray')
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
     interval=gcdelta*constants.deg2m/(numevalx-1) # interval in km
     radevalarr=np.linspace(radii[0],radii[1],numevalz) #radius arr in km
-    coords=np.array(mapping.getintermediateLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
+    coords=np.array(mapping.getIntermediate(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
         
     if(len(coords) != numevalx):
         raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
@@ -659,7 +659,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     """Plot one section through the Earth through a pair of points.""" 
 
     # Specify theta such that it is symmetric
-    lat2,lng2=mapping.getDestinationLatLong(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
     if gcdelta==180.:
         theta=[0.,gcdelta]
     elif gcdelta==360.:

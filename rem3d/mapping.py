@@ -61,13 +61,13 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
     # p X c gives initial bearing vector
     if isinstance(path1brngEnd, (float,int)):
         path1def = 'bearing' # path 1 defined by endpoint
-        p1end = spher2cart(getDestinationLatLong(path1start[0],path1start[1],path1brngEnd,180.))
+        p1end = spher2cart(getDestination(path1start[0],path1start[1],path1brngEnd,180.))
     else:
         path1def = 'endpoint' #path 1 defined by initial bearing
         p1end = path1brngEnd
     if isinstance(path2brngEnd, (float,int)):
         path2def = 'bearing'
-        p2end = spher2cart(getDestinationLatLong(path2start[0],path2start[1],path2brngEnd,180.))
+        p2end = spher2cart(getDestination(path2start[0],path2start[1],path2brngEnd,180.))
     else:
         path2def = 'endpoint'
         p2end = path2brngEnd
@@ -142,31 +142,40 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
             antipode = i2
         else:
             intersect = i2
-            antipode = i1        
-    return intersect,antipode
+            antipode = i1 
+    
+    ## Attempted with pygeodesy. Has issues for certain configurations.
+#     if path1start[1] > 180.: path1start[1] = path1start[1] -360.
+#     path1start = LatLon(path1start[0],path1start[1])
+#     if path2start[1] > 180.: path2start[1] = path2start[1] -360.
+#     path2start = LatLon(path2start[0],path2start[1])
+#     # find out what the types are 
+#     # c1 & c2 are vectors defining great circles through start & end points
+#     # p X c gives initial bearing vector
+#     if isinstance(path1brngEnd, (float,int)):
+#         path1def = 'bearing' # path 1 defined by endpoint
+#     else:
+#         path1def = 'endpoint' #path 1 defined by initial bearing
+#         if path1brngEnd[1] > 180.: path1brngEnd[1] = path1brngEnd[1] -360.
+#         path1brngEnd = LatLon(path1brngEnd[0],path1brngEnd[1])
+#     if isinstance(path2brngEnd, (float,int)):
+#         path2def = 'bearing'
+#     else:
+#         path2def = 'endpoint'
+#         if path2brngEnd[1] > 180.: path2brngEnd[1] = path2brngEnd[1] -360.
+#         path2brngEnd = LatLon(path2brngEnd[0],path2brngEnd[1])
+#     intersect = path1start.intersection(path1brngEnd, path2start, path2brngEnd)
 
+    return intersect,antipode
         
 def midpoint(lat1, lon1, lat2, lon2):
     """Get the mid-point from positions in geographic coordinates.Input values as degrees"""
-
-#Convert to radians
-    lat1 = radians(lat1)
-    lon1 = radians(lon1)
-    lat2 = radians(lat2)
-    lon2 = radians(lon2)
-
-
-    bx = cos(lat2) * cos(lon2 - lon1)
-    by = cos(lat2) * sin(lon2 - lon1)
-    lat3 = atan2(sin(lat1) + sin(lat2), \
-           sqrt((cos(lat1) + bx) * (cos(lat1) \
-           + bx) + by**2))
-    lon3 = lon1 + atan2(by, cos(lat1) + bx)
-    
-    
-
-    return [round(degrees(lat3), 2), round(degrees(lon3), 2)]
-
+    if lon1 > 180.: lon1 = lon1 - 360.
+    if lon2 > 180.: lon2 = lon2 - 360.
+    start = LatLon(lat1,lon1)
+    end = LatLon(lat2,lon2)
+    mid = start.midpointTo(end)
+    return [mid.lat, mid.lon]
 
 def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
     """Get the distance and azimuths from positions in geographic coordinates"""
@@ -276,7 +285,7 @@ def cart2polar(xy):
         raise ValueError('dimension of xy should be 1 or 2')    
     return rtheta
  
-def getDestinationLatLong(lat,lng,azimuth,distance):
+def getDestination(lat,lng,azimuth,distance):
     '''returns the lat an long of destination point 
     given the start lat, long, aziuth, and distance (in meters)'''
     R = constants.R #Radius of the Earth in m
@@ -287,34 +296,28 @@ def getDestinationLatLong(lat,lng,azimuth,distance):
     return[end.lat, end.lon]
 
 def calculateBearing(lat1,lng1,lat2,lng2):
-    '''calculates the azimuth in degrees from start point to end point'''
-    startLat = radians(lat1)
-    startLong = radians(lng1)
-    endLat = radians(lat2)
-    endLong = radians(lng2)
-    dLong = endLong - startLong
-    dPhi = log(tan(endLat/2.0+pi/4.0)/tan(startLat/2.0+pi/4.0))
-    if abs(dLong) > pi:
-         if dLong > 0.0:
-             dLong = -(2.0 * pi - dLong)
-         else:
-             dLong = (2.0 * pi + dLong)
-    bearing = (degrees(atan2(dLong, dPhi)) + 360.0) % 360.0;
-    
+    '''calculates the azimuth in degrees from start point to end point'''    
+    if lng1 > 180.: lng1 = lng1 -360.
+    start = LatLon(lat1,lng1)
+    if lng2 > 180.: lng2 = lng2 -360.
+    end = LatLon(lat2,lng2)
+    bearing = start.initialBearingTo(end)
     return bearing
 
-def getintermediateLatLong(lat1,lng1,azimuth,gcdelta,interval):
+def getIntermediate(lat1,lng1,azimuth,distance,interval):
     '''returns every coordinate pair inbetween two coordinate 
     pairs given the desired interval. gcdelta and interval is great cirle dist in m'''
-#     d = getPathLength(lat1,lng1,lat2,lng2)
-    remainder, dist = modf((gcdelta / interval))
-    lat2,lng2=getDestinationLatLong(lat1,lng1,azimuth,gcdelta)
-    counter = float(interval)
+    R = constants.R #Radius of the Earth in m
+    d = distance #Distance m 
+    if lng1 > 180.: lng1 = lng1 -360.
+    start = LatLon(lat1,lng1)
+    end = start.destination(d,azimuth,R)
+    steps = int(distance / interval)
     coords = []
     coords.append([lat1,lng1])
-    for distance in range(0,int(dist)):
-        coord = getDestinationLatLong(lat1,lng1,azimuth,counter)
-        counter = counter + float(interval)
+    for step in range(steps):
+        counter = float(interval) * float(step+1)
+        coord = getDestination(lat1,lng1,azimuth,counter)
         coords.append(coord)
     return coords
 
@@ -338,4 +341,3 @@ def interpolate(values, vtx, wts, fill_value=np.nan):
     ret = np.einsum('nj,nj->n', np.take(values, vtx), wts)
     ret[np.any(wts < 0, axis=1)] = fill_value
     return ret
- 
