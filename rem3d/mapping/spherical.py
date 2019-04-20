@@ -4,24 +4,15 @@
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin, modf
 import sys,os
 import numpy as np #for numerical analysis
-import multiprocessing
-import codecs,json #printing output
-from joblib import Parallel, delayed
 from pygeodesy.sphericalNvector import LatLon
 import pdb    #for the debugger 
-# from scipy.io import netcdf_file as netcdf #reading netcdf files
-import scipy.interpolate as spint
-import scipy.spatial.qhull as qhull
 if (sys.version_info[:2] < (3, 0)): range = xrange
 
 ############################### PLOTTING ROUTINES ################################        
-from .tools.trigd import atand,tand
-from .tools.common import convert2nparray
-from .f2py import ddelazgc # geolib library from NSW
-from . import constants
+from ..tools.common import convert2nparray
+from .. import constants
 ###############################
  
 def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
@@ -176,35 +167,6 @@ def midpoint(lat1, lon1, lat2, lon2):
     end = LatLon(lat2,lon2)
     mid = start.midpointTo(end)
     return [mid.lat, mid.lon]
-
-def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
-    """Get the distance and azimuths from positions in geographic coordinates"""
-    
-    geoco = constants.geoco
-    if isinstance(eplat,list): # if the input is a list loop 
-        delta=[];azep=[];azst=[]
-        # Standard checks on number of cores
-        avail_cores = multiprocessing.cpu_count()
-        if num_cores > avail_cores: 
-            sys.exit("Number of cores requested ("+str(num_cores)+") is higher than available ("+str(avail_cores)+")")
-        # Crate list of tuples of job arguments and pass to parallel using a helper routine     
-        job_args = [(atand(geoco*tand(item_lat)),eplon[jj],atand(geoco*tand(stlat[jj])),stlon[jj]) for jj, item_lat in enumerate(eplat)]
-        temp=Parallel(n_jobs=num_cores)(delayed(delazgc_helper)(ii) for ii in job_args)
-        for il in temp: delta.append(il[0]);azep.append(il[1]);azst.append(il[2])
-
-    elif isinstance(eplat,float):
-        elat=atand(geoco*tand(eplat))
-        elon=eplon
-        slat=atand(geoco*tand(stlat))
-        slon=stlon
-        delta,azep,azst = ddelazgc(elat,elon,slat,slon)    
-    else:    
-        raise ValueError("get_distaz only takes list or floats")
-    
-    return delta,azep,azst
-
-def delazgc_helper(args):
-    return ddelazgc(*args)
     
 def cart2spher(xyz):
     """Convert from cartesian to spherical coordinates
@@ -320,24 +282,3 @@ def getIntermediate(lat1,lng1,azimuth,distance,interval):
         coord = getDestination(lat1,lng1,azimuth,counter)
         coords.append(coord)
     return coords
-
-def interp_weights(xyz, uvw, d=3):
-    """First, a call to sp.spatial.qhull.Dealunay is made to triangulate the irregular grid coordinates.
-Then, for each point in the new grid, the triangulation is searched to find in which triangle (actually, in which simplex, which in your 3D case will be in which tetrahedron) does it lay.
-The barycentric coordinates of each new grid point with respect to the vertices of the enclosing simplex are computed. From:
-http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids
-    """
-    tri = qhull.Delaunay(xyz)
-    simplex = tri.find_simplex(uvw)
-    vertices = np.take(tri.simplices, simplex, axis=0)
-    temp = np.take(tri.transform, simplex, axis=0)
-    delta = uvw - temp[:, d]
-    bary = np.einsum('njk,nk->nj', temp[:, :d, :], delta)
-    return vertices, np.hstack((bary, 1 - bary.sum(axis=1, keepdims=True)))
-
-def interpolate(values, vtx, wts, fill_value=np.nan):
-    """An interpolated values is computed for that grid point, using the barycentric coordinates, and the values of the function at the vertices of the enclosing simplex. From:
-    http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids"""    
-    ret = np.einsum('nj,nj->n', np.take(values, vtx), wts)
-    ret[np.any(wts < 0, axis=1)] = fill_value
-    return ret
