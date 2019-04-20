@@ -14,6 +14,8 @@ Source code: [github](https://github.com/globalseismology/rem3d)
 
 Contact the REM3D team at info@rem3d.org with any questions or suggestions.
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/110c5a409f60485f83d442b8834eba2c)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=globalseismology/rem3d&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.com/globalseismology/rem3d.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=master)](https://travis-ci.com/globalseismology/rem3d) [![codecov](https://codecov.io/gh/globalseismology/rem3d/branch/master/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/rem3d) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![PyPI version](https://badge.fury.io/py/rem3d.svg)](https://badge.fury.io/py/rem3d) [![Gitter](https://badges.gitter.im/rem3d/community.svg)](https://gitter.im/rem3d/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 ## Requirements
 
 REM3D needs the following python modules installed in the system.
@@ -97,4 +99,4 @@ This project is licensed under the GNU GPL v3 or newer - see the [LICENSE](LICEN
 
 * Funded by the National Science Foundation and the David and Lucile Packard Foundation
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/110c5a409f60485f83d442b8834eba2c)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=globalseismology/rem3d&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.com/globalseismology/rem3d.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=master)](https://travis-ci.com/globalseismology/rem3d) [![codecov](https://codecov.io/gh/globalseismology/rem3d/branch/master/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/rem3d)
+
