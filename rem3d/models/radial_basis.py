@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""This script/module contains routines that are used to analyze/visualize the data sets 
-in the standard REM3D format."""
-
+"""This script/module contains routines that are used to analyze/visualize the data sets in the standard REM3D format."""
 #####################  IMPORT STANDARD MODULES   ######################################   
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
@@ -38,14 +36,17 @@ class radial_basis(object):
         attributes: a dictionary containing variables used to define this particular type
                     e.g. knots for vbspl. Checked that these are defined using self.check.
     '''
-    def __init__(self,name,type,metadata={}):
+    def __init__(self,name,type,metadata=None):
         self.data = {}
         self.data['depths_in_km'] = None
         self.data['vercof'] = None
         self.data['dvercof'] = None
         self.name = name
         self.type = type
-        self.metadata = metadata
+        if metadata is None:
+            self.metadata = {}
+        else:
+            self.metadata = metadata
         # Check if all required atributes are available
         self.check()
 

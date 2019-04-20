@@ -2,9 +2,7 @@
 """This module contains the various subroutines used for plotting
 Usage import """
 
-import sys,os
 import argparse #parsing arguments
-import pdb
 
 ################################ IMPORT REM3D MODULES   #####################################
 from rem3d.f2py import ddelazgc # geolib library from NSW
@@ -82,7 +80,6 @@ def main():
     
 # plot1section(lat1,lng1,azimuth,gcdelta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,colorcontour=arg.colorcontour)
 
-        
     return
 
 if __name__== "__main__":

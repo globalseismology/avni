@@ -37,7 +37,7 @@ def store_sparse_hdf(h5f,varname,mat,compression="gzip"):
     """        
     # Check the vector type
     msg = "This code only works for csr matrices"
-    assert(mat.__class__ == sparse.csr.csr_matrix), msg
+    if not mat.__class__ == sparse.csr.csr_matrix: raise AssertionError(msg)
     try:  # Try loading the sparse array if it exists
         mat_original = load_sparse_hdf(h5f,varname)
         mat_write = sparse.vstack([mat_original,mat])
@@ -66,7 +66,7 @@ def load_sparse_hdf(h5f,varname):
     # Check the vector type
     pars = []
     for par in ('data', 'indices', 'indptr', 'shape'):
-        pars.append(h5f[varname][par].value) 
+        pars.append(h5f[varname][par].value)
     m = sparse.csr_matrix(tuple(pars[:3]), shape=pars[3])
     return m
             

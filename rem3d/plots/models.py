@@ -581,7 +581,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     evalpoints=np.column_stack((constants.R/1000.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
     
     # get the interpolation
-    valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,k=k)
+    valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=k)
     
     #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
     return valselect,model,tree
@@ -650,7 +650,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     
     # get the interpolation
     npts_surf = len(coords)
-    tomovals = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,k=k)
+    tomovals = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=k)
     xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')  
     
     return xsec.T,model,tree
@@ -757,7 +757,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     except ValueError:
         cpalette=standardcolorpalette(colorpalette)
         
-    interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,k=k)
+    interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=k)
     
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)

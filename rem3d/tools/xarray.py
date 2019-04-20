@@ -35,14 +35,14 @@ def tree3D(treefile,latitude,longitude,radius_in_km):
         pickle.dump(tree,open(treefile,'wb'))
     return tree
 
-def querytree3D(tree,latitude,longitude,radius_in_km,values,k=1):    
+def querytree3D(tree,latitude,longitude,radius_in_km,values,nearest=1):    
     latitude = convert2nparray(latitude)
     longitude = convert2nparray(longitude)
     radius_in_km = convert2nparray(radius_in_km)
     evalpoints = np.column_stack((radius_in_km.flatten(),latitude.flatten(), longitude.flatten()))
     coordstack = spher2cart(evalpoints)
-    d,inds = tree.query(coordstack,k=k)
-    if k == 1:
+    d,inds = tree.query(coordstack,k=nearest)
+    if nearest == 1:
         interp = values[inds]
     else:
         w = 1.0 / d**2
@@ -87,7 +87,7 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth']
         rad = xr.IndexVariable('rad',[radius_in_km])
     f.close() #close netcdf file
     
-    # get the tree 
+    # get the tree
     gridlat, gridrad, gridlon = np.meshgrid(lat.data,rad.data,lon.data)
     tree = tree3D(treefile,gridlat,gridlon,gridrad)
     return tree
@@ -120,8 +120,8 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
     dlat=dlon=pix_lat.item()
     xlat = []; xlon = []; area = []
     nlat = 180./dlat; nlon = 360./dlon
-    assert(np.mod(nlat,1.)==0.),'nlat should be an integer'
-    assert(np.mod(nlon,1.)==0.),'nlon should be an integer'
+    if not np.mod(nlat,1.)==0.: raise AssertionError('nlat should be an integer')
+    if not np.mod(nlon,1.)==0.: raise AssertionError('nlon should be an integer')
     nlat = int(nlat); nlon = int(nlon)
     for ilat in range(nlat):
         xlat.append(90.0-0.5*dlat-(ilat*dlat))
@@ -138,7 +138,7 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
         area.append(2.*np.pi*(sind(xlat[ilat]+0.5*dlat)-             sind(xlat[ilat]-0.5*dlat))/float(nlon))
     
     # now fill the areas
-    totarea=0.; areaarray = []
+    areaarray = []
     if data.shape[0] == 0.5*data.shape[1]:
         rowvar = latname
         colvar = lonname
@@ -192,8 +192,8 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
     
     pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
     pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
-    assert(len(pix_lat)==len(pix_lon)==1),'only one pixel size allowed in xarray'
-    assert(pix_lat.item()==pix_lon.item()),'same pixel size in both lat and lon in xarray'
+    if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
+    if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
     # take weights
     # drop the variables for weights
     drops = [var for var in data.coords.keys() if var not in [latname,lonname]]

@@ -19,7 +19,6 @@ def getdepthsfolder(folder='.',extension='.epix',delimiter='.'):
     depths = []
     folder = get_fullpath(folder)
     onlyfiles = glob.glob(folder+ '/*'+extension)
-    filelist=[]
     for name in onlyfiles: 
         name = name.split(folder)[1]
         depths.append(int(name[name.index(delimiter)+1:name.rindex(extension)]))

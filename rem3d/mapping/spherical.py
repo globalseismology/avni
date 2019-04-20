@@ -10,7 +10,7 @@ from pygeodesy.sphericalNvector import LatLon
 import pdb    #for the debugger 
 if (sys.version_info[:2] < (3, 0)): range = xrange
 
-############################### PLOTTING ROUTINES ################################        
+############################### PLOTTING ROUTINES ################################
 from ..tools.common import convert2nparray
 from .. import constants
 ###############################
@@ -102,7 +102,7 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
             intersect = i2
             antipode = i1
         elif dir1 + dir2 == 0:  
-            # dir1, dir2 opposite; intersection is at further-away intersection point  
+            # dir1, dir2 opposite; intersection is at further-away intersection point
             # take opposite intersection from mid-point of p1 & p2 [is this always true?]
             if np.dot(p1+p2,X1) > 0 :
                 intersect = i2
@@ -110,7 +110,7 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
             else:
                 intersect = i1
                 antipode = i2
-    elif  case == 'bearing+endpoint':  #use bearing c1 X p1       
+    elif  case == 'bearing+endpoint':  #use bearing c1 X p1
         dir1 = np.sign(np.dot(np.cross(N1,p1),X1)) #c1Xp1.X1 +ve means p1 bearing points to X1
         if dir1 > 0:
             intersect = i1
@@ -273,7 +273,6 @@ def getIntermediate(lat1,lng1,azimuth,distance,interval):
     d = distance #Distance m 
     if lng1 > 180.: lng1 = lng1 -360.
     start = LatLon(lat1,lng1)
-    end = start.destination(d,azimuth,R)
     steps = int(distance / interval)
     coords = []
     coords.append([lat1,lng1])

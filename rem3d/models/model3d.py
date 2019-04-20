@@ -22,7 +22,6 @@ import h5py
 import xarray as xr
 import traceback
 import pandas as pd
-import time
 if (sys.version_info[:2] < (3, 0)): input = raw_input
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools   
@@ -215,8 +214,8 @@ class model3d(object):
         # check the pixel size
         pixlat = np.unique(np.ediff1d(np.array(ds.latitude)))
         pixlon = np.unique(np.ediff1d(np.array(ds.longitude)))        
-        assert(len(pixlat)==len(pixlon)==1),'only one pixel size allowed in xarray'
-        assert(pixlat.item()==pixlon.item()),'same pixel size in both lat and lon in xarray'
+        if not len(pixlat)==len(pixlon)==1: raise AssertionError('only one pixel size allowed in xarray')
+        if not pixlat.item()==pixlon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
         metadata['hsplfile']=np.array([str(pixlat[0])+' X '+str(pixlat[0])], dtype='<U40')
         lenarr = len(ds.latitude)*len(ds.longitude)
         metadata['xsipix']=np.array([[pixlat[0] for ii in range(lenarr)]])
@@ -327,7 +326,7 @@ class model3d(object):
             for ii in range(len(hf[query].keys()) - len(self.data)): self.add_resolution()
         for resolution in hf[query].keys():
             g1 = hf[query][resolution]
-            assert(g1.attrs['type']=='resolution')
+            if not g1.attrs['type']=='resolution': raise AssertionError()
             for name,value in g1.attrs.items(): 
                 try:
                     self.metadata[resolution][name] = value
@@ -336,7 +335,7 @@ class model3d(object):
             #now loop over every realization
             for case in g1.keys():
                 g2 = hf[query][resolution][case]
-                assert(g2.attrs['type']=='realization')
+                if not g2.attrs['type']=='realization': raise AssertionError()
                 kerstr = self.metadata[resolution]['kerstr']
                 key = self.name+'/'+kerstr+'/'+resolution+'/'+case
                 self.data[resolution][case]['coef'] = pd.DataFrame(tools.io.load_numpy_hdf(hf,key))
@@ -397,7 +396,7 @@ class model3d(object):
         hf.close()
         print('... written to '+outfile)
 
-    def evaluate_at_point(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None): 
+    def evaluate_at_point(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1): 
         """
         Evaluate the mode at a location (latitude, longitude,depth)
         
@@ -442,14 +441,15 @@ class model3d(object):
                     xlapix = np.repeat(xlopix,len(depths))
                     tree = tools.tree3D(treefile,xlapix,xlapix,constants.R/1000. - depth_in_km)
                 # get the interpolation
-                values = tools.querytree3D(tree,latitude,longitude,depth_in_km,qpts_rad,vals,k=k)
+                values = tools.querytree3D(tree,latitude,longitude,depth_in_km,qpts_rad,vals,nearest)
                 
         return values
 
     def getpixeldepths(self,resolution,parameter):
         typehpar = self.metadata['resolution_'+str(resolution)]['typehpar']
-        assert(len(typehpar) == 1),'only one type of horizontal parameterization allowed'
-        for type in typehpar: assert(type == 'PIXELS'),'for interpolation with tree3D'
+       if not len(typehpar) == 1: raise AssertionError('only one type of horizontal parameterization allowed')
+        for type in typehpar: 
+            if not type == 'PIXELS': raise AssertionError('for interpolation with tree3D')
         kernel_set = self.metadata['resolution_'+str(resolution)]['kernel_set']
         kernel_param = kernel_set.data['radial_basis'][parameter]
         depths = []
@@ -474,7 +474,7 @@ class model3d(object):
         resolution = tools.convert2nparray(resolution,int2float=False)
             
         # Loop over resolution levels, adding coefficients 
-        for ir in range(len(resolution)): 
+        for ir in range(len(resolution)):
             try:
                 coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef']
                 #if modelarr is already made use it
@@ -674,10 +674,8 @@ class model3d(object):
         depth_in_km = tools.convert2nparray(depth_in_km)
         parameter = tools.convert2nparray(parameter)
                    
-        assert(len(latitude)==len(longitude)==len(depth_in_km)),'latitude, longitude and depth_in_km should be of same length' 
-                       
-        assert(len(latitude)==len(longitude)==len(depth_in_km)),'latitude, longitude and depth_in_km should be of same length'       
-        
+        if not len(latitude)==len(longitude)==len(depth_in_km): raise AssertionError('latitude, longitude and depth_in_km should be of same length')
+                               
         # Get the radial projection file
         kernel = self.metadata['resolution_'+str(resolution)]['kernel_set']
 
@@ -744,7 +742,7 @@ class model3d(object):
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
         for variable in selfmeta['varstr']:
             ivarfind =np.where(selfmeta['varstr']==variable)[0]
-            assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set'
+            if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in eval_kernel_set')
             findvar = selfmeta['varstr'][ivarfind[0]]
             findrad = np.array([(ii, selfmeta['desckern'][ii]) for ii in np.arange(len(selfmeta['ivarkern'])) if ivarfind[0]+1 == selfmeta['ivarkern'][ii]],dtype=dt)
             

@@ -13,6 +13,7 @@ import re
 from configobj import ConfigObj
 from six import string_types # to check if variable is string using isinstance
 import ntpath
+import ast
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
@@ -101,10 +102,10 @@ def df2nparray(dataframe):
 
 def krunge(n,x,h,y,f,m=0,phi=np.zeros(6),savey=np.zeros(6)):
     """
-    some sort of integration or interpolation? x is 
-    incremented on second and fourth calls. Resets itself after 
+    some sort of integration or interpolation? x is
+    incremented on second and fourth calls. Resets itself after
     5'th call.
-
+    
     Input parameters:
     ----------------
     input: (these are guesses)
@@ -330,16 +331,16 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
         parser_select = parser[planet]
     except:
         raise IOError('No planet '+planet+' found in file '+configfile)
-    constants.a_e = eval(parser_select['a_e']) # Equatorial radius
-    constants.GM = eval(parser_select['GM']) # Geocentric gravitational constant m^3s^-2
-    constants.G = eval(parser_select['G']) # Gravitational constant m^3kg^-1s^-2
-    constants.f = eval(parser_select['f']) #flattening
-    constants.omega = eval(parser_select['omega']) #Angular velocity in rad/s
-    constants.M_true = eval(parser_select['M_true']) # Solid Earth mass in kg
-    constants.I_true = eval(parser_select['I_true']) # Moment of inertia in m^2 kg
-    constants.R = eval(parser_select['R']) # Radius of the Earth in m
-    constants.rhobar = eval(parser_select['rhobar']) # Average density in kg/m^3
-    constants.deg2km = eval(parser_select['deg2km']) #length of 1 degree in km
+    constants.a_e = ast.literal_eval(parser_select['a_e']) # Equatorial radius
+    constants.GM = ast.literal_eval(parser_select['GM']) # Geocentric gravitational constant m^3s^-2
+    constants.G = ast.literal_eval(parser_select['G']) # Gravitational constant m^3kg^-1s^-2
+    constants.f = ast.literal_eval(parser_select['f']) #flattening
+    constants.omega = ast.literal_eval(parser_select['omega']) #Angular velocity in rad/s
+    constants.M_true = ast.literal_eval(parser_select['M_true']) # Solid Earth mass in kg
+    constants.I_true = ast.literal_eval(parser_select['I_true']) # Moment of inertia in m^2 kg
+    constants.R = ast.literal_eval(parser_select['R']) # Radius of the Earth in m
+    constants.rhobar = ast.literal_eval(parser_select['rhobar']) # Average density in kg/m^3
+    constants.deg2km = ast.literal_eval(parser_select['deg2km']) #length of 1 degree in km
     constants.deg2m = constants.deg2km * 1000. #length of 1 degree in m
     # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
     try:

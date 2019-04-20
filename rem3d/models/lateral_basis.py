@@ -9,7 +9,6 @@ from builtins import *
 
 import sys,os
 import numpy as np #for numerical analysis
-from datetime import date  #to give a timestamp to output and compare times
 import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -22,14 +21,17 @@ class lateral_basis(object):
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.
     '''
-    def __init__(self, name, type, metadata = {}):
+    def __init__(self, name, type, metadata = None):
         """
         types : 'epix','ylm','sh','wavelet','slepians'
         """
         self.data = {}
         self.name = name
         self.type = type
-        self.metadata = metadata
+        if metadata is None:   
+            self.metadata = {}
+        else:
+            self.metadata = metadata
 
     def addtypes(self, names, types):
         """
@@ -95,4 +97,4 @@ class lateral_basis(object):
         """
         Project from current horizontal basis to another orthogonal basis 
         and return the coefficients.
-        """    
+        """

@@ -169,10 +169,11 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     
     # keys in coefficients should be acceptable
     choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
-    assert(np.all([key in choices for key in types]))
+    if not np.all([key in choices for key in types]): raise AssertionError()
     npoly = len(radius_range)*len(types)
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
-    for ii in range(len(radius_range)): assert(np.all(np.sort(radius_range[ii])==radius_range[ii])),'radius_range needs to be sorted'
+    for ii in range(len(radius_range)): 
+        if not np.all(np.sort(radius_range[ii])==radius_range[ii]): raise AssertionError('radius_range needs to be sorted')
     rbot=radius_range[0]/rnorm
     rtop=radius_range[1]/rnorm
     findtopbot = np.any([key in ['BOTTOM','TOP'] for key in types])
@@ -263,8 +264,8 @@ def eval_splcon(latitude,longitude,xlaspl,xlospl,xraspl):
         longitude = np.asarray([float(longitude)])
     else:
         raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
-    assert(len(latitude) == len(longitude)),'latitude and longitude should be of same length' 
-    assert(len(xlaspl) == len(xlospl) == len(xraspl)),'xlaspl,xlospl and xraspl should be of same length' 
+    if not len(latitude) == len(longitude): raise AssertionError('latitude and longitude should be of same length')
+    if not len(xlaspl) == len(xlospl) == len(xraspl): raise AssertionError('xlaspl,xlospl and xraspl should be of same length')
 
     ncoefhor = len(xlaspl)
     values = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
@@ -394,8 +395,8 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
     else:
         raise TypeError('longitude must be list or tuple, not %s' % type(longitude))
     
-    assert(len(latitude) == len(longitude)),'latitude and longitude should be of same length' 
-    assert(len(xlapix) == len(xlopix) == len(xsipix)),'xlapix,xlopix,xsipix should be of same length' 
+    if not len(latitude) == len(longitude): raise AssertionError('latitude and longitude should be of same length') 
+    if not len(xlapix) == len(xlopix) == len(xsipix): raise AssertionError('xlapix,xlopix,xsipix should be of same length')
     if len(np.unique(xsipix)) > 1:
         strout=''
         for ii in range(len(np.unique(xsipix))): strout = strout+', '+str(np.unique(xsipix)[ii])

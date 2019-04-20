@@ -71,12 +71,12 @@ class kernel_set(object):
             radial[variable]=[]
             
             ivarfind =np.where(self.metadata['varstr']==variable)[0]
-            assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set'
+            if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in eval_kernel_set')
             findrad = np.array([(ii, dict['desckern'][ii]) for ii in np.arange(len(dict['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
 
             metadata = {};found = False
             types = np.unique([findrad['kernel'][ii].split(',')[-2].strip() for ii in np.arange(len(findrad))])
-            assert(len(types) == 1),'only one type is allowed'
+            if not len(types) == 1: raise AssertionError('only one type is allowed')
             
             for jj in np.arange(len(findrad)):
                 radker = findrad['kernel'][jj]
@@ -108,7 +108,7 @@ class kernel_set(object):
         # select the radial kernels for this parameter
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
         ivarfind =np.where(self.metadata['varstr']==parameter)[0]
-        assert(len(ivarfind) == 1),'only one parameter can be selected in eval_kernel_set among: '+stringsum+'. Only '+str(len(ivarfind))+' found for parameter '+parameter
+        if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in eval_kernel_set among: '+stringsum+'. Only '+str(len(ivarfind))+' found for parameter '+parameter)
         findrad = np.array([(ii, self.metadata['desckern'][ii]) for ii in np.arange(len(self.metadata['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
 
         # select corresponding lateral bases
@@ -120,7 +120,7 @@ class kernel_set(object):
  
         #make sure only one variable is selected based on parameter input
         variables = np.unique(self.metadata['varstr'][self.metadata['ivarkern']-1][findrad['index']])
-        assert(len(variables) == 1),'only one parameter, not '+str(len(variables))+', can be selected in eval_kernel_set from: '+stringsum        # select radial bases for this variable
+        if not len(variables) == 1: raise AssertionError('only one parameter, not '+str(len(variables))+', can be selected in eval_kernel_set from: '+stringsum)        # select radial bases for this variable
         radial_select = self.data['radial_basis'][variables[0]]
         
         #initialize a projection matrix

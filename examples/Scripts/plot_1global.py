@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """This module contains an example of plotting a map using rem3d codes"""
 
-import sys,os
 import argparse #parsing arguments
 import matplotlib.pyplot as plt
 
@@ -27,7 +26,7 @@ def main():
     rem3d.data.update_file(filename,folder='.')
          
     # Read the file
-    latlonval,metadata,comments =rem3d.models.readepixfile(filename)
+    latlonval,metadata,_ =rem3d.models.readepixfile(filename)
     
     # Plot the file
     fig=plt.figure() 

@@ -68,7 +68,7 @@ def readepixfile(filename):
                     comments.append(line.split('\n')[0].lstrip().rstrip())
     return epixarr,metadata,comments
     
-def writeepixfile(filename,epixarr,metadata={'BASIS':'PIX','FORMAT':'50'},comments=[]):
+def writeepixfile(filename,epixarr,metadata={'BASIS':'PIX','FORMAT':'50'},comments=None):
     """Write .epix file format from a named array.
 
     Parameters
@@ -84,7 +84,7 @@ def writeepixfile(filename,epixarr,metadata={'BASIS':'PIX','FORMAT':'50'},commen
     #combine headers
     header=''
     for key in sorted(metadata.keys()): header=header+'#'+key+':'+metadata[key]+'\n'
-    if len(comments) != 0: 
+    if comments != None: 
         for comment in comments: header = header+comment+'\n'
     header = header[:-1] # to get rid of the last \n in header
     try:
@@ -435,7 +435,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(np.sum(epix_lengths)))
 
     stru_indx = []
-    stru_list = []
+    #stru_list = []
     lats = []
     lons = []
     pxs = []
@@ -478,15 +478,15 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                                     
             # conduct checks
             if checks:
-                assert (parser['parameters'][parameter]['unit'].lower()==metadata['UNIT'].lower())," in file "+epix_file                                
+                if not  parser['parameters'][parameter]['unit'].lower()==metadata['UNIT'].lower(): raise AssertionError("UNIT incompatible in file "+epix_file)                               
 
                                                
                 if parameter.lower()!=metadata['WHAT'].lower()  or parser['parameters'][parameter]['description'].lower() == metadata['WHAT'].lower():
                     warnings.warn("parameter or its description !=metadata['WHAT'] in file "+epix_file)
                 if parser['metadata']['refmodel'].lower()!=metadata['REFMODEL'].lower():
                     warnings.warn("parser['parameters']['refmodel']!=metadata['REFMODEL'] in file "+epix_file)
-                assert (metadata['FORMAT']=='50')," in file "+epix_file
-                assert (metadata['BASIS'].lower()=='PIX'.lower())," in file "+epix_file
+                if not metadata['FORMAT']=='50': raise AssertionError("FORMAT incompatible in file "+epix_file)
+                if not metadata['BASIS'].lower()=='PIX'.lower(): raise AssertionError("BASIS incompatible in file "+epix_file)
 
             # defaults if field not available in the epix file
             try:
@@ -512,7 +512,9 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 f_out.write(u'DESC  {:3.0f}: {}, boxcar, {} km\n'.format(k,parameter,depth_range))
                 ref_dict[parameter]['depth_in_km'].append( np.float(metadata['DEPTH_IN_KM']))
             elif mod_type == 'topography':
-                if checks: assert (float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']))," in file "+epix_file
+                if checks: 
+                    if not float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']):
+                        raise AssertionError("REFVALUE incompatible in file "+epix_file)
                 depth_ref = parser['parameters'][parameter]['depth']
                 f_out.write(u'DESC  {:3.0f}: {}, delta, {} km\n'.format(k,parameter,depth_ref))
             
@@ -543,7 +545,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             k += 1
             
             #enforce longitudes from 0 to 360 to be consistent with xarray
-            assert(min(f[:,1]) >= 0.)," longitudes need to be [0,360] "+epix_file
+            if not min(f[:,1]) >= 0.: raise AssertionError("longitudes need to be [0,360] "+epix_file)
 
 
     #write horizontal parameterization
@@ -559,8 +561,8 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         shape = (int(180.0/px_w),int(360.0/px_w))
         f_out.write(u'HPAR   {}: PIXELS,  {:3.2f} X {:3.2f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats[i])))
 
-        assert (np.all(sorted(np.unique(lons))==np.unique(lons)))
-        assert (np.all(sorted(np.unique(lats))==np.unique(lats)))
+        if not np.all(sorted(np.unique(lons))==np.unique(lons)): raise AssertionError()
+        if not np.all(sorted(np.unique(lats))==np.unique(lats)): raise AssertionError()
         for j in range(len(lats[i])):
             lon_here = lons[i][j]
             lat_here = lats[i][j]
@@ -674,8 +676,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         line = asciioutput.readline()
         
     # check that reference model is the same as parser
-    assert(ref_model == parser['metadata']['refmodel']),ref_model+' the reference model in '+asciioutput+' is not the same as refmodel in '+setup_file
-    assert(krnl_set == parser['metadata']['kerstr']) ,krnl_set+' the kernel string in '+asciioutput+' is not the same as kerstr in '+setup_file
+    if not ref_model == parser['metadata']['refmodel']: raise AssertionError(ref_model+' the reference model in '+asciioutput+' is not the same as refmodel in '+setup_file)
+    if not krnl_set == parser['metadata']['kerstr']: raise AssertionError(krnl_set+' the kernel string in '+asciioutput+' is not the same as kerstr in '+setup_file)
 
 
     #read variables and parameterizations
@@ -730,7 +732,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
             break
             
     # check that information on variables in ascii file exists in setup.cfg
-    for var in variables: assert(var in parser['parameters'].keys()),var+' not found as shortname in '+setup_file
+    for var in variables: 
+        if not var in parser['parameters'].keys(): raise AssertionError(var+' not found as shortname in '+setup_file)
 
     for i in range(nhpar):
 
@@ -747,7 +750,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
              pxw_lon = float(line.strip().split()[3].strip(','))
              pxw_lat = float(line.strip().split()[5].strip(','))
              nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
-             assert(nlines == float(line.strip().split()[6].strip(',')))
+             if not nlines == float(line.strip().split()[6].strip(',')): raise AssertionError()
         else:
             raise ValueError('only PIXEL parameterizations enabled')
 
@@ -811,7 +814,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         lon = np.unique(hpar_list[hpar_idx][0])
         lat = np.unique(hpar_list[hpar_idx][1])
         pxw = np.unique(hpar_list[hpar_idx][2])
-        assert(len(pxw)==1),'only 1 pixel size allowed'
+        if not len(pxw)==1: raise AssertionError('only 1 pixel size allowed')
         print(variable,': PXW', pxw[0])
 
         #create dims arrays

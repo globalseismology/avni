@@ -6,7 +6,6 @@ from builtins import *
 
 import sys,os
 import numpy as np #for numerical analysis
-import pdb    #for the debugger 
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 import scipy.spatial.qhull as qhull
 

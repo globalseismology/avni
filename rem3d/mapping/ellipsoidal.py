@@ -9,13 +9,10 @@ import sys,os
 import numpy as np #for numerical analysis
 import multiprocessing
 from joblib import Parallel, delayed
-from pygeodesy.sphericalNvector import LatLon
-import pdb    #for the debugger 
 if (sys.version_info[:2] < (3, 0)): range = xrange
 
 ############################### PLOTTING ROUTINES ################################        
 from ..tools.trigd import atand,tand
-from ..tools.common import convert2nparray
 from ..f2py import ddelazgc # geolib library from NSW
 from .. import constants
 ###############################

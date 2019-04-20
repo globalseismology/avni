@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """This module contains an example of outputting radial splines using rem3d codes"""
 
-import sys,os
 import argparse #parsing arguments
 import numpy as np
-import pdb
 ################################ IMPORT REM3D MODULES   #####################################
 import rem3d
 
@@ -26,7 +24,7 @@ def main():
     #Get depths
     start = np.float(arg.lower_bound);end=float(arg.upper_bound);inter=float(arg.interval)
     depths = np.arange(start,end,inter)
-    vercof, dvercof = rem3d.tools.eval_vbspl(depths,knots)
+    vercof, _ = rem3d.tools.eval_vbspl(depths,knots)
     writearr = np.concatenate((depths.reshape((-1, 1)),vercof),1)
     np.savetxt('vercof.txt',writearr,fmt='%.5f')       
     return
