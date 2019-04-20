@@ -40,3 +40,4 @@ Further reading
 
 - [Versioning Conventions](versioning_conventions.md):  The conventions behind REM3D's version numbering system are explained here.
 
+- [Public Release](public_release.md):  The workflow employed by admins for public releases to CIG repositories.

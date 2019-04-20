@@ -52,12 +52,21 @@ where `CONDA_PREFIX` is the location of Anaconda installation, which should be a
 If you want to use REM3D's development routines, you will need to do the following additional steps. This assumes that you have a free account at <https://github.com>
 
 1. Create an account on our [Web site](http://rem3d.org/login/register) and request access rights from [here](http://rem3d.org/join-us/github).
-2. Please accept the invitation through e-mail. Clone the development branch REM3D git repository and the from the terminal  
+2. Please accept the invitation through e-mail. Clone the development branch from the REM3D git repository through the terminal  
 `git clone -b devel https://username:password@github.com/globalseismology/rem3d.git`  
 This will create a directory that contains a folder called `rem3d`.
 3. Install REM3D module by opening a terminal window, navigating to `rem3d` directory and entering  
 `pip install -e . --user`  
 This lets you to keep working on files inside the Github folder without recompiling the codes.
+
+We maintain 3 major branches for our client libraries and these are relevant to public releases. Read/write access to these are restricted to main administrators and developers:  
+`devel` — Active development occurs on this branch or in branches that spin off from this.  
+`public` — Development for bug fixes happens here. We also bump versions and update the changelog on this branch.  
+`master` — We squash commits from the release branch into single release commits on this branch as well as tagging releases.  
+New branches may be created for individual projects. Please clone the `devel` branch to build upon the latest codes  
+`git checkout -b new_branch devel`  
+You can push this locally created branch to the remote `globalseismology/rem3d` with  
+`git push -u origin new_branch`  
 
 ## Start Here
 
@@ -98,5 +107,3 @@ This project is licensed under the GNU GPL v3 or newer - see the [LICENSE](LICEN
 ## Acknowledgments
 
 * Funded by the National Science Foundation and the David and Lucile Packard Foundation
-
-
