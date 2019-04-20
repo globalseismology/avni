@@ -97,4 +97,4 @@ This project is licensed under the GNU GPL v3 or newer - see the [LICENSE](LICEN
 
 * Funded by the National Science Foundation and the David and Lucile Packard Foundation
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/110c5a409f60485f83d442b8834eba2c)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=globalseismology/rem3d&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/110c5a409f60485f83d442b8834eba2c)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=globalseismology/rem3d&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.com/globalseismology/rem3d.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=master)](https://travis-ci.com/globalseismology/rem3d) [![codecov](https://codecov.io/gh/globalseismology/rem3d/branch/master/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/rem3d)
