@@ -130,7 +130,7 @@ from numpy.distutils.core import setup
 #
 # Use this if you need a single module for all subroutines import rem3d.f2py
 sourcefiles = []
-for path,dir,filelist in os.walk(join(f90_dir)):
+for path,_,filelist in os.walk(join(f90_dir)):
     for f in filelist:
         if f.endswith('.f'): sourcefiles.append(join(path,f))
 extf = [Extension(name='rem3d.f2py',

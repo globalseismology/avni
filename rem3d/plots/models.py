@@ -140,11 +140,11 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = 
         #name, segs = pickle.load(open('%s/%s.pkl' % (dbs_path,bound), 'rb'))
 
         try:
-            name, _ = tools.readjson('%s/%s.json' % (dbs_path,bound))
+            _ , segs = tools.readjson('%s/%s.json' % (dbs_path,bound))
         except IOError: #Download to default directory
             filedir = tools.get_filedir(checkwrite=True,makedir=True)
             data.update_file('%s.json' % (bound))
-            name, segs = tools.readjson('%s/%s.json' % (filedir,bound))
+            _ , segs = tools.readjson('%s/%s.json' % (filedir,bound))
 
         segs=np.array(segs)
         ind_nan, = np.nonzero(np.isnan(segs[:,0]))
@@ -164,7 +164,7 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = 
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=[30.,90.],gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=None,gridwidth=0, **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
 
@@ -199,13 +199,15 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
 
     kwargs : optional arguments for Basemap
     """
+    # defaults
+    if grid is None: grid=[30.,90.]
 
     # set up map
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
     else:
         m = Basemap(ax=ax,projection='robin', lon_0=150, resolution='c')
-    clip_path = m.drawmapboundary()
+    #clip_path = m.drawmapboundary()
     m.drawcoastlines(linewidth=1.5)
     # draw parallels and meridians.
     # label parallels on right and top

@@ -173,8 +173,8 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
     if not np.all([key in choices for key in types]): raise AssertionError()
     npoly = len(radius_range)*len(types)
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
-    for ii in range(len(radius_range)):
-        if not np.all(np.sort(radius_range[ii])==radius_range[ii]): raise AssertionError('radius_range needs to be sorted')
+    for radii in radius_range:
+        if not np.all(np.sort(radii)==radii): raise AssertionError('radius_range needs to be sorted')
     rbot=radius_range[0]/rnorm
     rtop=radius_range[1]/rnorm
     findtopbot = np.any([key in ['BOTTOM','TOP'] for key in types])
@@ -182,10 +182,10 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
 
     if findtopbot and findconstantlinear: raise ValueError('Cannot have both BOTTOM/TOP and CONSTANT/LINEAR as types in eval_polynomial')
 
-    for irad in range(len(radiusin)):
+    for irad,val in enumerate(radiusin):
         temp = np.zeros(npoly)
         dtemp = np.zeros(npoly)
-        for irange in range(len(radius_range)):
+        for irange,val2 in enumerate(radius_range):
             #Undefined if depth does not lie within the depth extents of knot points
             if radiusin[irad] <= min(radius_range[irange]) or radiusin[irad] > max(radius_range[irange]):
                 # <= so that the boundary depth belongs to only one radial kernel
@@ -195,7 +195,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
                     dtemp[ii]=0.
             else:
                 rn=radiusin[irad]/rnorm
-                for itype in range(len(types)):
+                for itype,val2 in enumerate(types):
                     ii = irange*len(types)+itype
                     if findconstantlinear:
                         if types[itype]=='CONSTANT':
@@ -317,8 +317,7 @@ def eval_ylm(latitude,longitude,lmaxhor):
     if not len(latitude) == len(longitude): raise AssertionError('latitude and longitude should be of same length')
     ncoefhor = np.power(lmaxhor+1,2) # numpye of coefficients upto Lmax
     horcof = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
-    for iloc in range(len(latitude)):
-        lat = latitude[iloc]
+    for iloc,lat in enumerate(latitude):
         lon = longitude[iloc]
         #--- make lon go from 0-360
         if lon<0.: lon=lon+360.

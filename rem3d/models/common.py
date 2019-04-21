@@ -552,7 +552,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
     #write horizontal parameterization
     f_out.write(u'HORIZONTAL PARAMETERIZATIONS: {}\n'.format(len(lats)))
-    for i in range(0,len(lats)):
+    for i,val in enumerate(lats):
 
         #check pixel widths
         if np.min(pxs[i]) != np.max(pxs[i]):

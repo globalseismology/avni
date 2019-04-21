@@ -61,7 +61,7 @@ def main():
 
     #Japan
     lat1 = 34.;lng1 = 152.;lat2 = 40.;lng2 = 117.
-    delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
+    delta,azep,_ = ddelazgc(lat1,lng1,lat2,lng2)
     if arg.output:
         outfile = 'Japan.png'
     else:

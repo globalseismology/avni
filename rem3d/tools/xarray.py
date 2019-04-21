@@ -135,7 +135,6 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
     # check if it is a compatible dataarray
     checkDataArray(data,latname, lonname)
     pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
-    pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
 
     #---- calculate the grid of test points and their weights
     dlat=dlon=pix_lat.item()

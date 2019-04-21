@@ -267,7 +267,7 @@ class model3d(object):
                 ivarkern.append(icount)
             else:
                 _ , nlat, nlon = ds[key].shape
-                for ii in range(len(deptop)):
+                for ii,_ in enumerate(deptop):
                     descstring = u'{}, boxcar, {} - {} km'.format(key,deptop[ii],depbottom[ii])
                     try:
                         coef = np.vstack([coef,ds[key][ii].values.flatten()])
@@ -484,7 +484,7 @@ class model3d(object):
         resolution = tools.convert2nparray(resolution,int2float=False)
 
         # Loop over resolution levels, adding coefficients
-        for ir in range(len(resolution)):
+        for ir,_ in enumerate(resolution):
             try:
                 coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef']
                 #if modelarr is already made use it
@@ -537,9 +537,9 @@ class model3d(object):
 
             # Loop over all kernel basis
             knot_depth=[]
-            for ii in range(len(self.metadata['resolution_'+str(ll)]['ihorpar'])):
+            for ii,_ in enumerate(self.metadata['resolution_'+str(ll)]['ihorpar']):
                 ifound=0
-                for jj in range(len(radial_type)):
+                for jj,_ in enumerate(radial_type):
                     if re.search(radial_type[jj],self.metadata['resolution_'+str(ll)]['desckern'][ii]):
                         index = int(self.metadata['resolution_'+str(ll)]['desckern'][ii].split(',')[-1]) - 1
                         knot_depth.append(radial_knots[jj][index]); ifound=1
@@ -692,7 +692,7 @@ class model3d(object):
         # loop through parameter and append the projection for each location
         refstrarr=[]
         for param in parameter:
-            for iloc in range(len(latitude)):
+            for iloc,_ in enumerate(latitude):
                 lat = latitude[iloc]
                 lon = longitude[iloc]
                 dep = depth_in_km[iloc]

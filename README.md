@@ -45,9 +45,9 @@ where `CONDA_ROOT` is the location of Anaconda directory (e.g. `/home/user/anaco
 `conda install -c conda-forge basemap-data-hires`  
 Basemap installation may give errors for the PROJ4 library. We have found it useful to specify the location of the library using the following in our .tcshrc shell configuration  
 `setenv PROJ_LIB $CONDA_PREFIX/share/proj`  
-where `CONDA_PREFIX` is the location of Anaconda installation, which should be automatically initialized with step 2.
+where `CONDA_PREFIX` is the location of Anaconda installation, which should be automatically initialized with step 2.  
 4. Install the stable version of REM3D and its additional dependencies with
-`pip install rem3d`
+`pip install rem3d`  
 
 ### Advanced installation (for developers)
 
@@ -61,9 +61,9 @@ If you want to use REM3D's development routines, you will need to do the followi
 This lets you to keep working on files inside the Github folder without recompiling the codes.
 
 We maintain 3 major branches for our client libraries and these are relevant to public releases. Read/write access to these are restricted to main administrators and developers:
-* `devel` — Active development occurs on this branch or in branches that spin off from this.
-* `public` — Development for bug fixes happens here. We also bump versions and update the changelog on this branch.
-* `master` — We squash commits from the release branch into single release commits on this branch as well as tagging releases.
+* `devel` — Active development occurs on this branch or in branches that spin off from this.  
+* `public` — Development for bug fixes happens here. We also bump versions and update the changelog on this branch.  
+* `master` — We squash commits from the release branch into single release commits on this branch as well as tagging releases.  
 New branches may be created for individual projects. Please clone the `devel` branch to build upon the latest codes  
 `git checkout -b new_branch devel`  
 You can push this locally created branch to the remote `globalseismology/rem3d` with  
@@ -81,10 +81,10 @@ provide a graphical user interface. For those of you who are not familiar  with 
 relatively easy to adapt the scripts for computations and plotting.
 Here are some specific features and pitfalls on Python:
 
-* Python uses specific indentation. A script might fail if a code block is not indented correctly. We use four spaces and no tabs, mixing these can give trouble.
-* Indices require square brackets and function or method calls parentheses (mainly different from Matlab).
-* The first index of an array is 0 (e.g. x[0])
-* Put dots after numbers to make them floats instead of integers (e.g. 5/3 will give 1 (Python 2.x rounds downward), while 5./3. will give 1.66666666667)
+* Python uses specific indentation. A script might fail if a code block is not indented correctly. We use four spaces and no tabs, mixing these can give trouble.  
+* Indices require square brackets and function or method calls parentheses (mainly different from Matlab).  
+* The first index of an array is 0 (e.g. x[0])  
+* Put dots after numbers to make them floats instead of integers (e.g. 5/3 will give 1 (Python 2.x rounds downward), while 5./3. will give 1.66666666667)  
 
 ## Contributing
 
