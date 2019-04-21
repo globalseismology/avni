@@ -21,12 +21,17 @@ def main():
         help='Output file format')
     arg = parser.parse_args()
     
-    filename=arg.epix
-    # update the file from the server
-    rem3d.data.update_file(filename,folder='.')
-         
+    try:
+        # stage the file for plotting
+        rem3d.tools.stage(arg.epix)
+        model = ntpath.basename(arg.epix)
+    except:
+        # update the file from the server
+        rem3d.data.update_file(arg.epix,folder='.')
+        model = arg.epix
+        
     # Read the file
-    latlonval,metadata,_ =rem3d.models.readepixfile(filename)
+    latlonval,metadata,_ =rem3d.models.readepixfile(model)
     
     # Plot the file
     fig=plt.figure() 
@@ -40,7 +45,7 @@ def main():
         rem3d.plots.globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorpalette='rem3d')
     ax.set_title('Depth : '+metadata['DEPTH_RANGE']+' km')
     plt.show()
-    fig.savefig(filename+arg.format,dpi=300)
+    fig.savefig(model+arg.format,dpi=300)
         
     return
 

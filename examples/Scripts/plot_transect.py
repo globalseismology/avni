@@ -3,12 +3,12 @@
 Usage import """
 
 import argparse #parsing arguments
-
+import ntpath
 ################################ IMPORT REM3D MODULES   #####################################
 from rem3d.f2py import ddelazgc # geolib library from NSW
 from rem3d.plots import plot1section
-from rem3d.tools import get_fullpath
-
+from rem3d.tools import get_fullpath,stage
+from rem3d.data import update_file
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
@@ -30,6 +30,15 @@ def main():
         help='Save the figures in files')
     arg = parser.parse_args()
     
+    try:
+        # stage the file for plotting
+        rem3d.tools.stage(arg.file)
+        model3d = ntpath.basename(arg.file)
+    except:
+        # update the file from the server
+        update_file(arg.file)
+        model3d = arg.file
+            
     ##### Example of a regional transects
     print("PLOTTING SECTION 1")
     # Kermadec
@@ -39,7 +48,7 @@ def main():
         outfile = 'Kermadec.png'
     else:
         outfile = None
-    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',outfile=outfile,vexaggerate=arg.elev_exxagerate,nelevinter=arg.elev_interval,colorcontour=arg.colorcontour)
+    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=model3d,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',outfile=outfile,vexaggerate=arg.elev_exxagerate,nelevinter=arg.elev_interval,colorcontour=arg.colorcontour)
     
     # N. Chile    
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
@@ -78,7 +87,7 @@ def main():
         outfile = None           
     plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,outfile=outfile,colorcontour=arg.colorcontour)
     
-# plot1section(lat1,lng1,azimuth,gcdelta,model=arg.file,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,colorcontour=arg.colorcontour)
+# plot1section(lat1,lng1,azimuth,gcdelta,model=model3d,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta V_{S} / V_{S}$'+' (%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,colorcontour=arg.colorcontour)
 
     return
 
