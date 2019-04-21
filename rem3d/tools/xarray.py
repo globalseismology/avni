@@ -112,8 +112,8 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
 
     pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
     pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
-    assert(len(pix_lat)==len(pix_lon)==1),'only one pixel size allowed in xarray'
-    assert(pix_lat.item()==pix_lon.item()),'same pixel size in both lat and lon in xarray'
+    if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
+    if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
 
     #---- calculate the grid of test points and their weights
     dlat=dlon=pix_lat.item()
