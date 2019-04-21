@@ -406,7 +406,7 @@ class reference1D(object):
         if figuresize is None: figuresize=[7,12]
         if height_ratios is None: height_ratios=[2, 2, 1]
         if zoomdepth is None: zoomdepth=[0.,1000.]
-        
+
         depthkmarr = (constants.R - self.data['radius'])/1000. # in km
         #Set default fontsize for plots
         plots.updatefont(10)

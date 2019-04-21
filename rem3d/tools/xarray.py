@@ -67,7 +67,7 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km =
     """
     #defaults
     if lonlatdepth is None: lonlatdepth = ['longitude','latitude','depth']
-    
+
     #read topography file
     if os.path.isfile(ncfile):
         f = xr.open_dataset(ncfile)
@@ -97,7 +97,7 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km =
 def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
     """
     checks whether the data input is a DataArray and the coordinates are compatible
-    
+
     Parameters
     ----------
     data : Dataset or DataArray
@@ -115,8 +115,8 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
     pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
     if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
     if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
-        
-    
+
+
 def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
     """
     weighted average for xray data geographically averaged
@@ -211,8 +211,6 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
 
     # check if it is a compatible dataarray
     checkDataArray(data,latname, lonname)
-    pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
-    pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
 
     # take weights
     # drop the variables for weights

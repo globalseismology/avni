@@ -45,7 +45,7 @@ def convert2nparray(value,int2float = True):
         outvalue = np.asarray(value)
     elif isinstance(value, float):
         outvalue = np.asarray([value])
-    elif isinstance(value, int):
+    elif isinstance(value, (int,np.int64)):
         if int2float:
             outvalue = np.asarray([float(value)])
         else:

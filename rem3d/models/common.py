@@ -76,7 +76,7 @@ def writeepixfile(filename,epixarr,metadata=None,comments=None):
     filename : Name of the file containing four columns
               (latitude, longitude, pixel_size, value)
 
-    metadata: metadata fields from input fields if specified. 
+    metadata: metadata fields from input fields if specified.
               default : {'BASIS':'PIX','FORMAT':'50'}
 
     comments: all other comments except lines containing metadata
@@ -133,7 +133,7 @@ def read3dmodelfile(modelfile):
         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
 
         # search for parmaterization
-        foundsplines = False; foundharmonics = False; #foundpixels = False
+        foundsplines = False; foundpixels = False; #foundharmonics = False
         if line.startswith("DESC"):
             idummy=int(line[4:line.index(':')])
             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
@@ -159,7 +159,7 @@ def read3dmodelfile(modelfile):
                 lmax = int(substr[21:].rstrip('\n'))
                 lmaxhor[idummy-1]=lmax
                 ncoefhor[idummy-1]=(lmax+1)**2
-                foundharmonics = True
+                #foundharmonics = True
             elif substr[ifst:ifst+18] == 'SPHERICAL SPLINES,':
                 ifst1=ifst+18
                 ifst=len(substr)
@@ -202,7 +202,7 @@ def read3dmodelfile(modelfile):
                 ncoefhor[idummy-1]=ncoef
 
                 # initialize
-                if not foundsplines:
+                if not foundpixels:
                     xlapix=[[] for i in range(nhorpar)]
                     xlopix=[[] for i in range(nhorpar)]
                     xsipix=[[] for i in range(nhorpar)]
@@ -213,7 +213,7 @@ def read3dmodelfile(modelfile):
                     xlopix[idummy-1].append(float(arr[0]))
                     xlapix[idummy-1].append(float(arr[1]))
                     xsipix[idummy-1].append(float(arr[2]))
-                #foundpixels = True
+                foundpixels = True
             else:
                 raise ValueError('Undefined parameterization type - '+substr[ifst:ilst])
         if line.startswith("STRU"):
@@ -861,7 +861,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
             av_attrs['average'] = np.array(avgvalue)
         else:
             # get the average, use an earlier evaluation of area if possible
-            globalav,area,percentarea = tools.MeanDataArray(data_array,area=area)
+            globalav,area,_ = tools.MeanDataArray(data_array,area=area)
             av_attrs['average'] = globalav
             av_attrs['depth'] = float(av_attrs['depth'])
 

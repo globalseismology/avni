@@ -4,7 +4,6 @@
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees
 import sys
 import multiprocessing
 from joblib import Parallel, delayed

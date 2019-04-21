@@ -5,7 +5,6 @@
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import sys
 import numpy as np #for numerical analysis
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -70,29 +69,26 @@ class radial_basis(object):
             for key in ['knots']:
                 try:
                     knots = self.metadata[key]
-                    print('knots for '+self.type+' are ',knots)
-                except:
+                except KeyError:
                     print('Current attributes : ',self.metadata.keys())
                     raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
         elif self.type in ['delta','dirac delta']:
             for key in ['info']:
                 try:
                     knots = self.metadata[key]
-                    print('knots for '+self.type+' are ',knots)
-                except:
+                except KeyError:
                     print('Current attributes : ',self.metadata.keys())
                     raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
         elif self.type in ['boxcar']:
             for key in ['depthtop','depthbottom']:
                 try:
                     knots = self.metadata[key]
-                    print('knots for '+self.type+' are ',knots)
-                except:
+                except KeyError:
                     print('Current attributes : ',self.metadata.keys())
                     raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
         else:
             raise TypeError('metadata type note defined in eval_radial %s' % self.type)
-
+        return knots
 
     def readprojfile(self,projfile):
         """

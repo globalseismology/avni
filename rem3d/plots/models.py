@@ -9,7 +9,6 @@ Usage import
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin
 import os
 import numpy as np #for numerical analysis
 #import matplotlib.cm as cmx
@@ -426,7 +425,7 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = None,r_labels = 
     #defaults
     if r_labels is None: r_labels = ['CMB',' ','2000',' ','1000',' ','Moho']
     if r_locs is None: r_locs = [3480.,3871.,4371.,4871.,5371.,5871.,6346.6]
-    
+
     # PolarAxes.PolarTransform takes radian. However, we want our coordinate
     # system in degree
     tr = Affine2D().scale(np.pi/180., 1.) + PolarAxes.PolarTransform()
@@ -689,8 +688,8 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
             intersection,antipode = mapping.intersection([lat1,lng1],azimuth,[0.,0.],90.)
             # shift the plot by the distance between equator and antipode
             # This shift is needed to sync with the inset figure in ortho projection
-            delta_i,azep, _  = mapping.get_distaz(lat1,lng1,intersection[0],intersection[1])
-            delta_a,azep,azst = mapping.get_distaz(lat1,lng1,antipode[0],antipode[1])
+            delta_i,_,_  = mapping.get_distaz(lat1,lng1,intersection[0],intersection[1])
+            delta_a,_,_ = mapping.get_distaz(lat1,lng1,antipode[0],antipode[1])
             # ortho projection usually takes the nearest point as the rightmost point
             delta = min(delta_i,delta_a)
         theta=[delta,gcdelta+delta]

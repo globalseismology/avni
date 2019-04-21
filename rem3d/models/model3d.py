@@ -266,7 +266,7 @@ class model3d(object):
                 desckern.append(descstring)
                 ivarkern.append(icount)
             else:
-                ndepth, nlat, nlon = ds[key].shape
+                _ , nlat, nlon = ds[key].shape
                 for ii in range(len(deptop)):
                     descstring = u'{}, boxcar, {} - {} km'.format(key,deptop[ii],depbottom[ii])
                     try:
@@ -396,7 +396,7 @@ class model3d(object):
         hf.close()
         print('... written to '+outfile)
 
-    def evaluate_at_point(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1):
+    def evaluate_at_point(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1,dbs_path=tools.get_filedir()):
         """
         Evaluate the mode at a location (latitude, longitude,depth)
 
@@ -417,31 +417,43 @@ class model3d(object):
         depth_in_km = tools.convert2nparray(depth_in_km)
         resolution = tools.convert2nparray(resolution,int2float=False)
 
-        #compute for each resolution
-        for res in resolution:
+        #compute values for each resolution
+        for index,res in enumerate(resolution):
+            # get the model array
+            modelarr = self.coeff2modelarr(resolution=res,realization=realization)
             if not interpolated:
                 # get the projection matrix
                 project = self.calculateproj(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res)
-                modelarr = self.coeff2modelarr(resolution=res,realization=realization)
                 predsparse = project['projarr']*modelarr
-                values = predsparse.data
+                if index == 0:
+                    values = predsparse.data
+                else:
+                    values = values + predsparse.data
             else:
                 if tree==None:
                     kerstr = self.metadata['resolution_'+str(res)]['kerstr']
-                    treefile = kerstr+'.KDTree.3D.pkl'
+                    #get full path
+                    dbs_path=tools.get_fullpath(dbs_path)
+                    treefile = dbs_path+'/'+constants.planetpreferred+'.'+kerstr+'.KDTree.3D.pkl'
                     #check that the horizontal param is pixel based
                     xlopix = self.metadata['resolution_'+str(res)]['xlopix'][0]
                     xlapix = self.metadata['resolution_'+str(res)]['xlapix'][0]
                     depths = self.getpixeldepths(res,parameter)
-                    depth_in_km = np.array([])
-                    for depth in depths: depth_in_km = np.append(depth_in_km,np.ones_like(xlopix)*depth)
+                    depth_in_km_pix = np.array([])
+                    for depth in depths: depth_in_km_pix = np.append(depth_in_km_pix,np.ones_like(xlopix)*depth)
                     xlapix = np.repeat(xlapix,len(depths))
                     xlapix = np.repeat(xlopix,len(depths))
-                    tree = tools.tree3D(treefile,xlapix,xlapix,constants.R/1000. - depth_in_km)
-                # get the interpolation
-                values = tools.querytree3D(tree,latitude,longitude,depth_in_km,qpts_rad,vals,nearest)
-
-        return values
+                    tree = tools.tree3D(treefile,xlapix,xlapix,constants.R/1000. - depth_in_km_pix)
+                # get the interpolation, summing over all resolutions
+                temp = tools.querytree3D(tree=tree,latitude=latitude,longitude=longitude,radius_in_km= constants.R/1000. - depth_in_km,values=modelarr,nearest=nearest)
+                if index == 0:
+                    values = temp
+                else:
+                    values = values + temp
+        if not interpolated:
+            return values, tree
+        else:
+            return values.toarray()
 
     def getpixeldepths(self,resolution,parameter):
         typehpar = self.metadata['resolution_'+str(resolution)]['typehpar']
@@ -451,8 +463,8 @@ class model3d(object):
         kernel_set = self.metadata['resolution_'+str(resolution)]['kernel_set']
         kernel_param = kernel_set.data['radial_basis'][parameter]
         depths = []
-        for radker in kernel_param:
-            depths.append((radker.metadata['depthtop']+radker.metadata['depthbottom'])/2.)
+        for index,radker in enumerate(kernel_param):
+            depths.append((radker.metadata['depthtop'][index]+radker.metadata['depthbottom'][index])/2.)
         return np.asarray(depths)
 
     def coeff2modelarr(self,resolution=0,realization=0):

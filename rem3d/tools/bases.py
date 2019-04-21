@@ -148,7 +148,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
     radius_range: limits of the radius limits of the region
 
     types: polynomial coefficients to be used for calculation. Options are : TOP,
-                  TOP, BOTTOM, CONSTANT, LINEAR, QUADRATIC, CUBIC. 
+                  TOP, BOTTOM, CONSTANT, LINEAR, QUADRATIC, CUBIC.
                   default: ['CONSTANT','LINEAR']
 
     rnorm: normalization for radius, usually the radius of the planet
