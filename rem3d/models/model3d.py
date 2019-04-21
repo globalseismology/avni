@@ -441,7 +441,7 @@ class model3d(object):
                     xlapix = np.repeat(xlopix,len(depths))
                     tree = tools.tree3D(treefile,xlapix,xlapix,constants.R/1000. - depth_in_km)
                 # get the interpolation
-                values = tools.querytree3D(tree,latitude,longitude,depth_in_km,qpts_rad,vals,nearest)
+                values = tools.querytree3D(tree,latitude,longitude,depth_in_km,qpts_rad,vals,nearest=nearest)
                 
         return values
 
