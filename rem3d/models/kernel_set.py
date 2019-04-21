@@ -7,7 +7,7 @@ in the standard REM3D format."""
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import sys,os
+import sys
 import numpy as np #for numerical analysis
 from scipy import sparse
 
@@ -31,7 +31,12 @@ class kernel_set(object):
         self.extract_lateral(dict)
         self.extract_radial(dict)
 
-    def initialize(self,dict,required = ['nmodkern','ivarkern','desckern','ncoefhor','ncoefcum','nhorpar','ihorpar','ityphpar','typehpar','numvar','varstr'],optional = ['forward_modeling','scaling']):
+    def initialize(self,dict,required=None,optional=None):
+        
+        #defaults
+        if required is None: required = ['nmodkern','ivarkern','desckern','ncoefhor','ncoefcum','nhorpar','ihorpar','ityphpar','typehpar','numvar','varstr']
+        if optional is None: optional = ['forward_modeling','scaling']
+        
         for var in required:
             try:
                 self.metadata[var] = dict[var]

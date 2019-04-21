@@ -47,8 +47,8 @@ def eval_vbspl(depths,knots):
 
     if len(repeats) > 0: # if there are repeated knots, splits it
         split_at = []
-        for ii in range(len(repeats)):
-            split_at.append(np.where(knots==repeats[ii])[0][1])
+        for index,value in enumerate(repeats):
+            split_at.append(np.where(knots==value)[0][1])
         knots_list = np.split(knots, split_at)
         for knots in knots_list:
             if len(knots) < 4:
@@ -57,15 +57,15 @@ def eval_vbspl(depths,knots):
         jj = 0
         for depth in depths:
             jj = jj + 1
-            for kk in range(len(knots_list)):
+            for index,value in enumerate(knots_list):
                 # create the arrays as Fortran-contiguous
-                splpts = np.array(knots_list[kk].tolist(), order = 'F')
+                splpts = np.array(value.tolist(), order = 'F')
                 #Undefined if depth does not lie within the depth extents of knot points
-                if depth < min(knots_list[kk]) or depth > max(knots_list[kk]):
+                if depth < min(value) or depth > max(value):
                     temp1 = temp2 = np.zeros_like(splpts)
                 else:
                     (temp1, temp2) = vbspl(depth,len(splpts),splpts)
-                if kk == 0:
+                if index == 0:
                     vercof_temp = temp1; dvercof_temp = temp2
                 else:
                     vercof_temp = np.concatenate((vercof_temp,temp1))
@@ -122,12 +122,12 @@ def eval_splrem(radius, radius_range, nsplines):
     if len(radius_range) != 2 or not isinstance(radius_range, (list,tuple,np.ndarray)):
         raise TypeError('radius_range must be list , not %s' % type(radius_range))
 
-    for irad in range(len(radius)):
+    for irad,radval in enumerate(radius):
         #Undefined if depth does not lie within the depth extents of knot points
-        if radius[irad] < min(radius_range) or radius[irad] > max(radius_range):
+        if radval < min(radius_range) or radval > max(radius_range):
             temp1 = temp2 = np.zeros(nsplines)
         else:
-            (temp1, temp2) = dbsplrem(radius[irad],radius_range[0], radius_range[1],nsplines)
+            (temp1, temp2) = dbsplrem(radval,radius_range[0], radius_range[1],nsplines)
         if irad == 0:
             vercof = temp1; dvercof = temp2
         else:
@@ -136,7 +136,7 @@ def eval_splrem(radius, radius_range, nsplines):
     return vercof, dvercof
 
 
-def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
+def eval_polynomial(radius, radius_range, rnorm, types = None):
     """
     Evaluate the cubic spline know with second derivative as 0 at end points.
 
@@ -148,7 +148,8 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
     radius_range: limits of the radius limits of the region
 
     types: polynomial coefficients to be used for calculation. Options are : TOP,
-                  TOP, BOTTOM, CONSTANT, LINEAR, QUADRATIC, CUBIC
+                  TOP, BOTTOM, CONSTANT, LINEAR, QUADRATIC, CUBIC. 
+                  default: ['CONSTANT','LINEAR']
 
     rnorm: normalization for radius, usually the radius of the planet
 
@@ -157,6 +158,8 @@ def eval_polynomial(radius, radius_range, rnorm, types = ['CONSTANT','LINEAR']):
 
     vercof : value of the polynomial coefficients at each depth, size (Nradius).
     """
+    #defaults
+    if types is None: types= ['CONSTANT','LINEAR']
 
     # convert to numpy arrays
     radiusin = convert2nparray(radius)
@@ -321,7 +324,7 @@ def eval_ylm(latitude,longitude,lmaxhor):
         if lon<0.: lon=lon+360.
         # wk1,wk2,wk3 are legendre polynomials of size Lmax+1
         # ylmcof is the value of Ylm
-        ylmcof,wk1,wk2,wk3 = ylm(lat,lon,lmaxhor,ncoefhor,lmaxhor+1)
+        ylmcof, _ , _ , _ = ylm(lat,lon,lmaxhor,ncoefhor,lmaxhor+1)
         rowind = iloc*np.ones(ncoefhor)
         colind = np.arange(ncoefhor)
         # update values
@@ -363,8 +366,7 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
     lori[np.where(lori>360.)]=lori[np.where(lori>360.)]-360.
     lole[np.where(lole>360.)]=lole[np.where(lole>360.)]-360.
     horcof = sparse.csr_matrix((len(latitude),len(xsipix))) # empty matrix
-    for iloc in range(len(latitude)):
-        lat = latitude[iloc]
+    for iloc,lat in enumerate(latitude):
         lon = longitude[iloc]
         #--- make lon go from 0-360
         if lon<0.: lon=lon+360.

@@ -117,10 +117,9 @@ def getcolorlist(cptfile):
     """Get a tuple for colorlist from a cptfile"""
     currentdir=os.getcwd()
     try:
-        f = open(cptfile, 'r')
+        cptarr=np.genfromtxt(cptfile, dtype=None,comments="#")
     except IOError:
         raise ValueError("File ("+cptfile+") does not exist in the current directory - "+currentdir)
-    cptarr=np.genfromtxt(cptfile, dtype=None,comments="#")
     colorlist=[]
     for irow in np.arange(len(cptarr)):
         tups=cptarr[irow][1]/255.,cptarr[irow][2]/255.,cptarr[irow][3]/255.

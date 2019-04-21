@@ -7,9 +7,7 @@ in the standard REM3D format."""
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import os
 import numpy as np #for numerical analysis
-import pdb    #for the debugger pdb.set_trace()
 import fortranformat as ff #reading/writing fortran formatted text
 from future.utils import native_str
 from six import string_types # to check if variable is string using isinstance
@@ -300,10 +298,11 @@ class reference1D(object):
             raise ValueError('reference1D object is not allocated')
         return values
 
-    def to_cards(self,dir='.',fmt='cards',parameters = ['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']):
+    def to_mineoscards(self,dir='.',fmt='cards'):
         '''
         Writes a model file that is compatible with MINEOS.
         '''
+        parameters = ['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
         if self.data is not None and self.__nlayers__ > 0:
             model_name = self.name
             ntotlev = self.__nlayers__
@@ -399,10 +398,15 @@ class reference1D(object):
         else:
             raise ValueError('reference1D object is not allocated')
 
-    def plot(self,figuresize=[7,12],height_ratios=[2, 2, 1],ifshow=True,format='.eps',isotropic=False,zoomdepth=[0.,1000.]):
+    def plot(self,figuresize=None,height_ratios=None,ifshow=True,format='.eps',isotropic=False,zoomdepth=None):
         """
         Plot the cards array in a PREM like plot
         """
+        #defaults
+        if figuresize is None: figuresize=[7,12]
+        if height_ratios is None: height_ratios=[2, 2, 1]
+        if zoomdepth is None: zoomdepth=[0.,1000.]
+        
         depthkmarr = (constants.R - self.data['radius'])/1000. # in km
         #Set default fontsize for plots
         plots.updatefont(10)

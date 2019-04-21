@@ -227,7 +227,7 @@ class model3d(object):
         indx = 0
         idep = 0
         if len(ds.dims) == 3:
-            ndepth, nlat, nlon = ds[data_keys[0]].shape
+            _ , nlat, nlon = ds[data_keys[0]].shape
             for ilat in range(nlat):
                 for ilon in range(nlon):
                     metadata['xlapix'][0][indx] = ds[data_keys[0]][idep,ilat,ilon].latitude
@@ -439,7 +439,7 @@ class model3d(object):
                     xlapix = np.repeat(xlopix,len(depths))
                     tree = tools.tree3D(treefile,xlapix,xlapix,constants.R/1000. - depth_in_km)
                 # get the interpolation
-                values = tools.querytree3D(tree,latitude,longitude,depth_in_km,qpts_rad,vals,nearest=nearest)
+                values = tools.querytree3D(tree,latitude,longitude,depth_in_km,qpts_rad,vals,nearest)
 
         return values
 
@@ -640,7 +640,7 @@ class model3d(object):
             neval=h5f.attrs['neval']; deptharr=h5f.attrs['deptharr']
             refstrarr=h5f.attrs['refstrarr']; grid = tools.io.load_numpy_hdf(h5f,'grid')
             xlat=grid['xlat']; xlon=grid['xlon']; area=grid['area']
-            model=h5f.attrs['model']; param=h5f.attrs['param']
+            model=h5f.attrs['model']; lateral_basis=h5f.attrs['param']
 
             # Always read the following from hdf5 so projarr is list ofsparsehdf5-fast I/O
             projarr={};refvalarr={}

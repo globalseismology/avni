@@ -5,7 +5,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 from builtins import *
 
-import sys,os
+import sys
 import numpy as np
 import gc
 from scipy import sparse
@@ -82,7 +82,7 @@ def store_numpy_hdf(h5f,varname,array,compression="gzip", compression_opts=9):
 
     h5f: hdf5 file handle
     """
-    if not type(array) == np.ndarray: raise ValueError('Only numpy arrays can be stored with store_numpy_hdf')
+    if not isinstance(array, np.ndarray) : raise ValueError('Only numpy arrays can be stored with store_numpy_hdf')
     if array.dtype.names is None:
         raise ValueError('Only named numpy arrays are allowed')
     else:

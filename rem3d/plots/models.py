@@ -9,22 +9,22 @@ Usage import
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin, modf
+from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin
 import os
 import numpy as np #for numerical analysis
-import matplotlib.cm as cmx
+#import matplotlib.cm as cmx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap
 #from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
 #                               AutoMinorLocator)
-import multiprocessing
-from joblib import Parallel, delayed
+#import multiprocessing
+#from joblib import Parallel, delayed
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 import scipy.interpolate as spint
-import itertools
-import time
-import progressbar
+#import itertools
+#import time
+#import progressbar
 import xarray as xr
 from six import string_types # to check if variable is string using isinstance
 # For polar sectionplot
@@ -111,7 +111,7 @@ def plot_hotspots(m, dbs_path = tools.get_filedir(), lon360 = False, **kwargs):
         m.scatter(x, y)
     return
 
-def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes=['ridge', 'transform', 'trench'],**kwargs):
+def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = None,**kwargs):
     """
     Plots different types of tectonic plates
 
@@ -131,6 +131,8 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes=['
     kwargs : denotes the arguments, if any, for scatter
 
     """
+    #defaults
+    if boundtypes is None: boundtypes = ['ridge', 'transform', 'trench']
 
     # Earlier was in pickle format, cross-platform compatibility required json
     # ridge,ridgeloc=pickle.load(open('%s/ridge.pkl' % (dbs_path),'rb'))
@@ -139,7 +141,7 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes=['
         #name, segs = pickle.load(open('%s/%s.pkl' % (dbs_path,bound), 'rb'))
 
         try:
-            name, segs = tools.readjson('%s/%s.json' % (dbs_path,bound))
+            name, _ = tools.readjson('%s/%s.json' % (dbs_path,bound))
         except IOError: #Download to default directory
             filedir = tools.get_filedir(checkwrite=True,makedir=True)
             data.update_file('%s.json' % (bound))
@@ -233,7 +235,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
     elif isinstance(colorcontour,(int, float)): # Number of intervals for color bar
         bounds = np.linspace(vmin,vmax,colorcontour+1)
         mytks = np.arange(vmin,vmax+(vmax-vmin)/4.,(vmax-vmin)/4.)
-        mytkslabel = [str(a) for a in mytks]
+        #mytkslabel = [str(a) for a in mytks]
         spacing='proportional'
     else:
         raise ValueError("Undefined colorcontour in globalmap; should be a numpy array, list or integer")
@@ -242,8 +244,8 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
     # plot the model
     for ii in np.arange(len(valarray['lon'])):
         if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
-    numlon=len(np.unique(valarray['lon']))
-    numlat=len(np.unique(valarray['lat']))
+    #numlon=len(np.unique(valarray['lon']))
+    #numlat=len(np.unique(valarray['lat']))
     # grid spacing assuming a even grid
     # Get the unique lat and lon spacing, avoiding repeated lat/lon
     spacing_lat = np.ediff1d(np.sort(valarray['lat']))
@@ -342,7 +344,7 @@ def backgroundmap(ax,dbs_path=tools.get_filedir(),plates='r',oceans='w',continen
     else:
         m = Basemap(ax=ax,projection='robin', lat_0=0, lon_0=150, resolution='l')
 
-    clip_path = m.drawmapboundary()
+    # clip_path = m.drawmapboundary()
     # draw coastlines.
 #     m.drawcoastlines(linewidth=1.)
     # draw a boundary around the map, fill the background.
@@ -408,7 +410,7 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
         dots_x,dots_y=m(coords[2:-1][:,1],coords[2:-1][:,0])
         m.scatter(dots_x,dots_y,s=50,zorder=10,facecolor='w',edgecolor='k')
         m.scatter(dotsstart_x,dotsstart_y,s=50,zorder=10,facecolor='m',edgecolor='k')
-        dotsall_x,dotsall_y=m(coords[:,1],coords[:,0])
+        #dotsall_x,dotsall_y=m(coords[:,1],coords[:,0])
         if gcdelta < 180.:
             m.drawgreatcircle(lon1, lat1, lon2, lat2,color='k',linewidth=3.)
         elif gcdelta == 180.:
@@ -419,8 +421,12 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
             m.plot(lonextent,latextent,color='k',linewidth=3.)
     return m
 
-def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,4371.,4871.,5371.,5871.,6346.6],r_labels = ['CMB',' ','2000',' ','1000',' ','Moho'],fontsize=12):
+def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = None,r_labels = None, fontsize=12):
     """Setup the polar axis for section plot. numdegticks is the number of grids in theta. rect is the 3-digit number for axis on a plot. (theta, radius) are array for the range."""
+    #defaults
+    if r_labels is None: r_labels = ['CMB',' ','2000',' ','1000',' ','Moho']
+    if r_locs is None: r_locs = [3480.,3871.,4371.,4871.,5371.,5871.,6346.6]
+    
     # PolarAxes.PolarTransform takes radian. However, we want our coordinate
     # system in degree
     tr = Affine2D().scale(np.pi/180., 1.) + PolarAxes.PolarTransform()
@@ -606,8 +612,10 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
 #     title(phase, fontsize=20,loc='left')
     return ax
 
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,nearest=10):
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=None,dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,nearest=10):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
+    #defaults
+    if radii is None: radii=[3480.,6346.6]
 
     #get full path
     dbs_path=tools.get_fullpath(dbs_path)
@@ -654,11 +662,14 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
 
     return xsec.T,model,tree
 
-def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=50,width_ratios=[1,3],numevalx=200,numevalz=300,nearest=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,hotspots=False,plates=False):
+def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,width_ratios=None,numevalx=200,numevalz=300,nearest=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,hotspots=False,plates=False):
     """Plot one section through the Earth through a pair of points."""
+    #defaults
+    if radii is None: radii=[3480.,6346.6]
+    if width_ratios is None: width_ratios=[1,3]
 
     # Specify theta such that it is symmetric
-    lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    #lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
     if gcdelta==180.:
         theta=[0.,gcdelta]
     elif gcdelta==360.:
@@ -678,7 +689,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
             intersection,antipode = mapping.intersection([lat1,lng1],azimuth,[0.,0.],90.)
             # shift the plot by the distance between equator and antipode
             # This shift is needed to sync with the inset figure in ortho projection
-            delta_i,azep,azst = mapping.get_distaz(lat1,lng1,intersection[0],intersection[1])
+            delta_i,azep, _  = mapping.get_distaz(lat1,lng1,intersection[0],intersection[1])
             delta_a,azep,azst = mapping.get_distaz(lat1,lng1,antipode[0],antipode[1])
             # ortho projection usually takes the nearest point as the rightmost point
             delta = min(delta_i,delta_a)
@@ -802,8 +813,10 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     return fig,topo,topotree,model,modeltree
 
 
-def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,figuresize=[8,4],outfile=None,**kwargs):
+def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,figuresize=None,outfile=None,**kwargs):
     """Plot one section through the Earth through a pair of points."""
+    #defaults
+    if figuresize is None: figuresize=[8,4]
 
     fig = plt.figure(figsize=(figuresize[0],figuresize[1]))
     if kwargs:
@@ -829,8 +842,11 @@ def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='
     fig.savefig(modelname+outformat,dpi=300)
     return
 
-def plot1hitmap(hitfile,dbs_path=tools.get_filedir(),projection='robin',lat_0=0,lon_0=150,colorcontour=[0,25,100,250,400,600,800,1000,1500,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000],colorpalette='Blues',outformat='.pdf',ifshow=True):
+def plot1hitmap(hitfile,dbs_path=tools.get_filedir(),projection='robin',lat_0=0,lon_0=150,colorcontour = None,colorpalette='Blues',outformat='.pdf',ifshow=True):
     """Plot one hitcount map"""
+    #defaults
+    if colorcontour is None: colorcontour=[0,25,100,250,400,600,800,1000,1500,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000]
+
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
     hit_array,grid_spacing = data.read_SWhitcount(hitfile)

@@ -5,9 +5,8 @@
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import sys,os
+import sys
 import numpy as np #for numerical analysis
-import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
@@ -71,6 +70,7 @@ class radial_basis(object):
             for key in ['knots']:
                 try:
                     knots = self.metadata[key]
+                    print('knots for '+self.type+' are ',knots)
                 except:
                     print('Current attributes : ',self.metadata.keys())
                     raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
@@ -78,6 +78,7 @@ class radial_basis(object):
             for key in ['info']:
                 try:
                     knots = self.metadata[key]
+                    print('knots for '+self.type+' are ',knots)
                 except:
                     print('Current attributes : ',self.metadata.keys())
                     raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
@@ -85,6 +86,7 @@ class radial_basis(object):
             for key in ['depthtop','depthbottom']:
                 try:
                     knots = self.metadata[key]
+                    print('knots for '+self.type+' are ',knots)
                 except:
                     print('Current attributes : ',self.metadata.keys())
                     raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)

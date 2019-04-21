@@ -7,7 +7,7 @@ import ntpath
 ################################ IMPORT REM3D MODULES   #####################################
 from rem3d.f2py import ddelazgc # geolib library from NSW
 from rem3d.plots import plot1section
-from rem3d.tools import get_fullpath,stage
+from rem3d.tools import stage
 from rem3d.data import update_file
 #########################################################
 def main():
@@ -52,7 +52,7 @@ def main():
 
     # N. Chile
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
-    delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
+    delta,azep, _  = ddelazgc(lat1,lng1,lat2,lng2)
     if arg.output:
         outfile = 'NorthChile.png'
     else:

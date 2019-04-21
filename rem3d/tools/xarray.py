@@ -48,7 +48,7 @@ def querytree3D(tree,latitude,longitude,radius_in_km,values,nearest=1):
         interp = np.sum(w * values[inds], axis = 1)/ np.sum(w, axis=1)
     return interp
 
-def ncfile2tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth'],stride=None, radius_in_km = None):
+def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km = None):
     """
     Read or write a pickle interpolant with KDTree
 
@@ -63,8 +63,11 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth']
                     3rd field in lonlatdepth.Typically 6371km for Earth
 
     lonlatdepth: variable name of the longitude, latitude, depth (in km) arrays
+                 default: ['longitude','latitude','depth']
     """
-
+    #defaults
+    if lonlatdepth is None: lonlatdepth = ['longitude','latitude','depth']
+    
     #read topography file
     if os.path.isfile(ncfile):
         f = xr.open_dataset(ncfile)
@@ -91,7 +94,29 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = ['longitude','latitude','depth']
     tree = tree3D(treefile,gridlat,gridlon,gridrad)
     return tree
 
+def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
+    """
+    checks whether the data input is a DataArray and the coordinates are compatible
+    
+    Parameters
+    ----------
+    data : Dataset or DataArray
+        the xray object to average over
 
+    Returns
+    -------
+
+    pass: if true, is a compatible dataarray
+
+    """
+    if not isinstance(data, xr.DataArray): raise ValueError("date must be an xray DataArray")
+
+    pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
+    pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
+    if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
+    if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
+        
+    
 def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
     """
     weighted average for xray data geographically averaged
@@ -107,13 +132,10 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
     area: a DataArray object with area of each pixel
 
     """
-
-    if not isinstance(data, xr.DataArray): raise ValueError("date must be an xray DataArray")
-
+    # check if it is a compatible dataarray
+    checkDataArray(data,latname, lonname)
     pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
     pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
-    if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
-    if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
 
     #---- calculate the grid of test points and their weights
     dlat=dlon=pix_lat.item()
@@ -187,12 +209,11 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
 
     """
 
-    if not isinstance(data, xr.DataArray): raise ValueError("date must be an xray DataArray")
-
+    # check if it is a compatible dataarray
+    checkDataArray(data,latname, lonname)
     pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
     pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
-    if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
-    if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
+
     # take weights
     # drop the variables for weights
     drops = [var for var in data.coords.keys() if var not in [latname,lonname]]

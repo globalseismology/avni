@@ -67,7 +67,7 @@ def readepixfile(filename):
                     comments.append(line.split('\n')[0].lstrip().rstrip())
     return epixarr,metadata,comments
 
-def writeepixfile(filename,epixarr,metadata={'BASIS':'PIX','FORMAT':'50'},comments=None):
+def writeepixfile(filename,epixarr,metadata=None,comments=None):
     """Write .epix file format from a named array.
 
     Parameters
@@ -76,10 +76,13 @@ def writeepixfile(filename,epixarr,metadata={'BASIS':'PIX','FORMAT':'50'},commen
     filename : Name of the file containing four columns
               (latitude, longitude, pixel_size, value)
 
-    metadata: metadata fields from input fields if specified
+    metadata: metadata fields from input fields if specified. 
+              default : {'BASIS':'PIX','FORMAT':'50'}
 
     comments: all other comments except lines containing metadata
     """
+    # default value
+    if metadata is None: metadata = {'BASIS':'PIX','FORMAT':'50'}
     #combine headers
     header=''
     for key in sorted(metadata.keys()): header=header+'#'+key+':'+metadata[key]+'\n'
@@ -130,7 +133,7 @@ def read3dmodelfile(modelfile):
         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
 
         # search for parmaterization
-        foundsplines = False; foundharmonics = False; foundpixels = False
+        foundsplines = False; foundharmonics = False; #foundpixels = False
         if line.startswith("DESC"):
             idummy=int(line[4:line.index(':')])
             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
@@ -210,7 +213,7 @@ def read3dmodelfile(modelfile):
                     xlopix[idummy-1].append(float(arr[0]))
                     xlapix[idummy-1].append(float(arr[1]))
                     xsipix[idummy-1].append(float(arr[2]))
-                foundpixels = True
+                #foundpixels = True
             else:
                 raise ValueError('Undefined parameterization type - '+substr[ifst:ilst])
         if line.startswith("STRU"):
@@ -537,9 +540,9 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
                     if not np.array_equal(par1,par_new):
                         n_hpar += 1
-                        lats.append(f[:,0])
-                        lons.append(f[:,1])
-                        pxs.append(f[:,2])
+                        lats.append(lats_new)
+                        lons.append(lons_new)
+                        pxs.append(pxs_new)
                 stru_indx.append(n_hpar)
             k += 1
 
@@ -557,7 +560,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         else:
             px_w = pxs[i][0]
 
-        shape = (int(180.0/px_w),int(360.0/px_w))
+        #shape = (int(180.0/px_w),int(360.0/px_w))
         f_out.write(u'HPAR   {}: PIXELS,  {:3.2f} X {:3.2f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats[i])))
 
         if not np.all(sorted(np.unique(lons))==np.unique(lons)): raise AssertionError()
@@ -738,7 +741,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
 
         line = asciioutput.readline()
         print(line.strip())
-        hpar_type = line.strip().split()[2].split(',')[0]
+        #hpar_type = line.strip().split()[2].split(',')[0]
         hpar_name = line.split(':')[1].strip()
 
         if hpar_name.lower().startswith('pixel'):
@@ -852,7 +855,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
                 # select the appropriate map
                 mapval = data_array.sel(depth=depth)
                 # get the average, use an earlier evaluation of area if possible
-                globalav,area,percentarea = tools.MeanDataArray(mapval,area=area)
+                globalav,area, _  = tools.MeanDataArray(mapval,area=area)
                 avgvalue.append(globalav)
             if ifread1D: av_attrs['refvalue'] = np.array(refvalue)
             av_attrs['average'] = np.array(avgvalue)
