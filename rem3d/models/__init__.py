@@ -14,4 +14,3 @@ from .reference1D import reference1D
 from .kernel_set import kernel_set
 from .radial_basis import radial_basis
 from .lateral_basis import lateral_basis
-

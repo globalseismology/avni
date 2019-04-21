@@ -18,7 +18,7 @@ def main():
     parser.add_argument('-k','--knots', nargs='+', help='Knot locations in km. Can give multiple values', required=True)
 
     arg = parser.parse_args()
-    
+
     # Get spline knots
     knots = [float(knot) for knot in arg.knots]
     #Get depths
@@ -26,12 +26,12 @@ def main():
     depths = np.arange(start,end,inter)
     vercof, _ = rem3d.tools.eval_vbspl(depths,knots)
     writearr = np.concatenate((depths.reshape((-1, 1)),vercof),1)
-    np.savetxt('vercof.txt',writearr,fmt='%.5f')       
+    np.savetxt('vercof.txt',writearr,fmt='%.5f')
     return
 
 if __name__== "__main__":
     main()
-    
+
     # Example:
     # -k 24.4 75. 150. 225. 300. 410. 530. 650. 650. 820. 1320. 1820. 2320. 2550. 2791. 2891.
 

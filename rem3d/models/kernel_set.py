@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""This script/module contains routines that are used to analyze/visualize the data sets 
+"""This script/module contains routines that are used to analyze/visualize the data sets
 in the standard REM3D format."""
 
-#####################  IMPORT STANDARD MODULES   ######################################   
+#####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 from builtins import *
@@ -27,10 +27,10 @@ class kernel_set(object):
         self.metadata ={}
         self.data = {}
         self.name = dict['kerstr']
-        self.initialize(dict)     
+        self.initialize(dict)
         self.extract_lateral(dict)
         self.extract_radial(dict)
-        
+
     def initialize(self,dict,required = ['nmodkern','ivarkern','desckern','ncoefhor','ncoefcum','nhorpar','ihorpar','ityphpar','typehpar','numvar','varstr'],optional = ['forward_modeling','scaling']):
         for var in required:
             try:
@@ -42,7 +42,7 @@ class kernel_set(object):
                 self.metadata[var] = dict[var]
             except:
                 self.metadata[var] = None
-        
+
     def extract_lateral(self,dict):
         lateral=[]
         for ihor in np.arange(self.metadata['nhorpar']):
@@ -61,13 +61,13 @@ class kernel_set(object):
                 raise NotImplementedError(type+' has not been implemented in kernel_set.extract_lateral')
             lateral.append(lateral_basis(name='HPAR'+str(ihor+1), type = type, metadata=metadata))
         self.data['lateral_basis']=np.array(lateral)
-        
+
     def extract_radial(self,dict):
         radial={}
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
         for variable in dict['varstr']: #loop over all variables, grabbing
             radial[variable]=[]
-            
+
             ivarfind =np.where(self.metadata['varstr']==variable)[0]
             if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in eval_kernel_set')
             findrad = np.array([(ii, dict['desckern'][ii]) for ii in np.arange(len(dict['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
@@ -75,30 +75,30 @@ class kernel_set(object):
             metadata = {};found = False
             types = np.unique([findrad['kernel'][ii].split(',')[-2].strip() for ii in np.arange(len(findrad))])
             if not len(types) == 1: raise AssertionError('only one type is allowed')
-            
+
             for jj in np.arange(len(findrad)):
                 radker = findrad['kernel'][jj]
-                metadata = {}; 
+                metadata = {};
                 found = False
                 if 'variable splines' in radker or 'vbspl' in radker:
                     found = True
                     metadata['knots'] = [float(findrad['kernel'][ii].split(',')[-1].split('km')[0]) for ii in np.arange(len(findrad))]
                     radial[variable].append(radial_basis(name=radker, type = 'variable splines', metadata=metadata))
-                    
+
                 elif 'delta' in radker or 'dirac delta' in radker:
                     found = True
                     metadata['info'] = radker.split(',')[-1]
                     radial[variable].append(radial_basis(name=radker, type = 'dirac delta', metadata=metadata))
                 elif 'boxcar' in radker or 'constant' in radker:
-                    found = True                    
+                    found = True
                     metadata['depthtop'] = [float(findrad['kernel'][ii].split(',')[-1].split('-')[0]) for ii in np.arange(len(findrad))]
                     metadata['depthbottom'] = [float(findrad['kernel'][ii].split(',')[-1].split('-')[1].split('km')[0]) for ii in np.arange(len(findrad))]
                     radial[variable].append(radial_basis(name=radker, type = 'boxcar', metadata=metadata))
                 if not found: raise ValueError('information not found for '+radker)
         self.data['radial_basis']=radial
-        
+
     def getprojection(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5'):
-        
+
         # all the parameter options
         stringsum = self.metadata['varstr'][0]
         for stri in self.metadata['varstr'][1:]: stringsum= stringsum+', '+stri
@@ -115,12 +115,12 @@ class kernel_set(object):
             lateral_select = lateral_basis[self.metadata['ihorpar']-1][findrad['index']]
         except:
             raise ValueError('ihorpar needs to be defined for a kernel set. The HPAR for each radial kernel')
- 
+
         #make sure only one variable is selected based on parameter input
         variables = np.unique(self.metadata['varstr'][self.metadata['ivarkern']-1][findrad['index']])
         if not len(variables) == 1: raise AssertionError('only one parameter, not '+str(len(variables))+', can be selected in eval_kernel_set from: '+stringsum)        # select radial bases for this variable
         radial_select = self.data['radial_basis'][variables[0]]
-        
+
         #initialize a projection matrix
         proj = sparse.csr_matrix((1,self.metadata['ncoefcum'][-1]))
         # loop over all radial kernels that belong to this parameter and add up

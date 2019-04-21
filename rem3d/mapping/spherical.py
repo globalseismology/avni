@@ -13,40 +13,40 @@ if (sys.version_info[:2] < (3, 0)): range = xrange
 from ..tools.common import convert2nparray
 from .. import constants
 ###############################
- 
+
 def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
     """
     Get the intersection of two great circle paths. Input can either be
     point and bearings or two sets of points
-    
-    if c1 & c2 are great circles through start and end points 
+
+    if c1 & c2 are great circles through start and end points
     (or defined by start point + bearing),
     then candidate intersections are simply c1 X c2 & c2 x c1
-    most of the work is deciding correct intersection point to select! 
-    if bearing is given, that determines which intersection, 
+    most of the work is deciding correct intersection point to select!
+    if bearing is given, that determines which intersection,
     if both paths are defined by start/end points, take closer intersection
     https://www.movable-type.co.uk/scripts/latlong-vectors.html#intersection
-    
+
     Input Parameters:
     ----------------
-    
+
     path1start: Location of start point of a curve in [latitude, longitude]
-    
+
     path1brngEnd: End point either in terms of a bearing (float/int) or location
-    
+
     path2start: Similar to path1start for the second curve
-    
+
     path2brngEnd: Similar to path1brngEnd for the second curve
-    
+
     Return:
     ------
-    
+
     intersection: preferred intersection of the two curves based on the input
-    
+
     antipode: antipode of the intersection where the great-circle curves meet as well
-    
+
     """
-    # find out what the types are 
+    # find out what the types are
     # c1 & c2 are vectors defining great circles through start & end points
     # p X c gives initial bearing vector
     if isinstance(path1brngEnd, (float,int)):
@@ -66,7 +66,7 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
     # convert to spherical coordinates
     p1 = spher2cart(path1start)
     p2 = spher2cart(path2start)
-        
+
 
     # Get normal to planes containing great circles
     # np.cross product of vector to each point from the origin
@@ -79,15 +79,15 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
     # Find two intersection points
     X1 = L / np.sqrt(L[0]**2 + L[1]**2 + L[2]**2)
     X2 = -X1
-    
+
     #Check if correct
     if np.any(np.isnan(X1)): raise ValueError('not found an intersection point between ',path1start,' with azimuth ',path1brngEnd,' and ', path2start, ' with azimuth ',path2brngEnd)
-    
+
     # convert back to spherical
     i1 = cart2spher(X1)[1:]
     i2 = cart2spher(X2)[1:]
-       
-    # selection of intersection point depends on 
+
+    # selection of intersection point depends on
     # how paths are defined (bearings or endpoints)
     if case == 'bearing+bearing':
         #if NXp1.i1 is +ve, the initial bearing is towards i1
@@ -100,7 +100,7 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
         elif dir1 + dir2 == -2: #dir1, dir2 both -ve, 1 & 2 both pointing to X2
             intersect = i2
             antipode = i1
-        elif dir1 + dir2 == 0:  
+        elif dir1 + dir2 == 0:
             # dir1, dir2 opposite; intersection is at further-away intersection point
             # take opposite intersection from mid-point of p1 & p2 [is this always true?]
             if np.dot(p1+p2,X1) > 0 :
@@ -116,7 +116,7 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
             antipode = i2
         else:
             intersect = i2
-            antipode = i1    
+            antipode = i1
     elif  case == 'endpoint+bearing': #use bearing c2 X p2
         dir2 = np.sign(np.dot(np.cross(N2,p2),X1)) #c2Xp2.X1 +ve means p2 bearing points to X1
         if dir2 > 0:
@@ -124,7 +124,7 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
             antipode = i2
         else:
             intersect = i2
-            antipode = i1   
+            antipode = i1
     elif case == 'endpoint+endpoint': #select nearest intersection to mid-point of all points
         mid = p1+p2+p1end+p2end
         if np.dot(mid,X1) > 0 :
@@ -132,14 +132,14 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
             antipode = i2
         else:
             intersect = i2
-            antipode = i1 
-    
+            antipode = i1
+
     ## Attempted with pygeodesy. Has issues for certain configurations.
 #     if path1start[1] > 180.: path1start[1] = path1start[1] -360.
 #     path1start = LatLon(path1start[0],path1start[1])
 #     if path2start[1] > 180.: path2start[1] = path2start[1] -360.
 #     path2start = LatLon(path2start[0],path2start[1])
-#     # find out what the types are 
+#     # find out what the types are
 #     # c1 & c2 are vectors defining great circles through start & end points
 #     # p X c gives initial bearing vector
 #     if isinstance(path1brngEnd, (float,int)):
@@ -157,7 +157,7 @@ def intersection(path1start, path1brngEnd, path2start, path2brngEnd):
 #     intersect = path1start.intersection(path1brngEnd, path2start, path2brngEnd)
 
     return intersect,antipode
-        
+
 def midpoint(lat1, lon1, lat2, lon2):
     """Get the mid-point from positions in geographic coordinates.Input values as degrees"""
     if lon1 > 180.: lon1 = lon1 - 360.
@@ -166,7 +166,7 @@ def midpoint(lat1, lon1, lat2, lon2):
     end = LatLon(lat2,lon2)
     mid = start.midpointTo(end)
     return [mid.lat, mid.lon]
-    
+
 def cart2spher(xyz):
     """Convert from cartesian to spherical coordinates
     http://www.geom.uiuc.edu/docs/reference/CRC-formulas/node42.html
@@ -188,7 +188,7 @@ def cart2spher(xyz):
     else:
         raise ValueError('dimension of xyz should be 1 or 2')
     return rlatlon
- 
+
 def spher2cart(rlatlon):
     """Convert from spherical to cartesian coordinates
     http://www.geom.uiuc.edu/docs/reference/CRC-formulas/node42.html
@@ -212,7 +212,7 @@ def spher2cart(rlatlon):
         xyz[2] = rlatlon[0]*np.cos(np.pi/180.*colatitude)
     else:
         raise ValueError('dimension of rlatlon should be 1 or 2')
-    return xyz 
+    return xyz
 
 def polar2cart(rtheta):
     """
@@ -243,21 +243,21 @@ def cart2polar(xy):
         rtheta[0] = np.sqrt(np.power(xy[1],2)+np.power(xy[1],2))
         rtheta[1] = np.arctan2(xy[1],xy[0]) * 180 / np.pi
     else:
-        raise ValueError('dimension of xy should be 1 or 2')    
+        raise ValueError('dimension of xy should be 1 or 2')
     return rtheta
- 
+
 def getDestination(lat,lng,azimuth,distance):
-    '''returns the lat an long of destination point 
+    '''returns the lat an long of destination point
     given the start lat, long, aziuth, and distance (in meters)'''
     R = constants.R #Radius of the Earth in m
-    d = distance #Distance m 
+    d = distance #Distance m
     if lng > 180.: lng = lng -360.
     start = LatLon(lat,lng)
     end = start.destination(d,azimuth,R)
     return[end.lat, end.lon]
 
 def calculateBearing(lat1,lng1,lat2,lng2):
-    '''calculates the azimuth in degrees from start point to end point'''    
+    '''calculates the azimuth in degrees from start point to end point'''
     if lng1 > 180.: lng1 = lng1 -360.
     start = LatLon(lat1,lng1)
     if lng2 > 180.: lng2 = lng2 -360.
@@ -266,7 +266,7 @@ def calculateBearing(lat1,lng1,lat2,lng2):
     return bearing
 
 def getIntermediate(lat1,lng1,azimuth,distance,interval):
-    '''returns every coordinate pair inbetween two coordinate 
+    '''returns every coordinate pair inbetween two coordinate
     pairs given the desired interval. gcdelta and interval is great cirle dist in m'''
     if lng1 > 180.: lng1 = lng1 -360.
     steps = int(distance / interval)

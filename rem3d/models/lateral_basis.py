@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""This script/module contains routines that are used to analyze/visualize the data sets 
+"""This script/module contains routines that are used to analyze/visualize the data sets
 in the standard REM3D format."""
 
-#####################  IMPORT STANDARD MODULES   ######################################   
+#####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 from builtins import *
@@ -12,7 +12,7 @@ import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from .. import tools  
+from .. import tools
 #######################################################################################
 # Horizontal basis parameter class that defines an unique combination of parameters, their radial parameterization and any scaling
 # 3D model class
@@ -37,20 +37,20 @@ class lateral_basis(object):
         """
         types = ['ylm','sh','wavelet','slepians']
         """
-        # check the type 
+        # check the type
         if len(names) !=len(types): raise ValueError("len(names) !=len(types)")
-        if isinstance(types,string_types): types = np.array(types) 
+        if isinstance(types,string_types): types = np.array(types)
         for ii in np.arange(types.size):
             # if does not exist already`or not the same as self type
-            if types[ii] not in self.proj.keys() and types[ii] != self.metadata['type']:         
+            if types[ii] not in self.proj.keys() and types[ii] != self.metadata['type']:
                 self.proj[types[ii]] = {}
-                self.proj[types[ii]][to_name[ii]] = {'data':None,'attributes':{}}        
-    
+                self.proj[types[ii]][to_name[ii]] = {'data':None,'attributes':{}}
+
     def readprojfile(self,infile):
         """
         Reads a projection matrix file that evaluates the radial bases at various depths.
         """
-        
+
         if (not os.path.isfile(infile)): raise IOError("Filename ("+infile+") does not exist. Use shell script print_projmatrix to create it.")
         #nbytes = os.path.getsize(infile)
 
@@ -61,7 +61,7 @@ class lateral_basis(object):
             # preliminary metadata
             indata = f.read(4); cc = cc+4 # try to read iflag
             iflag = struct.unpack(ifswp+'i',indata)[0] # Read flag
-            if iflag != 1: 
+            if iflag != 1:
                 ifswp = '!' # swap endianness from now on
                 iflag = struct.unpack(ifswp+'i',indata)[0]
                 if iflag != 1: sys.exit("Error: iflag != 1")
@@ -72,11 +72,11 @@ class lateral_basis(object):
             #npx = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
             #nhorcum = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
 
-        
+
     def eval_lateral(self,lat,lon,store=False):
         """
         Evaluate radial basis at a depth interpolated from existing projection matrices.
-        """    
+        """
         if self.type == 'SPHERICAL SPLINES':
             horcof = tools.eval_splcon(lat,lon,self.metadata['xlaspl'],self.metadata['xlospl'],self.metadata['xraspl'])
         elif self.type == 'SPHERICAL HARMONICS':
@@ -95,6 +95,6 @@ class lateral_basis(object):
 
     def project_lateral(self,lateral_basis):
         """
-        Project from current horizontal basis to another orthogonal basis 
+        Project from current horizontal basis to another orthogonal basis
         and return the coefficients.
         """

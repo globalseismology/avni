@@ -68,7 +68,7 @@ Download our configuration script `config_repo`
           exit -1
         fi
 
-        git config --global url."https://".insteadOf git:// 
+        git config --global url."https://".insteadOf git://
         git config branch.devel.remote origin
         git config branch.devel.merge devel
         git config branch.devel.pushremote $GITHUB_USER

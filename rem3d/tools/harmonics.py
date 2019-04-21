@@ -18,7 +18,7 @@ def getdepthsfolder(folder='.',extension='.epix',delimiter='.'):
     depths = []
     folder = get_fullpath(folder)
     onlyfiles = glob.glob(folder+ '/*'+extension)
-    for name in onlyfiles: 
+    for name in onlyfiles:
         name = name.split(folder)[1]
         depths.append(int(name[name.index(delimiter)+1:name.rindex(extension)]))
     depths.sort()
@@ -26,16 +26,16 @@ def getdepthsfolder(folder='.',extension='.epix',delimiter='.'):
 
 
 def rdswpsh(filename,maxl=360):
-    """Code to get spherical harmonic coefficients in the ylm normalization. shmatrix is the linear array 
+    """Code to get spherical harmonic coefficients in the ylm normalization. shmatrix is the linear array
     with the ylm normalization like in PM's codes. """
-    
+
     if (not os.path.isfile(filename)): raise IOError("Filename ("+filename+") does not exist")
-        
+
     lineformat = ff.FortranRecordReader("(i4,i4,2e13.5)")
     comments=[]
     shmatrix=[]
     for line in open(filename):
-        if line.startswith("#"): 
+        if line.startswith("#"):
             comments.append(line)
         else:
             tempshrow = lineformat.read(line)
@@ -45,21 +45,21 @@ def rdswpsh(filename,maxl=360):
                 tempshrow[2] =  2. * tempshrow[2]
                 tempshrow[3] = -2. * tempshrow[3]
             shmatrix.append(tempshrow)
-    
+
     # Convert to numpy array
     namelist = ['l','m','cos','sin']
     formatlist = ['i4','i4','f8','f8']
     dtype = dict(names = namelist, formats=formatlist)
-    shmatrix = np.array([tuple(x) for x in shmatrix],dtype=dtype)        
+    shmatrix = np.array([tuple(x) for x in shmatrix],dtype=dtype)
     return shmatrix, comments
 
 def wrswpsh(filename,shmatrix,comments, maxl=360):
-    """Code to write spherical harmonic coefficients from the ylm normalization. shmatrix is the linear array 
+    """Code to write spherical harmonic coefficients from the ylm normalization. shmatrix is the linear array
     with the ylm normalization like in PM's codes. """
-    
-    header_linem0 = ff.FortranRecordWriter('(i4,i4,e13.5)')        
+
+    header_linem0 = ff.FortranRecordWriter('(i4,i4,e13.5)')
     header_line = ff.FortranRecordWriter('(i4,i4,2e13.5)')
-    printstr = list(comments)    
+    printstr = list(comments)
     for ii in np.arange(len(shmatrix['l'])):
         if shmatrix['l'][ii] <= maxl:
             if shmatrix['m'][ii] == 0:
@@ -67,18 +67,18 @@ def wrswpsh(filename,shmatrix,comments, maxl=360):
             else:
                 # convert to ylm normalization on the fly
                 arow=header_line.write([shmatrix['l'][ii],shmatrix['m'][ii],0.5*shmatrix['cos'][ii],-0.5*shmatrix['sin'][ii]])
-            
+
             printstr.append(arow+'\n')
-    
+
     f=open(filename,'w')
     f.writelines(printstr)
     f.close()
     print("..... written "+filename)
     return
- 
+
 def calcshpar2(shmatrix):
-    """This calculates the roughness and rms of a model file from shmatrix read using rdswpsh"""      
-    
+    """This calculates the roughness and rms of a model file from shmatrix read using rdswpsh"""
+
     # convert from shmatrix to shmod
     lmod = max(shmatrix['l'])
     icount = 0
@@ -91,8 +91,8 @@ def calcshpar2(shmatrix):
             shmod.append(shmatrix['cos'][ii])
             shmod.append(shmatrix['sin'][ii])
             icount = icount + 2
-    if icount != (lmod+1)**2: raise ValueError("icount != (lmod+1)**2")       
-    
+    if icount != (lmod+1)**2: raise ValueError("icount != (lmod+1)**2")
+
 #     loop over all degrees, fixing the normalization from ylm on the
 #     fly
     i=0
@@ -133,5 +133,5 @@ def calcshpar2(shmatrix):
     roughness=np.sqrt(gradsquared)/rms
 #    roughness2=sqrt(gradsquared)/rms
 #    roughness1=0.
-    
+
     return average,rms,roughness,powerarr

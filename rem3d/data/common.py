@@ -27,15 +27,15 @@ def creation_date(path_to_file):
     """
     Try to get the date that a file was created, falling back to when it was
     last modified if that isn't possible.
-    
+
     Parameters
     ----------
 
-    path_to_file : full path to a file 
-    
+    path_to_file : full path to a file
+
     Return
     ----------
-    
+
     datetime stamp in UTC as REM3D server stores datetime in UTC
     """
     if platform.system() == 'Windows':
@@ -48,12 +48,12 @@ def creation_date(path_to_file):
 
 def update_file(file,folder=tools.get_filedir()):
     """
-    If the REM3D server contain a downloadable resource that is newer, 
+    If the REM3D server contain a downloadable resource that is newer,
     download it locally.
-   
+
     Parameters
     ----------
-    
+
     file: full path and name of the file to sync with REM3D servers
     """
     localfile = folder+'/'+file
@@ -73,7 +73,7 @@ def update_file(file,folder=tools.get_filedir()):
             download = True
     else:
         print("Warning: Unknown status code ("+str(h.status_code)+") while quering "+file)
-    
+
     # download if needed
     if download:
         print(".... Downloading "+file+" from REM3D server to "+localfile)
@@ -81,8 +81,7 @@ def update_file(file,folder=tools.get_filedir()):
         open(localfile, 'wb').write(r.content)
         utime = calendar.timegm(server_data.timetuple()) # calendar assumes tuple in UTC
         # set the time to server time but taking UTC into account above
-        os.utime(localfile, (utime, utime)) 
+        os.utime(localfile, (utime, utime))
         print(".... Download completed.")
     return h.status_code
 
-    

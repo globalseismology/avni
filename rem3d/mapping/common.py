@@ -8,9 +8,9 @@ import numpy as np #for numerical analysis
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 import scipy.spatial.qhull as qhull
 
-############################### PLOTTING ROUTINES ################################        
+############################### PLOTTING ROUTINES ################################
 ###############################
- 
+
 def interp_weights(xyz, uvw, d=3):
     """First, a call to sp.spatial.qhull.Dealunay is made to triangulate the irregular grid coordinates.
 Then, for each point in the new grid, the triangulation is searched to find in which triangle (actually, in which simplex, which in your 3D case will be in which tetrahedron) does it lay.
@@ -27,7 +27,7 @@ http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-
 
 def interpolate(values, vtx, wts, fill_value=np.nan):
     """An interpolated values is computed for that grid point, using the barycentric coordinates, and the values of the function at the vertices of the enclosing simplex. From:
-    http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids"""    
+    http://stackoverflow.com/questions/20915502/speedup-scipy-griddata-for-multiple-interpolations-between-two-irregular-grids"""
     ret = np.einsum('nj,nj->n', np.take(values, vtx), wts)
     ret[np.any(wts < 0, axis=1)] = fill_value
     return ret

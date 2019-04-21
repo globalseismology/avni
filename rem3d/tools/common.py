@@ -38,7 +38,7 @@ def stage(file,overwrite=False):
 def convert2nparray(value,int2float = True):
     """
     Converts input value to a float numpy array
-    
+
     int2float: convert integer to floats, if true
     """
     if isinstance(value, (list,tuple,np.ndarray)):
@@ -73,8 +73,8 @@ def precision_and_scale(x):
         frac_digits /= 10
     scale = np.int(np.log10(frac_digits))
     return (magnitude + scale, scale)
-        
-def alphanum_key(s): 
+
+def alphanum_key(s):
     '''
     helper tool to sort lists in ascending numerical order (natural sorting),
     rather than lexicographic sorting
@@ -102,7 +102,7 @@ def krunge(n,x,h,y,f,m=0,phi=np.zeros(6),savey=np.zeros(6)):
     some sort of integration or interpolation? x is
     incremented on second and fourth calls. Resets itself after
     5'th call.
-    
+
     Input parameters:
     ----------------
     input: (these are guesses)
@@ -111,41 +111,41 @@ def krunge(n,x,h,y,f,m=0,phi=np.zeros(6),savey=np.zeros(6)):
     f() = function evaluated at each point
     x   = independent variable
     h   = step size
-    
+
     Output:
     ------
-    y() = 
+    y() =
     """
-    if len(y) > 6 or len(f) > 6: 
+    if len(y) > 6 or len(f) > 6:
         raise ValueError ("len(y) > 6 or len(f) >  in krunge")
-    m = m + 1    
+    m = m + 1
     if m == 1:
         krunge=1
     elif m == 2:
-        for j in np.arange(n): 
+        for j in np.arange(n):
             savey[j] = y[j]
             phi[j]   = f[j]
             y[j] = savey[j]+(0.5*h*f[j])
         x = x + 0.5*h
         krunge = 1
     elif m == 3:
-        for j in np.arange(n): 
+        for j in np.arange(n):
             phi[j] = phi[j] + (2.0*f[j])
             y[j]   = savey[j] + (0.5*h*f[j])
         krunge = 1
     elif m == 4:
-        for j in np.arange(n): 
+        for j in np.arange(n):
             phi[j] = phi[j] + (2.0*f[j])
             y[j]   = savey[j] + (h*f[j])
         x = x + 0.5*h
         krunge = 1
     elif m == 5:
-        for j in np.arange(n): 
+        for j in np.arange(n):
             y[j] = savey[j] + (phi[j]+f[j])*h/6.0
         m    = 0
         krunge = 0
     return krunge,y,f,m,phi,savey
-        
+
 
 def firstnonspaceindex(string):
     """
@@ -153,7 +153,7 @@ def firstnonspaceindex(string):
     """
     ifst=0
     ilst=len(string.rstrip('\n'))
-    while string[ifst:ifst+1] == ' ' and ifst < ilst: ifst=ifst+1 
+    while string[ifst:ifst+1] == ' ' and ifst < ilst: ifst=ifst+1
     if ilst-ifst <= 0: raise ValueError("error reading model")
     return ifst,ilst
 
@@ -161,12 +161,12 @@ def get_fullpath(path):
     """
     Provides the full path by replacing . and ~ in path.
     """
-    # Get the current directory    
-    if path[0]=='.': path = os.path.dirname(os.path.abspath(__file__))+path[1:]   
+    # Get the current directory
+    if path[0]=='.': path = os.path.dirname(os.path.abspath(__file__))+path[1:]
     # If the path starts with tilde, replace with home directory
     if path[0]=='~': path=os.path.expanduser("~")+path[1:]
     return path
-    
+
 def listfolders(path):
     """
     Return a list of directories in a path
@@ -206,9 +206,9 @@ def get_filedir(module='rem3d',checkwrite=True,makedir=True):
     """
     installdir = get_installdir(module=module,checkwrite=checkwrite)
     filedir = installdir+'/'+constants.localfilefolder
-    if checkwrite and makedir: 
+    if checkwrite and makedir:
         if not os.path.exists(filedir):
-            os.makedirs(filedir)        
+            os.makedirs(filedir)
     return filedir
 
 def get_cptdir(module='rem3d',checkwrite=True,makedir=True):
@@ -217,50 +217,50 @@ def get_cptdir(module='rem3d',checkwrite=True,makedir=True):
     """
     filedir = get_filedir(module=module,checkwrite=checkwrite,makedir=makedir)
     cptdir = filedir+'/'+constants.cptfolder
-    if checkwrite and makedir: 
+    if checkwrite and makedir:
         if not os.path.exists(cptdir):
-            os.makedirs(cptdir)        
+            os.makedirs(cptdir)
     return cptdir
 
 def get_configdir(module='rem3d',checkwrite=True,makedir=True):
     """
-    Get the directory containing configuration files. 
+    Get the directory containing configuration files.
     Make a new directory if doesn't exist (makedir==True)
     """
     installdir = get_installdir(module=module,checkwrite=checkwrite)
     configdir = installdir+'/'+constants.configfolder
-    if checkwrite and makedir: 
+    if checkwrite and makedir:
         if not os.path.exists(configdir):
-            os.makedirs(configdir)        
+            os.makedirs(configdir)
     return configdir
 
 def get_projections(checkwrite=True,makedir=True,type='radial'):
     """
-    Get the file containing projection matrices. 
+    Get the file containing projection matrices.
     Make a new directory if doesn't exist (makedir==True)
     """
-    if type != 'radial' and type != 'lateral': 
+    if type != 'radial' and type != 'lateral':
         raise ValueError('type is undefined in get_projections')
     configdir = get_configdir(checkwrite=checkwrite,makedir=makedir)
     projections = configdir+'/projections.'+type+'.npz'
     exists = os.path.isfile(projections)
     return projections,exists
 
-        
+
 def writejson(nparray,filename,encoding='utf-8'):
     """Writes a json file from a numpy array"""
-    
+
     listarray = nparray.tolist() # nested lists with same data, indices
     json.dump(listarray, codecs.open(filename, 'w', encoding=encoding), separators=(',', ':'), sort_keys=True, indent=4) ### this saves the array in .json format
     return
 
 def readjson(filename,encoding='utf-8'):
     """Reading from a filename to a numpy array"""
-        
+
     obj_text = codecs.open(filename, 'r', encoding=encoding).read()
     listarray = json.loads(obj_text)
     nparray = np.array(listarray)
-    return nparray    
+    return nparray
 
 def uniquenumpyrow(a):
     """Gets the unique rows from a numpy array and the indices. e.g. to get unique lat-lon values"""
@@ -270,60 +270,60 @@ def uniquenumpyrow(a):
     return unique_a,idx
 
 
-def sanitised_input(prompt, type_=None, min_=None, max_=None, range_=None): 
+def sanitised_input(prompt, type_=None, min_=None, max_=None, range_=None):
     """Provide a user prompt with values between min-max or range of values e.g.
     For specific values:
     user_input = sanitised_input("Replace(r)/Ignore(i) this datum?", str.lower, range_=('r', 'i')
     For a range:
     age = sanitised_input("Enter your age: ", int, range_=xrange(100))
     """
-    if min_ is not None and max_ is not None and max_ < min_: 
-        raise ValueError("min_ must be less than or equal to max_.") 
-    while True: 
-        ui = input(prompt) 
-        if type_ is not None: 
-            try: 
-                ui = type_(ui) 
-            except ValueError: 
-                print("Input type must be {0}.".format(type_.__name__)) 
+    if min_ is not None and max_ is not None and max_ < min_:
+        raise ValueError("min_ must be less than or equal to max_.")
+    while True:
+        ui = input(prompt)
+        if type_ is not None:
+            try:
+                ui = type_(ui)
+            except ValueError:
+                print("Input type must be {0}.".format(type_.__name__))
                 continue
-        if max_ is not None and ui > max_: 
-            print("Input must be less than or equal to {0}.".format(max_)) 
-        elif min_ is not None and ui < min_: 
-            print("Input must be greater than or equal to {0}.".format(min_)) 
-        elif range_ is not None and ui not in range_: 
-            if isinstance(range_, xrange): 
+        if max_ is not None and ui > max_:
+            print("Input must be less than or equal to {0}.".format(max_))
+        elif min_ is not None and ui < min_:
+            print("Input must be greater than or equal to {0}.".format(min_))
+        elif range_ is not None and ui not in range_:
+            if isinstance(range_, xrange):
                 template = "Input must be between {0} and {1}."
-                print(template.format(range_[0],range_[-1])) 
-            else: 
+                print(template.format(range_[0],range_[-1]))
+            else:
                 template = "Input must be {0}."
-                if len(range_) == 1: 
-                    print(template.format(*range_)) 
-                else: 
-                    print(template.format(" or ".join((", ".join(map(str, 
-                                                                     range_[:-1])), 
-                                                       str(range_[-1]))))) 
-        else: 
-            return ui  
-            
+                if len(range_) == 1:
+                    print(template.format(*range_))
+                else:
+                    print(template.format(" or ".join((", ".join(map(str,
+                                                                     range_[:-1])),
+                                                       str(range_[-1])))))
+        else:
+            return ui
+
 def getplanetconstants(planet = constants.planetpreferred, configfile = get_configdir()+'/'+constants.planetconstants):
     """
     Read the constants from configfile relevant to a planet to constants.py
-    
+
     Input parameters:
     ----------------
     planet: planet option from configfile
-    
-    configfile: all the planet configurations are in this file. 
+
+    configfile: all the planet configurations are in this file.
                 Default option means read from tools.get_configdir()
-    
+
     """
-        
+
     if not os.path.isfile(configfile):
         raise IOError('No configuration file found: '+configfile)
     else:
         parser = ConfigObj(configfile)
-    
+
     try:
         parser_select = parser[planet]
     except:
@@ -348,7 +348,7 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
     # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
     try:
         print('... Re - Initialized rem3d module with constants for '+planet+' from '+parser_select['cite']+' from geocentric correction '+str(constants.geoco))
-        constants.geoco = (1.0 - constants.f)**2.  
+        constants.geoco = (1.0 - constants.f)**2.
     except AttributeError:
-        constants.geoco = (1.0 - constants.f)**2.  
+        constants.geoco = (1.0 - constants.f)**2.
 

@@ -8,7 +8,7 @@ Table of Contents
   	* [Fortran](#fortran-formatting)
 
 Use *issues* to discuss intended modifications
---------------------------------------------------
+----------------------------------------------
 
 GitHub provides a [system](https://github.com/geodynamics/rem3d/issues) to track issues. It should be a central place to monitor REM3D evolution. In particular:
 
@@ -69,7 +69,7 @@ class PyClass:
     """Documentation for a class.
     More details.
     """
-   
+
     def __init__(self):
         """The constructor."""
         self._memVar = 0;
@@ -142,19 +142,19 @@ bad
 ~~~fortran
   module models
   integer :: count
-  end module  
+  end module
 ~~~
 
 **comment, comment, comment your code:**
 
 good
-~~~fortran  
+~~~fortran
   ! gets associated normal on GLL point
   ! (note convention: pointing outwards of acoustic element)
   nx = coupling_ac_el_normal(1,igll,iface)
 
   ! continuity of displacement and pressure on global point
-  accel(1,iglob) = accel(1,iglob) + jacobianw*nx*pressure  
+  accel(1,iglob) = accel(1,iglob) + jacobianw*nx*pressure
 ~~~
 
 bad

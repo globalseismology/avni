@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""This script/module contains routines that are used to analyze/visualize the data sets 
+"""This script/module contains routines that are used to analyze/visualize the data sets
 in the standard REM3D format."""
 
-#####################  IMPORT STANDARD MODULES   ######################################   
+#####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 from builtins import *
@@ -24,7 +24,7 @@ from collections import Counter
 import traceback
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from .. import plots 
+from .. import plots
 from .. import constants
 from rem3d.f2py import getbullen
 #######################################################################################
@@ -41,19 +41,19 @@ class reference1D(object):
         self.metadata = {}
         self.name = None
         self.radius_max = None
-        if file is not None: 
+        if file is not None:
             self.read(file)
             self.get_Love_elastic()
             self.get_discontinuity()
             self.get_mineralogical()
-    
+
     def __str__(self):
         if self.data is not None and self.__nlayers__ > 0:
             output = "%s is a one-dimensional model with %s layers and radius up to %s km" % (self.name, self.__nlayers__,self.radius_max/1000.)
         else:
             output = "No model has been read into this reference1D instance yet"
         return output
-        
+
     def __copy__(self):
         cls = self.__class__
         result = cls.__new__(cls)
@@ -67,7 +67,7 @@ class reference1D(object):
         for k, v in self.__dict__.items():
             setattr(result, k, deepcopy(v, memo))
         return result
-            
+
     def read(self,file):
         '''
         Read a card deck file used in OBANI. Other formats not ready yet
@@ -78,8 +78,8 @@ class reference1D(object):
             var1 = traceback.format_exc()
             print(var1)
             raise NotImplementedError('model format is not currently implemented in reference1D.read')
-        
-        
+
+
     def readmineoscards(self,file):
         fields=['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
         formats=[np.float for ii in range(len(fields))]
@@ -96,30 +96,30 @@ class reference1D(object):
         Model1D_Attr = np.dtype([(native_str(fields[ii]),formats[ii]) for ii in range(len(fields))])
         self.data = np.zeros(self.__nlayers__,dtype=Model1D_Attr)
         for key in modelarr.dtype.names: self.data[key] = modelarr[key]
-        self.radius_max = np.max(self.data['radius'])        
+        self.radius_max = np.max(self.data['radius'])
 
     def get_Love_elastic(self):
         '''
         Get the Love parameters and Voigt averaged elastic properties with depth
-        
+
         A,C,N,L,F: anisotropy elastic Love parameters
-        
+
         kappa: bulk modulus
-        
+
         mu: shear modulus
-        
+
         vphi: bulk sound velocity
-        
+
         xi: shear anisotropy ratio
-        
+
         phi: P anisotropy ratio
-        
+
         Zs, Zp: S and P impedances
         '''
         if self.data is not None and self.__nlayers__ > 0:
             # Add metadata
             for field in ['A','C','N','L','F','vp','vs','vphi','xi','phi','Zp','Zs']: self.metadata['attributes'].append(field)
-            
+
             # Add data fields
             self.data=append_fields(self.data, 'A', self.data['rho']*self.data['vph']**2 , usemask=False)
             self.data=append_fields(self.data, 'C', self.data['rho']*self.data['vpv']**2 , usemask=False)
@@ -139,17 +139,17 @@ class reference1D(object):
             self.data=append_fields(self.data, 'Zs', self.data['vs']*self.data['rho'], usemask=False)
         else:
             raise ValueError('reference1D object is not allocated')
-            
+
     def get_mineralogical(self):
         '''
         Get the Love parameters and Voigt averaged elastic properties with depth
-        
+
         gravity: gavity at each depth
-        
+
         Brunt-Vaisala Frequency: Used for Bullen's parameter
-        
+
         Bullen: Bullen's parameter
-        
+
         pressure: pressure at each depth
         '''
         if self.data is not None and self.__nlayers__ > 0:
@@ -159,7 +159,7 @@ class reference1D(object):
                 grav,vaisala,bullen,pressure = getbullen(file,layers,constants.omega,constants.G)
                 # Add metadata
                 for field in ['gravity','Brunt-Vaisala','Bullen','pressure']: self.metadata['attributes'].append(field)
-            
+
                 # Add data fields
                 self.data=append_fields(self.data, 'gravity', grav, usemask=False)
                 self.data=append_fields(self.data, 'Brunt-Vaisala', vaisala, usemask=False)
@@ -169,29 +169,29 @@ class reference1D(object):
                 print('Warning: mineralogical parameters not evaluated for '+constants.planetpreferred)
         else:
             raise ValueError('reference1D object is not allocated')
-            
+
     def get_discontinuity(self):
         '''
         Get values, average values and contrasts at discontinuities
-        
+
         Output:
         ------
-        
+
         Returns a structure self.metadata['disc'] that has three arrays:
-        
+
         delta: containing absolute difference in attributes between smaller/larger radii
-         
+
         average: containing absolute average attributes between smaller/larger radii
-        
+
         contrasts: containing contrast in attributes (in %)
         '''
-        
+
         disc_depths = [item for item, count in Counter(self.data['depth']).items() if count > 1]
         disc = {}
 # Create a named array for discontinuities
         disc['delta'] = np.zeros(len(np.unique(disc_depths)),dtype=self.data.dtype)
         disc['contrast'] = np.copy(disc['delta']);disc['average'] = np.copy(disc['delta'])
-        
+
         icount  = 0
         for depth in np.unique(disc_depths):
             sel = self.data[np.where(self.data['depth']==depth)]
@@ -201,42 +201,42 @@ class reference1D(object):
                     disc['average'][field][icount] = sel[0][field]
                     disc['contrast'][field][icount] = sel[0][field]
                 else:
-                    disc['delta'][field][icount] = sel[0][field]-sel[1][field] 
+                    disc['delta'][field][icount] = sel[0][field]-sel[1][field]
                     disc['average'][field][icount] = 0.5*(sel[0][field]+sel[1][field])
                     disc['contrast'][field][icount] = abs(disc['delta'][field][icount]) / disc['average'][field][icount]*100.
             icount = icount+1
-            
-            
-        #---- try to find discontinuities        
+
+
+        #---- try to find discontinuities
         discfind = disc['delta']['radius'][np.abs(1221.5-disc['delta']['radius']/1000.)<25.]
         if len(discfind) <= 0: # not found
             print("Warning: itopic not found")
         elif len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
         else:
             disc['itopic'] = np.where(self.data['radius']==discfind[0])[0][1]
-        
+
         discfind = disc['delta']['radius'][np.abs(3480.0-disc['delta']['radius']/1000.)<25.]
         if len(discfind) <= 0: # not found
             print("Warning: itopoc not found")
-        elif len(discfind) > 1: 
+        elif len(discfind) > 1:
             raise ValueError('get_discontinuity: multiple values within discontinuity limits')
         else:
             disc['itopoc'] = np.where(self.data['radius']==discfind[0])[0][1]
-        
+
         ###   Top of crust
         discfind = np.where(np.logical_and(self.data['vp']<7500.,self.data['vs']>0.))[0]
         if len(discfind) > 0: disc['itopcrust'] = max(discfind) + 1
         #discfind = disc['delta']['radius'][np.abs(6368.0-disc['delta']['radius']/1000.)<0.1]
 #         if len(discfind) <= 0: # not found
 #             print("Warning: itopcrust not found")
-#         elif len(discfind) > 1: 
+#         elif len(discfind) > 1:
 #             raise ValueError('get_discontinuity: multiple values within discontinuity limits')
 #         else:
             #disc['itopcrust'] = np.where(self.data['radius']==discfind[0])[0][1]
-        
+
         itopmantle = min(np.where(self.data['vp']<7500.)[0])
         if itopmantle >0: disc['itopmantle'] = itopmantle
-        
+
         self.metadata['discontinuities'] = disc
 
 
@@ -246,8 +246,8 @@ class reference1D(object):
         '''
         if self.data is not None and self.__nlayers__ > 0:
             # convert to array for ease of looping
-            if isinstance(parameters,string_types): parameters = np.array([parameters]) 
-            
+            if isinstance(parameters,string_types): parameters = np.array([parameters])
+
             for ii in np.arange(parameters.size):
                 if parameters[ii] not in list(self.data.dtype.names):
                     if 'SH-SV' in parameters[ii]:
@@ -265,13 +265,13 @@ class reference1D(object):
                     elif 'dETA/ETA' in parameters[ii]:
                         self.data=append_fields(self.data, parameters[ii], self.data['eta'] , usemask=False)
                     elif 'dRHO/RHO' in parameters[ii]:
-                        self.data=append_fields(self.data, parameters[ii], self.data['rho'] , usemask=False)                
+                        self.data=append_fields(self.data, parameters[ii], self.data['rho'] , usemask=False)
                     else:
                         raise NotImplementedError('parameter ',parameters[ii],' is not currently implemented in reference1D.get_custom_parameter')
         else:
             raise ValueError('reference1D object is not allocated')
 
-    def evaluate_at_depth(self,depth_in_km,parameter='vs',interpolation='linear'):   
+    def evaluate_at_depth(self,depth_in_km,parameter='vs',interpolation='linear'):
         '''
         Get the values of a parameter at a given depth
         '''
@@ -311,7 +311,7 @@ class reference1D(object):
             itopoc = self.metadata['discontinuities']['itopoc']
             itopmantle = self.metadata['discontinuities']['itopmantle']
             itopcrust = self.metadata['discontinuities']['itopcrust']
-            
+
             f = open(dir+'/'+model_name+'.'+fmt,'w')
             f.write(model_name+'\n')
             f.write('1 1. 1 1\n')
@@ -333,7 +333,7 @@ class reference1D(object):
         file format options 'tvel' and 'nd'.
 
         Note: TauP can't handle zero shear velocity in the ocean layer...
-          To work around this, zero values an ocean layer will be written 
+          To work around this, zero values an ocean layer will be written
           as 1e-4.
         '''
         if self.data is not None and self.__nlayers__ > 0:
@@ -347,7 +347,7 @@ class reference1D(object):
                    (self.radius_max - self.data['radius'][::-1][i]) / 1000.0,
                    self.data['vp'][::-1][i] / 1000.0,
                    self.data['vs'][::-1][i] / 1000.0,
-                   self.data['rho'][::-1][i] / 1000.0))       
+                   self.data['rho'][::-1][i] / 1000.0))
             f.close()
         else:
             raise ValueError('reference1D object is not allocated')
@@ -393,21 +393,21 @@ class reference1D(object):
                 self.data['eta'][::-1][i]) )
 
                 if i < len(self.data)-1 and self.data['radius'][::-1][i] == self.data['radius'][::-1][i+1]:
-                    depth_here = (self.radius_max - self.data['radius'][::-1][i]) / 1000.0 
+                    depth_here = (self.radius_max - self.data['radius'][::-1][i]) / 1000.0
                     n_discon += 1
                     f.write('#    Discontinuity {}, depth {:6.2f} km\n'.format(n_discon,depth_here))
         else:
             raise ValueError('reference1D object is not allocated')
-            
+
     def plot(self,figuresize=[7,12],height_ratios=[2, 2, 1],ifshow=True,format='.eps',isotropic=False,zoomdepth=[0.,1000.]):
-        """ 
+        """
         Plot the cards array in a PREM like plot
         """
         depthkmarr = (constants.R - self.data['radius'])/1000. # in km
         #Set default fontsize for plots
         plots.updatefont(10)
         fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
-        gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios) 
+        gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios)
         fig.patch.set_facecolor('white')
         ax01=plt.subplot(gs[0])
         ax01.plot(depthkmarr,self.data['rho']/1000.,'k')
@@ -417,9 +417,9 @@ class reference1D(object):
         ax01.plot(depthkmarr,self.data['vph']/1000.,'r:')
         mantle=np.where( depthkmarr < 2891.)
         ax01.plot(depthkmarr[mantle],self.data['eta'][mantle],'g')
-        ax01.set_xlim([0., constants.R/1000.])        
+        ax01.set_xlim([0., constants.R/1000.])
         ax01.set_ylim([0, 14])
-    
+
         majorLocator = MultipleLocator(2)
         majorFormatter = FormatStrFormatter('%d')
         minorLocator = MultipleLocator(1)
@@ -427,7 +427,7 @@ class reference1D(object):
         ax01.yaxis.set_major_formatter(majorFormatter)
         # for the minor ticks, use no labels; default NullFormatter
         ax01.yaxis.set_minor_locator(minorLocator)
-        
+
         majorLocator = MultipleLocator(2000)
         majorFormatter = FormatStrFormatter('%d')
         minorLocator = MultipleLocator(1000)
@@ -436,7 +436,7 @@ class reference1D(object):
         # for the minor ticks, use no labels; default NullFormatter
         ax01.xaxis.set_minor_locator(minorLocator)
         ax01.set_ylabel('Velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
-        
+
         for para,color,xloc,yloc in [("$\eta$",'g',1500.,2.),("$V_S$",'b',1500.,7.8),("$V_P$",'r',1500.,13.5),("$\\rho$",'k',1500.,4.5),("$V_P$",'r',4000.,9.2),("$\\rho$",'k',4000.,12.5),("$V_S$",'b',5500.,4.5)]:
             ax01.annotate(para,color=color,
             xy=(3, 1), xycoords='data',
@@ -458,12 +458,12 @@ class reference1D(object):
         else:
             ax12.plot(depthkmarr[depthselect],self.data['vpv'][depthselect]/1000.,'r')
             ax12.plot(depthkmarr[depthselect],self.data['vph'][depthselect]/1000.,'r:')
-        
+
         ax11.plot(depthkmarr[depthselect],self.data['eta'][depthselect],'g')
         ax11.set_xlim(zoomdepth)
         ax11.set_ylim([0, 7])
         ax12.set_xlim(zoomdepth)
-        ax12.set_ylim([-2, 12])        
+        ax12.set_ylim([-2, 12])
         ax11.set_ylabel('Shear velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
         ax12.set_ylabel('Compressional velocity (km/sec)')
         for para,color,xloc,yloc in [("$\eta$",'g',150.,1.),("$V_{S}$",'b',150.,4.3),("$V_{P}$",'r',120.,5.5),("$\\rho$",'k',150.,3.8)]:
@@ -480,14 +480,14 @@ class reference1D(object):
         # for the minor ticks, use no labels; default NullFormatter
         ax11.xaxis.set_minor_locator(minorLocator)
 
-        
+
         ax21=plt.subplot(gs[2], sharex=ax11)
         with np.errstate(divide='ignore', invalid='ignore'): # Ignore warning about dividing by zero
             anisoVs=(self.data['vsh']-self.data['vsv'])*200./(self.data['vsh']+self.data['vsv'])
         anisoVp=(self.data['vph']-self.data['vpv'])*200./(self.data['vph']+self.data['vpv'])
         ax21.plot(depthkmarr[depthselect],anisoVs[depthselect],'b')
         ax21.plot(depthkmarr[depthselect],anisoVp[depthselect],'r')
-        ax21.set_ylim([0, 5])        
+        ax21.set_ylim([0, 5])
         ax21.set_xlim(zoomdepth)
         majorLocator = MultipleLocator(1)
         majorFormatter = FormatStrFormatter('%d')
@@ -508,7 +508,7 @@ class reference1D(object):
         ax21.set_xlabel('Depth (km)')
         ax21.set_ylabel("$V_P$"+' or '+"$V_S$"+' anisotropy (%)')
         ax22.set_ylabel('Shear attenuation Q'+'$_{\mu}$')
-        ax22.set_ylim([0, 400])        
+        ax22.set_ylim([0, 400])
         ax22.set_xlim(zoomdepth)
         majorLocator = MultipleLocator(100)
         majorFormatter = FormatStrFormatter('%d')
@@ -517,7 +517,7 @@ class reference1D(object):
         ax22.yaxis.set_major_formatter(majorFormatter)
         # for the minor ticks, use no labels; default NullFormatter
         ax22.yaxis.set_minor_locator(minorLocator)
-        if ifshow: 
+        if ifshow:
             plt.show()
         else:
             plt.savefig(self.name+format)

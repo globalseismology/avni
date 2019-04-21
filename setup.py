@@ -51,7 +51,7 @@ elif F90 == "gfortran":
 elif F90 == "f90":
     f90_flags = ["-fopenmp", "-fPIC", "-O3", "-library=sunperf","-xopenmp"]
     omp_lib = [""]
-    
+
 elif F90 in ["pgfortran", "pgf90", "pgf95"]:
     f90_flags = ["-mp"]
     omp_lib = [""]
@@ -111,7 +111,7 @@ versionstuff = dict(
 # Tried to use setuptools in order to check dependencies.
 # if the system does not have setuptools, fall back on
 # distutils.
-# Can only use numpy distutils with distutils as fortran codes 
+# Can only use numpy distutils with distutils as fortran codes
 # are not compiles otherwise
 #
 # Build the f2py fortran extension
@@ -119,7 +119,7 @@ versionstuff = dict(
 from os.path import join
 from numpy.distutils.core import Extension
 from numpy.distutils.core import setup
- 
+
 # Use this if you need import rem3d.module for every module folder
 # extf = [Extension(name='rem3d.'+module,
 #                 sources = [join(f90_dir,module,f) for f in os.listdir(join(f90_dir,module)) if f.endswith('.f')],
@@ -127,7 +127,7 @@ from numpy.distutils.core import setup
 #                 extra_f90_compile_args = f90_flags,
 #                 extra_link_args = omp_lib)
 #             for module in os.listdir(f90_dir)]
-# 
+#
 # Use this if you need a single module for all subroutines import rem3d.f2py
 sourcefiles = []
 for path,dir,filelist in os.walk(join(f90_dir)):

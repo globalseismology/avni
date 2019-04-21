@@ -6,8 +6,8 @@ from __future__ import absolute_import
 # common routines
 from .common import *
 
-# ellipsoidal Earth 
+# ellipsoidal Earth
 from .ellipsoidal import *
 
-# spherical Earth 
+# spherical Earth
 from .spherical import *

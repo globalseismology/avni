@@ -20,7 +20,7 @@ def main():
     parser.add_argument('-o', '--format', type=str,default='.pdf',
         help='Output file format')
     arg = parser.parse_args()
-    
+
     try:
         # stage the file for plotting
         rem3d.tools.stage(arg.epix)
@@ -29,12 +29,12 @@ def main():
         # update the file from the server
         rem3d.data.update_file(arg.epix,folder='.')
         model = arg.epix
-        
+
     # Read the file
     latlonval,metadata,_ =rem3d.models.readepixfile(model)
-    
+
     # Plot the file
-    fig=plt.figure() 
+    fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
     projection=arg.projection; vmin = arg.lower_bound; vmax = arg.upper_bound
     if projection=='ortho':
@@ -46,7 +46,7 @@ def main():
     ax.set_title('Depth : '+metadata['DEPTH_RANGE']+' km')
     plt.show()
     fig.savefig(model+arg.format,dpi=300)
-        
+
     return
 
 if __name__== "__main__":
