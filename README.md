@@ -10,13 +10,13 @@ Homepage: [rem3d.org](http://rem3d.org)
 
 Documentation: readthedocs [html](http://rem3d.readthedocs.io), [pdf](https://media.readthedocs.org/pdf/rem3d/latest/rem3d.pdf)  
 
-Source code: [github](https://github.com/geodynamics/rem3d) 
+Source code: [github](https://github.com/globalseismology/rem3d) 
 
-Requests/Bug Reports: [issues](https://github.com/geodynamics/rem3d/issues)
+Requests/Bug Reports: [issues](https://github.com/globalseismology/rem3d/issues)
 
 A core team maintains the public repository and releases versions after benchmarking; if you do not see activity on Github, that does not mean improvements or bug fixes are not underway! We provide APIs that interface with heavy, legacy codes hosted our servers so that REM3D installation remains light to serve various applications. Contact the REM3D team at **info@rem3d.org** with any questions or suggestions.
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/110c5a409f60485f83d442b8834eba2c)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=geodynamics/rem3d&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.com/globalseismology/rem3d.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=master)](https://travis-ci.com/globalseismology/rem3d) [![Documentation Status](https://readthedocs.org/projects/rem3d/badge/?version=latest)](https://rem3d.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/geodynamics/rem3d/branch/master/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/geodynamics/rem3d) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![PyPI version](https://badge.fury.io/py/rem3d.svg)](https://badge.fury.io/py/rem3d) [![Gitter](https://badges.gitter.im/rem3d/community.svg)](https://gitter.im/rem3d/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rem3d.svg?style=popout)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/110c5a409f60485f83d442b8834eba2c)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=globalseismology/rem3d&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.com/globalseismology/rem3d.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=master)](https://travis-ci.com/globalseismology/rem3d) [![Documentation Status](https://readthedocs.org/projects/rem3d/badge/?version=latest)](https://rem3d.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/globalseismology/rem3d/branch/master/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/rem3d) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![PyPI version](https://badge.fury.io/py/rem3d.svg)](https://badge.fury.io/py/rem3d) [![Gitter](https://badges.gitter.im/rem3d/community.svg)](https://gitter.im/rem3d/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rem3d.svg?style=popout)
 
 ## Requirements
 
@@ -55,7 +55,7 @@ If you want to use REM3D's development routines, you will need to do the followi
 
  1. Create an account on our [Web site](http://rem3d.org/login/register) and request access rights from [here](http://rem3d.org/join-us/github).
  2. Please accept the invitation through e-mail. Clone the development branch from the REM3D git repository through the terminal. This will create a directory that contains a folder called `rem3d`.   
-`git clone -b devel https://username:password@github.com/geodynamics/rem3d.git`  
+`git clone -b devel https://username:password@github.com/globalseismology/rem3d.git`  
  3. Install REM3D module by opening a terminal window, navigating to `rem3d` directory and entering  
 `pip install -e . --user`  
 This lets you to keep working on files inside the Github folder without recompiling the codes.
@@ -66,7 +66,7 @@ We maintain 3 major branches for our client libraries and these are relevant to 
 `master` — We squash commits from the release branch into single release commits on this branch as well as tagging releases.  
 New branches may be created for individual projects. Please clone the `devel` branch to build upon the latest codes  
 `git checkout -b new_branch devel`  
-You can push this locally created branch to the remote `geodynamics/rem3d` with  
+You can push this locally created branch to the remote `globalseismology/rem3d` with  
 `git push -u origin new_branch`  
 
 ## Start Here
@@ -92,14 +92,14 @@ Please read [contributing.md](docs/contributing.md) for details on our code of c
 
 ### Versioning
 
-We use [SemVer](http://semver.org/) for versioning as explained in [versioning_conventions.md](docs/versioning_conventions.md). For the versions available, see the [tags on this repository](https://github.com/geodynamics/rem3d/tags). 
+We use [SemVer](http://semver.org/) for versioning as explained in [versioning_conventions.md](docs/versioning_conventions.md). For the versions available, see the [tags on this repository](https://github.com/globalseismology/rem3d/tags). 
 
 ### Authors
 
   * **Pritwiraj Moulik** - *Primary administrator* - [github](https://github.com/pmoulik)
   * **Ved Lekic** - *Co-administrator* - [github](https://github.com/vedlekic)
 
-See also the list of [Github contributors](https://github.com/geodynamics/rem3d/contributors) who participated in this project.
+See also the list of [Github contributors](https://github.com/globalseismology/rem3d/contributors) who participated in this project.
 
 ## License
 
