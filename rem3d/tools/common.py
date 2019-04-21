@@ -334,7 +334,13 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
     constants.a_e = ast.literal_eval(parser_select['a_e']) # Equatorial radius
     constants.GM = ast.literal_eval(parser_select['GM']) # Geocentric gravitational constant m^3s^-2
     constants.G = ast.literal_eval(parser_select['G']) # Gravitational constant m^3kg^-1s^-2
-    constants.f = ast.literal_eval(parser_select['f']) #flattening
+    try:
+        constants.f = ast.literal_eval(parser_select['f']) #flattening
+    except KeyError:
+        try:
+            constants.f = 1./ast.literal_eval(parser_select['1/f']) #flattening
+        except:
+            raise KeyError('need either flattening (f) or inverse flattening (1/f) for '+planet+' in '+configfile)
     constants.omega = ast.literal_eval(parser_select['omega']) #Angular velocity in rad/s
     constants.M_true = ast.literal_eval(parser_select['M_true']) # Solid Earth mass in kg
     constants.I_true = ast.literal_eval(parser_select['I_true']) # Moment of inertia in m^2 kg

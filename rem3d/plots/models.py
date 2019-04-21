@@ -532,7 +532,7 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = [3480.,3871.,437
     return ax1, aux_ax
         
     
-def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tree=None,dbs_path=tools.get_filedir(),numeval=50,stride=10,k=1):
+def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tree=None,dbs_path=tools.get_filedir(),numeval=50,stride=10,nearest=1):
     """
     Get the topography transect.
     
@@ -546,7 +546,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     
     stride: is the downsampling before interpolation. 
     
-    k: 1 returns the nearest point
+    nearest: 1 returns the nearest point
     """
 
     #read topography file
@@ -581,7 +581,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     evalpoints=np.column_stack((constants.R/1000.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
     
     # get the interpolation
-    valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=k)
+    valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
     
     #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
     return valselect,model,tree
@@ -607,7 +607,7 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
 #     title(phase, fontsize=20,loc='left')
     return ax
     
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,k=10):
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=[3480.,6346.6],dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,nearest=10):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     
     #get full path
@@ -650,12 +650,12 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     
     # get the interpolation
     npts_surf = len(coords)
-    tomovals = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=k)
+    tomovals = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
     xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')  
     
     return xsec.T,model,tree
 
-def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=50,width_ratios=[1,3],numevalx=200,numevalz=300,k=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,hotspots=False,plates=False):
+def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=[3480.,6346.6],n3dmodelinter=50,vexaggerate=50,width_ratios=[1,3],numevalx=200,numevalz=300,nearest=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,hotspots=False,plates=False):
     """Plot one section through the Earth through a pair of points.""" 
 
     # Specify theta such that it is symmetric
@@ -690,7 +690,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
     if vexaggerate != 0:   
-        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,stride=10,k=1)
+        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,stride=10,nearest=1)
         if min(elev)< 0.:
             extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
         else:
@@ -757,7 +757,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     except ValueError:
         cpalette=standardcolorpalette(colorpalette)
         
-    interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=k)
+    interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
     
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)
