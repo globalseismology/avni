@@ -4,10 +4,8 @@
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import pkgutil
 import numpy as np
 from collections import Counter
-import pdb
 from scipy import sparse
 
 ####################### IMPORT REM3D LIBRARIES  #######################################

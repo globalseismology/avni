@@ -8,7 +8,6 @@ import pkgutil
 import os
 import codecs,json #printing output
 import numpy as np
-import pdb
 import re
 from configobj import ConfigObj
 from six import string_types # to check if variable is string using isinstance
@@ -17,8 +16,6 @@ import ast
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
-from rem3d.f2py import vbspl,dbsplrem
-from .trigd import sind
 #######################################################################################
 
 def stage(file,overwrite=False):
@@ -350,8 +347,7 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
     constants.deg2m = constants.deg2km * 1000. #length of 1 degree in m
     # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
     try:
-        temp = constants.geoco
-        print('... Initialized rem3d module with constants for '+planet+' from '+parser_select['cite'])
+        print('... Re - Initialized rem3d module with constants for '+planet+' from '+parser_select['cite']+' from geocentric correction '+str(constants.geoco))
         constants.geoco = (1.0 - constants.f)**2.  
     except AttributeError:
         constants.geoco = (1.0 - constants.f)**2.  

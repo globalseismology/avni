@@ -4,10 +4,9 @@
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import sys,os
+import sys
 import numpy as np #for numerical analysis
 from pygeodesy.sphericalNvector import LatLon
-import pdb    #for the debugger 
 if (sys.version_info[:2] < (3, 0)): range = xrange
 
 ############################### PLOTTING ROUTINES ################################
@@ -269,10 +268,7 @@ def calculateBearing(lat1,lng1,lat2,lng2):
 def getIntermediate(lat1,lng1,azimuth,distance,interval):
     '''returns every coordinate pair inbetween two coordinate 
     pairs given the desired interval. gcdelta and interval is great cirle dist in m'''
-    R = constants.R #Radius of the Earth in m
-    d = distance #Distance m 
     if lng1 > 180.: lng1 = lng1 -360.
-    start = LatLon(lat1,lng1)
     steps = int(distance / interval)
     coords = []
     coords.append([lat1,lng1])

@@ -10,20 +10,18 @@ from __future__ import absolute_import, division, print_function
 from builtins import *
 
 from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin, modf
-import sys,os
+import os
 import numpy as np #for numerical analysis
 import matplotlib.cm as cmx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from mpl_toolkits.basemap import Basemap, shiftgrid
-from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
-                               AutoMinorLocator)
+from mpl_toolkits.basemap import Basemap
+#from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
+#                               AutoMinorLocator)
 import multiprocessing
 from joblib import Parallel, delayed
-import pdb    #for the debugger pdb.set_trace()
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 import scipy.interpolate as spint
-import scipy.spatial.qhull as qhull
 import itertools
 import time
 import progressbar
@@ -32,9 +30,10 @@ from six import string_types # to check if variable is string using isinstance
 # For polar sectionplot
 from matplotlib.transforms import Affine2D
 import mpl_toolkits.axisartist.floating_axes as floating_axes
-import mpl_toolkits.axisartist.angle_helper as angle_helper
+#import mpl_toolkits.axisartist.angle_helper as angle_helper
 from matplotlib.projections import PolarAxes
-from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
+#from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
+from mpl_toolkits.axisartist.grid_finder import DictFormatter,FixedLocator
 from matplotlib import gridspec # Relative size of subplots
 
 ####################       IMPORT OWN MODULES     ######################################
@@ -255,7 +254,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
     if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon): 
         print("Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation")
         # compute native map projection coordinates of lat/lon grid.
-        x, y = m(valarray['lon'], valarray['lat'])
+        #x, y = m(valarray['lon'], valarray['lat'])
         rlatlon = np.vstack([np.ones(len(valarray['lon'])),valarray['lat'],valarray['lon']]).transpose()
         xyz = mapping.spher2cart(rlatlon)
         
@@ -556,7 +555,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     if tree == None and isinstance(model,string_types):
         treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.stride'+str(stride)+'.pkl'
         ncfile = dbs_path+'/'+model
-        if not os.path.isfile(ncfile): code = data.update_file(model)
+        if not os.path.isfile(ncfile): data.update_file(model)
         tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=constants.R/1000.)
         #read values
         if os.path.isfile(ncfile):

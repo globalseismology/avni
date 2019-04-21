@@ -32,7 +32,7 @@ def main():
     
     try:
         # stage the file for plotting
-        rem3d.tools.stage(arg.file)
+        stage(arg.file)
         model3d = ntpath.basename(arg.file)
     except:
         # update the file from the server
@@ -43,7 +43,7 @@ def main():
     print("PLOTTING SECTION 1")
     # Kermadec
     lat1 = -25.;lng1 = 191.;lat2 = -22.;lng2 = 160.
-    delta,azep,azst = ddelazgc(lat1,lng1,lat2,lng2)
+    delta,azep, _  = ddelazgc(lat1,lng1,lat2,lng2)
     if arg.output: 
         outfile = 'Kermadec.png'
     else:

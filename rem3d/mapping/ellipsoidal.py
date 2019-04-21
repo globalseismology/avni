@@ -4,9 +4,8 @@
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin, modf
-import sys,os
-import numpy as np #for numerical analysis
+from math import cos, pi, log, sin, tan, atan, atan2, sqrt, radians, degrees, asin
+import sys
 import multiprocessing
 from joblib import Parallel, delayed
 if (sys.version_info[:2] < (3, 0)): range = xrange

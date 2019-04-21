@@ -9,13 +9,11 @@ Usage import
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import sys,os
+import os
 import numpy as np #for numerical analysis
 import matplotlib.cm as cmx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-
-import pdb    #for the debugger pdb.set_trace()
 
 ####################       IMPORT OWN MODULES     ######################################
 from .. import tools
@@ -78,7 +76,7 @@ def standardcolorpalette(name='rem3d'):
     
 def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm',colorcontour=20):
     """gets the value of color for a given palette"""
-    jet = cm = cmx.get_cmap(palette) 
+    cm = cmx.get_cmap(palette) 
     #cNorm  = mcolors.Normalize(vmin=xmin, vmax=xmax)
     bounds = np.linspace(xmin,xmax,colorcontour+1)
     cNorm = mcolors.BoundaryNorm(bounds,cm.N)
@@ -88,7 +86,7 @@ def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm',colorcontour=20):
 
 def grayify_cmap(cmap):
     """Return a grayscale version of the colormap"""
-    cmap = cm = get_cmap(cmap)
+    cmap = get_cmap(cmap)
     colors = cmap(np.arange(cmap.N))
     
     # convert RGBA to perceived greyscale luminance

@@ -52,7 +52,7 @@ class lateral_basis(object):
         """
         
         if (not os.path.isfile(infile)): raise IOError("Filename ("+infile+") does not exist. Use shell script print_projmatrix to create it.")
-        nbytes = os.path.getsize(infile)
+        #nbytes = os.path.getsize(infile)
 
         cc = 0 #initialize byte counter
         ifswp = '' # Assuem that byte order is not be swapped unless elat is absurdly high

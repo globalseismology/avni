@@ -4,7 +4,6 @@
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import sys,os
 import numpy as np #for numerical analysis
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 import scipy.spatial.qhull as qhull

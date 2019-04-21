@@ -7,7 +7,6 @@ from builtins import *
 
 import sys,os
 import numpy as np #for numerical analysis
-from datetime import date  #to give a timestamp to output and compare times
 import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################

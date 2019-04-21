@@ -7,7 +7,6 @@ from builtins import *
 #importing standard modules
 import os
 import glob
-import pdb
 import fortranformat as ff #reading/writing fortran formatted text
 import numpy as np
 ############             input REM          modules ######

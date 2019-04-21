@@ -7,7 +7,7 @@ in the standard REM3D format."""
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import sys,os
+import os
 import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 import fortranformat as ff #reading/writing fortran formatted text
@@ -19,7 +19,7 @@ import ntpath #Using os.path.split or os.path.basename as others suggest won't w
 import matplotlib.pyplot as plt
 from matplotlib import gridspec # Relative size of subplots
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
-from copy import copy, deepcopy
+from copy import deepcopy
 from collections import Counter
 import traceback
 

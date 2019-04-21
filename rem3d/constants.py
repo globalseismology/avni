@@ -3,39 +3,28 @@
 from __future__ import absolute_import, division, print_function
 from builtins import *
 
-import scipy.constants
-import pdb    #for the debugger pdb.set_trace()
+#import scipy.constants
 
 ### Add units like this in future releases
 #import pint # For SI units
 #ureg = pint.UnitRegistry()
 #R = 6371000. * ureg.m    #Radius of the Earth in m
 
-"""
-download files
-"""
+"download files"
 downloadpage = 'https://maurya.umd.edu/files/common'
 localfilefolder = 'files'
 
-"""
-configuration folder
-"""
+"configuration folder"
 configfolder = 'config'
 
-"""
-color palette folder
-"""
+"color palette folder"
 cptfolder = 'CPT'
 
-"""
-Mapping constants
-"""
+"Mapping constants"
 planetconstants = 'planets.ini'
 planetpreferred = 'Earth'
 
-"""
-Color scales
-"""
+"Color scales"
 colorscale = {
 'rem3d': {'name': 'rem3d','description': \
 	'REM3D color scale created by combining two perceptually uniform \

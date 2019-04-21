@@ -9,8 +9,6 @@ from builtins import *
 
 import sys,os
 import numpy as np #for numerical analysis
-from datetime import date  #to give a timestamp to output and compare times
-import pdb    #for the debugger pdb.set_trace()
 from scipy import sparse
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -133,7 +131,7 @@ class kernel_set(object):
                 indstart = 0
             else:
                 indstart = self.metadata['ncoefcum'][findrad['index'][ii]-1]
-            vercof, dvercof = radial_select[ii].eval_radial(depth_in_km)
+            vercof, _ = radial_select[ii].eval_radial(depth_in_km)
             # convert to numpy arrays
             vercof = tools.convert2nparray(vercof)
             if vercof[ii] != 0.:

@@ -11,7 +11,6 @@ import sys,os
 import timeit
 import glob # pattern matching for finding files
 import numpy as np #for numerical analysis
-import pdb    #for the debugger pdb.set_trace()
 import fortranformat as ff #reading/writing fortran formatted text
 from configobj import ConfigObj
 import xarray as xr
@@ -663,8 +662,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     #read header
     line = asciioutput.readline()
     while line:
-        if 'NAME' in line:
-            model_name = line.split('NAME:')[1].strip()
+        #if 'NAME' in line:
+        #    model_name = line.split('NAME:')[1].strip()
         if 'REFERENCE MODEL' in line:
             ref_model = line.split('REFERENCE MODEL:')[1].strip()
         if 'KERNEL SET' in line:
@@ -679,16 +678,12 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     if not ref_model == parser['metadata']['refmodel']: raise AssertionError(ref_model+' the reference model in '+asciioutput+' is not the same as refmodel in '+setup_file)
     if not krnl_set == parser['metadata']['kerstr']: raise AssertionError(krnl_set+' the kernel string in '+asciioutput+' is not the same as kerstr in '+setup_file)
 
-
     #read variables and parameterizations
     variables = []
     rpar_list = []
     hpar_list = []
     rpar = []
     variable_idxs = []
-
-    npts_dep = nrad_krnl
-
     hpar_idx = 0
     rpar_idx = -1
     var_idx = 0
@@ -777,7 +772,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
 
             #get structure info
             line = asciioutput.readline()
-            nstru = int(line.strip().split()[1].split(':')[0])
+            #nstru = int(line.strip().split()[1].split(':')[0])
             nhparam = int(line.strip().split()[2])
             npts = len(hpar_list[nhparam-1][0][:])
             nlines = int(npts/6)

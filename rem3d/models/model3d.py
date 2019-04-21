@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from scipy import sparse
 from configobj import ConfigObj
 import re
-from copy import copy, deepcopy
+from copy import deepcopy
 import struct
 import h5py
 import xarray as xr
@@ -223,7 +223,7 @@ class model3d(object):
         metadata['xlopix'] = np.zeros([1,lenarr])  
         # get data keys
         data_keys = []
-        for key,val in ds.data_vars.items(): data_keys.append(key)
+        for key,_ in ds.data_vars.items(): data_keys.append(key)
         indx = 0   
         idep = 0     
         if len(ds.dims) == 3:
@@ -388,7 +388,7 @@ class model3d(object):
                 except:
                     print('Warning: No name found for resolution '+str(ires)+', realization '+str(icase))
                 # write the data array in the appropriate position
-                kerstr = self.metadata['resolution_'+str(ires)]['kerstr']
+                #kerstr = self.metadata['resolution_'+str(ires)]['kerstr']
                 key = self.name+'/resolution_'+str(ires)+'/realization_'+str(icase)
                 out = tools.df2nparray(self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'])
                 tools.io.store_numpy_hdf(hf,key,out)
@@ -430,8 +430,6 @@ class model3d(object):
                     kerstr = self.metadata['resolution_'+str(res)]['kerstr']
                     treefile = kerstr+'.KDTree.3D.pkl'
                     #check that the horizontal param is pixel based
-
-                    kernel_set = self.metadata['resolution_'+str(res)]['kernel_set']
                     xlopix = self.metadata['resolution_'+str(res)]['xlopix'][0]
                     xlapix = self.metadata['resolution_'+str(res)]['xlapix'][0]
                     depths = self.getpixeldepths(res,parameter)

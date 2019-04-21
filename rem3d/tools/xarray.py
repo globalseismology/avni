@@ -9,7 +9,6 @@ import numpy as np
 import xarray as xr
 from scipy.spatial import cKDTree
 import pickle
-import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .trigd import sind
@@ -207,7 +206,7 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
     # find the precision of data to round the average to
     max_precision = 0
     for val in data.drop(drops).values.flatten():
-        numdigits, precision = precision_and_scale(val)
+        _ , precision = precision_and_scale(val)
         if precision > max_precision: max_precision = precision
     average = np.round(np.sum(weighted.values)/totarea,decimals=max_precision)
     return average,area,percentglobal
