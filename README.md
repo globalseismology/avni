@@ -49,6 +49,7 @@ where `CONDA_PREFIX` is the location of Anaconda installation, which should be a
 4. Install the stable version of REM3D and its additional dependencies with
 `pip install rem3d`  
 
+
 ### Advanced installation (for developers)
 
 If you want to use REM3D's development routines, you will need to do the following additional steps. This assumes that you have a free account at <https://github.com>  
