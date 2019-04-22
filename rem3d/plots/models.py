@@ -17,6 +17,7 @@ import numpy as np #for numerical analysis
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
 #from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
 #                               AutoMinorLocator)
 #import multiprocessing
@@ -42,7 +43,7 @@ from .. import mapping
 from .. import tools
 from .. import data
 from .. import constants
-from .common import standardcolorpalette
+from .common import standardcolorpalette,updatefont
 
 ############################### PLOTTING ROUTINES ################################
 def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
@@ -869,4 +870,246 @@ def plot1hitmap(hitfile,dbs_path=tools.get_filedir(),projection='robin',lat_0=0,
     ax.set_title(group+': Overtone '+overtone+', '+wavetype+' at '+period)
     if ifshow: plt.show()
     fig.savefig(hitfile+outformat,dpi=300)
+    return
+    
+def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format='.eps',isotropic=False,zoomdepth=None):
+    """
+    Plot the ref1d object array in a PREM like plot
+    """
+    #defaults
+    if figuresize is None: figuresize=[7,12]
+    if height_ratios is None: height_ratios=[2, 2, 1]
+    if zoomdepth is None: zoomdepth=[0.,1000.]
+
+    depthkmarr = (constants.R - ref1d.data['radius'])/1000. # in km
+    #Set default fontsize for plots
+    updatefont(10)
+    fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
+    gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios)
+    fig.patch.set_facecolor('white')
+    ax01=plt.subplot(gs[0])
+    ax01.plot(depthkmarr,ref1d.data['rho']/1000.,'k')
+    ax01.plot(depthkmarr,ref1d.data['vsv']/1000.,'b')
+    ax01.plot(depthkmarr,ref1d.data['vsh']/1000.,'b:')
+    ax01.plot(depthkmarr,ref1d.data['vpv']/1000.,'r')
+    ax01.plot(depthkmarr,ref1d.data['vph']/1000.,'r:')
+    mantle=np.where( depthkmarr < 2891.)
+    ax01.plot(depthkmarr[mantle],ref1d.data['eta'][mantle],'g')
+    ax01.set_xlim([0., constants.R/1000.])
+    ax01.set_ylim([0, 14])
+
+    majorLocator = MultipleLocator(2)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(1)
+    ax01.yaxis.set_major_locator(majorLocator)
+    ax01.yaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax01.yaxis.set_minor_locator(minorLocator)
+
+    majorLocator = MultipleLocator(2000)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(1000)
+    ax01.xaxis.set_major_locator(majorLocator)
+    ax01.xaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax01.xaxis.set_minor_locator(minorLocator)
+    ax01.set_ylabel('Velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
+
+    for para,color,xloc,yloc in [("$\eta$",'g',1500.,2.),("$V_S$",'b',1500.,7.8),("$V_P$",'r',1500.,13.5),("$\\rho$",'k',1500.,4.5),("$V_P$",'r',4000.,9.2),("$\\rho$",'k',4000.,12.5),("$V_S$",'b',5500.,4.5)]:
+        ax01.annotate(para,color=color,
+        xy=(3, 1), xycoords='data',
+        xytext=(xloc/constants.R/1000., yloc/14.), textcoords='axes fraction',
+        horizontalalignment='left', verticalalignment='top')
+
+
+    ax11=plt.subplot(gs[1])
+    depthselect=np.intersect1d(np.where( depthkmarr >= zoomdepth[0]),np.where( depthkmarr <= zoomdepth[1]))
+    ax11.plot(depthkmarr[depthselect],ref1d.data['rho'][depthselect]/1000.,'k')
+    if isotropic:
+        ax11.plot(depthkmarr[depthselect],ref1d.data['vs'][depthselect]/1000.,'b')
+    else:
+        ax11.plot(depthkmarr[depthselect],ref1d.data['vsv'][depthselect]/1000.,'b')
+        ax11.plot(depthkmarr[depthselect],ref1d.data['vsh'][depthselect]/1000.,'b:')
+    ax12 = ax11.twinx()
+    if isotropic:
+        ax12.plot(depthkmarr[depthselect],ref1d.data['vp'][depthselect]/1000.,'r')
+    else:
+        ax12.plot(depthkmarr[depthselect],ref1d.data['vpv'][depthselect]/1000.,'r')
+        ax12.plot(depthkmarr[depthselect],ref1d.data['vph'][depthselect]/1000.,'r:')
+
+    ax11.plot(depthkmarr[depthselect],ref1d.data['eta'][depthselect],'g')
+    ax11.set_xlim(zoomdepth)
+    ax11.set_ylim([0, 7])
+    ax12.set_xlim(zoomdepth)
+    ax12.set_ylim([-2, 12])
+    ax11.set_ylabel('Shear velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
+    ax12.set_ylabel('Compressional velocity (km/sec)')
+    for para,color,xloc,yloc in [("$\eta$",'g',150.,1.),("$V_{S}$",'b',150.,4.3),("$V_{P}$",'r',120.,5.5),("$\\rho$",'k',150.,3.8)]:
+        ax11.annotate(para,color=color,
+        xy=(3, 1), xycoords='data',
+        xytext=(xloc/1000., yloc/7.), textcoords='axes fraction',
+        horizontalalignment='left', verticalalignment='top')
+    ax12.set_yticks(np.arange(6, 14, step=2))
+    majorLocator = MultipleLocator(200)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(100)
+    ax11.xaxis.set_major_locator(majorLocator)
+    ax11.xaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax11.xaxis.set_minor_locator(minorLocator)
+
+
+    ax21=plt.subplot(gs[2], sharex=ax11)
+    with np.errstate(divide='ignore', invalid='ignore'): # Ignore warning about dividing by zero
+        anisoVs=(ref1d.data['vsh']-ref1d.data['vsv'])*200./(ref1d.data['vsh']+ref1d.data['vsv'])
+    anisoVp=(ref1d.data['vph']-ref1d.data['vpv'])*200./(ref1d.data['vph']+ref1d.data['vpv'])
+    ax21.plot(depthkmarr[depthselect],anisoVs[depthselect],'b')
+    ax21.plot(depthkmarr[depthselect],anisoVp[depthselect],'r')
+    ax21.set_ylim([0, 5])
+    ax21.set_xlim(zoomdepth)
+    majorLocator = MultipleLocator(1)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(0.5)
+    ax21.yaxis.set_major_locator(majorLocator)
+    ax21.yaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax21.yaxis.set_minor_locator(minorLocator)
+    for para,color,xloc,yloc in [('Q'+'$_{\mu}$','k',400.,2.5),("$a_{S}$",'b',150.,3.7),("$a_{P}$",'r',100.,1.8)]:
+        ax21.annotate(para,color=color,
+        xy=(3, 1), xycoords='data',
+        xytext=(xloc/1000., yloc/4.), textcoords='axes fraction',
+        horizontalalignment='left', verticalalignment='top')
+
+
+    ax22 = ax21.twinx()
+    ax22.plot(depthkmarr[depthselect],ref1d.data['Qmu'][depthselect],'k')
+    ax21.set_xlabel('Depth (km)')
+    ax21.set_ylabel("$V_P$"+' or '+"$V_S$"+' anisotropy (%)')
+    ax22.set_ylabel('Shear attenuation Q'+'$_{\mu}$')
+    ax22.set_ylim([0, 400])
+    ax22.set_xlim(zoomdepth)
+    majorLocator = MultipleLocator(100)
+    majorFormatter = FormatStrFormatter('%d')
+    minorLocator = MultipleLocator(50)
+    ax22.yaxis.set_major_locator(majorLocator)
+    ax22.yaxis.set_major_formatter(majorFormatter)
+    # for the minor ticks, use no labels; default NullFormatter
+    ax22.yaxis.set_minor_locator(minorLocator)
+    if ifshow:
+        plt.show()
+    else:
+        plt.savefig(ref1d.name+format)
+        
+def plotmodel3d(model3d,lateral_basis='pixel1',dbs_path=tools.get_filedir(),x=0,percent_or_km='%',colormin = -6.,colormax=6.,depth=None,resolution=0,realization=0):
+    """
+    Plots interactively a model slice of a variable at a given depth till an
+    invalid depth is input by the user
+
+    Parameters
+    ----------
+    model3d : the model dictionary read by read3dmodelfile
+
+    param : lateral parameterization dictionary read by readprojmatrix
+
+    x,percent_or_km, colormin,colormax,depth : plotting options for jupyter
+                                               instead of interactive input
+    """
+    if not isinstance(resolution, int): raise TypeError('resolution must be an integer, not %s' % type(resolution))
+    if not isinstance(realization, int): raise TypeError('realization must be an integer, not %s' % type(realization))
+
+
+    typehpar = model3d.metadata['resolution_'+str(resolution)]['typehpar']
+    if len(typehpar) != 1 or typehpar[0] != 'PIXELS': raise ValueError('Slices can only be made for pixel paramterization')
+
+    # Select appropriate arrays from projection matrix, read from file
+    lat = model3d.metadata['resolution_'+str(resolution)]['xlapix'][0]
+    lon = model3d.metadata['resolution_'+str(resolution)]['xlopix'][0]
+
+    refstrarr = model3d.metadata['resolution_'+str(resolution)]['varstr']
+    # select models based on parameter and depth desired
+    new_figure='y'  # flag for done
+    colormin = -6.
+    colormax = 6.
+    while (new_figure =='y' or new_figure == 'Y'):
+        plt.ion()
+        fig=plt.figure()
+        try:
+            subplotstr = input("Provide rows and colums of subplots - default  is 1 1:")
+            subploty,subplotx = int(subplotstr.split()[0]),int(subplotstr.split()[1])
+        except (ValueError,IndexError,SyntaxError,EOFError):
+            subploty = 1; subplotx=1
+
+        flag=0  # flag for depth
+        while (flag < subploty*subplotx):
+            flag=flag+1
+            ifplot =True
+            try:
+                for ii in np.arange(len(refstrarr)): print(ii,refstrarr[ii])
+                try:
+                    x = int(input("Select variable to plot - default is 0:"))
+                except (ValueError,EOFError):
+                    x = x
+
+                if 'topo' in refstrarr[x]:
+                    #find the radial kernels for this paramter
+                    kerfind = np.where(model3d.metadata['resolution_'+str(resolution)]['ivarkern']==x+1)[0]
+                    if len(kerfind) == 1:
+                        modelarray = model3d.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'].iloc[kerfind[0]]
+                    else:
+                        flag=flag-1
+                        ifplot =False
+                else:
+                    # get the depths available for this parameter
+                    deptharr = model3d.getpixeldepths(resolution,refstrarr[x])
+                    #depth differences and get depth extents
+                    depdiff = np.ediff1d(deptharr)
+                    deptop = np.copy(deptharr)
+                    depbottom = np.copy(deptharr)
+                    for ii in range(len(depdiff)-2):
+                        deptop[ii] = deptop[ii] - (2.*depdiff[ii]-depdiff[ii+1])/2.
+                        depbottom[ii] = depbottom[ii] + (2.*depdiff[ii]-depdiff[ii+1])/2.
+                    for ii in range(len(depdiff),len(depdiff)-3,-1):
+                        deptop[ii] = deptop[ii] - (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+                        depbottom[ii] = depbottom[ii]+ (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+
+                    try:
+                        depth = float(input("Select depth - select any value for topography ["+str(round(min(deptop),2))+"-"+str(round(max(depbottom),2))+"] :"))
+                    except (ValueError,EOFError):
+                        if depth is None:
+                            depth = min(deptharr)
+                        else:
+                            depth = depth
+                    if depth < min(deptop) or depth > max(depbottom):
+                        flag=flag-1
+                        ifplot =False
+                    else:
+                        #find the radial kernels for this paramter
+                        kerfind = np.where(model3d.metadata['resolution_'+str(resolution)]['ivarkern']==x+1)[0]
+                        #evaluate at all points
+                        ind = np.where(np.logical_and(depth>deptop, depth<=depbottom))[0][0]
+                        modelarray = model3d.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'].iloc[kerfind[ind]]
+
+                if ifplot:
+                    # Get limits for colorbar
+                    try:
+                        colorstr = input("Input two values for minimum and maximum values of colorbar - default is "+str(colormin)+" "+str(colormax)+":")
+                        colormin,colormax = float(colorstr.split()[0]),float(colorstr.split()[1])
+                    except (ValueError,IndexError,EOFError):
+                        colormin = colormin; colormax=colormax
+
+                    # Plot the model
+                    test = np.vstack((lat,lon,modelarray)).transpose()
+                    dt = {'names':['lat', 'lon', 'val'], 'formats':[np.float, np.float, np.float]}
+                    plotmodel = np.zeros(len(test), dtype=dt)
+                    plotmodel['lat'] = test[:,0]; plotmodel['lon'] = test[:,1]; plotmodel['val'] = test[:,2]
+                    ax=fig.add_subplot(subploty,subplotx,flag)
+                    globalmap(ax,plotmodel,colormin,colormax,dbs_path=dbs_path, colorlabel='Anomaly', grid=[30.,90.],gridwidth=0,projection='robin',lat_0=0, lon_0=150., colorpalette='rem3d',colorcontour=21)
+                    ax.set_title(refstrarr[x]+' at '+str(depth)+' km.' if 'Topo' not in refstrarr[x] and 'topo' not in refstrarr[x] else refstrarr[x])
+                    fig.canvas.draw()
+            except SyntaxError:
+                flag=flag-1
+        try:
+            new_figure = input("Another figure? y/n:")
+        except (EOFError):
+            new_figure = 'n'
     return
