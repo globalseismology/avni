@@ -184,10 +184,10 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
 
     if findtopbot and findconstantlinear: raise ValueError('Cannot have both BOTTOM/TOP and CONSTANT/LINEAR as types in eval_polynomial')
 
-    for irad,val in enumerate(radiusin):
+    for irad,_ in enumerate(radiusin):
         temp = np.zeros(npoly)
         dtemp = np.zeros(npoly)
-        for irange,val2 in enumerate(radius_range):
+        for irange,_ in enumerate(radius_range):
             #Undefined if depth does not lie within the depth extents of knot points
             if radiusin[irad] <= min(radius_range[irange]) or radiusin[irad] > max(radius_range[irange]):
                 # <= so that the boundary depth belongs to only one radial kernel

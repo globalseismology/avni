@@ -321,8 +321,8 @@ class reference1D(object):
             line = ff.FortranRecordWriter('(f8.0,3f9.2,2f9.1,2f9.2,f9.5)')
 
             write = self.data[parameters]
-            for i,val in enumerate(write):
-                f.write(line.write(write[i])+u'\n')
+            for _,val in enumerate(write):
+                f.write(line.write(val)+u'\n')
             f.close()
         else:
             raise ValueError('reference1D object is not allocated')

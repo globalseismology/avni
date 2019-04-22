@@ -551,10 +551,9 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             #enforce longitudes from 0 to 360 to be consistent with xarray
             if not min(f[:,1]) >= 0.: raise AssertionError("longitudes need to be [0,360] "+epix_file)
 
-
     #write horizontal parameterization
     f_out.write(u'HORIZONTAL PARAMETERIZATIONS: {}\n'.format(len(lats)))
-    for i,val in enumerate(lats):
+    for i,_ in enumerate(lats):
 
         #check pixel widths
         if np.min(pxs[i]) != np.max(pxs[i]):
