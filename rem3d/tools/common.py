@@ -236,15 +236,15 @@ def get_configdir(module='rem3d',checkwrite=True,makedir=True):
             os.makedirs(configdir)
     return configdir
 
-def get_projections(checkwrite=True,makedir=True,type='radial'):
+def get_projections(checkwrite=True,makedir=True,types='radial'):
     """
     Get the file containing projection matrices.
     Make a new directory if doesn't exist (makedir==True)
     """
-    if type != 'radial' and type != 'lateral':
-        raise ValueError('type is undefined in get_projections')
+    if types != 'radial' and types != 'lateral':
+        raise ValueError('types is undefined in get_projections')
     configdir = get_configdir(checkwrite=checkwrite,makedir=makedir)
-    projections = configdir+'/projections.'+type+'.npz'
+    projections = configdir+'/projections.'+types+'.npz'
     exists = os.path.isfile(projections)
     return projections,exists
 

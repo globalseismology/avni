@@ -7,7 +7,7 @@ in the standard REM3D format."""
 from __future__ import absolute_import, division, print_function
 import sys
 if (sys.version_info[:2] < (3, 0)):
-    from builtins import float,int,list,tuple
+    from builtins import float,int
 
 import os
 import timeit
@@ -300,7 +300,7 @@ def readensemble(filename):
 
     return
 
-def readprojections(type='radial'):
+def readprojections(types='radial'):
     """Read .npz file containing a collection of models.
 
     Parameters

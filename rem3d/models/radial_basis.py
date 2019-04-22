@@ -32,13 +32,13 @@ class radial_basis(object):
         attributes: a dictionary containing variables used to define this particular type
                     e.g. knots for vbspl. Checked that these are defined using self.check.
     '''
-    def __init__(self,name,type,metadata=None):
+    def __init__(self,name,types,metadata=None):
         self.data = {}
         self.data['depths_in_km'] = None
         self.data['vercof'] = None
         self.data['dvercof'] = None
         self.name = name
-        self.type = type
+        self.type = types
         if metadata is None:
             self.metadata = {}
         else:

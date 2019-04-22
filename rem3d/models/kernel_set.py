@@ -7,7 +7,7 @@ in the standard REM3D format."""
 from __future__ import absolute_import, division, print_function
 import sys
 if (sys.version_info[:2] < (3, 0)):
-    from builtins import float,int,list,tuple
+    from builtins import float
 
 import numpy as np #for numerical analysis
 from scipy import sparse
@@ -24,15 +24,15 @@ class kernel_set(object):
     '''
     A class for kernel sets that define the G matrix for relating data d to model m, d=Gm
     '''
-    def __init__(self,dict):
+    def __init__(self,dictionary):
         self.metadata ={}
         self.data = {}
-        self.name = dict['kerstr']
-        self.initialize(dict)
-        self.extract_lateral(dict)
-        self.extract_radial(dict)
+        self.name = dictionary['kerstr']
+        self.initialize(dictionary)
+        self.extract_lateral(dictionary)
+        self.extract_radial(dictionary)
 
-    def initialize(self,dict,required=None,optional=None):
+    def initialize(self,dictionary,required=None,optional=None):
 
         #defaults
         if required is None: required = ['nmodkern','ivarkern','desckern','ncoefhor','ncoefcum','nhorpar','ihorpar','ityphpar','typehpar','numvar','varstr']
@@ -40,47 +40,47 @@ class kernel_set(object):
 
         for var in required:
             try:
-                self.metadata[var] = dict[var]
+                self.metadata[var] = dictionary[var]
             except:
                 raise KeyError('required field '+var+' not found for kernel_set')
         for var in optional:
             try:
-                self.metadata[var] = dict[var]
+                self.metadata[var] = dictionary[var]
             except:
                 self.metadata[var] = None
 
-    def extract_lateral(self,dict):
+    def extract_lateral(self,dictionary):
         lateral=[]
         for ihor in np.arange(self.metadata['nhorpar']):
-            type = self.metadata['typehpar'][ihor]
+            types = self.metadata['typehpar'][ihor]
             metadata = {}
-            metadata['ncoefhor']=dict['ncoefhor'][ihor]
-            if 'SPHERICAL HARMONICS' in type:
-                metadata['lmaxhor'] = dict['lmaxhor'][ihor]
-            elif 'PIXELS' in type:
+            metadata['ncoefhor']=dictionary['ncoefhor'][ihor]
+            if 'SPHERICAL HARMONICS' in types:
+                metadata['lmaxhor'] = dictionary['lmaxhor'][ihor]
+            elif 'PIXELS' in types:
                 for field in ['xsipix','xlapix','xlopix']:
-                    metadata[field] = np.array(dict[field][ihor], order = 'F')
-            elif 'SPHERICAL SPLINES' in type:
+                    metadata[field] = np.array(dictionary[field][ihor], order = 'F')
+            elif 'SPHERICAL SPLINES' in types:
                 for field in ['ixlspl','xlaspl','xlospl','xraspl']:
-                    metadata[field] = np.array(dict[field][ihor], order = 'F')
+                    metadata[field] = np.array(dictionary[field][ihor], order = 'F')
             else:
-                raise NotImplementedError(type+' has not been implemented in kernel_set.extract_lateral')
-            lateral.append(lateral_basis(name='HPAR'+str(ihor+1), type = type, metadata=metadata))
+                raise NotImplementedError(types+' has not been implemented in kernel_set.extract_lateral')
+            lateral.append(lateral_basis(name='HPAR'+str(ihor+1), types = types, metadata=metadata))
         self.data['lateral_basis']=np.array(lateral)
 
-    def extract_radial(self,dict):
+    def extract_radial(self,dictionary):
         radial={}
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
-        for variable in dict['varstr']: #loop over all variables, grabbing
+        for variable in dictionary['varstr']: #loop over all variables, grabbing
             radial[variable]=[]
 
             ivarfind =np.where(self.metadata['varstr']==variable)[0]
             if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in eval_kernel_set')
-            findrad = np.array([(ii, dict['desckern'][ii]) for ii in np.arange(len(dict['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
+            findrad = np.array([(ii, dictionary['desckern'][ii]) for ii in np.arange(len(dictionary['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
 
             metadata = {};found = False
             types = np.unique([findrad['kernel'][ii].split(',')[-2].strip() for ii in np.arange(len(findrad))])
-            if not len(types) == 1: raise AssertionError('only one type is allowed')
+            if not len(types) == 1: raise AssertionError('only one types is allowed')
 
             for jj in np.arange(len(findrad)):
                 radker = findrad['kernel'][jj]
@@ -89,17 +89,17 @@ class kernel_set(object):
                 if 'variable splines' in radker or 'vbspl' in radker:
                     found = True
                     metadata['knots'] = [float(findrad['kernel'][ii].split(',')[-1].split('km')[0]) for ii in np.arange(len(findrad))]
-                    radial[variable].append(radial_basis(name=radker, type = 'variable splines', metadata=metadata))
+                    radial[variable].append(radial_basis(name=radker, types = 'variable splines', metadata=metadata))
 
                 elif 'delta' in radker or 'dirac delta' in radker:
                     found = True
                     metadata['info'] = radker.split(',')[-1]
-                    radial[variable].append(radial_basis(name=radker, type = 'dirac delta', metadata=metadata))
+                    radial[variable].append(radial_basis(name=radker, types = 'dirac delta', metadata=metadata))
                 elif 'boxcar' in radker or 'constant' in radker:
                     found = True
                     metadata['depthtop'] = [float(findrad['kernel'][ii].split(',')[-1].split('-')[0]) for ii in np.arange(len(findrad))]
                     metadata['depthbottom'] = [float(findrad['kernel'][ii].split(',')[-1].split('-')[1].split('km')[0]) for ii in np.arange(len(findrad))]
-                    radial[variable].append(radial_basis(name=radker, type = 'boxcar', metadata=metadata))
+                    radial[variable].append(radial_basis(name=radker, types = 'boxcar', metadata=metadata))
                 if not found: raise ValueError('information not found for '+radker)
         self.data['radial_basis']=radial
 

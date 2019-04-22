@@ -4,7 +4,7 @@
 from __future__ import absolute_import, division, print_function
 import sys
 if (sys.version_info[:2] < (3, 0)):
-    from builtins import float,int,list,tuple
+    from builtins import list,tuple
 
 import numpy as np
 from collections import Counter

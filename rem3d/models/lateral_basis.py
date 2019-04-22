@@ -5,9 +5,6 @@ in the standard REM3D format."""
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
-import sys
-if (sys.version_info[:2] < (3, 0)):
-    from builtins import float,int,list,tuple
 
 import os
 import numpy as np #for numerical analysis
@@ -23,13 +20,13 @@ class lateral_basis(object):
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.
     '''
-    def __init__(self, name, type, metadata = None):
+    def __init__(self, name, types, metadata = None):
         """
         types : 'epix','ylm','sh','wavelet','slepians'
         """
         self.data = {}
         self.name = name
-        self.type = type
+        self.type = types
         if metadata is None:
             self.metadata = {}
         else:
@@ -66,7 +63,7 @@ class lateral_basis(object):
             if iflag != 1:
                 ifswp = '!' # swap endianness from now on
                 iflag = struct.unpack(ifswp+'i',indata)[0]
-                if iflag != 1: sys.exit("Error: iflag != 1")
+                if iflag != 1: raise ValueError("iflag != 1")
             self.metadata['from_type'] = struct.unpack('20s',f.read(20))[0].strip(); cc = cc+20
             pdb.set_trace()
             self.proj['to_type'] = struct.unpack('20s',f.read(20))[0].strip(); cc = cc+20

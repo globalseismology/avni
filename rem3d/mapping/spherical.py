@@ -5,7 +5,6 @@ from __future__ import absolute_import, division, print_function
 import sys
 if (sys.version_info[:2] < (3, 0)):
     from builtins import float,int
-    range = xrange
 
 import numpy as np #for numerical analysis
 from pygeodesy.sphericalNvector import LatLon
@@ -273,7 +272,7 @@ def getIntermediate(lat1,lng1,azimuth,distance,interval):
     steps = int(distance / interval)
     coords = []
     coords.append([lat1,lng1])
-    for step in range(steps):
+    for step in np.arange(steps):
         counter = float(interval) * float(step+1)
         coord = getDestination(lat1,lng1,azimuth,counter)
         coords.append(coord)

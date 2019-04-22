@@ -308,9 +308,9 @@ class model3d(object):
             if len(hf.keys()) == 1:
                 query = hf.keys()[0]
             else:
-                str=''
-                for str1 in hf.keys(): str=str+' , '+str1
-                raise ValueError("... choose one from multiple query "+str)
+                strsum=''
+                for str1 in hf.keys(): strsum=strsum+' , '+str1
+                raise ValueError("... choose one from multiple query "+strsum)
         # read mean model
         for name,value in hf[query].attrs.items():
             try:
@@ -456,8 +456,8 @@ class model3d(object):
     def getpixeldepths(self,resolution,parameter):
         typehpar = self.metadata['resolution_'+str(resolution)]['typehpar']
         if not len(typehpar) == 1: raise AssertionError('only one type of horizontal parameterization allowed')
-        for type in typehpar:
-            if not type == 'PIXELS': raise AssertionError('for interpolation with tree3D')
+        for types in typehpar:
+            if not types == 'PIXELS': raise AssertionError('for interpolation with tree3D')
         kernel_set = self.metadata['resolution_'+str(resolution)]['kernel_set']
         kernel_param = kernel_set.data['radial_basis'][parameter]
         depths = []

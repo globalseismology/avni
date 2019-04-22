@@ -3,10 +3,8 @@
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 
-import sys
 import multiprocessing
 from joblib import Parallel, delayed
-if (sys.version_info[:2] < (3, 0)): range = xrange
 
 ############################### PLOTTING ROUTINES ################################
 from ..tools.trigd import atand,tand
