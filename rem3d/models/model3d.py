@@ -5,9 +5,10 @@ in the standard REM3D format."""
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
-from builtins import *
-
 import sys,os
+if (sys.version_info[:2] < (3, 0)): 
+    from builtins import *
+    
 import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
@@ -22,7 +23,6 @@ import h5py
 import xarray as xr
 import traceback
 import pandas as pd
-if (sys.version_info[:2] < (3, 0)): input = raw_input
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
 from .. import plots

@@ -2,8 +2,10 @@
 
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
-from builtins import *
-
+import sys
+if (sys.version_info[:2] < (3, 0)): 
+    from builtins import *
+        
 from os.path import dirname, basename, isfile
 import glob
 import pkgutil

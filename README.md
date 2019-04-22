@@ -109,7 +109,6 @@ This project is licensed under the GNU GPL v3 or newer - see the [LICENSE](LICEN
 
 * Funded by the National Science Foundation and the David and Lucile Packard Foundation.
 * We thank Göran Ekström, Adam Dziewonski, Todd Karowski, other members of the open source and Earth Science community for their input and non-Github contributions.
-* Computational resources maintained at the University of Maryland at College Park. We thank Todd Karowski and other system administrators for assistance.
-* Style and documentation of this repository is influenced by other open-source repositories such as [SPECFEM3D](https://github.com/geodynamics/specfem3d) and [Burnman](https://github.com/geodynamics/burnman).  
+* Computational resources maintained at the University of Maryland at College Park. We thank Todd Karowski and other system administrators for assistance.  
 
 <img src="docs/NSF.png" width="100"> <img src="docs/packard.png" width="200"> <img src="docs/UMD.png" width="100">

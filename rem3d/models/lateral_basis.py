@@ -5,9 +5,11 @@ in the standard REM3D format."""
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
-from builtins import *
-
-import sys,os
+import sys
+if (sys.version_info[:2] < (3, 0)): 
+    from builtins import *
+    
+import os
 import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 

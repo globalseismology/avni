@@ -5,8 +5,10 @@ in the standard REM3D format."""
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
-from builtins import *
-
+import sys
+if (sys.version_info[:2] < (3, 0)): 
+    from builtins import *
+    
 import numpy as np #for numerical analysis
 from scipy import sparse
 
