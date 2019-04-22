@@ -2,9 +2,9 @@
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 import sys
-if (sys.version_info[:2] < (3, 0)): 
+if (sys.version_info[:2] < (3, 0)):
     from builtins import *
-    
+
 #import scipy.constants
 
 ### Add units like this in future releases

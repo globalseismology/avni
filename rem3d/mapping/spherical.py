@@ -3,13 +3,13 @@
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 import sys
-if (sys.version_info[:2] < (3, 0)): 
+if (sys.version_info[:2] < (3, 0)):
     from builtins import *
-        
+    range = xrange
+
 import sys
 import numpy as np #for numerical analysis
 from pygeodesy.sphericalNvector import LatLon
-if (sys.version_info[:2] < (3, 0)): range = xrange
 
 ############################### PLOTTING ROUTINES ################################
 from ..tools.common import convert2nparray

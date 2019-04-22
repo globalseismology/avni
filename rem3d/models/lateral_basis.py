@@ -6,9 +6,9 @@ in the standard REM3D format."""
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 import sys
-if (sys.version_info[:2] < (3, 0)): 
+if (sys.version_info[:2] < (3, 0)):
     from builtins import *
-    
+
 import os
 import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
