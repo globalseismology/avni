@@ -7,7 +7,7 @@ in the standard REM3D format."""
 from __future__ import absolute_import, division, print_function
 import sys
 if (sys.version_info[:2] < (3, 0)):
-    from builtins import *
+    from builtins import float,int,list,tuple
 
 import numpy as np #for numerical analysis
 import fortranformat as ff #reading/writing fortran formatted text
@@ -16,15 +16,11 @@ from six import string_types # to check if variable is string using isinstance
 from numpy.lib.recfunctions import append_fields # for appending named columns to named numpy arrays
 from scipy.interpolate import griddata
 import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
-import matplotlib.pyplot as plt
-from matplotlib import gridspec # Relative size of subplots
-from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
 from copy import deepcopy
 from collections import Counter
 import traceback
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from .. import plots
 from .. import constants
 from rem3d.f2py import getbullen
 #######################################################################################
@@ -399,131 +395,3 @@ class reference1D(object):
                     f.write('#    Discontinuity {}, depth {:6.2f} km\n'.format(n_discon,depth_here))
         else:
             raise ValueError('reference1D object is not allocated')
-
-    def plot(self,figuresize=None,height_ratios=None,ifshow=True,format='.eps',isotropic=False,zoomdepth=None):
-        """
-        Plot the cards array in a PREM like plot
-        """
-        #defaults
-        if figuresize is None: figuresize=[7,12]
-        if height_ratios is None: height_ratios=[2, 2, 1]
-        if zoomdepth is None: zoomdepth=[0.,1000.]
-
-        depthkmarr = (constants.R - self.data['radius'])/1000. # in km
-        #Set default fontsize for plots
-        plots.updatefont(10)
-        fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
-        gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios)
-        fig.patch.set_facecolor('white')
-        ax01=plt.subplot(gs[0])
-        ax01.plot(depthkmarr,self.data['rho']/1000.,'k')
-        ax01.plot(depthkmarr,self.data['vsv']/1000.,'b')
-        ax01.plot(depthkmarr,self.data['vsh']/1000.,'b:')
-        ax01.plot(depthkmarr,self.data['vpv']/1000.,'r')
-        ax01.plot(depthkmarr,self.data['vph']/1000.,'r:')
-        mantle=np.where( depthkmarr < 2891.)
-        ax01.plot(depthkmarr[mantle],self.data['eta'][mantle],'g')
-        ax01.set_xlim([0., constants.R/1000.])
-        ax01.set_ylim([0, 14])
-
-        majorLocator = MultipleLocator(2)
-        majorFormatter = FormatStrFormatter('%d')
-        minorLocator = MultipleLocator(1)
-        ax01.yaxis.set_major_locator(majorLocator)
-        ax01.yaxis.set_major_formatter(majorFormatter)
-        # for the minor ticks, use no labels; default NullFormatter
-        ax01.yaxis.set_minor_locator(minorLocator)
-
-        majorLocator = MultipleLocator(2000)
-        majorFormatter = FormatStrFormatter('%d')
-        minorLocator = MultipleLocator(1000)
-        ax01.xaxis.set_major_locator(majorLocator)
-        ax01.xaxis.set_major_formatter(majorFormatter)
-        # for the minor ticks, use no labels; default NullFormatter
-        ax01.xaxis.set_minor_locator(minorLocator)
-        ax01.set_ylabel('Velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
-
-        for para,color,xloc,yloc in [("$\eta$",'g',1500.,2.),("$V_S$",'b',1500.,7.8),("$V_P$",'r',1500.,13.5),("$\\rho$",'k',1500.,4.5),("$V_P$",'r',4000.,9.2),("$\\rho$",'k',4000.,12.5),("$V_S$",'b',5500.,4.5)]:
-            ax01.annotate(para,color=color,
-            xy=(3, 1), xycoords='data',
-            xytext=(xloc/constants.R/1000., yloc/14.), textcoords='axes fraction',
-            horizontalalignment='left', verticalalignment='top')
-
-
-        ax11=plt.subplot(gs[1])
-        depthselect=np.intersect1d(np.where( depthkmarr >= zoomdepth[0]),np.where( depthkmarr <= zoomdepth[1]))
-        ax11.plot(depthkmarr[depthselect],self.data['rho'][depthselect]/1000.,'k')
-        if isotropic:
-            ax11.plot(depthkmarr[depthselect],self.data['vs'][depthselect]/1000.,'b')
-        else:
-            ax11.plot(depthkmarr[depthselect],self.data['vsv'][depthselect]/1000.,'b')
-            ax11.plot(depthkmarr[depthselect],self.data['vsh'][depthselect]/1000.,'b:')
-        ax12 = ax11.twinx()
-        if isotropic:
-            ax12.plot(depthkmarr[depthselect],self.data['vp'][depthselect]/1000.,'r')
-        else:
-            ax12.plot(depthkmarr[depthselect],self.data['vpv'][depthselect]/1000.,'r')
-            ax12.plot(depthkmarr[depthselect],self.data['vph'][depthselect]/1000.,'r:')
-
-        ax11.plot(depthkmarr[depthselect],self.data['eta'][depthselect],'g')
-        ax11.set_xlim(zoomdepth)
-        ax11.set_ylim([0, 7])
-        ax12.set_xlim(zoomdepth)
-        ax12.set_ylim([-2, 12])
-        ax11.set_ylabel('Shear velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
-        ax12.set_ylabel('Compressional velocity (km/sec)')
-        for para,color,xloc,yloc in [("$\eta$",'g',150.,1.),("$V_{S}$",'b',150.,4.3),("$V_{P}$",'r',120.,5.5),("$\\rho$",'k',150.,3.8)]:
-            ax11.annotate(para,color=color,
-            xy=(3, 1), xycoords='data',
-            xytext=(xloc/1000., yloc/7.), textcoords='axes fraction',
-            horizontalalignment='left', verticalalignment='top')
-        ax12.set_yticks(np.arange(6, 14, step=2))
-        majorLocator = MultipleLocator(200)
-        majorFormatter = FormatStrFormatter('%d')
-        minorLocator = MultipleLocator(100)
-        ax11.xaxis.set_major_locator(majorLocator)
-        ax11.xaxis.set_major_formatter(majorFormatter)
-        # for the minor ticks, use no labels; default NullFormatter
-        ax11.xaxis.set_minor_locator(minorLocator)
-
-
-        ax21=plt.subplot(gs[2], sharex=ax11)
-        with np.errstate(divide='ignore', invalid='ignore'): # Ignore warning about dividing by zero
-            anisoVs=(self.data['vsh']-self.data['vsv'])*200./(self.data['vsh']+self.data['vsv'])
-        anisoVp=(self.data['vph']-self.data['vpv'])*200./(self.data['vph']+self.data['vpv'])
-        ax21.plot(depthkmarr[depthselect],anisoVs[depthselect],'b')
-        ax21.plot(depthkmarr[depthselect],anisoVp[depthselect],'r')
-        ax21.set_ylim([0, 5])
-        ax21.set_xlim(zoomdepth)
-        majorLocator = MultipleLocator(1)
-        majorFormatter = FormatStrFormatter('%d')
-        minorLocator = MultipleLocator(0.5)
-        ax21.yaxis.set_major_locator(majorLocator)
-        ax21.yaxis.set_major_formatter(majorFormatter)
-        # for the minor ticks, use no labels; default NullFormatter
-        ax21.yaxis.set_minor_locator(minorLocator)
-        for para,color,xloc,yloc in [('Q'+'$_{\mu}$','k',400.,2.5),("$a_{S}$",'b',150.,3.7),("$a_{P}$",'r',100.,1.8)]:
-            ax21.annotate(para,color=color,
-            xy=(3, 1), xycoords='data',
-            xytext=(xloc/1000., yloc/4.), textcoords='axes fraction',
-            horizontalalignment='left', verticalalignment='top')
-
-
-        ax22 = ax21.twinx()
-        ax22.plot(depthkmarr[depthselect],self.data['Qmu'][depthselect],'k')
-        ax21.set_xlabel('Depth (km)')
-        ax21.set_ylabel("$V_P$"+' or '+"$V_S$"+' anisotropy (%)')
-        ax22.set_ylabel('Shear attenuation Q'+'$_{\mu}$')
-        ax22.set_ylim([0, 400])
-        ax22.set_xlim(zoomdepth)
-        majorLocator = MultipleLocator(100)
-        majorFormatter = FormatStrFormatter('%d')
-        minorLocator = MultipleLocator(50)
-        ax22.yaxis.set_major_locator(majorLocator)
-        ax22.yaxis.set_major_formatter(majorFormatter)
-        # for the minor ticks, use no labels; default NullFormatter
-        ax22.yaxis.set_minor_locator(minorLocator)
-        if ifshow:
-            plt.show()
-        else:
-            plt.savefig(self.name+format)

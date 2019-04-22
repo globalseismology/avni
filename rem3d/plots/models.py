@@ -9,7 +9,7 @@ Usage import
 from __future__ import absolute_import, division, print_function
 import sys
 if (sys.version_info[:2] < (3, 0)):
-    from builtins import *
+    from builtins import int,float
 
 import os
 import numpy as np #for numerical analysis
@@ -646,7 +646,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
             vals = model.data.flatten(order='C')
         except:
             raise ValueError('model in gettopotransect not a string or xarray')
-    lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    #lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
     interval=gcdelta*constants.deg2m/(numevalx-1) # interval in km
     radevalarr=np.linspace(radii[0],radii[1],numevalz) #radius arr in km
     coords=np.array(mapping.getIntermediate(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))

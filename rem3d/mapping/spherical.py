@@ -4,10 +4,9 @@
 from __future__ import absolute_import, division, print_function
 import sys
 if (sys.version_info[:2] < (3, 0)):
-    from builtins import *
+    from builtins import float,int
     range = xrange
 
-import sys
 import numpy as np #for numerical analysis
 from pygeodesy.sphericalNvector import LatLon
 

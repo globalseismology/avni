@@ -4,7 +4,7 @@
 from __future__ import absolute_import, division, print_function
 import sys
 if (sys.version_info[:2] < (3, 0)):
-    from builtins import *
+    from builtins import float,int,list,tuple
 
 import numpy as np
 from collections import Counter
@@ -197,7 +197,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
                     dtemp[ii]=0.
             else:
                 rn=radiusin[irad]/rnorm
-                for itype,val2 in enumerate(types):
+                for itype,_ in enumerate(types):
                     ii = irange*len(types)+itype
                     if findconstantlinear:
                         if types[itype]=='CONSTANT':
@@ -258,8 +258,7 @@ def eval_splcon(latitude,longitude,xlaspl,xlospl,xraspl):
 
     ncoefhor = len(xlaspl)
     values = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
-    for iloc in range(len(latitude)):
-        lat = latitude[iloc]
+    for iloc,lat in enumerate(latitude):
         lon = longitude[iloc]
         #--- make lon go from 0-360
         if lon<0.: lon=lon+360.
