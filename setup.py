@@ -85,7 +85,8 @@ else:
 #---------------------------------------------------------------------------
 
 f90_dir='rem3d/f2py'
-packagelist=['rem3d','rem3d.data','rem3d.models','rem3d.tools']
+packagelist=['rem3d','rem3d.data','rem3d.models','rem3d.tools',
+             'rem3d.mapping','rem3d.plots']
 for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
 
 
