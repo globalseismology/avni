@@ -98,13 +98,6 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
 
     """
 
-    """
-    Check the station names and append any new ones from SWdata.
-
-    iflagthreshold: iflag minimum to use for using in calculations
-
-    """
-
     if iflagthreshold is None:
         data = SWdata['data']
     else:
@@ -165,7 +158,7 @@ def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
 
     """
     hf = h5py.File(hdffile, 'a')
-    for index, row in files.iterrows():
+    for _ , row in files.iterrows():
         file = row[0]
         print("... adding "+file+" to "+hdffile+" in the "+datatype+" group")
         SWdata = readSWascii(file,delim=delim)
