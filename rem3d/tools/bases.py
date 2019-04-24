@@ -158,7 +158,8 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
     Output:
     ------
 
-    vercof : value of the polynomial coefficients at each depth, size (Nradius).
+    vercof : value of the polynomial coefficients and derivative at each depth
+             size (Nradius).
     """
     #defaults
     if types is None: types= ['CONSTANT','LINEAR']

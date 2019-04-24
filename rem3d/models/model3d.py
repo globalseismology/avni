@@ -441,9 +441,9 @@ class model3d(object):
                     for depth in depths: depth_in_km_pix = np.append(depth_in_km_pix,np.ones_like(xlopix)*depth)
                     xlapix = np.repeat(xlapix,len(depths))
                     xlapix = np.repeat(xlopix,len(depths))
-                    tree = tools.tree3D(treefile,xlapix,xlapix,constants.R/1000. - depth_in_km_pix)
+                    tree = tools.tree3D(treefile,xlapix,xlapix,constants.R.to('km').magnitude - depth_in_km_pix)
                 # get the interpolation, summing over all resolutions
-                temp = tools.querytree3D(tree=tree,latitude=latitude,longitude=longitude,radius_in_km= constants.R/1000. - depth_in_km,values=modelarr,nearest=nearest)
+                temp = tools.querytree3D(tree=tree,latitude=latitude,longitude=longitude,radius_in_km= constants.R.to('km').magnitude - depth_in_km,values=modelarr,nearest=nearest)
                 if index == 0:
                     values = temp.data
                 else:
@@ -519,13 +519,16 @@ class model3d(object):
         if (not os.path.isfile(filepath)): raise IOError("Configuration file ("+filepath+") does not exist")
         parser = ConfigObj(filepath)
 
-        for ll in np.arange(len(self.metadata)): # Loop over every resolution
+        for _,resolution in enumerate(self.metadata): # Loop over every resolution
 
             # Read the kernel set from the model3d dictionary
-            kerstr=self.metadata['resolution_'+str(ll)]['kerstr']
+            kerstr=self.metadata[resolution]['kerstr']
 
             # Read the basis
-            temp = parser['Kernel_Set'][kerstr]['radial_knots']; radial_knots = []
+            try:
+                temp = parser['Kernel_Set'][kerstr]['radial_knots']; radial_knots = []
+            except KeyError:
+                raise KeyError('Kernel set '+kerstr+' not found in '+parserfile)
             for ii in range(len(temp)):
                 temp2 = [float(i) for i in temp[ii].split(',')]
                 radial_knots.append(temp2)
@@ -535,19 +538,19 @@ class model3d(object):
 
             # Loop over all kernel basis
             knot_depth=[]
-            for ii,_ in enumerate(self.metadata['resolution_'+str(ll)]['ihorpar']):
+            for ii,kernel in enumerate(self.metadata[resolution]['desckern']):
                 ifound=0
                 for jj,_ in enumerate(radial_type):
-                    if re.search(radial_type[jj],self.metadata['resolution_'+str(ll)]['desckern'][ii]):
-                        index = int(self.metadata['resolution_'+str(ll)]['desckern'][ii].split(',')[-1]) - 1
+                    if re.search(radial_type[jj],kernel):
+                        index = int(self.metadata[resolution]['desckern'][ii].split(',')[-1]) - 1
                         knot_depth.append(radial_knots[jj][index]); ifound=1
                 if ifound != 1:
-                    print("Warning: Did not find radial kernel knot depth in getradialattributes for "+self.metadata['resolution_'+str(ll)]['desckern'][ii]+". Setting to NaN to denote ignorance in clustering")
+                    print("Warning: Did not find radial kernel knot depth in getradialattributes for "+self.metadata[resolution]['desckern'][ii]+". Setting to NaN to denote ignorance in clustering")
                     knot_depth.append(np.nan)
             # Stor in relevant variables
-            self.metadata['resolution_'+str(ll)]['knot_depth']=np.array(knot_depth)
-            self.metadata['resolution_'+str(ll)]['description']=parser['Kernel_Set'][kerstr]['description']
-            self.metadata['resolution_'+str(ll)]['scaling']=parser['Kernel_Set'][kerstr]['scaling']
+            self.metadata[resolution]['knot_depth']=np.array(knot_depth)
+            self.metadata[resolution]['description']=parser['Kernel_Set'][kerstr]['description']
+            self.metadata[resolution]['scaling']=parser['Kernel_Set'][kerstr]['scaling']
 
         return
 

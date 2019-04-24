@@ -37,7 +37,7 @@ from matplotlib.projections import PolarAxes
 #from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
 from mpl_toolkits.axisartist.grid_finder import DictFormatter,FixedLocator
 from matplotlib import gridspec # Relative size of subplots
-
+import pdb
 ####################       IMPORT OWN MODULES     ######################################
 from .. import mapping
 from .. import tools
@@ -366,10 +366,10 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
     """plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
 
     # Calculate intermediate points
-    lat2,lon2=mapping.getDestination(lat1,lon1,azimuth,gcdelta*constants.deg2m)
+    lat2,lon2=mapping.getDestination(lat1,lon1,azimuth,gcdelta*constants.deg2m.magnitude)
     if numdegticks != 0 :
-        interval=gcdelta*constants.deg2m/(numdegticks-1) # interval in km
-        coords=np.array(mapping.getIntermediate(lat1,lon1,azimuth,gcdelta*constants.deg2m,interval))
+        interval=gcdelta*constants.deg2m.magnitude/(numdegticks-1) # interval in km
+        coords=np.array(mapping.getIntermediate(lat1,lon1,azimuth,gcdelta*constants.deg2m.magnitude,interval))
 
     # Center lat lon based on azimuth
     if gcdelta > 350.:
@@ -557,7 +557,6 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
 
     nearest: 1 returns the nearest point
     """
-
     #read topography file
     dbs_path=tools.get_fullpath(dbs_path)
 
@@ -566,7 +565,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
         treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.stride'+str(stride)+'.pkl'
         ncfile = dbs_path+'/'+model
         if not os.path.isfile(ncfile): data.update_file(model)
-        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=constants.R/1000.)
+        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=constants.R.to('km').magnitude)
         #read values
         if os.path.isfile(ncfile):
             f = xr.open_dataset(ncfile)
@@ -582,12 +581,12 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
             raise ValueError('model in gettopotransect not a string or xarray')
 
     #find destination point
-    lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
-    interval=gcdelta*constants.deg2m/(numeval-1) # interval in m
-    coords=np.array(mapping.getIntermediate(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
+    lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude)
+    interval=gcdelta*constants.deg2m.magnitude/(numeval-1) # interval in m
+    coords=np.array(mapping.getIntermediate(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude,interval))
 
     #query tree for topography
-    evalpoints=np.column_stack((constants.R/1000.*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
+    evalpoints=np.column_stack((constants.R.to('km').magnitude*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
 
     # get the interpolation
     valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
@@ -601,12 +600,12 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     elevplot2=np.array(elev)
     # Blue for areas below sea level
     if np.min(elev)<0.:
-        lowerlimit=constants.R/1000.-np.min(elev)/1000.*vexaggerate
+        lowerlimit=constants.R.to('km').magnitude-np.min(elev)/1000.*vexaggerate
         elevplot2[elevplot2>0.]=0.
         ax.fill_between(theta_range, lowerlimit*np.ones(len(theta_range)),lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,facecolor='aqua', alpha=0.5)
         ax.plot(theta_range,lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,'k',linewidth=0.5)
     else:
-        lowerlimit=constants.R/1000.
+        lowerlimit=constants.R.to('km').magnitude
 
     # Grey for areas above sea level
     elevplot1[elevplot1<0.]=0.
@@ -647,10 +646,10 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
             vals = model.data.flatten(order='C')
         except:
             raise ValueError('model in gettopotransect not a string or xarray')
-    #lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
-    interval=gcdelta*constants.deg2m/(numevalx-1) # interval in km
+    #lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude)
+    interval=gcdelta*constants.deg2m.magnitude/(numevalx-1) # interval in km
     radevalarr=np.linspace(radii[0],radii[1],numevalz) #radius arr in km
-    coords=np.array(mapping.getIntermediate(lat1,lng1,azimuth,gcdelta*constants.deg2m,interval))
+    coords=np.array(mapping.getIntermediate(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude,interval))
 
     if(len(coords) != numevalx):
         raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
@@ -673,7 +672,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     if width_ratios is None: width_ratios=[1,3]
 
     # Specify theta such that it is symmetric
-    #lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m)
+    #lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude)
     if gcdelta==180.:
         theta=[0.,gcdelta]
     elif gcdelta==360.:
@@ -871,7 +870,7 @@ def plot1hitmap(hitfile,dbs_path=tools.get_filedir(),projection='robin',lat_0=0,
     if ifshow: plt.show()
     fig.savefig(hitfile+outformat,dpi=300)
     return
-    
+
 def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format='.eps',isotropic=False,zoomdepth=None):
     """
     Plot the ref1d object array in a PREM like plot
@@ -895,7 +894,7 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
     ax01.plot(depthkmarr,ref1d.data['vph']/1000.,'r:')
     mantle=np.where( depthkmarr < 2891.)
     ax01.plot(depthkmarr[mantle],ref1d.data['eta'][mantle],'g')
-    ax01.set_xlim([0., constants.R/1000.])
+    ax01.set_xlim([0., constants.R.to('km').magnitude])
     ax01.set_ylim([0, 14])
 
     majorLocator = MultipleLocator(2)
@@ -918,7 +917,7 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
     for para,color,xloc,yloc in [("$\eta$",'g',1500.,2.),("$V_S$",'b',1500.,7.8),("$V_P$",'r',1500.,13.5),("$\\rho$",'k',1500.,4.5),("$V_P$",'r',4000.,9.2),("$\\rho$",'k',4000.,12.5),("$V_S$",'b',5500.,4.5)]:
         ax01.annotate(para,color=color,
         xy=(3, 1), xycoords='data',
-        xytext=(xloc/constants.R/1000., yloc/14.), textcoords='axes fraction',
+        xytext=(xloc/constants.R.to('km').magnitude, yloc/14.), textcoords='axes fraction',
         horizontalalignment='left', verticalalignment='top')
 
 
@@ -999,7 +998,7 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
         plt.show()
     else:
         plt.savefig(ref1d.name+format)
-        
+
 def plotmodel3d(model3d,lateral_basis='pixel1',dbs_path=tools.get_filedir(),x=0,percent_or_km='%',colormin = -6.,colormax=6.,depth=None,resolution=0,realization=0):
     """
     Plots interactively a model slice of a variable at a given depth till an

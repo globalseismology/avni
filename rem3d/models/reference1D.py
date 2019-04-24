@@ -22,6 +22,7 @@ import traceback
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
+from .. import tools
 from rem3d.f2py import getbullen
 #######################################################################################
 # 1D model class
@@ -82,7 +83,7 @@ class reference1D(object):
         modelarr = np.genfromtxt(file,dtype=None,comments='#',skip_header=3,names=fields)
         # Add depth assuming model describes from Earth center to surface
         fields.append('depth'); formats.append(np.float)
-        modelarr=append_fields(modelarr, 'depth', constants.R - modelarr['radius'], usemask=False)
+        modelarr=append_fields(modelarr, 'depth', constants.R.magnitude - modelarr['radius'], usemask=False)
         self.metadata['attributes'] = fields
         self.metadata['description'] = 'Read from '+file
         self.metadata['filename'] = file
@@ -152,7 +153,7 @@ class reference1D(object):
             if constants.planetpreferred == 'Earth':
                 file = self.metadata['filename']
                 layers = self.__nlayers__
-                grav,vaisala,bullen,pressure = getbullen(file,layers,constants.omega,constants.G)
+                grav,vaisala,bullen,pressure = getbullen(file,layers,constants.omega.to_base_units().magnitude,constants.G.to_base_units().magnitude)
                 # Add metadata
                 for field in ['gravity','Brunt-Vaisala','Bullen','pressure']: self.metadata['attributes'].append(field)
 
@@ -246,22 +247,10 @@ class reference1D(object):
 
             for ii in np.arange(parameters.size):
                 if parameters[ii] not in list(self.data.dtype.names):
-                    if 'SH-SV' in parameters[ii]:
-                        self.data=append_fields(self.data, parameters[ii], self.data['vsh'] - self.data['vsv'] , usemask=False)
-                    elif 'as' in parameters[ii]:
+                    if 'as' in parameters[ii]:
                         self.data=append_fields(self.data, parameters[ii], np.divide(self.data['vsh'] - self.data['vsv'],self.data['vs'],out=np.zeros_like(self.data['vs']), where= self.data['vs'] != 0.)*100. , usemask=False)
-                    elif 'PH-PV' in parameters[ii] or 'ap' in parameters[ii]:
-                        self.data=append_fields(self.data, parameters[ii], self.data['vph'] - self.data['vpv'] , usemask=False)
                     elif 'ap' in parameters[ii]:
                         self.data=append_fields(self.data, parameters[ii], np.divide(self.data['vph'] - self.data['vpv'],self.data['vp'],out=np.zeros_like(self.data['vp']), where= self.data['vp'] != 0.)*100. , usemask=False)
-                    elif '(SH+SV)*0.5' in parameters[ii]:
-                        self.data=append_fields(self.data, parameters[ii], (self.data['vsh'] + self.data['vsv'])/2. , usemask=False)
-                    elif '(PH+PV)*0.5' in parameters[ii]:
-                        self.data=append_fields(self.data, parameters[ii], (self.data['vph'] + self.data['vpv'])/2. , usemask=False)
-                    elif 'dETA/ETA' in parameters[ii]:
-                        self.data=append_fields(self.data, parameters[ii], self.data['eta'] , usemask=False)
-                    elif 'dRHO/RHO' in parameters[ii]:
-                        self.data=append_fields(self.data, parameters[ii], self.data['rho'] , usemask=False)
                     else:
                         raise NotImplementedError('parameter ',parameters[ii],' is not currently implemented in reference1D.get_custom_parameter')
         else:
@@ -272,20 +261,12 @@ class reference1D(object):
         Get the values of a parameter at a given depth
         '''
         values=None
-        if isinstance(depth_in_km, (list,tuple,np.ndarray)):
-            depth_in_km = np.asarray(depth_in_km)
-        elif isinstance(depth_in_km, float):
-            depth_in_km = np.asarray([depth_in_km])
-        elif isinstance(depth_in_km, int):
-            depth_in_km = np.asarray([float(depth_in_km)])
-        else:
-            raise TypeError('depth_in_km must be list or tuple, not %s' % type(depth_in_km))
-
+        depth_in_km = tools.convert2nparray(depth_in_km)
 
         if self.data is not None and self.__nlayers__ > 0:
             if parameter in self.data.dtype.names:
                 values = self.data[parameter]
-                depth_array = (constants.R - self.data['radius'])/1000. # in km
+                depth_array = (constants.R.to_base_units().magnitude - self.data['radius'])/1000. # in km
                 # Sort to make interpolation possible
                 indx = depth_array.argsort()
                 values = griddata(depth_array[indx], values[indx], depth_in_km, method=interpolation)

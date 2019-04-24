@@ -121,11 +121,11 @@ class radial_basis(object):
             depthtop = tools.convert2nparray(self.metadata['depthtop'])
             depthbottom = tools.convert2nparray(self.metadata['depthbottom'])
 
-            rtop = constants.R/1000. - depthtop
-            rbottom = constants.R/1000. - depthbottom
-            rquery = constants.R/1000. - depths
+            rtop = constants.R.to('km').magnitude - depthtop
+            rbottom = constants.R.to('km').magnitude - depthbottom
+            rquery = constants.R.to('km').magnitude - depths
             rrange = np.vstack((rbottom,rtop)).T
-            vercof, dvercof = tools.eval_polynomial(rquery,rrange,constants.R/1000.,types = ['CONSTANT'])
+            vercof, dvercof = tools.eval_polynomial(rquery,rrange,constants.R.to('km').magnitude,types = ['CONSTANT'])
         else:
             raise TypeError('metadata type not defined in eval_radial %s' % self.type)
 
