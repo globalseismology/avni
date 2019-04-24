@@ -445,13 +445,13 @@ class model3d(object):
                 # get the interpolation, summing over all resolutions
                 temp = tools.querytree3D(tree=tree,latitude=latitude,longitude=longitude,radius_in_km= constants.R/1000. - depth_in_km,values=modelarr,nearest=nearest)
                 if index == 0:
-                    values = temp
+                    values = temp.data
                 else:
-                    values = values + temp
-        if not interpolated:
+                    values = values + temp.data
+        if interpolated:
             return values, tree
         else:
-            return values.toarray()
+            return values
 
     def getpixeldepths(self,resolution,parameter):
         typehpar = self.metadata['resolution_'+str(resolution)]['typehpar']

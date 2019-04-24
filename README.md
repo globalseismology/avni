@@ -65,6 +65,7 @@ We maintain 3 major branches for our client libraries and these are relevant to 
 * `devel` — Active development occurs on this branch or in branches that spin off from this.  
 * `public` — Development for bug fixes happens here. We also bump versions and update the changelog on this branch.  
 * `master` — We squash commits from the release branch into single release commits on this branch as well as tagging releases.  
+
 New branches may be created for individual projects. Please clone the `devel` branch to build upon the latest codes  
 `git checkout -b new_branch devel`  
 You can push this locally created branch to the remote `globalseismology/rem3d` with  
