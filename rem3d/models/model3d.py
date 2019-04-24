@@ -448,7 +448,7 @@ class model3d(object):
                     values = temp
                 else:
                     values = values + temp
-        if not interpolated:
+        if interpolated:
             return values, tree
         else:
             return values.toarray()
