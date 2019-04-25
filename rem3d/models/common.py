@@ -21,11 +21,10 @@ from copy import deepcopy
 import ntpath
 import warnings
 import pandas as pd
-import pint # For SI units
-ureg = pint.UnitRegistry()
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
+from .. import constants
 from .reference1D import reference1D
 #######################################################################################
 
@@ -461,7 +460,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         elif mod_type == 'topography':
             #topo_folder = parser['parameters'][parameter]['folder']
             epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
-            depth = parser['parameters'][parameter]['depth']*ureg(parser['parameters'][parameter]['unit'])
+            depth = parser['parameters'][parameter]['depth']*constants.ureg(parser['parameters'][parameter]['unit'])
             depth.ito('km')
             ref_dict[parameter]['depth_in_km'] = float(depth.magnitude)
         else:

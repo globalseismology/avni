@@ -19,6 +19,9 @@ import ntpath #Using os.path.split or os.path.basename as others suggest won't w
 from copy import deepcopy
 from collections import Counter
 import traceback
+import pandas as pd
+import pdb
+import pint
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
@@ -78,22 +81,29 @@ class reference1D(object):
 
 
     def readmineoscards(self,file):
-        fields=['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
-        formats=[np.float for ii in range(len(fields))]
-        modelarr = np.genfromtxt(file,dtype=None,comments='#',skip_header=3,names=fields)
-        # Add depth assuming model describes from Earth center to surface
-        fields.append('depth'); formats.append(np.float)
-        modelarr=append_fields(modelarr, 'depth', constants.R.magnitude - modelarr['radius'], usemask=False)
-        self.metadata['attributes'] = fields
+        # Operations between PintArrays of different unit registry will not work.
+        # We can change the unit registry that will be used in creating new
+        # PintArrays to prevent this issue.
+        pint.PintType.ureg = constants.ureg
+
+        names=['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
+        units =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
+        fields=list(zip(names,units))
+        #formats=[np.float for ii in range(len(fields))]
+        # modelarr = np.genfromtxt(file,dtype=None,comments='#',skip_header=3,names=fields)
+        modelarr = pd.read_csv(file,skiprows=3,comment='#',sep='\s+',names=fields)
+        # read the punit units from last header
+        modelarr_ = modelarr.pint.quantify(level=-1)
+        self.metadata['attributes'] = names
         self.metadata['description'] = 'Read from '+file
         self.metadata['filename'] = file
         self.name = ntpath.basename(file)
         self.__nlayers__ = len(modelarr['radius'])
         # Create data array
-        Model1D_Attr = np.dtype([(native_str(fields[ii]),formats[ii]) for ii in range(len(fields))])
-        self.data = np.zeros(self.__nlayers__,dtype=Model1D_Attr)
-        for key in modelarr.dtype.names: self.data[key] = modelarr[key]
-        self.radius_max = np.max(self.data['radius'])
+        PA_ = pint.PintArray
+        modelarr_['depth'] = PA_((constants.R.magnitude - modelarr_['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
+        self.data = modelarr_
+        self.radius_max = max(self.data['radius']).magnitude
 
     def get_Love_elastic(self):
         '''
@@ -118,22 +128,26 @@ class reference1D(object):
             for field in ['A','C','N','L','F','vp','vs','vphi','xi','phi','Zp','Zs']: self.metadata['attributes'].append(field)
 
             # Add data fields
-            self.data=append_fields(self.data, 'A', self.data['rho']*self.data['vph']**2 , usemask=False)
-            self.data=append_fields(self.data, 'C', self.data['rho']*self.data['vpv']**2 , usemask=False)
-            self.data=append_fields(self.data, 'N', self.data['rho']*self.data['vsh']**2 , usemask=False)
-            self.data=append_fields(self.data, 'L', self.data['rho']*self.data['vsv']**2 , usemask=False)
-            self.data=append_fields(self.data, 'F', self.data['eta']*(self.data['A']-2.*self.data['L']) , usemask=False)
-            self.data=append_fields(self.data, 'kappa', (4.0*(self.data['A']+self.data['F']-self.data['N'])+self.data['C'])/9. , usemask=False)
-            self.data=append_fields(self.data, 'mu', (self.data['A']+self.data['C']-2.*self.data['F']+5.*self.data['N']+6.*self.data['L'])/15. , usemask=False)
-            self.data=append_fields(self.data, 'vp', np.sqrt(np.divide((self.data['kappa']+4.*self.data['mu']/3.),self.data['rho'])) , usemask=False)
-            self.data=append_fields(self.data, 'vs', np.sqrt(np.divide(self.data['mu'],self.data['rho'])) , usemask=False)
-            self.data=append_fields(self.data, 'vphi', np.sqrt(np.divide(self.data['kappa'],self.data['rho'])) , usemask=False)
-            with np.errstate(divide='ignore', invalid='ignore'): # Ignore warning about dividing by zero
-                xi = np.power(np.divide(self.data['vsh'],self.data['vsv']),2)
-            self.data=append_fields(self.data, 'xi', xi , usemask=False)
-            self.data=append_fields(self.data, 'phi', np.power(np.divide(self.data['vpv'],self.data['vph']),2) , usemask=False)
-            self.data=append_fields(self.data, 'Zp', self.data['vp']*self.data['rho'], usemask=False)
-            self.data=append_fields(self.data, 'Zs', self.data['vs']*self.data['rho'], usemask=False)
+            self.data['A'] = self.data['rho']*self.data['vph']**2
+            self.data['C'] = self.data['rho']*self.data['vpv']**2
+            self.data['N'] = self.data['rho']*self.data['vsh']**2
+            self.data['L'] = self.data['rho']*self.data['vsv']**2
+            self.data['F'] = self.data['eta']*(self.data['A']-2.*self.data['L'])
+
+            # equivalent isotropic
+            self.data['kappa'] = (4.0*(self.data['A']+self.data['F']-self.data['N'])+self.data['C'])/9.
+            self.data['mu'] = (self.data['A']+self.data['C']-2.*self.data['F']+5.*self.data['N']+6.*self.data['L'])/15.
+            self.data['vp'] = ((self.data['kappa']+4.*self.data['mu']/3.)/self.data['rho']).pow(0.5)
+            self.data['vs'] = (self.data['mu']/self.data['rho']).pow(0.5)
+            self.data['vphi'] = (self.data['kappa']/self.data['rho']).pow(0.5)
+
+            # anisotropy
+            self.data['xi'] = (self.data['vsh'].div(self.data['vsv'])).pow(2)
+            self.data['phi'] = (self.data['vpv'].div(self.data['vph'])).pow(2)
+
+            # impedance contrasts
+            self.data['Zp'] = self.data['vp']*self.data['rho']
+            self.data['Zs'] = self.data['vs']*self.data['rho']
         else:
             raise ValueError('reference1D object is not allocated')
 
@@ -158,6 +172,7 @@ class reference1D(object):
                 for field in ['gravity','Brunt-Vaisala','Bullen','pressure']: self.metadata['attributes'].append(field)
 
                 # Add data fields
+                pdb.set_trace()
                 self.data=append_fields(self.data, 'gravity', grav, usemask=False)
                 self.data=append_fields(self.data, 'Brunt-Vaisala', vaisala, usemask=False)
                 self.data=append_fields(self.data, 'Bullen', bullen, usemask=False)
@@ -182,26 +197,31 @@ class reference1D(object):
 
         contrasts: containing contrast in attributes (in %)
         '''
-
-        disc_depths = [item for item, count in Counter(self.data['depth']).items() if count > 1]
+        disc_depths = [item.magnitude for item, count in Counter(self.data['depth']).items() if count > 1]
         disc = {}
 # Create a named array for discontinuities
-        disc['delta'] = np.zeros(len(np.unique(disc_depths)),dtype=self.data.dtype)
-        disc['contrast'] = np.copy(disc['delta']);disc['average'] = np.copy(disc['delta'])
 
-        icount  = 0
-        for depth in np.unique(disc_depths):
-            sel = self.data[np.where(self.data['depth']==depth)]
-            for field in self.data.dtype.names:
+        for field in ['delta','average']: disc[field] = self.data.copy().drop(range(len(np.unique(disc_depths)),len(self.data)))
+
+        # default names and units as percent
+        names = self.data.columns.tolist()
+        units = ['percent' for name in names]
+        fields=list(zip(names,units))
+
+        for icount,depth in enumerate(disc_depths):
+            sel = self.data[self.data['depth'].data==depth]
+            for field in sel:
                 if field == 'radius' or field == 'depth':
-                    disc['delta'][field][icount] = sel[0][field]
-                    disc['average'][field][icount] = sel[0][field]
-                    disc['contrast'][field][icount] = sel[0][field]
+                    disc['delta'][field][icount] = sel[field].iat[0]
+                    disc['average'][field][icount] = sel[field].iat[0]
+                    disc['contrast'][field][icount] = sel[field].iat[0]
                 else:
-                    disc['delta'][field][icount] = sel[0][field]-sel[1][field]
-                    disc['average'][field][icount] = 0.5*(sel[0][field]+sel[1][field])
-                    disc['contrast'][field][icount] = abs(disc['delta'][field][icount]) / disc['average'][field][icount]*100.
-            icount = icount+1
+                    disc['delta'][field][icount] = sel[field].iat[0]-sel[field].iat[1]
+                    disc['average'][field][icount] = 0.5*(sel[field].iat[0]+sel[field].iat[1])
+                    pdb.set_trace()
+                    ## contrasts need to be in %
+                    contrast = (abs(disc['delta'][field][icount]) / disc['average'][field][icount]).to('percent')
+                    disc['contrast'][field][icount] = (abs(disc['delta'][field][icount]) / disc['average'][field][icount]).to('percent')
 
 
         #---- try to find discontinuities
@@ -235,7 +255,6 @@ class reference1D(object):
         if itopmantle >0: disc['itopmantle'] = itopmantle
 
         self.metadata['discontinuities'] = disc
-
 
     def get_custom_parameter(self,parameters):
         '''
