@@ -227,10 +227,9 @@ class model3d(object):
         if len(ds.dims) == 3:
             _ , nlat, nlon = ds[data_keys[0]].shape
             for ilat in range(nlat):
-                for ilon in range(nlon):
-                    metadata['xlapix'][0][indx] = ds[data_keys[0]][idep,ilat,ilon].latitude
-                    metadata['xlopix'][0][indx] = ds[data_keys[0]][idep,ilat,ilon].longitude
-                    indx += 1
+                metadata['xlapix'][0][indx:indx+nlon]=ds[data_keys[0]][idep,ilat,:].latitude.values
+                metadata['xlopix'][0][indx:indx+nlon]=ds[data_keys[0]][idep,ilat,:].longitude.values
+                indx += nlon
         else:
             raise ValueError('dimensions != 3')
 
@@ -250,29 +249,39 @@ class model3d(object):
         ## create keys
         metadata['numvar']=len(data_keys)
         metadata['varstr']=np.array(data_keys, dtype='<U150')
-        desckern = []; ivarkern = []; icount=0; coef=None
+
+        # pre-allocate coef array. final shape is (n_depths, nlat*nlon).
+        # n_depth for topo keys differ from others
+        coef_ndepth=0
+        coef_nlatnon=nlat*nlon
+        for key in data_keys:
+            if 'topo' in key:
+                coef_ndepth=coef_ndepth+1
+            else:
+                ndepth , nlat, nlon = ds[key].shape
+                coef_ndepth=coef_ndepth+ndepth
+        coef=np.zeros([coef_ndepth,nlat*nlon])
+
+        desckern = []; ivarkern = []; icount=0; idepth=0
         for key in data_keys:
             icount = icount+1
             if 'topo' in key:
                 depth_range = key.split('topo')[1]
                 nlat, nlon = ds[key].shape
                 descstring = u'{}, delta, {} km'.format(key,depth_range)
-                try:
-                    coef = np.vstack([coef,ds[key].values.flatten()])
-                except:
-                    coef = ds[key].values.flatten()
+                coef[idepth,:]=ds[key].values.flatten()
+                idepth=idepth+1
                 desckern.append(descstring)
                 ivarkern.append(icount)
             else:
-                _ , nlat, nlon = ds[key].shape
+                ndepth , nlat, nlon = ds[key].shape
                 for ii,_ in enumerate(deptop):
                     descstring = u'{}, boxcar, {} - {} km'.format(key,deptop[ii],depbottom[ii])
-                    try:
-                        coef = np.vstack([coef,ds[key][ii].values.flatten()])
-                    except:
-                        coef = ds[key][ii].values.flatten()
                     desckern.append(descstring)
                     ivarkern.append(icount)
+                coef[idepth:idepth+ndepth,:]=np.reshape(ds[key].values,[ndepth,nlat*nlon])
+                idepth=idepth+ndepth
+
         metadata['desckern']=np.array(desckern, dtype='<U150')
         metadata['nmodkern']=len(desckern); metadata['ivarkern']=np.array(ivarkern)
         metadata['ihorpar']=np.ones(len(desckern),dtype = np.int)
