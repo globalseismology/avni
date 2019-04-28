@@ -49,7 +49,7 @@ script:
   # Add the required command for testing here
   - cd tests
   - python test_grab_server_data.py
-  - if diff ./S362ANI+M.vs.5.epix ./Outputs/S362ANI+M.vs.5.epix ; then
+  - if diff ./S362ANI+M.vs.5.epix ./outputs/S362ANI+M.vs.5.epix ; then
       echo "Build successful";
     else
       echo "Build failed";
