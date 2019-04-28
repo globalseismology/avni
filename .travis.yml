@@ -10,7 +10,6 @@ branches:
     - devel
     - travis
 
-
 before_install:
   # print the distro information
   - lsb_release -a
@@ -45,3 +44,6 @@ script:
       echo "Build failed";
       exit 1;
     fi
+    
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
