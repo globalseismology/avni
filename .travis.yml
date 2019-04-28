@@ -38,7 +38,7 @@ script:
   # Add the required command for testing here
   - cd rem3d/examples/Tests
   - python grab_server_data.py
-  - if diff ./S362ANI+M.vs.5.epix ./Output/S362ANI+M.vs.5.epix ; then
+  - if diff ./S362ANI+M.vs.5.epix ./Outputs/S362ANI+M.vs.5.epix ; then
       echo "Build successful";
     else
       echo "Build failed";
