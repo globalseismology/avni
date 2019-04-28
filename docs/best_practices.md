@@ -3,7 +3,8 @@ Table of Contents
 
   1. [Use *issues* to discuss intended modifications](#use-issues-to-discuss-any-intended-modifications)
   2. [Document your code](#document-your-code)
-  3. [Coding style](#coding-style)
+  3. [Test your code](#test-your-code)
+  4. [Coding style](#coding-style)
   	* [Python](#python-formatting)
   	* [Fortran](#fortran-formatting)
 
@@ -26,8 +27,14 @@ REM3D's issue tracker interface lets us track bugs being fixed and enhancements 
 Document your code
 ------------------
 
-Any new code should be fully Doxygen commented in [Python](#python-formatting) or [fortran](#fortran-formatting). If you have some free time, feel free to comment any code you modify.
+Any new code should be fully Doxygen commented in [Python](#python-formatting) or [fortran](#fortran-formatting). If you have some free time, feel free to comment any code you modify. 
 
+Test your code
+------------------
+
+[![Build Status](https://travis-ci.com/globalseismology/rem3d.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=devel)](https://travis-ci.com/globalseismology/rem3d) [![codecov](https://codecov.io/gh/globalseismology/rem3d/branch/devel/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/rem3d)
+
+Any new code should be tested with unit tests kept in the [tests](../tests) folder. Note that we use [coverage.py](https://coverage.readthedocs.io) for testing so all files and routines should be named test_*. We attempt to keep coverage above 90% on our development builds.
 
 Coding style
 ------------
