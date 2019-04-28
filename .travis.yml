@@ -9,6 +9,7 @@ branches:
   only:
     - devel
     - travis
+    - master
 
 before_install:
   # print the distro information
@@ -62,6 +63,17 @@ script:
 after_success:
   #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
   - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
+
+# deploy to pypi-test from master when tagged
+deploy:
+  provider: pypi
+  server: https://test.pypi.org/legacy/ # Remove for deployment to official PyPi repo 
+  user: pmoulik
+  password:
+    secure: "tOx/5080t8weII1Cf8ElL4uaEsGVPZGDiPCMfg0Muae9D9SJ14sTz41rb8wnx7ilhs9p4jxRImqneUD7Hv4gJcwX57XQzKvOnjd3l/droARCYBu67v2283u9ShHk+glEZS1HUqhtSQN9KTgTChdKAZgpfp61Ox17VWt65r24S8GBtnlX5hBX5pRGYhwM6PgAa+3QcwdLrCr8D0a0sbQOpQiZV+ZYdeumKhIGOnGe22/N4teHgAQKlPcsMSX7MjnHSDgHXLvFr7gLvDQhAzcCqCy0bcbvRyuVbpy5c1O43TtMlyrYOALThLO4jw6a49sF4fSw8QGwPTKXeQZIhvxqIqgpOb3ptGBL1sb4emj1IVIl2J6txwk96X/OMju8vIFfNd4hblf6x4stw1AFsYX3PYO5K+26nlanMm/OhhBiVxLH3X1vLSfO2+R+n2k/jZ7ie04tsOlfLlqTiwY2F50z3YQEZXRuDP2073w+MLYk3BPYruBMjPrk8AulpnYCtsDC5i3AomeJ+X8cBEGF7dwOI1cRbgw2UYK2xAggY0dwCg/BKBDve3AQQ2SJcIUUiHF5qdaSvJQBht1d8zHNongv6X4PJeVt51esQCnZflNCAP9Q506Yl5h6FatFjGrfJtknjQG1r/1PX1KfJ8WXQoljlTfwdl92KSvwUbzGV77AV3g="
+  on:
+    branch: master
+    tags: true
 
 # Slack notification
 notifications:
