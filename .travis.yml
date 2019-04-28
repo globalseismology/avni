@@ -23,13 +23,21 @@ before_install:
   - export F90=gfortran
   - conda update --yes conda
 
+env:
+  - CODECOV_TOKEN=780b4864-10db-46f6-8118-3a93665c8546
+
 install:
+  # Make environment and activate
   - conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION
   - source $HOME/miniconda/etc/profile.d/conda.sh
   - source activate rem3d
-  - conda install --yes netcdf4 basemap basemap-data-hires
+  
+  # Install REM3D requirements
+  - conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires
+  
+  # This is for coverage testing
+  - conda install --yes -c conda-forge codecov pytest-cov pytest
   - pip install python-slugify
-  - pip install codecov
     
 script:
   # Running pip install -e . --user directly causes errors
@@ -37,7 +45,7 @@ script:
   - cd ..
   - pip install -e rem3d --user
   # Add the required command for testing here
-  - cd rem3d/examples/Tests
+  - cd rem3d/tests
   - python grab_server_data.py
   - if diff ./S362ANI+M.vs.5.epix ./Outputs/S362ANI+M.vs.5.epix ; then
       echo "Build successful";
@@ -46,5 +54,8 @@ script:
       exit 1;
     fi
     
+    pytest --cov-report term --cov=./
+    
 after_success:
-  - codecov -t 780b4864-10db-46f6-8118-3a93665c8546
+  #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
+  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
