@@ -1,0 +1,35 @@
+sudo: required
+dist: xenial
+
+language: python
+python:
+  - "3.7"
+
+branches:
+  only:
+    - devel
+
+
+before_install:
+  # print the distro information
+  - lsb_release -a
+
+  # Here we just install Miniconda, which you shouldn't have to change.
+  - sudo apt install -y gfortran
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - export F90=gfortran
+  - conda update --yes conda
+
+install:
+  - conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION
+  - source $HOME/miniconda/etc/profile.d/conda.sh
+  - source activate rem3d
+  - conda install --yes netcdf4 basemap basemap-data-hires
+  - pip install python-slugify
+
+script:
+  - cd rem3d
+  - pip install -e . --user
+  # Add the required command for testing here
