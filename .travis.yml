@@ -28,6 +28,9 @@ env:
     # CODECOV_TOKEN
     # travis encrypt CODECOV_TOKEN="secretvalue"
     secure: "jb9II2WjGCIww4E1ULr6JhIj1WhcmwDlXOWqA9ld6C+UPqYePPb670vQk3pUmUdwSsqXXlvbVjVhse0KRsdFOhac5FmS3j6LjXn4H14jJNQU3gZIXt4Fz1ND0Z2qWsfzCa95VNqNfgLZI/PFMxmwSlBe8H/GQ/T7OaFFQaFNYVz70VnHW9PceRfCISVcCzCh3+LEO9AKz4YdR8Ac1GWcrt313pDIB3PFneIx5kRDeC9ckrnlkPPA186Mq7kICZTq65luNGwsLRvO81dmQ0JooP8mEsckaaozTlUyeQHwI8y3Vit89otaraWlELCloKT63sHmOzywgkCvJMbg8L+4XfJGIZEFKk3ZQd2f1nVuO50+Ajys/PBWlbV2x4nwmBPxMumP4r2m9XJUm8SP9p1LdaMq/bnCW+X0jgS0MUPJzF9rpjKYFVLd6fxgl7gVz0lhc/0Tgf8mu+48C3aaKLTkHsKwHuXfEm8wob5f9gKeqVqZuml8j1ZqpcB86zB+gqvq4LJy0+wmSQRVmM1FeuFjoxL008wqWD1DDO0Gu8vWFt2AjxIZjspCGgnOCq2TQCYQehr9vgeXPEwJEim9+dQBWpBIlz6ycFBLs1AwmRofRs6dNnI00dkUp9iZakJ+md05F7FocZ6/kpCLJTbJzjE382WSeOL7P1vMYSNIAoGQbxQ="
+    # CODECOV_SLACK_WEBHOOK
+    # travis encrypt CODECOV_SLACK_WEBHOOK="https://hooks.slack.com/services/*"
+    secure: "QbRfPAgGZ1xVNEu59hX/DPj7/slbflIIRamnAvaxlbuqyDsG6QZYo9TBo5BZ1keTkmvd949zwDkX2RB33tjxE1ifAS0MF3EA1pJgMbzLFBfKV6EAfamQVlc7tmeLGvpNbbBAqKtNYMhnOBtZ5wwgH4soMCMUXVmfy49gL24vRLTuxdULrIVaXteNSCZQdbvg5qOLxo7fzXqLL1WZTGfpbA0RpZtTxNWBeFO5q655hiBOH9VKzHnr2VtYtjAYkpXaAr5+iKEAESbzTCg8QzC8qOcRNAT842LZwoFtlwAYV3GRqjvbZ/Khr5GA2xqG0ndqSxkeSXg3D7WfC9NT9dVEeKvpoFjetqNWDImghxIgBzHCV7nsXkDUlbGX18hLzUA3xAieJDUnD8gqv9pSoTAei6Syps353oxDk+lRp5WWnku2A3SVjZMl6d/Ep73dhJKwq+Z2Kto58GBHD77aWS3QHQeQkQn0LbOqLafUno4cWhL2n7+HJjv6DTKSSaJ8r9COU4dHrjqz8FWVdqo63ClF7PKnHKhyV40B5DI3LimEEIZ0aEtMKG6sFK7td1VUceVPjvbH3rc00SQ5gtFC6g8FUt04NvnhBvS+0VTqy9l1wgAklt7O8n7EObq4zSdG5F188VaK5ZtC7LNxVLZg+8hUOMqwP2hPXkIAIXS7QA/RQqk="
 
 install:
   # Make environment and activate
@@ -70,3 +73,15 @@ notifications:
       # build channel
       - secure: "gBQV5Uwq/PuIKbFgWms7r11Wz34xT8PhTPXqOtwliSEZ+I/3z/itwkrtlIpW8Rz0DQpwIaSd4PXFJpeb4HUUS8aHUeJzNvic+BrTdHm7zahyzHyNF2EyKK3OUBLb32A4iRqNyAra00bE9TpMW64jCI9O1u2WnMKbOjdBVQDYw/tHgCaMusSuz51sjviWKMWfBircWuqx7YkJcdTLghDX9/6As7+mo150LirdMu73M909KFjP4xrHIcC+6BNd66zTdoVhMLmn/E1oJWiAvjArSdqX/CQYz6+6pLXC/B1qrQMhglB8CfQKrd/LgCdVjKHNynC6OldvwncpEkXVK8R+qsavcelxeNzwhJLGpHK344iJts++p8uhZfmPA2XQc1zBfU/nuDBqc8qhQmc7dq7CRsR2ilEi8YM1VN+4PoQ7hk+I1xyeJFcj6cheT3JaPyzxy9vSDzAT/fBbV8+FLByEvv54z6NDcK2BDuJBobZT0p/WN5dtFB1w8UIV7oliR/eCdFb21yQFsuyScP3GiKvD5/oZLcfkRfNj802o4djRxSdQskRk9zzDPhfWIFHmcqLQmG0JHxz+IjgQ9YEAxi3WzJFb//spC88Z1aRV4w5fY3p1SR/YhrAbrrmR403taIkWwotcEBrGi+RB5UH+kOWBOxZB0WvrfyHs5gh7cbX0LAg="
     on_success: always  
+  
+# Codecov notification on Slack  
+coverage:
+  notify:
+    slack:
+      default:
+        url: $CODECOV_SLACK_WEBHOOK
+        threshold: 1%
+        only_pulls: false
+        branches: null
+        flags: null
+        paths: null
