@@ -8,14 +8,16 @@ python:
 branches:
   only:
     - devel
+    - travis
 
 
 before_install:
   # print the distro information
   - lsb_release -a
+  - sudo apt-get update -qq
+  - sudo apt-get install -y gfortran
 
   # Here we just install Miniconda, which you shouldn't have to change.
-  - sudo apt install -y gfortran
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -30,6 +32,16 @@ install:
   - pip install python-slugify
 
 script:
-  - cd rem3d
-  - pip install -e . --user
+  # Running pip install -e . --user directly causes errors
+  # Refer https://jeetblogs.org/post/strange-uninstall-failures-when-running-pip-install-in-editable-mode/
+  - cd ..
+  - pip install -e rem3d --user
   # Add the required command for testing here
+  - cd rem3d/examples/Scripts
+  - python grab_server_data.py
+  - if diff ./S362ANI+M.vs.5.epix ../Output/S362ANI+M.vs.5.epix ; then
+      echo "Build successful"
+    else
+      echo "Build failed"
+      exit 1
+    fi
