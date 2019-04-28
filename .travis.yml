@@ -28,9 +28,6 @@ env:
     # CODECOV_TOKEN
     # travis encrypt CODECOV_TOKEN="secretvalue"
     secure: "jb9II2WjGCIww4E1ULr6JhIj1WhcmwDlXOWqA9ld6C+UPqYePPb670vQk3pUmUdwSsqXXlvbVjVhse0KRsdFOhac5FmS3j6LjXn4H14jJNQU3gZIXt4Fz1ND0Z2qWsfzCa95VNqNfgLZI/PFMxmwSlBe8H/GQ/T7OaFFQaFNYVz70VnHW9PceRfCISVcCzCh3+LEO9AKz4YdR8Ac1GWcrt313pDIB3PFneIx5kRDeC9ckrnlkPPA186Mq7kICZTq65luNGwsLRvO81dmQ0JooP8mEsckaaozTlUyeQHwI8y3Vit89otaraWlELCloKT63sHmOzywgkCvJMbg8L+4XfJGIZEFKk3ZQd2f1nVuO50+Ajys/PBWlbV2x4nwmBPxMumP4r2m9XJUm8SP9p1LdaMq/bnCW+X0jgS0MUPJzF9rpjKYFVLd6fxgl7gVz0lhc/0Tgf8mu+48C3aaKLTkHsKwHuXfEm8wob5f9gKeqVqZuml8j1ZqpcB86zB+gqvq4LJy0+wmSQRVmM1FeuFjoxL008wqWD1DDO0Gu8vWFt2AjxIZjspCGgnOCq2TQCYQehr9vgeXPEwJEim9+dQBWpBIlz6ycFBLs1AwmRofRs6dNnI00dkUp9iZakJ+md05F7FocZ6/kpCLJTbJzjE382WSeOL7P1vMYSNIAoGQbxQ="
-    # CODECOV_SLACK_WEBHOOK
-    # travis encrypt CODECOV_SLACK_WEBHOOK="https://hooks.slack.com/services/*"
-    secure: "YXp78kbNfq5s5OgP3uvAt5FOCq00xIyeeXZ72N8++QE7klqubuqvbvowujAsDQE+u2Rh1ZgG0+r0/5CgwfkMYXq5roSppqaDObNGhGYv6qHZhYcjUR4v7eZ+Jtxp2n4aJUb9vG2vYa2KS5LxwhBRvG0F0NQaE5RcQVRK48FRFUCJeHWFHJQ4Jyh1LzbmY9nVoPbbPcnYJy8W5oOM2AJfaAb0YuQVe6JolSQtxPtPn7nqmSBYfXDl8K4jakRbBmJEEeVxGodyVTxb4mzOTFjO2q9U1zf0nnwhs6HpKxpDDaFmNEAJuahWgjRSHb6FLJDRPVe9y9gUeyDeEkhhXOdxGWiXKoew0UBtwnrBS1QBUDRQqnQRotdfMBgH5BJdTUYKmW1gYdDGLOSbkA/EasVG8NkZhxhXVMfruuMVatCTkmXp4GKryI3qM38dwN7t95sMGaTuU9psGTd8qrJ/waae3RbofOXBB4k4VzEmK1jNaajllJ+t7AdXtYTPnjODYgBTKKLSNk0B9RCsX2bYn9EK7hPy6xg/8Fi/5TdN8YOYZx3DBZVP8y/ypRixcuBK8PoYPHsI02Yaqz3B1NJJvsIR4T5afl3gU1lmdW/7OMpqt87snRCvwBsFrIilX+dCMa5YSbc/bqxM2NOSZNpzBv/Uu0VcTkBKfzQI3AbthkC40VE="
   
 install:
   # Make environment and activate
@@ -68,20 +65,14 @@ after_success:
 
 # Slack notification
 notifications:
+  email: false    # default notification method
   slack:
     rooms:
       # build channel
       - secure: "gBQV5Uwq/PuIKbFgWms7r11Wz34xT8PhTPXqOtwliSEZ+I/3z/itwkrtlIpW8Rz0DQpwIaSd4PXFJpeb4HUUS8aHUeJzNvic+BrTdHm7zahyzHyNF2EyKK3OUBLb32A4iRqNyAra00bE9TpMW64jCI9O1u2WnMKbOjdBVQDYw/tHgCaMusSuz51sjviWKMWfBircWuqx7YkJcdTLghDX9/6As7+mo150LirdMu73M909KFjP4xrHIcC+6BNd66zTdoVhMLmn/E1oJWiAvjArSdqX/CQYz6+6pLXC/B1qrQMhglB8CfQKrd/LgCdVjKHNynC6OldvwncpEkXVK8R+qsavcelxeNzwhJLGpHK344iJts++p8uhZfmPA2XQc1zBfU/nuDBqc8qhQmc7dq7CRsR2ilEi8YM1VN+4PoQ7hk+I1xyeJFcj6cheT3JaPyzxy9vSDzAT/fBbV8+FLByEvv54z6NDcK2BDuJBobZT0p/WN5dtFB1w8UIV7oliR/eCdFb21yQFsuyScP3GiKvD5/oZLcfkRfNj802o4djRxSdQskRk9zzDPhfWIFHmcqLQmG0JHxz+IjgQ9YEAxi3WzJFb//spC88Z1aRV4w5fY3p1SR/YhrAbrrmR403taIkWwotcEBrGi+RB5UH+kOWBOxZB0WvrfyHs5gh7cbX0LAg="
-    on_success: always  
-  
-# Codecov notification on Slack  
-coverage:
-  notify:
-    slack:
-      default:
-        url: $CODECOV_SLACK_WEBHOOK
-        threshold: 1%
-        only_pulls: false
-        branches: null
-        flags: null
-        paths: null
+    on_success: always  # change: send a notification when the build status changes.
+    on_failure: always  # always: always send a notification.
+    template:
+      - "Repo `%{repository_slug}` *%{result}* build (<%{build_url}|#%{build_number}>) for commit (<%{compare_url}|%{commit}>) on branch `%{branch}`."
+      - "Execution time: *%{duration}*"
+      - "Message: %{message}"

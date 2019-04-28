@@ -1,0 +1,12 @@
+# Codecov notification on Slack  
+coverage:
+  notify:
+    slack:
+      default:
+        url: 
+           secret:ukCTVFHMOQS3tIJ9ZTuG8cPhtDktijRlJcHFHKjihyC2A6TVqre85t26G9jpXt6+fiMPpEP+m5d+RKPWq7kb2iiCn92KBl5AtYyZoHVijG7fBpxLTAX3/ZkY5NkBSGnBVrj+p5aGb/TfLn/3iUzOpNtFFGixJu5nWiGAeWYae+0=
+        threshold: 1%
+        only_pulls: false
+        branches: null
+        flags: null
+        paths: null
