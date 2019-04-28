@@ -40,8 +40,8 @@ script:
   - cd rem3d/examples/Scripts
   - python grab_server_data.py
   - if diff ./S362ANI+M.vs.5.epix ../Output/S362ANI+M.vs.5.epix ; then
-      echo "Build successful"
+      echo "Build successful";
     else
-      echo "Build failed"
-      exit 1
+      echo "Build failed";
+      exit 1;
     fi
