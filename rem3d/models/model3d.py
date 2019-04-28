@@ -26,63 +26,66 @@ import pandas as pd
 from .. import tools
 from .. import constants
 from .common import read3dmodelfile
-from .kernel_set import kernel_set
+from .kernel_set import Kernel_set
+from .realization import Realization
 #######################################################################################
 
 # 3D model class
-class model3d(object):
+class Model3D(object):
     '''
     A class for 3D reference Earth models used in tomography
     '''
+    #########################       magic       ##########################
     def __init__(self,file=None,**kwargs):
         self.metadata ={}
         self.data = {}
-        self.name = None
-        self.type = None
-        self.refmodel = None
-        self.description = None
-        self.add_resolution(realization=True)
-        if file is not None:
-            if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
-            try:# try hdf5 for the whole ensemble
-                success1 = True
-                hf = h5py.File(file, 'r')
-                if kwargs:
-                    self.readhdf5(hf,**kwargs)
-                else:
-                    self.readhdf5(hf)
-                self.description = "Read from "+file
-                self.infile = file
-                hf.close()
-            except: # try netcdf or ascii for a single model
-                try: #first close the hdf5 if opened with h5py above
-                    hf.close()
-                except NameError:
-                    hf = None
-                success1 = False
-                var1 = traceback.format_exc()
-                try:
-                    if kwargs:
-                        success2 = self.read(file,resolution=0,realization=0,**kwargs)
-                    else:
-                        success2 = self.read(file,resolution=0,realization=0)
-                except:
-                    print(var1)
-            if not success1 and not success2: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
-            # try to get the kernel set
-            for resolution in self.metadata.keys():
-                try:
-                    self.metadata[resolution]['kernel_set'] = kernel_set(self.metadata[resolution])
-                except:
-                    print('Warning: Kernelset could not initialized for'+str(resolution))
+        self._name = None
+        self._type = None
+        self._infile = None
+        self._refmodel = None
+        self._description = None
+        #self._add_resolution(realization=True)
+        if file is not None: self._read(file,**kwargs)
 
     def __str__(self):
-        if self.name is not None:
-            output = "%s is a three-dimensional model ensemble with %s resolution levels, %s realizations of %s type and %s as the reference model" % (self.name,len(self.metadata), len(self.data['resolution_0']),self.type,self.refmodel)
+        if self._name is not None:
+            output = "%s is a three-dimensional model ensemble with %s resolution levels, %s realizations of %s type and %s as the reference model" % (self._name,self.num_resolutions, len(self.data['resolution_0']),self._type,self._refmodel)
         else:
             output = "No three-dimensional model has been read into this model3d instance yet"
         return output
 
+    def __repr__(self):
+        return '{self.__class__.__name__}({self._infile})'.format(self=self)
+
+    def __len__(self):
+        return len(self.metadata)
+        
+    def __getitem__(self,key):
+        """returns data and metadata from key, a tuple of (resolution, realization)"""
+        key = tools.convert2nparray(key,int2float=False)
+        # if only first index, return metadata for the resolution,
+        if not len(key) in [1,2] : raise AssertionError()
+        metadata = self.metadata['resolution_'+str(key[0])]
+        if len(key) == 1:
+            return metadata
+        else:
+            data = self.data['resolution_'+str(key[0])]['realization_'+str(key[1])]
+            return data
+    
+    def __setitem__(self,key,data):
+        """sets (data, metadata) data_meta to key, a tuple of (resolution, realization)"""
+        self.data['resolution_'+str(key[0])]['realization_'+str(key[1])] = data
+        return
+        
+    def __setitem__(self,key,data):
+        """sets (data, metadata) data_meta to key, a tuple of (resolution, realization)"""
+        if isinstance(key, (int,np.int64)): 
+            self.metadata['resolution_'+str(key)] = data
+        elif isinstance(key, tuple):
+            self.data['resolution_'+str(key[0])]['realization_'+str(key[1])] = data
+        else:
+            raise TypeError('invalid input type for model3d')
+                
     def __copy__(self):
         cls = self.__class__
         result = cls.__new__(cls)
@@ -97,202 +100,95 @@ class model3d(object):
             setattr(result, k, deepcopy(v, memo))
         return result
 
-    def add_realization(self,resolution=None,name=None,coef=None):
+    #########################       decorators       ##########################
+    @property
+    def num_resolutions(self):
+        return len(self.metadata)
+
+    @property
+    def num_realizations(self):
+        output = []
+        for res in self.metadata: output.append(len(self.data[res]))
+        return output
+    #########################       methods       #############################
+    
+    def _read(self,file,**kwargs):
+        if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
+        try:# try hdf5 for the whole ensemble
+            success1 = True
+            hf = h5py.File(file, 'r')
+            if kwargs:
+                self._readhdf5(hf,**kwargs)
+            else:
+                self._readhdf5(hf)
+            self._description = "Read from "+file
+            self._infile = file
+            hf.close()
+        except: # try netcdf or ascii for a single model
+            try: #first close the hdf5 if opened with h5py above
+                hf.close()
+            except NameError:
+                hf = None
+            success1 = False
+            success2 = True
+            var1 = traceback.format_exc()
+            try:
+                realization = Realization(file)
+                # store in the last resolution
+                self._add_resolution(metadata=realization.metadata)
+                self._add_realization(coef=realization.data,name=realization._name)
+                self._name = realization._name
+                self._type = 'rem3d'
+                self._refmodel = realization._refmodel    
+                self._infile = file    
+            except:
+                success1 = False
+                print('############    Tried reading as hdf5   ############')
+                print(var1)
+                print('############    Tried reading as ascii   ############')
+                print(traceback.format_exc())
+        if not success1 and not success2: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
+        # try to get the kernel set
+        for resolution in self.metadata.keys():
+            try:
+                self.metadata[resolution]['kernel_set'] = Kernel_set(self.metadata[resolution])
+            except:
+                print('Warning: kernel_set could not initialized for '+str(resolution))
+
+    def _add_realization(self,coef=None,name=None,resolution=None):
         """
         Added a set of realizations to the object. resolution is the tesselation level at
-        which the instance is update with name and coeff (default: None).
-        """
+        which the instance is update with name and coeff (default: None, last resolution).
+        """    
         if resolution==None:
-            resolution = len(self.data)
-            for ii in np.arange(resolution):
-                realization = len(self.data['resolution_'+str(ii)])
-                self.data['resolution_'+str(ii)]['realization_'+str(realization)] = {'name':name,'coef':coef}
+            if self.num_resolutions == 0: raise ValueError('_add_resolution first') # add a resolution if none
+            resolution = self.num_resolutions - 1 # last available resolution
+            realization = self.num_realizations[resolution]
         else:
             if isinstance(resolution, int) :
-                realization = len(self.data['resolution_'+str(resolution)])
-                self.data['resolution_'+str(resolution)]['realization_'+str(realization)] = {'name':name,'coef':coef}
+                realization = self.num_realizations['resolution_'+str(resolution)]
             else:
-                raise ValueError('Invalid resolution in add_realization')
-        return realization
-
-    def add_resolution(self,name=None,realization = False):
-        """
-        Added a resolution level to the object. num_realization is the number
-        of realizations of model coefficients within that object.
-        """
-        num_resolution = len(self.data)
-        self.metadata['resolution_'+str(num_resolution)] = {'name':name}
-        self.data['resolution_'+str(num_resolution)] = {}
-        if realization:
-            self.data['resolution_'+str(num_resolution)]['realization_0'] = {'name':None,'coef':None}
-        return num_resolution
-
-    def read(self,file,resolution=0,realization=0,**kwargs):
-        """
-        Try reading the file into resolution/realization either as ascii, hdf5 or nc4
-        """
-        if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
-        success = True
-        try:# try ascii
-            if kwargs:
-                self.readascii(file,resolution=resolution,realization=realization,**kwargs)
-            else:
-                self.readascii(file,resolution=resolution,realization=realization)
-        except:
-            var1 = traceback.format_exc()
-            try: # try nc4
-                ds = xr.open_dataset(file)
-                if kwargs:
-                    self.readnc4(ds,resolution=resolution,realization=realization,**kwargs)
-                else:
-                    self.readnc4(ds,resolution=resolution,realization=realization)
-                ds.close()
-            except:
-                try: #first close the dataset if opened with xarray above
-                    ds.close()
-                except NameError:
-                    ds = None
-                var2 = traceback.format_exc()
-                print(var1)
-                print(var2)
-                success = False
-        if success:
-            self.description = "Read from "+file
-            self.infile = file
-        return success
-
-
-    def readascii(self,modelfile,resolution=0,realization=0,**kwargs):
-        """
-        Reads a standard 3D model file. maxkern is the maximum number of radial kernels
-        and maxcoeff is the maximum number of corresponding lateral basis functions.
-        resolution and realization are the indices for the resolution level
-        and the realization from a model ensemble (usually 0 if a single file)
-        """
-        if (not os.path.isfile(modelfile)): raise IOError("Filename ("+modelfile+") does not exist")
-
-        # read mean model
-        if kwargs:
-            model=read3dmodelfile(modelfile,**kwargs)
-        else:
-            model=read3dmodelfile(modelfile)
-
-        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = model['data']['name']
-        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = model['data']['coef']
-
-        self.metadata['resolution_'+str(resolution)] = model['metadata']
-        #rename the name field only if it is None
-        if self.name == None : self.name = model['data']['name']
-        self.description = "Read from "+modelfile
-        self.infile = modelfile
-        self.type = 'rem3d'
-        self.refmodel = model['metadata']['refmodel']
-
+                raise ValueError('Invalid resolution in _add_realization')
+        #initialize
+        self.data['resolution_'+str(resolution)]['realization_'+str(resolution)] = {}
+        # fill it up
+        if name == None: name = str(realization)
+        data = {'name':name,'coef':coef}
+        self[resolution,realization]=data
         return
 
-    def readnc4(self,ds,resolution=0,realization=0,**kwargs):
+    def _add_resolution(self,metadata=None):
         """
-        Read netCDF4 file into a resolution and realization of model3D class.
-
-        Input Parameters:
-        -----------------
-
-        ds: xarray Dataset handle
-
+        Added a resolution level to the object. num_realizations is the number
+        of realizations of model coefficients within that object.
         """
+        current = self.num_resolutions
+        if metadata == None: metadata = {'name':str(current)}
+        self[current] = metadata
+        self.data['resolution_'+str(current)] = {} # empty resolutions
+        return
 
-        # Store in a dictionary
-        metadata = {}
-        for key in ds.attrs.keys(): metadata[key] = ds.attrs[key]
-        metadata['nhorpar']=1
-        metadata['null_model']=None
-        metadata['shortcite']=ds.attrs['name']
-        metadata['ityphpar']=np.array([3])
-        metadata['typehpar']=np.array(['PIXELS'], dtype='<U40')
-        # check the pixel size
-        pixlat = np.unique(np.ediff1d(np.array(ds.latitude)))
-        pixlon = np.unique(np.ediff1d(np.array(ds.longitude)))
-        if not len(pixlat)==len(pixlon)==1: raise AssertionError('only one pixel size allowed in xarray')
-        if not pixlat.item()==pixlon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
-        metadata['hsplfile']=np.array([str(pixlat[0])+' X '+str(pixlat[0])], dtype='<U40')
-        lenarr = len(ds.latitude)*len(ds.longitude)
-        metadata['xsipix']=np.array([[pixlat[0] for ii in range(lenarr)]])
-        metadata['xlapix'] = np.zeros([1,lenarr])
-        metadata['xlopix'] = np.zeros([1,lenarr])
-        # get data keys
-        data_keys = []
-        for key,_ in ds.data_vars.items(): data_keys.append(key)
-        indx = 0
-        idep = 0
-        if len(ds.dims) == 3:
-            _ , nlat, nlon = ds[data_keys[0]].shape
-            for ilat in range(nlat):
-                for ilon in range(nlon):
-                    metadata['xlapix'][0][indx] = ds[data_keys[0]][idep,ilat,ilon].latitude
-                    metadata['xlopix'][0][indx] = ds[data_keys[0]][idep,ilat,ilon].longitude
-                    indx += 1
-        else:
-            raise ValueError('dimensions != 3')
-
-
-        #depth differences and get depth extents
-        depdiff = np.ediff1d(ds.depth)
-        deptop = np.copy(ds.depth)
-        depbottom = np.copy(ds.depth)
-
-        for ii in range(len(depdiff)-2):
-            deptop[ii] = deptop[ii] - (2.*depdiff[ii]-depdiff[ii+1])/2.
-            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii]-depdiff[ii+1])/2.
-        for ii in range(len(depdiff),len(depdiff)-3,-1):
-            deptop[ii] = deptop[ii] - (2.*depdiff[ii-1]-depdiff[ii-2])/2.
-            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii-1]-depdiff[ii-2])/2.
-
-        ## create keys
-        metadata['numvar']=len(data_keys)
-        metadata['varstr']=np.array(data_keys, dtype='<U150')
-        desckern = []; ivarkern = []; icount=0; coef=None
-        for key in data_keys:
-            icount = icount+1
-            if 'topo' in key:
-                depth_range = key.split('topo')[1]
-                nlat, nlon = ds[key].shape
-                descstring = u'{}, delta, {} km'.format(key,depth_range)
-                try:
-                    coef = np.vstack([coef,ds[key].values.flatten()])
-                except:
-                    coef = ds[key].values.flatten()
-                desckern.append(descstring)
-                ivarkern.append(icount)
-            else:
-                _ , nlat, nlon = ds[key].shape
-                for ii,_ in enumerate(deptop):
-                    descstring = u'{}, boxcar, {} - {} km'.format(key,deptop[ii],depbottom[ii])
-                    try:
-                        coef = np.vstack([coef,ds[key][ii].values.flatten()])
-                    except:
-                        coef = ds[key][ii].values.flatten()
-                    desckern.append(descstring)
-                    ivarkern.append(icount)
-        metadata['desckern']=np.array(desckern, dtype='<U150')
-        metadata['nmodkern']=len(desckern); metadata['ivarkern']=np.array(ivarkern)
-        metadata['ihorpar']=np.ones(len(desckern),dtype = np.int)
-
-        # get the number of coeffients
-        metadata['ncoefhor']=np.array([lenarr])
-        metadata['ncoefcum']=np.cumsum([metadata['ncoefhor'][ihor-1] for ihor in metadata['ihorpar']])
-
-        # store to the object
-        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['name'] = ds.attrs['name']
-        self.data['resolution_'+str(resolution)]['realization_'+str(realization)]['coef'] = pd.DataFrame(coef)
-
-        self.metadata['resolution_'+str(resolution)] = metadata
-
-        #rename the name field only if it is None
-        if self.name == None : self.name = metadata['name']
-        self.type = 'rem3d'
-
-
-    def readhdf5(self,hf,query=None):
+    def _readhdf5(self,hf,query=None):
         """
         Reads a standard 3D model file from a hdf5 file
 
@@ -321,7 +217,7 @@ class model3d(object):
         # loop over resolution
         if len(self.data) < len(hf[query].keys()):
             # add more resolutions
-            for ii in range(len(hf[query].keys()) - len(self.data)): self.add_resolution()
+            for ii in range(len(hf[query].keys()) - len(self.data)): self._add_resolution()
         for resolution in hf[query].keys():
             g1 = hf[query][resolution]
             if not g1.attrs['type']=='resolution': raise AssertionError()
@@ -335,27 +231,27 @@ class model3d(object):
                 g2 = hf[query][resolution][case]
                 if not g2.attrs['type']=='realization': raise AssertionError()
                 kerstr = self.metadata[resolution]['kerstr']
-                key = self.name+'/'+kerstr+'/'+resolution+'/'+case
+                key = self._name+'/'+kerstr+'/'+resolution+'/'+case
                 self.data[resolution][case]['coef'] = pd.DataFrame(tools.io.load_numpy_hdf(hf,key))
                 self.data[resolution][case]['name'] = g2.attrs['name']
         return
 
 
-    def writehdf5(self, outfile = None, overwrite = False):
+    def _writehdf5(self, outfile = None, overwrite = False):
         """
         Writes the model object to hdf5 file
         """
-        if outfile == None: outfile = self.infile+'.h5'
+        if outfile == None: outfile = self._infile+'.h5'
         if overwrite:
             hf = h5py.File(outfile, 'w')
         else:
             hf = h5py.File(outfile, 'a')
-        g1 = hf.require_group(self.name)
+        g1 = hf.require_group(self._name)
 
-        if self.name != None: g1.attrs['name']=self.name
-        if self.type != None: g1.attrs['type']=self.type
-        if self.refmodel != None: g1.attrs['refmodel']=self.refmodel
-        if self.description != None: g1.attrs['description']=self.description
+        if self._name != None: g1.attrs['name']=self._name
+        if self._type != None: g1.attrs['type']=self._type
+        if self._refmodel != None: g1.attrs['refmodel']=self._refmodel
+        if self._description != None: g1.attrs['description']=self._description
 
         for ires in range(len(self.data)):
             g2 = g1.require_group('resolution_'+str(ires))
@@ -387,14 +283,14 @@ class model3d(object):
                     print('Warning: No name found for resolution '+str(ires)+', realization '+str(icase))
                 # write the data array in the appropriate position
                 #kerstr = self.metadata['resolution_'+str(ires)]['kerstr']
-                key = self.name+'/resolution_'+str(ires)+'/realization_'+str(icase)
+                key = self._name+'/resolution_'+str(ires)+'/realization_'+str(icase)
                 out = tools.df2nparray(self.data['resolution_'+str(ires)] ['realization_'+str(icase)]['coef'])
                 tools.io.store_numpy_hdf(hf,key,out)
 
         hf.close()
         print('... written to '+outfile)
 
-    def evaluate_at_point(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1,dbs_path=tools.get_filedir()):
+    def _evaluate_at_point(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1,dbs_path=tools.get_filedir()):
         """
         Evaluate the mode at a location (latitude, longitude,depth)
 
@@ -406,8 +302,8 @@ class model3d(object):
         interpolated: If True, use KDTree from a predefined grid. If False, evaluated
                       exactly using kernel_set instance.
         """
-        if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
-        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        if self._type != 'rem3d': raise NotImplementedError('model format ',self._type,' is not currently implemented in reference1D.coeff2modelarr')
+        if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
         # convert to numpy arrays
         latitude = tools.convert2nparray(latitude)
@@ -475,8 +371,8 @@ class model3d(object):
 
         resolution : list of resolutions to include the the modelarray
         """
-        if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
-        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        if self._type != 'rem3d': raise NotImplementedError('model format ',self._type,' is not currently implemented in reference1D.coeff2modelarr')
+        if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
         # convert to numpy arrays
         resolution = tools.convert2nparray(resolution,int2float=False)
@@ -506,18 +402,17 @@ class model3d(object):
                 raise ValueError('resolution '+str(resolution[ir])+' and realization '+str(realization)+' not filled up yet.')
         return modelarr
 
-    def getradialattributes(self,parserfile='attributes.ini'):
+    def getattributes(self,parserfile=tools.get_configdir()+'/'+ constants.attributes):
         """
         Reads configuration file and get the basis attributes like knot depth for each
         parameter in modelarray list of coefficients. parser is the output from
         parser = ConfigObj(config) where config is the configuration *.ini file.
         """
-        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
         # Read configuration file to a configuration parser. This is to make this available on the fly
-        filepath = tools.get_configdir(checkwrite=True) + '/'+parserfile
-        if (not os.path.isfile(filepath)): raise IOError("Configuration file ("+filepath+") does not exist")
-        parser = ConfigObj(filepath)
+        if (not os.path.isfile(parserfile)): raise IOError("Configuration file ("+parserfile+") does not exist")
+        parser = ConfigObj(parserfile)
 
         for _,resolution in enumerate(self.metadata): # Loop over every resolution
 
@@ -559,11 +454,11 @@ class model3d(object):
         Reads Projection matrix created by plot_3dmod_pm.
         lateral_basis can be M362 or pixel1
         """
-        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
         #read all the bytes to indata
-        outfile = self.name+'.'+lateral_basis+'.proj.bin.h5'
-        infile = self.name+'.'+lateral_basis+'.proj.bin'
+        outfile = self._name+'.'+lateral_basis+'.proj.bin.h5'
+        infile = self._name+'.'+lateral_basis+'.proj.bin'
 
         xlat=[];xlon=[];area=[];deptharr=[]
         cc = 0 #initialize byte counter
@@ -626,7 +521,7 @@ class model3d(object):
             results = map(list, zip(*results))
             dtype = dict(names = namelist, formats=formatlist)
             grid = np.array([tuple(x) for x in results],dtype=dtype)
-            model = self.name
+            model = self._name
 
             h5f = h5py.File(outfile,'w')
             h5f.attrs["infile"] = np.string_(ntpath.basename(infile))
@@ -677,7 +572,7 @@ class model3d(object):
         """
         Get the projection matrix from a lateral basis to another and for particular depths
         """
-        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
         # convert to numpy arrays
         latitude = tools.convert2nparray(latitude)
@@ -721,7 +616,7 @@ class model3d(object):
         """
         Projection matrix multiplied by model ensemble. Choses the nearest depth available for the projection.
         """
-        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
         modelarr = self.coeff2modelarr(resolution=resolution,realization=realization)
         # Select appropriate arrays from projection matrix, read from file
@@ -794,7 +689,7 @@ class model3d(object):
         model3d : The model object from read3dmodelfile
 
         """
-        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
         for ii in np.arange(len(self.metadata)):
 
             ifindspline=np.where(self.metadata['resolution_'+str(ii)]['typehpar']=='SPHERICAL SPLINES')[0]
@@ -804,3 +699,6 @@ class model3d(object):
                 np.savetxt(filename,arr, fmt='%7.3f %7.3f %7.3f')
                 print(".... written "+filename)
         return
+        
+        
+#######################################################################################

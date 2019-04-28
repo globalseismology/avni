@@ -7,10 +7,11 @@ from __future__ import absolute_import
 from .common import *
 
 # classes for various model representations:
-from .model3d import model3d
-from .reference1D import reference1D
+from .model3d import Model3D
+from .reference1d import Reference1D
+from .realization import Realization
 
 # classes for describing model parameterizations:
-from .kernel_set import kernel_set
-from .radial_basis import radial_basis
-from .lateral_basis import lateral_basis
+from .kernel_set import Kernel_set
+from .radial_basis import Radial_basis
+from .lateral_basis import Lateral_basis

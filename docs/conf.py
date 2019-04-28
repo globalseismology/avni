@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # REM3D documentation build configuration file, created by
-# sphinx-quickstart on Wed Jun 28 16:39:46 2017.
+# sphinx-quickstart on Wed Apr 26 2019.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -25,6 +25,7 @@ import rem3d.version
 #sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
+# -- Project information -----------------------------------------------------
 
 # In order for the Sphinx MATLAB domain to auto-document MATLAB source code, 
 # set the config value of matlab_src_dir to the absolute path instead of adding 

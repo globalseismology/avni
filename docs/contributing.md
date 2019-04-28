@@ -13,12 +13,14 @@ REM3D developers may want to install the following softwares and extensions to f
 * sphinxcontrib.bibtex for references (sphinx extension)
 * sphinxcontrib.matlab for matlab codes (sphinx extension)
 * recommonmark (writing in Markdown *.md rather than reStructured Text *.rst)
+* sphinx_rtd_theme (sphinx theme designed to look modern and be mobile-friendly)
 
 To install these, please enter the following in a terminal:
 ```
 sudo pip install sphinx numpydoc
 sudo pip install sphinxcontrib-bibtex sphinxcontrib-matlabdomain
 sudo pip install recommonmark
+sudo pip install sphinx_rtd_theme
 ```
 
 Contributors and core developers should always start with the `devel` branch. To clone the REM3D repository, type the following in a terminal using your Github username and password.

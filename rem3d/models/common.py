@@ -25,7 +25,7 @@ import pandas as pd
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
 from .. import constants
-from .reference1D import reference1D
+from .reference1d import Reference1D
 #######################################################################################
 
 def readepixfile(filename):
@@ -592,7 +592,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             ifread1D = np.any(np.array(ref_dict[parameter]['refvalue'])<0.)
             if ifread1D:
                 try: # try reading the 1D file in card format
-                    ref1d = reference1D(ref_dict[parameter]['refmodel'])
+                    ref1d = Reference1D(ref_dict[parameter]['refmodel'])
                     if mod_type == 'heterogeneity': ref1d.get_custom_parameter(parameter)
                 except:
                     ifread1D = False
@@ -798,7 +798,7 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
 
     ifread1D = True
     try: # try reading the 1D file in card format
-        ref1d = reference1D(parser['metadata']['refmodel'])
+        ref1d = Reference1D(parser['metadata']['refmodel'])
     except:
         ifread1D = False
 

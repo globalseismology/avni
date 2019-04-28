@@ -30,7 +30,7 @@ from rem3d.f2py import getbullen
 #######################################################################################
 # 1D model class
 
-class reference1D(object):
+class Reference1D(object):
     '''
     A class for 1D reference Earth models used in tomography
     '''
@@ -53,6 +53,9 @@ class reference1D(object):
         else:
             output = "No model has been read into this reference1D instance yet"
         return output
+
+    def __repr__(self):
+        return '{self.__class__.__name__}({self.name,self.radius_max})'.format(self=self)
 
     def __copy__(self):
         cls = self.__class__
