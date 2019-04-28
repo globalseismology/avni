@@ -13,7 +13,7 @@ from .. import constants
 
 # Vertical basis parameter class that defines an unique combination of functions, their radial parameterization and any scaling
 
-class radial_basis(object):
+class Radial_basis(object):
     '''
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.

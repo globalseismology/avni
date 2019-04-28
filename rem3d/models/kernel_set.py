@@ -13,14 +13,14 @@ import numpy as np #for numerical analysis
 from scipy import sparse
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from .lateral_basis import lateral_basis
-from .radial_basis import radial_basis
+from .lateral_basis import Lateral_basis
+from .radial_basis import Radial_basis
 from .common import radial_attributes
 from .. import tools
 #######################################################################################
 
 # kernel set
-class kernel_set(object):
+class Kernel_set(object):
     '''
     A class for kernel sets that define the G matrix for relating data d to model m, d=Gm
     '''
@@ -65,7 +65,7 @@ class kernel_set(object):
                     metadata[field] = np.array(dictionary[field][ihor], order = 'F')
             else:
                 raise NotImplementedError(types+' has not been implemented in kernel_set.extract_lateral')
-            lateral.append(lateral_basis(name='HPAR'+str(ihor+1), types = types, metadata=metadata))
+            lateral.append(Lateral_basis(name='HPAR'+str(ihor+1), types = types, metadata=metadata))
         self.data['lateral_basis']=np.array(lateral)
 
     def extract_radial(self,dictionary):
@@ -89,17 +89,17 @@ class kernel_set(object):
                 if 'variable splines' in radker or 'vbspl' in radker:
                     found = True
                     metadata['knots'] = [float(findrad['kernel'][ii].split(',')[-1].split('km')[0]) for ii in np.arange(len(findrad))]
-                    radial[variable].append(radial_basis(name=radker, types = 'variable splines', metadata=metadata))
+                    radial[variable].append(Radial_basis(name=radker, types = 'variable splines', metadata=metadata))
 
                 elif 'delta' in radker or 'dirac delta' in radker:
                     found = True
                     metadata['info'] = radker.split(',')[-1]
-                    radial[variable].append(radial_basis(name=radker, types = 'dirac delta', metadata=metadata))
+                    radial[variable].append(Radial_basis(name=radker, types = 'dirac delta', metadata=metadata))
                 elif 'boxcar' in radker or 'constant' in radker:
                     found = True
                     metadata['depthtop'] = [float(findrad['kernel'][ii].split(',')[-1].split('-')[0]) for ii in np.arange(len(findrad))]
                     metadata['depthbottom'] = [float(findrad['kernel'][ii].split(',')[-1].split('-')[1].split('km')[0]) for ii in np.arange(len(findrad))]
-                    radial[variable].append(radial_basis(name=radker, types = 'boxcar', metadata=metadata))
+                    radial[variable].append(Radial_basis(name=radker, types = 'boxcar', metadata=metadata))
                 if not found: raise ValueError('information not found for '+radker)
         self.data['radial_basis']=radial
 
@@ -118,7 +118,7 @@ class kernel_set(object):
         # select corresponding lateral bases
         lateral_basis = self.data['lateral_basis']
         try:
-            lateral_select = lateral_basis[self.metadata['ihorpar']-1][findrad['index']]
+            lateral_select = Lateral_basis[self.metadata['ihorpar']-1][findrad['index']]
         except:
             raise ValueError('ihorpar needs to be defined for a kernel set. The HPAR for each radial kernel')
 

@@ -18,6 +18,9 @@ cptfolder = 'CPT'
 planetconstants = 'planets.ini'
 planetpreferred = 'Earth'
 
+#Attribute information for the parameterizations
+attributes = 'attributes.ini'
+
 #Add custom definitions of units
 ureg = None # this is initialized to MKS units in _init_.py
 customunits = 'units.ini'

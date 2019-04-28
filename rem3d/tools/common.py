@@ -41,12 +41,14 @@ def stage(file,overwrite=False):
 
 def convert2nparray(value,int2float = True):
     """
-    Converts input value to a float numpy array
+    Converts input value to a float numpy array. Boolean are returned as Boolean arrays.
 
     int2float: convert integer to floats, if true
     """
     if isinstance(value, (list,tuple,np.ndarray)):
         outvalue = np.asarray(value)
+    elif isinstance(value, bool):
+        outvalue = np.asarray([value])
     elif isinstance(value, float):
         outvalue = np.asarray([value])
     elif isinstance(value, (int,np.int64)):
@@ -86,11 +88,18 @@ def alphanum_key(s):
     return [int(c) if c.isdigit() else c for c in re.split('([0-9]+)', s)]
 
 def diffdict(first_dict,second_dict):
-    '''
-    helper tool to get difference in two dictionaries
+    '''helper tool to get difference in two dictionaries
     '''
     return { k : second_dict[k] for k in set(second_dict) - set(first_dict) }
 
+def equaldict(first_dict,second_dict):
+    '''helper tool to check if two dictionaries are equal
+    '''
+    checks=[]
+    for k in set(realization.metadata):
+        checks.extend(convert2nparray(first_dict==second_dict))
+    return np.all(checks)
+    
 def df2nparray(dataframe):
     '''
     helper tool to return the named numpy array of the pandas dataframe
