@@ -45,10 +45,10 @@ script:
   - cd ..
   - pip install -e rem3d --user
   - cd rem3d
-  - pytest --cov-report term --cov=./
+  - pytest --cov-report term --cov=./tests
   # Add the required command for testing here
   - cd tests
-  - python grab_server_data.py
+  - python test_grab_server_data.py
   - if diff ./S362ANI+M.vs.5.epix ./Outputs/S362ANI+M.vs.5.epix ; then
       echo "Build successful";
     else
