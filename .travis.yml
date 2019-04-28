@@ -45,7 +45,7 @@ script:
   - cd ..
   - pip install -e rem3d --user
   - cd rem3d
-  - pytest --cov-report term --cov=./tests
+  - pytest --cov-report term --cov=.
   # Add the required command for testing here
   - cd tests
   - python test_grab_server_data.py
