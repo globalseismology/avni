@@ -17,7 +17,7 @@ before_install:
   - lsb_release -a
   - sudo apt-get update -qq
   - sudo apt-get install -y gfortran
-  - sudo apt-get install -y texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
+  - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
 
   # Here we just install Miniconda, which you shouldn't have to change.
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -64,7 +64,7 @@ script:
   # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
   - cd docs
   - make html
-  - ./latexdockercmd.sh make latexpdf
+  - make latexpdf
   - cd ..
 
 after_success:
