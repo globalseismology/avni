@@ -1,6 +1,5 @@
 sudo: required
 dist: xenial
-services: docker # Enables docker
 
 language: python
 python:
@@ -37,18 +36,16 @@ install:
   - conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION
   - source $HOME/miniconda/etc/profile.d/conda.sh
   - source activate rem3d
+  - conda install --yes -c conda-forge python-slugify
 
   # Install REM3D requirements
   - conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires
 
   # This is for coverage testing
   - conda install --yes -c conda-forge codecov pytest-cov pytest
-  - conda install --yes -c conda-forge python-slugify
 
   # for sphinx documentation
-  - conda install --yes -c conda-forge sphinx numpydoc
-  - conda install --yes -c conda-forge sphinxcontrib-bibtex
-  - conda install --yes -c conda-forge recommonmark sphinx_rtd_theme
+  - conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme
 
 script:
   # Running pip install -e . --user directly causes errors
@@ -60,8 +57,9 @@ script:
   # Add the required command for testing here
   - pytest --cov-report term --cov=.
 
-  # make docs GIVES ERRORS
+  # make docs; TODO: transfer to readthedocs.com
   # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
+  # http://openmdao.org/twodocs/versions/2.0.2/developer_docs/automating_doc_build/automating_doc_build.html
   - cd docs
   - make html
   - make latexpdf
