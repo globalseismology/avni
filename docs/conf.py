@@ -144,6 +144,17 @@ pygments_style = 'sphinx'
 todo_include_todos = True
 
 
+from unittest.mock import MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = ['rem3d']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
