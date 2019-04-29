@@ -14,6 +14,7 @@ pygeodesy
 pandas
 scipy
 numpy
+sphinx
 numpydoc
 sphinxcontrib-bibtex
 sphinxcontrib-matlabdomain
