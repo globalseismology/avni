@@ -1,1 +1,16 @@
+fortranformat
+joblib
+progressbar2
+requests
+future
+msgpack
+argparse
+configobj
+pint
+xarray
+h5py
+matplotlib
+pygeodesy
+pandas
+scipy
 numpy
