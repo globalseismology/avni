@@ -41,13 +41,12 @@ install:
 
   # This is for coverage testing
   - conda install --yes -c conda-forge codecov pytest-cov pytest
-  - pip install python-slugify
+  - conda install --yes -c conda-forge python-slugify
 
   # for sphinx documentation
-  - pip install sphinx numpydoc
-  - pip install sphinxcontrib-bibtex sphinxcontrib-matlabdomain
-  - pip install recommonmark
-  - pip install sphinx_rtd_theme
+  - conda install --yes -c conda-forge sphinx numpydoc
+  - conda install --yes -c conda-forge sphinxcontrib-bibtex
+  - conda install --yes -c conda-forge recommonmark sphinx_rtd_theme
 
 script:
   # Running pip install -e . --user directly causes errors
@@ -61,9 +60,10 @@ script:
 
   # make docs GIVES ERRORS
   # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
-  # - cd docs
-  # - make html
-  # - cd ..
+  - cd docs
+  - make html
+  - make latexpdf
+  - cd ..
 
 after_success:
   #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
