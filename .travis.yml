@@ -44,7 +44,7 @@ install:
   - pip install python-slugify
   
   # for sphinx documentation
-  - pip install sphinx numpydoc
+  - pip install sphinx==1.8.5 numpydoc
   - pip install sphinxcontrib-bibtex sphinxcontrib-matlabdomain
   - pip install recommonmark
   - pip install sphinx_rtd_theme
