@@ -14,7 +14,6 @@ pygeodesy
 pandas
 scipy
 numpy
-mock
 numpydoc
 sphinxcontrib-bibtex
 sphinxcontrib-matlabdomain
