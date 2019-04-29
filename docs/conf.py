@@ -16,14 +16,15 @@ import sys
 import os
 import shlex
 
-import rem3d
-import rem3d.version
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
+
+import rem3d
+import rem3d.version
+
 
 # -- Project information -----------------------------------------------------
 
@@ -31,7 +32,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # set the config value of matlab_src_dir to the absolute path instead of adding 
 # them to sys.path. Currently only one MATLAB path can be specified, but all 
 # subfolders in that tree will be searched.
-matlab_src_dir = '../rem3d-matlab'
+#matlab_src_dir = '../rem3d-matlab'
 
 # -- General configuration ------------------------------------------------
 
