@@ -22,8 +22,12 @@ import shlex
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 
-
-from unittest.mock import MagicMock
+# avoid gfortran not being available on readthedocs
+# https://read-the-docs.readthedocs.io/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
+if (sys.version_info[:2] < (3, 3)):
+    from mock import Mock as MagicMock
+else:
+    from unittest.mock import MagicMock
 
 class Mock(MagicMock):
     @classmethod
