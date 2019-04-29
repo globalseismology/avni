@@ -22,6 +22,17 @@ import shlex
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 
+
+from unittest.mock import MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = ['rem3d']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 import rem3d
 import rem3d.version
 
@@ -142,17 +153,6 @@ pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
-
-
-from unittest.mock import MagicMock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return MagicMock()
-
-MOCK_MODULES = ['rem3d']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 # -- Options for HTML output ----------------------------------------------
