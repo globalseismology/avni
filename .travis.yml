@@ -1,5 +1,6 @@
 sudo: required
 dist: xenial
+services: docker # Enables docker
 
 language: python
 python:
@@ -63,7 +64,7 @@ script:
   # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
   - cd docs
   - make html
-  - make latexpdf
+  - ./latexdockercmd.sh make latexpdf
   - cd ..
 
 after_success:
