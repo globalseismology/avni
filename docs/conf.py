@@ -34,7 +34,6 @@ MOCK_MODULES = ['rem3d']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 import rem3d
-import rem3d.version
 
 
 # -- Project information -----------------------------------------------------
