@@ -7,15 +7,13 @@ in the standard REM3D format."""
 from __future__ import absolute_import, division, print_function
 import sys
 if (sys.version_info[:2] < (3, 0)):
-    from builtins import float,int,list,tuple
+    from builtins import float,int,list
 
 import numpy as np #for numerical analysis
 import fortranformat as ff #reading/writing fortran formatted text
-from future.utils import native_str
 from six import string_types # to check if variable is string using isinstance
 from numpy.lib.recfunctions import append_fields # for appending named columns to named numpy arrays
 from scipy.interpolate import griddata
-import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
 from copy import deepcopy
 from collections import Counter
 import traceback

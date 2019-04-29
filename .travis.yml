@@ -42,6 +42,12 @@ install:
   # This is for coverage testing
   - conda install --yes -c conda-forge codecov pytest-cov pytest
   - pip install python-slugify
+  
+  # for sphinx documentation
+  - pip install sphinx numpydoc
+  - pip install sphinxcontrib-bibtex sphinxcontrib-matlabdomain
+  - pip install recommonmark
+  - pip install sphinx_rtd_theme
     
 script:
   # Running pip install -e . --user directly causes errors
@@ -50,6 +56,13 @@ script:
   - pip install -e rem3d --user
   - cd rem3d
   - pytest --cov-report term --cov=.
+  
+  # make docs GIVES ERRORS
+  # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
+  # - cd docs
+  # - make html
+  # - cd ..
+  
   # Add the required command for testing here
   - cd tests
   - python test_grab_server_data.py

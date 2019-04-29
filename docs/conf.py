@@ -16,14 +16,29 @@ import sys
 import os
 import shlex
 
-import rem3d
-import rem3d.version
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
+
+# avoid gfortran not being available on readthedocs
+# https://read-the-docs.readthedocs.io/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
+if (sys.version_info[:2] < (3, 3)):
+    from mock import Mock as MagicMock
+else:
+    from unittest.mock import MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = ['rem3d']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+import rem3d
+
 
 # -- Project information -----------------------------------------------------
 
@@ -31,7 +46,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # set the config value of matlab_src_dir to the absolute path instead of adding 
 # them to sys.path. Currently only one MATLAB path can be specified, but all 
 # subfolders in that tree will be searched.
-matlab_src_dir = '../rem3d-matlab'
+#matlab_src_dir = '../rem3d-matlab'
 
 # -- General configuration ------------------------------------------------
 

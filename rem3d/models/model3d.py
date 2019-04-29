@@ -19,13 +19,11 @@ import re
 from copy import deepcopy
 import struct
 import h5py
-import xarray as xr
 import traceback
 import pandas as pd
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
 from .. import constants
-from .common import read3dmodelfile
 from .kernel_set import Kernel_set
 from .realization import Realization
 #######################################################################################
@@ -59,7 +57,7 @@ class Model3D(object):
 
     def __len__(self):
         return len(self.metadata)
-        
+
     def __getitem__(self,key):
         """returns data and metadata from key, a tuple of (resolution, realization)"""
         key = tools.convert2nparray(key,int2float=False)
@@ -71,21 +69,16 @@ class Model3D(object):
         else:
             data = self.data['resolution_'+str(key[0])]['realization_'+str(key[1])]
             return data
-    
+
     def __setitem__(self,key,data):
         """sets (data, metadata) data_meta to key, a tuple of (resolution, realization)"""
-        self.data['resolution_'+str(key[0])]['realization_'+str(key[1])] = data
-        return
-        
-    def __setitem__(self,key,data):
-        """sets (data, metadata) data_meta to key, a tuple of (resolution, realization)"""
-        if isinstance(key, (int,np.int64)): 
+        if isinstance(key, (int,np.int64)):
             self.metadata['resolution_'+str(key)] = data
         elif isinstance(key, tuple):
             self.data['resolution_'+str(key[0])]['realization_'+str(key[1])] = data
         else:
             raise TypeError('invalid input type for model3d')
-                
+
     def __copy__(self):
         cls = self.__class__
         result = cls.__new__(cls)
@@ -111,7 +104,7 @@ class Model3D(object):
         for res in self.metadata: output.append(len(self.data[res]))
         return output
     #########################       methods       #############################
-    
+
     def _read(self,file,**kwargs):
         if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
         try:# try hdf5 for the whole ensemble
@@ -139,8 +132,8 @@ class Model3D(object):
                 self._add_realization(coef=realization.data,name=realization._name)
                 self._name = realization._name
                 self._type = 'rem3d'
-                self._refmodel = realization._refmodel    
-                self._infile = file    
+                self._refmodel = realization._refmodel
+                self._infile = file
             except:
                 success1 = False
                 print('############    Tried reading as hdf5   ############')
@@ -159,7 +152,7 @@ class Model3D(object):
         """
         Added a set of realizations to the object. resolution is the tesselation level at
         which the instance is update with name and coeff (default: None, last resolution).
-        """    
+        """
         if resolution==None:
             if self.num_resolutions == 0: raise ValueError('_add_resolution first') # add a resolution if none
             resolution = self.num_resolutions - 1 # last available resolution
@@ -217,7 +210,7 @@ class Model3D(object):
         # loop over resolution
         if len(self.data) < len(hf[query].keys()):
             # add more resolutions
-            for ii in range(len(hf[query].keys()) - len(self.data)): self._add_resolution()
+            for _ in range(len(hf[query].keys()) - len(self.data)): self._add_resolution()
         for resolution in hf[query].keys():
             g1 = hf[query][resolution]
             if not g1.attrs['type']=='resolution': raise AssertionError()
@@ -699,6 +692,6 @@ class Model3D(object):
                 np.savetxt(filename,arr, fmt='%7.3f %7.3f %7.3f')
                 print(".... written "+filename)
         return
-        
-        
+
+
 #######################################################################################

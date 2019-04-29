@@ -95,10 +95,10 @@ def diffdict(first_dict,second_dict):
 def equaldict(first_dict,second_dict):
     '''helper tool to check if two dictionaries are equal
     '''
-    checks=[]
-    for k in set(realization.metadata):
-        checks.extend(convert2nparray(first_dict==second_dict))
-    return np.all(checks)
+    #checks=[]
+    #for k in set(realization.metadata):
+    #    checks.extend(convert2nparray(first_dict==second_dict))
+    #return np.all(checks)
     
 def df2nparray(dataframe):
     '''
