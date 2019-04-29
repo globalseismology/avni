@@ -29,50 +29,42 @@ env:
     # CODECOV_TOKEN
     # travis encrypt CODECOV_TOKEN="secretvalue"
     secure: "jb9II2WjGCIww4E1ULr6JhIj1WhcmwDlXOWqA9ld6C+UPqYePPb670vQk3pUmUdwSsqXXlvbVjVhse0KRsdFOhac5FmS3j6LjXn4H14jJNQU3gZIXt4Fz1ND0Z2qWsfzCa95VNqNfgLZI/PFMxmwSlBe8H/GQ/T7OaFFQaFNYVz70VnHW9PceRfCISVcCzCh3+LEO9AKz4YdR8Ac1GWcrt313pDIB3PFneIx5kRDeC9ckrnlkPPA186Mq7kICZTq65luNGwsLRvO81dmQ0JooP8mEsckaaozTlUyeQHwI8y3Vit89otaraWlELCloKT63sHmOzywgkCvJMbg8L+4XfJGIZEFKk3ZQd2f1nVuO50+Ajys/PBWlbV2x4nwmBPxMumP4r2m9XJUm8SP9p1LdaMq/bnCW+X0jgS0MUPJzF9rpjKYFVLd6fxgl7gVz0lhc/0Tgf8mu+48C3aaKLTkHsKwHuXfEm8wob5f9gKeqVqZuml8j1ZqpcB86zB+gqvq4LJy0+wmSQRVmM1FeuFjoxL008wqWD1DDO0Gu8vWFt2AjxIZjspCGgnOCq2TQCYQehr9vgeXPEwJEim9+dQBWpBIlz6ycFBLs1AwmRofRs6dNnI00dkUp9iZakJ+md05F7FocZ6/kpCLJTbJzjE382WSeOL7P1vMYSNIAoGQbxQ="
-  
+
 install:
   # Make environment and activate
   - conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION
   - source $HOME/miniconda/etc/profile.d/conda.sh
   - source activate rem3d
-  
+
   # Install REM3D requirements
   - conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires
-  
+
   # This is for coverage testing
   - conda install --yes -c conda-forge codecov pytest-cov pytest
   - pip install python-slugify
-  
+
   # for sphinx documentation
   - pip install sphinx numpydoc
   - pip install sphinxcontrib-bibtex sphinxcontrib-matlabdomain
   - pip install recommonmark
   - pip install sphinx_rtd_theme
-    
+
 script:
   # Running pip install -e . --user directly causes errors
   # Refer https://jeetblogs.org/post/strange-uninstall-failures-when-running-pip-install-in-editable-mode/
   - cd ..
   - pip install -e rem3d --user
   - cd rem3d
+
+  # Add the required command for testing here
   - pytest --cov-report term --cov=.
-  
+
   # make docs GIVES ERRORS
   # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
   # - cd docs
   # - make html
   # - cd ..
-  
-  # Add the required command for testing here
-  - cd tests
-  - python test_grab_server_data.py
-  - if diff ./S362ANI+M.vs.5.epix ./outputs/S362ANI+M.vs.5.epix ; then
-      echo "Build successful";
-    else
-      echo "Build failed";
-      exit 1;
-    fi    
-    
+
 after_success:
   #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
   - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
@@ -80,7 +72,7 @@ after_success:
 # deploy to pypi-test from master when tagged
 deploy:
   provider: pypi
-  server: https://test.pypi.org/legacy/ # Remove for deployment to official PyPi repo 
+  server: https://test.pypi.org/legacy/ # Remove for deployment to official PyPi repo
   user: pmoulik
   password:
     secure: "tOx/5080t8weII1Cf8ElL4uaEsGVPZGDiPCMfg0Muae9D9SJ14sTz41rb8wnx7ilhs9p4jxRImqneUD7Hv4gJcwX57XQzKvOnjd3l/droARCYBu67v2283u9ShHk+glEZS1HUqhtSQN9KTgTChdKAZgpfp61Ox17VWt65r24S8GBtnlX5hBX5pRGYhwM6PgAa+3QcwdLrCr8D0a0sbQOpQiZV+ZYdeumKhIGOnGe22/N4teHgAQKlPcsMSX7MjnHSDgHXLvFr7gLvDQhAzcCqCy0bcbvRyuVbpy5c1O43TtMlyrYOALThLO4jw6a49sF4fSw8QGwPTKXeQZIhvxqIqgpOb3ptGBL1sb4emj1IVIl2J6txwk96X/OMju8vIFfNd4hblf6x4stw1AFsYX3PYO5K+26nlanMm/OhhBiVxLH3X1vLSfO2+R+n2k/jZ7ie04tsOlfLlqTiwY2F50z3YQEZXRuDP2073w+MLYk3BPYruBMjPrk8AulpnYCtsDC5i3AomeJ+X8cBEGF7dwOI1cRbgw2UYK2xAggY0dwCg/BKBDve3AQQ2SJcIUUiHF5qdaSvJQBht1d8zHNongv6X4PJeVt51esQCnZflNCAP9Q506Yl5h6FatFjGrfJtknjQG1r/1PX1KfJ8WXQoljlTfwdl92KSvwUbzGV77AV3g="
