@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import nbformat
 import rem3d
+import pdb
 #########################################################
 
 def _notebook_run(path):

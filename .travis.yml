@@ -43,6 +43,7 @@ install:
 
   # This is for coverage testing
   - conda install --yes -c conda-forge codecov pytest-cov pytest nbformat
+  - pip3 install --upgrade --force-reinstall --no-cache-dir jupyter
 
   # for sphinx documentation
   - conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme
