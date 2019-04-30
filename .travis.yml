@@ -22,9 +22,11 @@ env:
     secure: "FSy2beqe2qfRiRpss9XzT2gMIn1cgJm6IlCbupxQBff0RSSH7IZ5A6M0TOmjmneIjKJTUOcxm+MdoSzR15xy9OLFA7GxvGZsoxfLklQaJrzhK5/34Lqxo2Wzbeis0Q4XApjoLGHaRdNLufpxOUfhi5gOJpQ/hiBe/hOt3O6p71ZrSiM6R2M9IT52nJL6JjimS1AgI58LNStZvMC7B3F7T+5HBRQ4iHya0trTxUwp07qA3vz8+WFqcIbb5PEoOmdnhOXX1Vyk1bU8HJ9I4QoGMA+3MKAxyb5I5ovxQVJ9QxHGNSj0DifegbO+ATvB/qtLZAiTuQFQEzJCGY+PCzzQzcxzBcn+Pjl0ol0g1gxtl0dtwiU4Ikn12171pdtbS/CWAtGZJsaml2LKdgZnipROu+sQr91vZyMs8octOHqm2EmWBncFsHRNF3efl5bCxudnIAUEkd0d6uaxPgi9bU7Ke7ZWIUTIOoE09IzHHDaqH2S9NdeOQhR7E/i4awyctfzeKNWsjEYgdX0LtSki0zzDJhTSxC0bsY+w8u+rgyaG06Qdopxc6TRgFOicGo8ijknJKTCnJeRekUyj+ZFsRm0Py5mKE2CI/6Zx8snMWtA71TtTpS9qooUN2NtwAu/e4GFM8Tvg07Fe2XKtze/TPD/vai6+4ifZ0v53cKGoNDDeuwU="
 
 addons:
-    apt:
-        ssh_known_hosts:
-        - $REM_SERVER
+  sources:
+    - ubuntu-toolchain-r-test
+  apt:
+    ssh_known_hosts:
+      - $REM_SERVER
 
 before_install:
   # print the distro information
