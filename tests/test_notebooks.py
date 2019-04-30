@@ -29,7 +29,8 @@ def _notebook_run(path):
 
 def test_ipynb():
     os.chdir(rem3d.tools.get_installdir())
-    for root, dirs, files in os.walk("../examples/Notebooks/"):
+    os.chdir('../examples/Notebooks/')
+    for root, dirs, files in os.walk("."):
         for file in files:
             if file.endswith(".ipynb"):
                 nb, errors = _notebook_run(os.path.join(root, file))
