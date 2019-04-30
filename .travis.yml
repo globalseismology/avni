@@ -119,8 +119,7 @@ deploy:
   skip_cleanup: true
   script:
     - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        echo RSYNC-$REM_SERVER;
-        rsync -r --delete-after -v junk moulik@$REM_SERVER:/home/moulik/docs/;
+        rsync -r --delete-after -v junk moulik@$REM_SERVER:/home/moulik/docs/$TRAVIS_BRANCH;
       fi
   on:
     branch: devel
