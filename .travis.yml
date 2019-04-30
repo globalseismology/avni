@@ -116,9 +116,8 @@ deploy:
   skip_cleanup: true
   script:
     - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        - if [ "$MPI" ] && [ "$PY" = "3.4" ]; then
-            rsync -r --delete-after -v _build/html/* moulik@$REM_SERVER:docs/;
-          fi
+        echo RSYNC-$REM_SERVER;
+        rsync -r --delete-after -v rem3d/docs/_build/html/* moulik@$REM_SERVER:docs/;
       fi
   on:
     branch: devel
