@@ -117,7 +117,7 @@ deploy:
   script:
     - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         echo RSYNC-$REM_SERVER;
-        rsync -r --delete-after -v rem3d/docs/_build/html/* moulik@$REM_SERVER:docs/;
+        rsync -r --delete-after -v rem3d/docs/_build/html/* moulik@$REM_SERVER:/home/moulik/docs/;
       fi
   on:
     branch: devel
