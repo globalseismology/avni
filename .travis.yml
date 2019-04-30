@@ -33,7 +33,7 @@ before_install:
   - sudo apt-get install -y gfortran
 
   # install latex
-  @- sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
+  #- sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
 
   # Here we just install Miniconda, which you shouldn't have to change.
 #  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -89,9 +89,9 @@ script:
 #  - cd ..
    - touch junk
 
-after_success:
+#after_success:
   #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
-  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
+#  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
 
 before_deploy:
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
