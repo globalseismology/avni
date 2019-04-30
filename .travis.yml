@@ -69,7 +69,7 @@ script:
   - cd docs
   - make html
   - make latexpdf
-  - dropbox_uploader.sh upload _build/html rem3d
+  - ./dropbox_uploader.sh upload _build/html rem3d
   - cd ..
 
 after_success:
