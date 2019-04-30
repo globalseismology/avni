@@ -98,10 +98,10 @@ script:
 #  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
 
 before_deploy:
-  eval "$(ssh-agent -s)"
-  chmod 600 $HOME/travis_deploy_rsa
-  echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-  ssh-add $HOME/travis_deploy_rsa
+  - eval "$(ssh-agent -s)"
+  - chmod 600 $HOME/travis_deploy_rsa
+  - echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  - ssh-add $HOME/travis_deploy_rsa
 
 # deploy to pypi-test from master when tagged
 deploy:
