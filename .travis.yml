@@ -55,7 +55,7 @@ script:
   - cd rem3d
 
   # Add the required command for testing here
-  - pytest --cov-report term --cov=.
+  - pytest --cov-config setup.cfg --cov-report term --cov=.
 
   # make docs; TODO: transfer to readthedocs.com
   # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
