@@ -91,7 +91,7 @@ script:
 #  - make latexpdf
 #  #- ./dropbox_uploader.sh upload _build/html rem3d
 #  - cd ..
-   - touch junk
+  - touch junk
 
 #after_success:
   #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
@@ -120,6 +120,7 @@ deploy:
   script:
     - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         rsync -r --delete-after -v junk moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+
       fi
   on:
     branch: devel
