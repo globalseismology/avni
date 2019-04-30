@@ -103,6 +103,7 @@ before_deploy:
     chmod 600 $HOME/travis_deploy_rsa;
     echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config;
     ssh-add $HOME/travis_deploy_rsa;
+
   fi
 
 # deploy to pypi-test from master when tagged
