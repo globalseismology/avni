@@ -109,20 +109,31 @@ class Model(object):
         Output:
         ------
 
-        result: dictionary of numpy arrays
+        result: dictionary of results, including numpy arrays
 
             if args['parameter']='vs',
 
-            result = {'vs': 2d numpy array, 'theta': 1d angle in degrees,
-                      'radius': radius in km,
-                      'lat': 1d latitude of surface points (not implemented yet),
-                      'lon': 1d longitude of surface points (not implemented yet)}
+            result={'parameter':string with parameter name, e.g., 'vs'
+                    'vs': 2d numpy array,
+                    'depth': 1d array,depth in km,
+                    'lat': 1d array, latitude of surface points,
+                    'lon': 1d array, longitude of surface points,
+                    'theta': 1d array, angular distance along transect [degrees]
+                    }
         '''
         args['task']='crossSection'
         json_load = json.loads(self.r3dc.call(self.endpoint,dict(args),5*60))
-        parameter=list(json_load.keys())[0]
+
         results={}
+        not_arrays=['parameter']
         for keyn in json_load.keys():
-            results[keyn]=np.asarray(json_load[keyn])
+            if keyn not in not_arrays:
+                results[keyn]=np.asarray(json_load[keyn])
+            else:
+                results[keyn]=json_load[keyn]
+
+        # calculate angular coord (distance along path)
+        Nlatlon=results['lat'].size
+        results['theta']=np.linspace(0,args['gcdelta'],Nlatlon)
 
         return results
