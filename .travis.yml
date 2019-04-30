@@ -87,16 +87,16 @@ deploy:
     branch: master
     tags: true
 
-deploy:
-  provider: script
-  skip_cleanup: true
-  script:
-    - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        cd rem3d/docs;
-        dropbox_uploader.sh upload _build/html rem3d;
-      fi
-  on:
-    branch: devel
+#deploy:
+#  provider: script
+#  skip_cleanup: true
+#  script:
+#    - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+#        cd rem3d/docs;
+#        dropbox_uploader.sh upload _build/html rem3d;
+#      fi
+#  on:
+#    branch: devel
 
 
 # Slack notification
