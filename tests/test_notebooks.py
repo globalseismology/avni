@@ -3,6 +3,7 @@ import os
 import subprocess
 import tempfile
 import nbformat
+import rem3d
 #########################################################
 
 def _notebook_run(path):
@@ -26,6 +27,7 @@ def _notebook_run(path):
     return nb, errors
 
 def test_ipynb():
+    os.chdir(rem3d.tools.get_installdir())
     for root, dirs, files in os.walk("../examples/Notebooks/"):
         for file in files:
             if file.endswith(".ipynb"):
