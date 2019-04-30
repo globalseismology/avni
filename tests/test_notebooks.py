@@ -2,7 +2,6 @@
 import os
 import subprocess
 import tempfile
-
 import nbformat
 #########################################################
 
@@ -27,7 +26,6 @@ def _notebook_run(path):
     return nb, errors
 
 def test_ipynb():
-    list_notebooks
     for root, dirs, files in os.walk("../examples/Notebooks/"):
         for file in files:
             if file.endswith(".ipynb"):
