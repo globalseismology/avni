@@ -14,7 +14,7 @@ def _notebook_run(path):
     dirname, __ = os.path.split(path)
     os.chdir(dirname)
     with tempfile.NamedTemporaryFile(suffix=".ipynb") as fout:
-        args = ["nbconvert", "--to", "notebook", "--execute",
+        args = ["jupyter-nbconvert", "--to", "notebook", "--execute",
           "--ExecutePreprocessor.timeout=60",
           "--output", fout.name, path]
         subprocess.check_call(args)

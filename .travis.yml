@@ -42,8 +42,7 @@ install:
   - conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires
 
   # This is for coverage testing
-  - conda install --yes -c conda-forge codecov pytest-cov pytest nbformat
-  - pip3 install --upgrade --force-reinstall --no-cache-dir jupyter
+  - conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat
 
   # for sphinx documentation
   - conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme
