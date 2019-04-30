@@ -99,9 +99,9 @@ script:
 
 before_deploy:
   - eval "$(ssh-agent -s)"
-  - chmod 600 $HOME/travis_deploy_rsa
-  - echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-  - ssh-add $HOME/travis_deploy_rsa
+  - sudo chmod 600 $HOME/travis_deploy_rsa
+  - sudo echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  - sudo ssh-add $HOME/travis_deploy_rsa
 
 # deploy to pypi-test from master when tagged
 deploy:
