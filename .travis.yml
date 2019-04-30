@@ -120,7 +120,6 @@ deploy:
   script:
     - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         rsync -r --delete-after -v junk moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
-
       fi
   on:
     branch: devel
