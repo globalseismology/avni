@@ -32,6 +32,9 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y gfortran
 
+  # add a group for apache on end server
+  - sudo groupadd -g 10000 apache
+
   # install latex
   - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
 
