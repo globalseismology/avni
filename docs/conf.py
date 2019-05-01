@@ -258,16 +258,96 @@ html_static_path = ['_static']
 htmlhelp_basename = 'REM3Ddoc'
 
 # -- Options for LaTeX output ---------------------------------------------
-
+preamble1 = '''
+\\newcommand{{\\burnmanversion}}{{{0}}}
+'''.format(release)
+preamble = preamble1 + r'''
+\usepackage{textpos}
+\usepackage{amssymb}
+\newcommand{\burnman}{\texttt{\bf BurnMan}}
+\renewcommand{\maketitle}{
+\definecolor{dark_grey}{gray}{0.3}
+\definecolor{aspect_blue}{rgb}{0.9,0.35,0.3}
+%LINE 1%
+{
+\renewcommand{\familydefault}{\sfdefault}
+\pagenumbering{gobble}
+\begin{center}
+\resizebox{\textwidth}{!}{\textcolor{dark_grey}{\fontfamily{\sfdefault}\selectfont
+COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
+}}
+\hrule
+%LINE 2%
+\color{dark_grey}
+\rule{\textwidth}{2pt}
+%LINE 3%
+\color{dark_grey}
+% FILL: additional organizations
+% e.g.: {\Large Organization 1\\Organization 2}
+{\Large }
+\end{center}
+%COLOR AND CODENAME BLOCK%
+\begin{center}
+\resizebox{\textwidth}{!}{\colorbox
+% FILL: color of code name text box
+% e.g. blue
+{aspect_blue}{\fontfamily{\rmdefault}\selectfont \textcolor{white} {
+% FILL: name of the code
+% You may want to add \hspace to both sides of the codename to better center it, such as:
+% \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
+\hspace{0.1in}\burnman{}\hspace{0.1in}
+}}}
+\\[12pt]
+{\Large a thermodynamics and thermoelasticity toolkit}
+\end{center}
+%MAIN PICTURE%
+\begin{textblock*}{5.in}(0.3in,0.3in)
+% FILL: image height
+% e.g. height=6.5in
+\begin{center}
+\vspace{.5in}
+\includegraphics[height=4.5in]{../../burnjack-small.png}
+% FILL: image file name
+% e.g. cover_image.png
+\end{center}
+\end{textblock*}
+%USER MANUAL%
+\color{dark_grey}
+\hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
+% FILL: manual version
+% e.g. 1.0
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {\burnmanversion}\\
+%\\\large(generated from subversion: $Revision: 2568 $)\\
+}
+%AUTHOR(S) & WEBSITE%
+\null
+\vfill
+\color{dark_grey}
+\Large \hfill {\raggedleft \fontfamily{\sfdefault}\selectfont
+% FILL: author list
+% e.g. Author One\\Author Two\\Author Three\\
+% be sure to have a newline (\\) after the final author
+Sanne Cottaar\\Timo Heister\\Robert Myhill\\Ian Rose\\Cayman Unterborn\\
+}
+{\fontfamily{\sfdefault}\selectfont \href{http://geodynamics.org}{http://geodynamics.org}}
+%LINE%
+\color{dark_grey}
+\rule{\textwidth}{2pt}
+}
+\pagebreak
+}
+  '''
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+'papersize': 'letterpaper',
+'babel': '\usepackage[english]{babel}',
 
 # The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+'pointsize': '11pt',
 
 # Additional stuff for the LaTeX preamble.
-#'preamble': '',
+#'preamble': preamble,
+'preamble': preamble
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
