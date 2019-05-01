@@ -6,10 +6,11 @@ if (sys.version_info[:2] < (3, 0)):
     from builtins import *
 
 # imports for client:
-import json,requests
+import json,requests,os
 import pandas as pd
 import numpy as np
-
+from configobj import ConfigObj
+from .. import tools
 
 class Model(object):
 
@@ -32,7 +33,44 @@ class Model(object):
 
         '''
         args['task']='listModels'
-        return json.loads(self.r3dc.call(self.endpoint,dict(args),60))
+        ModelList=json.loads(self.r3dc.call(self.endpoint,dict(args),60))
+
+        # attach kernel list descriptions
+        ModelList=self.addConfigDescriptions(ModelList)
+
+        return ModelList
+
+    def addConfigDescriptions(self,ModelList={}):
+        '''
+        loads kernel, model descriptions from config object
+        '''
+        filepath = os.path.join(tools.get_configdir(),'attributes.ini')
+        if os.path.isfile(filepath):
+            # get config file loaded
+            parser=ConfigObj(filepath)
+
+            # compile kernel list to fetch
+            kernel_list=[]
+            for model in ModelList['3d']['available']:
+                kernels=ModelList['3d']['details'][model]['kernel']
+
+                # append kernels to list
+                for kern in kernels:
+                    if kern not in kernel_list:
+                        kernel_list.append(kern)
+
+                if model in parser['Model3D'].keys():
+                    ModelList['3d']['details'][model]['meta']=parser['Model3D'][model]
+
+            descs={}
+            for kern in kernel_list:
+                if kern in parser['Kernel_Set'].keys():
+                    descs[kern]=parser['Kernel_Set'][kern]
+
+            if len(descs)>0:
+                ModelList['kernel_list']=descs
+
+        return ModelList
 
     def evaluate_points(self,args_in={}):
         '''
