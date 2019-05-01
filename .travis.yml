@@ -118,9 +118,9 @@ deploy:
     skip_cleanup: true
     script:
       - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        sudo chgrp -R apache rem3d/docs/_build;
-        rsync -r -g --delete-after -v rem3d/docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
-        rsync -r -g --delete-after -v rem3d/docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        sudo chgrp -R apache docs/_build;
+        rsync -r -g --delete-after -v docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
         fi
     on:
       branch: devel
@@ -128,9 +128,9 @@ deploy:
     skip_cleanup: true
     script:
       - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        sudo chgrp -R apache rem3d/docs/_build;
-        rsync -r -g --delete-after -v rem3d/docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
-        rsync -r -g --delete-after -v rem3d/docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        sudo chgrp -R apache docs/_build;
+        rsync -r -g --delete-after -v docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
         fi
     on:
       branch: master
