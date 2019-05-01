@@ -124,7 +124,6 @@ deploy:
   on:
     branch: devel
 
-
 #deploy:
 #  provider: script
 #  skip_cleanup: true
