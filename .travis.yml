@@ -119,7 +119,7 @@ deploy:
   skip_cleanup: true
   script:
     - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        rsync -og --usermap=apache:apache -r --delete-after -v junk moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync --usermap=apache:apache -r --delete-after -v junk moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
       fi
   on:
     branch: devel
