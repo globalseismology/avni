@@ -118,16 +118,25 @@ deploy:
     tags: true
 
 deploy:
-  provider: script
-  skip_cleanup: true
-  script:
-    - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+  - provider: script
+    skip_cleanup: true
+    script:
+      - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         sudo chgrp -R apache junk;
         rsync -r -g --delete-after -v junk moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
-      fi
-  on:
-    branch: devel
-
+        fi
+    on:
+      branch: devel
+  - provider: script
+    skip_cleanup: true
+    script:
+      - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+        sudo chgrp -R apache junk;
+        rsync -r -g --delete-after -v junk moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        fi
+    on:
+      branch: master
+      tags: true
 
 #deploy:
 #  provider: script
