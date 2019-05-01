@@ -122,7 +122,7 @@ deploy:
   skip_cleanup: true
   script:
     - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        sudo chgrp -R apache junk
+        sudo chgrp apache junk
         rsync -r -g --delete-after -v junk moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
       fi
   on:
