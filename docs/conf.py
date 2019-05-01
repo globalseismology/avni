@@ -259,12 +259,12 @@ htmlhelp_basename = 'REM3Ddoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 preamble1 = '''
-\\newcommand{{\\burnmanversion}}{{{0}}}
+\\newcommand{{\\rem3dversion}}{{{0}}}
 '''.format(release)
 preamble = preamble1 + r'''
 \usepackage{textpos}
 \usepackage{amssymb}
-\newcommand{\burnman}{\texttt{\bf BurnMan}}
+\newcommand{\rem3d}{\texttt{\bf REM3D}}
 \renewcommand{\maketitle}{
 \definecolor{dark_grey}{gray}{0.3}
 \definecolor{aspect_blue}{rgb}{0.9,0.35,0.3}
@@ -295,7 +295,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % FILL: name of the code
 % You may want to add \hspace to both sides of the codename to better center it, such as:
 % \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
-\hspace{0.1in}\burnman{}\hspace{0.1in}
+\hspace{0.1in}\rem3d{}\hspace{0.1in}
 }}}
 \\[12pt]
 {\Large a thermodynamics and thermoelasticity toolkit}
@@ -306,7 +306,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % e.g. height=6.5in
 \begin{center}
 \vspace{.5in}
-\includegraphics[height=4.5in]{../../burnjack-small.png}
+\includegraphics[height=4.5in]{rem3dlogo.png}
 % FILL: image file name
 % e.g. cover_image.png
 \end{center}
@@ -316,7 +316,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
 % FILL: manual version
 % e.g. 1.0
-\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {\burnmanversion}\\
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {\rem3dversion}\\
 %\\\large(generated from subversion: $Revision: 2568 $)\\
 }
 %AUTHOR(S) & WEBSITE%
@@ -327,7 +327,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % FILL: author list
 % e.g. Author One\\Author Two\\Author Three\\
 % be sure to have a newline (\\) after the final author
-Sanne Cottaar\\Timo Heister\\Robert Myhill\\Ian Rose\\Cayman Unterborn\\
+Pritwiraj Moulik\\Ross Maguire\\Chris Havlin\\Ian Rose\\Cayman Unterborn\\
 }
 {\fontfamily{\sfdefault}\selectfont \href{http://geodynamics.org}{http://geodynamics.org}}
 %LINE%
