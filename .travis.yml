@@ -22,11 +22,9 @@ env:
     secure: "FSy2beqe2qfRiRpss9XzT2gMIn1cgJm6IlCbupxQBff0RSSH7IZ5A6M0TOmjmneIjKJTUOcxm+MdoSzR15xy9OLFA7GxvGZsoxfLklQaJrzhK5/34Lqxo2Wzbeis0Q4XApjoLGHaRdNLufpxOUfhi5gOJpQ/hiBe/hOt3O6p71ZrSiM6R2M9IT52nJL6JjimS1AgI58LNStZvMC7B3F7T+5HBRQ4iHya0trTxUwp07qA3vz8+WFqcIbb5PEoOmdnhOXX1Vyk1bU8HJ9I4QoGMA+3MKAxyb5I5ovxQVJ9QxHGNSj0DifegbO+ATvB/qtLZAiTuQFQEzJCGY+PCzzQzcxzBcn+Pjl0ol0g1gxtl0dtwiU4Ikn12171pdtbS/CWAtGZJsaml2LKdgZnipROu+sQr91vZyMs8octOHqm2EmWBncFsHRNF3efl5bCxudnIAUEkd0d6uaxPgi9bU7Ke7ZWIUTIOoE09IzHHDaqH2S9NdeOQhR7E/i4awyctfzeKNWsjEYgdX0LtSki0zzDJhTSxC0bsY+w8u+rgyaG06Qdopxc6TRgFOicGo8ijknJKTCnJeRekUyj+ZFsRm0Py5mKE2CI/6Zx8snMWtA71TtTpS9qooUN2NtwAu/e4GFM8Tvg07Fe2XKtze/TPD/vai6+4ifZ0v53cKGoNDDeuwU="
 
 addons:
-  sources:
-    - ubuntu-toolchain-r-test
-  apt:
-    ssh_known_hosts:
-      - $REM_SERVER
+    apt:
+        ssh_known_hosts:
+        - $REM_SERVER
 
 before_install:
   # print the distro information
@@ -34,77 +32,72 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y gfortran
 
-  # add a group for apache on end server
-  - sudo groupadd -g 10000 apache
-
   # install latex
-  #- sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
+  - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
 
   # Here we just install Miniconda, which you shouldn't have to change.
-#  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-#  - bash miniconda.sh -b -p $HOME/miniconda
-#  - export PATH="$HOME/miniconda/bin:$PATH"
-#  - export F90=gfortran
-#  - conda update --yes conda
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - export F90=gfortran
+  - conda update --yes conda
 
   # Decrypt rsync key
   - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         sudo openssl aes-256-cbc -K $encrypted_43caa601570c_key -iv $encrypted_43caa601570c_iv -in travis_deploy_rsa.enc -out $HOME/travis_deploy_rsa -d;
     fi
 
-#  - echo “Host *\n” >> ~/.ssh/config
-#  - echo “\tStrictHostKeyChecking no\n” >> ~/.ssh/config
-#  - echo “\tPort 41557\n” >> ~/.ssh/config
+  - echo -e “Host *\n\tStrictHostKeyChecking no\n\n” >> $HOME/.ssh/config
 
   # Dropbox uploader key
   # travis encrypt-file ~/.dropbox_uploader
   # - '[ "$TRAVIS_SECURE_ENV_VARS" == "false" ] || sudo openssl aes-256-cbc -K $encrypted_43caa601570c_key -iv $encrypted_43caa601570c_iv -in .dropbox_uploader.enc -out $HOME/.dropbox_uploader -d'
 
-#install:
-#  # Make environment and activate
-#  - conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION
-#  - source $HOME/miniconda/etc/profile.d/conda.sh
-#  - source activate rem3d
-#  - conda install --yes -c conda-forge python-slugify
-#
-#  # Install REM3D requirements
-#  - conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires
-#
-#  # This is for coverage testing
-#  - conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat
-#
-#  # for sphinx documentation
-#  - conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme
-#
+install:
+  # Make environment and activate
+  - conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION
+  - source $HOME/miniconda/etc/profile.d/conda.sh
+  - source activate rem3d
+  - conda install --yes -c conda-forge python-slugify
+
+  # Install REM3D requirements
+  - conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires
+
+  # This is for coverage testing
+  - conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat
+
+  # for sphinx documentation
+  - conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme
+
 script:
   # Running pip install -e . --user directly causes errors
   # Refer https://jeetblogs.org/post/strange-uninstall-failures-when-running-pip-install-in-editable-mode/
-#  - cd ..
-#  - pip install -e rem3d --user
-#  - cd rem3d
-#
-#  # Add the required command for testing here
-#  - pytest --cov-config setup.cfg --cov-report term --cov=.
-#
-#  # make docs; TODO: transfer to readthedocs.com
-#  # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
-#  # http://openmdao.org/twodocs/versions/2.0.2/developer_docs/automating_doc_build/automating_doc_build.html
-#  - cd docs
-#  - make html
-#  - make latexpdf
-#  #- ./dropbox_uploader.sh upload _build/html rem3d
-#  - cd ..
-  - touch junk
+  - cd ..
+  - pip install -e rem3d --user
+  - cd rem3d
 
-#after_success:
+  # Add the required command for testing here
+  - pytest --cov-config setup.cfg --cov-report term --cov=.
+
+  # make docs; TODO: transfer to readthedocs.com
+  # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
+  # http://openmdao.org/twodocs/versions/2.0.2/developer_docs/automating_doc_build/automating_doc_build.html
+  - cd docs
+  - make html
+  - make latexpdf
+  #- ./dropbox_uploader.sh upload _build/html rem3d
+  - cd ..
+
+after_success:
   #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
-#  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
+  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
 
 before_deploy:
-  - eval "$(ssh-agent -s)"
-  - sudo chmod 600 $HOME/travis_deploy_rsa
-  - sudo echo -e "Host *\n\tStrictHostKeyChecking no\n\tPort 41557\n" >> ~/.ssh/config
-  - sudo ssh-add $HOME/travis_deploy_rsa
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+    eval "$(ssh-agent -s)";
+    chmod 600 $HOME/travis_deploy_rsa;
+    ssh-add $HOME/travis_deploy_rsa;
+  fi
 
 # deploy to pypi-test from master when tagged
 deploy:
@@ -118,12 +111,26 @@ deploy:
     tags: true
 
 deploy:
+  provider: script
+  skip_cleanup: true
+  script:
+    - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+        echo RSYNC-$REM_SERVER;
+        rsync -r --delete-after -v rem3d/docs/_build/html/* moulik@$REM_SERVER:/home/moulik/docs/;
+      fi
+  on:
+    branch: devel
+
+
+# deploy documents to devel and master (if tagged)
+deploy:
   - provider: script
     skip_cleanup: true
     script:
       - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         sudo chgrp -R apache junk;
-        rsync -r -g --delete-after -v junk moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v rem3d/docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v rem3d/docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
         fi
     on:
       branch: devel
@@ -132,7 +139,8 @@ deploy:
     script:
       - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         sudo chgrp -R apache junk;
-        rsync -r -g --delete-after -v junk moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v rem3d/docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v rem3d/docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
         fi
     on:
       branch: master
@@ -148,7 +156,6 @@ deploy:
 #      fi
 #  on:
 #    branch: devel
-
 
 # Slack notification
 notifications:
