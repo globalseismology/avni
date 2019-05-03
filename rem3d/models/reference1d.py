@@ -80,6 +80,8 @@ class Reference1D(object):
             print(var1)
             raise NotImplementedError('model format is not currently implemented in reference1D.read')
 
+    def read_bases_coefficients(self,file):    
+        # Use tools.eval_polynomial and tools.eval_splrem
 
     def readmineoscards(self,file):
         # Operations between PintArrays of different unit registry will not work.
