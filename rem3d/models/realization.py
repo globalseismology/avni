@@ -30,9 +30,9 @@ class Realization(object):
         self.data = None
         self._name = None
         self._type = None
-        self._refmodel = None    
-        self._infile = None    
-        if file is not None:  success = self._read(file)
+        self._refmodel = None
+        self._infile = None
+        if file is not None:  success = self.read(file)
 
     def __str__(self):
         if self._name is not None:
@@ -57,20 +57,20 @@ class Realization(object):
     def refmodel(self):
         return self._refmodel
     #########################       methods       #############################
-        
-    def _read(self,file):
+
+    def read(self,file):
         """
         Try reading the file into resolution/realization either as ascii, hdf5 or nc4
         """
         if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
         success = True
         try:# try ascii
-            self._readascii(file)
+            self.readascii(file)
         except:
             var1 = traceback.format_exc()
             try: # try nc4
                 ds = xr.open_dataset(file)
-                self._readnc4(ds)
+                self.readnc4(ds)
                 ds.close()
             except:
                 try: #first close the dataset if opened with xarray above
@@ -83,7 +83,7 @@ class Realization(object):
                 success = False
         if success: self._infile = file
 
-    def _readascii(self,modelfile):
+    def readascii(self,modelfile):
         """
         Reads a standard 3D model file. maxkern is the maximum number of radial kernels
         and maxcoeff is the maximum number of corresponding lateral basis functions.
@@ -101,7 +101,7 @@ class Realization(object):
         self._type = 'ascii'
         self._refmodel = model['metadata']['refmodel']
 
-    def _readnc4(self,ds):
+    def readnc4(self,ds):
         """
         Read netCDF4 file into a resolution and realization of model3D class.
 
