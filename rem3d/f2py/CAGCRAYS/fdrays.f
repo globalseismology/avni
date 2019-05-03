@@ -5,10 +5,11 @@ c---- routine to interpolate p,delta,travel time,and dd/dp tables
 c     dimensioned for 5 possible arrivals
 c     input:  range  [rad]
 c             npps    =  number of points in p table to search
-c     output: nrays   =  number of geometrical arrivals 
+c     output: nrays   =  number of geometrical arrivals
 c             pr,tr,dddpr  =  values for found rays
 c
-      dimension p(1),t(1),d(1),dddp(1),q(1),turn(1)
+c      dimension p(1),t(1),d(1),dddp(1),q(1),turn(1)
+      dimension p(maxray),t(maxray),d(maxray),dddp(maxray),q(maxray),turn(maxray)
       dimension pr(maxray),tr(maxray),dddpr(maxray),qr(maxray),turad(maxray)
       data caustic /1.e-6/
 c

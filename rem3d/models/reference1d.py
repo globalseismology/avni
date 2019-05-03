@@ -20,6 +20,7 @@ import traceback
 import pandas as pd
 import pdb
 import pint
+import ntpath
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
@@ -34,11 +35,11 @@ class Reference1D(object):
     '''
 
     def __init__(self,file=None):
-        self.__nlayers__ = None
         self.data = None
         self.metadata = {}
         self.name = None
-        self.radius_max = None
+        self._radius_max = None
+        self._nlayers = None
         if file is not None:
             self.read(file)
             self.get_Love_elastic()
@@ -46,14 +47,14 @@ class Reference1D(object):
             self.get_mineralogical()
 
     def __str__(self):
-        if self.data is not None and self.__nlayers__ > 0:
-            output = "%s is a one-dimensional model with %s layers and radius up to %s km" % (self.name, self.__nlayers__,self.radius_max/1000.)
+        if self.data is not None and self._nlayers > 0:
+            output = "%s is a one-dimensional model with %s layers and radius up to %s km" % (self.name, self._nlayers,self._radius_max/1000.)
         else:
             output = "No model has been read into this reference1D instance yet"
         return output
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self.name,self.radius_max})'.format(self=self)
+        return '{self.__class__.__name__}({self.name,self._radius_max})'.format(self=self)
 
     def __copy__(self):
         cls = self.__class__
@@ -76,10 +77,10 @@ class Reference1D(object):
         try:
             self.readmineoscards(file)
         except:
+            pdb.set_trace()
             var1 = traceback.format_exc()
             print(var1)
             raise NotImplementedError('model format is not currently implemented in reference1D.read')
-
 
     def readmineoscards(self,file):
         # Operations between PintArrays of different unit registry will not work.
@@ -99,12 +100,12 @@ class Reference1D(object):
         self.metadata['description'] = 'Read from '+file
         self.metadata['filename'] = file
         self.name = ntpath.basename(file)
-        self.__nlayers__ = len(modelarr['radius'])
+        self._nlayers = len(modelarr['radius'])
         # Create data array
         PA_ = pint.PintArray
         modelarr_['depth'] = PA_((constants.R.magnitude - modelarr_['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
         self.data = modelarr_
-        self.radius_max = max(self.data['radius']).magnitude
+        self._radius_max = max(self.data['radius']).magnitude
 
     def get_Love_elastic(self):
         '''
@@ -124,7 +125,7 @@ class Reference1D(object):
 
         Zs, Zp: S and P impedances
         '''
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             # Add metadata
             for field in ['A','C','N','L','F','vp','vs','vphi','xi','phi','Zp','Zs']: self.metadata['attributes'].append(field)
 
@@ -164,10 +165,10 @@ class Reference1D(object):
 
         pressure: pressure at each depth
         '''
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             if constants.planetpreferred == 'Earth':
                 file = self.metadata['filename']
-                layers = self.__nlayers__
+                layers = self._nlayers
                 grav,vaisala,bullen,pressure = getbullen(file,layers,constants.omega.to_base_units().magnitude,constants.G.to_base_units().magnitude)
                 # Add metadata
                 for field in ['gravity','Brunt-Vaisala','Bullen','pressure']: self.metadata['attributes'].append(field)
@@ -202,7 +203,7 @@ class Reference1D(object):
         disc = {}
 # Create a named array for discontinuities
 
-        for field in ['delta','average']: disc[field] = self.data.copy().drop(range(len(np.unique(disc_depths)),len(self.data)))
+        for field in ['delta','average','contrast']: disc[field] = self.data.copy().drop(range(len(np.unique(disc_depths)),len(self.data)))
 
         # default names and units as percent
         names = self.data.columns.tolist()
@@ -215,6 +216,7 @@ class Reference1D(object):
                 if field == 'radius' or field == 'depth':
                     disc['delta'][field][icount] = sel[field].iat[0]
                     disc['average'][field][icount] = sel[field].iat[0]
+                    pdb.set_trace()
                     disc['contrast'][field][icount] = sel[field].iat[0]
                 else:
                     disc['delta'][field][icount] = sel[field].iat[0]-sel[field].iat[1]
@@ -261,7 +263,7 @@ class Reference1D(object):
         '''
         Get the arrays of custom parameters defined in various Earth models
         '''
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             # convert to array for ease of looping
             if isinstance(parameters,string_types): parameters = np.array([parameters])
 
@@ -283,7 +285,7 @@ class Reference1D(object):
         values=None
         depth_in_km = tools.convert2nparray(depth_in_km)
 
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             if parameter in self.data.dtype.names:
                 values = self.data[parameter]
                 depth_array = (constants.R.to_base_units().magnitude - self.data['radius'])/1000. # in km
@@ -302,9 +304,9 @@ class Reference1D(object):
         Writes a model file that is compatible with MINEOS.
         '''
         parameters = ['radius','rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             model_name = self.name
-            ntotlev = self.__nlayers__
+            ntotlev = self._nlayers
             itopic = self.metadata['discontinuities']['itopic']
             itopoc = self.metadata['discontinuities']['itopoc']
             itopmantle = self.metadata['discontinuities']['itopmantle']
@@ -334,7 +336,7 @@ class Reference1D(object):
           To work around this, zero values an ocean layer will be written
           as 1e-4.
         '''
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             model_name = self.name
             f = open(directory+'/'+model_name+'.'+fmt,'w')
             f.write('{} - P\n'.format(model_name))
@@ -342,7 +344,7 @@ class Reference1D(object):
 
             for i in range(0,len(self.data)):
                 f.write('{:2.4f}   {:2.4f}   {:2.4f}    {:2.4f}\n'.format(
-                   (self.radius_max - self.data['radius'][::-1][i]) / 1000.0,
+                   (self._radius_max - self.data['radius'][::-1][i]) / 1000.0,
                    self.data['vp'][::-1][i] / 1000.0,
                    self.data['vs'][::-1][i] / 1000.0,
                    self.data['rho'][::-1][i] / 1000.0))
@@ -358,7 +360,7 @@ class Reference1D(object):
         '''
          Write 1D model to be used as an external model in axisem
         '''
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             model_name = self.name
             f = open(directory+'/'+model_name+'.bm','w')
             n_discon = 0
@@ -391,7 +393,7 @@ class Reference1D(object):
                 self.data['eta'][::-1][i]) )
 
                 if i < len(self.data)-1 and self.data['radius'][::-1][i] == self.data['radius'][::-1][i+1]:
-                    depth_here = (self.radius_max - self.data['radius'][::-1][i]) / 1000.0
+                    depth_here = (self._radius_max - self.data['radius'][::-1][i]) / 1000.0
                     n_discon += 1
                     f.write('#    Discontinuity {}, depth {:6.2f} km\n'.format(n_discon,depth_here))
         else:
