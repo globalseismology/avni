@@ -6,4 +6,5 @@ from __future__ import absolute_import
 # common routines
 from .common import *
 
-
+# surface waves
+from .SW import *

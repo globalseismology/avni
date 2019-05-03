@@ -3,15 +3,15 @@ Table of Contents
 
   1. [Use *issues* to discuss intended modifications](#use-issues-to-discuss-any-intended-modifications)
   2. [Document your code](#document-your-code)
-  3. [Coding style](#coding-style)
+  3. [Test your code](#test-your-code)
+  4. [Coding style](#coding-style)
   	* [Python](#python-formatting)
-  	* [Matlab](#matlab-formatting)
   	* [Fortran](#fortran-formatting)
 
 Use *issues* to discuss intended modifications
---------------------------------------------------
+----------------------------------------------
 
-GitHub provides a [system](https://github.com/pmoulik/rem3d/issues) to track issues. It should be a central place to monitor REM3D evolution. In particular:
+GitHub provides a [system](https://github.com/geodynamics/rem3d/issues) to track issues. It should be a central place to monitor REM3D evolution. In particular:
 
 -   report bug as they occur
 
@@ -27,8 +27,14 @@ REM3D's issue tracker interface lets us track bugs being fixed and enhancements 
 Document your code
 ------------------
 
-Any new code should be fully Doxygen commented in [Python](http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#pythonblocks), [fortran](http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#fortranblocks) or Matlab. If you have some free time, feel free to comment any code you modify.
+Any new code should be fully Doxygen commented in [Python](#python-formatting) or [fortran](#fortran-formatting). If you have some free time, feel free to comment any code you modify. 
 
+Test your code
+------------------
+
+[![Build Status](https://travis-ci.com/globalseismology/rem3d.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=devel)](https://travis-ci.com/globalseismology/rem3d) [![codecov](https://codecov.io/gh/globalseismology/rem3d/branch/devel/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/rem3d)
+
+Any new code should be tested with unit tests kept in the [tests](../tests) folder. Note that we use [coverage.py](https://coverage.readthedocs.io) for testing so all files and routines should be named test_*. We attempt to keep coverage above 90% on our development builds.
 
 Coding style
 ------------
@@ -36,7 +42,6 @@ Coding style
 When modifying an existing file, try to maintain consistency with its original style.  If the code you add looks drastically different from the original code, it may be difficult for readers to follow. Try to avoid this. As a general guideline, we recommend the following code formatting style:
 
   - [Python](#python-formatting)
-  - [Matlab](#matlab-formatting)
   - [Fortran](#fortran-formatting)
 
 Python formatting
@@ -71,42 +76,11 @@ class PyClass:
     """Documentation for a class.
     More details.
     """
-   
+
     def __init__(self):
         """The constructor."""
         self._memVar = 0;
         pass
-~~~
-
-
-Matlab formatting
-------------------
-
-**give space for breathing:**
-
-good
-~~~matlab
-    dx = 0.5 * fac * (a - b);
-~~~
-
-bad
-~~~matlab
-	dx=1/2*fac*(a-b);
-~~~
-
-
-**comment, comment, comment your functions using Doxygen convention:**
-~~~matlab
-function [out1, out2] = func(input, mode)
-% Some kind of fancy matlab function.
-% Maybe it computes an integral like this:
-% :math:`\int e^{-x^2} \mathrm{d}x` .
-%
-% :param input: The material
-% :param mode: The method
-% :returns: **[out1, out2]** -- The results
-
-out = input + mode;
 ~~~
 
 
@@ -147,14 +121,14 @@ bad
 
 good
 ~~~fortran
-  subroutine scotch_partitioning()
+  subroutine vbspl()
   implicit none
   ..
 ~~~
 
 bad
 ~~~fortran
-subroutine scotch_partitioning
+subroutine vbspl
   implicit none
   ..
 ~~~
@@ -162,32 +136,32 @@ subroutine scotch_partitioning
 The line beginning should only be used for *very important* sections, as it makes the line *very prominent* to read.
 For example, only use it for function descriptions, important comments, or file headers. For comments, see also next point...
 
-*our exception, module definitions start at beginning:*
+*exception, module definitions start at beginning:*
 
 good
 ~~~fortran
-module my_par
+module models
   integer :: count
 end module
 ~~~
 
 bad
 ~~~fortran
-  module my_par
+  module models
   integer :: count
-  end module  
+  end module
 ~~~
 
 **comment, comment, comment your code:**
 
 good
-~~~fortran  
+~~~fortran
   ! gets associated normal on GLL point
   ! (note convention: pointing outwards of acoustic element)
   nx = coupling_ac_el_normal(1,igll,iface)
 
   ! continuity of displacement and pressure on global point
-  accel(1,iglob) = accel(1,iglob) + jacobianw*nx*pressure  
+  accel(1,iglob) = accel(1,iglob) + jacobianw*nx*pressure
 ~~~
 
 bad
@@ -196,7 +170,7 @@ bad
   accel(1,iglob) = accel(1,iglob) + jacobianw*nx*pressure
 ~~~
 
-Note we prefer indenting the comments as well to make it easier for reading the code, e.g., when inside multiple if-then statements. Putting the comment at the beginning breaks the flow...
+Note we prefer indenting the comments as well to make it easier for reading the code, e.g., when inside multiple if-then statements. Putting the comment at the beginning breaks the flow.
 
 **comment, comment, comment your functions:**
 

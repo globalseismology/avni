@@ -1,0 +1,162 @@
+sudo: required
+dist: xenial
+
+language: python
+python:
+  - "3.7"
+
+branches:
+  only:
+    - devel
+    - travis
+    - master
+
+env:
+  global:
+    # CODECOV_TOKEN
+    # travis encrypt CODECOV_TOKEN="secretvalue"
+    secure: "jb9II2WjGCIww4E1ULr6JhIj1WhcmwDlXOWqA9ld6C+UPqYePPb670vQk3pUmUdwSsqXXlvbVjVhse0KRsdFOhac5FmS3j6LjXn4H14jJNQU3gZIXt4Fz1ND0Z2qWsfzCa95VNqNfgLZI/PFMxmwSlBe8H/GQ/T7OaFFQaFNYVz70VnHW9PceRfCISVcCzCh3+LEO9AKz4YdR8Ac1GWcrt313pDIB3PFneIx5kRDeC9ckrnlkPPA186Mq7kICZTq65luNGwsLRvO81dmQ0JooP8mEsckaaozTlUyeQHwI8y3Vit89otaraWlELCloKT63sHmOzywgkCvJMbg8L+4XfJGIZEFKk3ZQd2f1nVuO50+Ajys/PBWlbV2x4nwmBPxMumP4r2m9XJUm8SP9p1LdaMq/bnCW+X0jgS0MUPJzF9rpjKYFVLd6fxgl7gVz0lhc/0Tgf8mu+48C3aaKLTkHsKwHuXfEm8wob5f9gKeqVqZuml8j1ZqpcB86zB+gqvq4LJy0+wmSQRVmM1FeuFjoxL008wqWD1DDO0Gu8vWFt2AjxIZjspCGgnOCq2TQCYQehr9vgeXPEwJEim9+dQBWpBIlz6ycFBLs1AwmRofRs6dNnI00dkUp9iZakJ+md05F7FocZ6/kpCLJTbJzjE382WSeOL7P1vMYSNIAoGQbxQ="
+
+    # REM_SERVER
+    # travis encrypt REM_SERVER="secretvalue"
+    secure: "FSy2beqe2qfRiRpss9XzT2gMIn1cgJm6IlCbupxQBff0RSSH7IZ5A6M0TOmjmneIjKJTUOcxm+MdoSzR15xy9OLFA7GxvGZsoxfLklQaJrzhK5/34Lqxo2Wzbeis0Q4XApjoLGHaRdNLufpxOUfhi5gOJpQ/hiBe/hOt3O6p71ZrSiM6R2M9IT52nJL6JjimS1AgI58LNStZvMC7B3F7T+5HBRQ4iHya0trTxUwp07qA3vz8+WFqcIbb5PEoOmdnhOXX1Vyk1bU8HJ9I4QoGMA+3MKAxyb5I5ovxQVJ9QxHGNSj0DifegbO+ATvB/qtLZAiTuQFQEzJCGY+PCzzQzcxzBcn+Pjl0ol0g1gxtl0dtwiU4Ikn12171pdtbS/CWAtGZJsaml2LKdgZnipROu+sQr91vZyMs8octOHqm2EmWBncFsHRNF3efl5bCxudnIAUEkd0d6uaxPgi9bU7Ke7ZWIUTIOoE09IzHHDaqH2S9NdeOQhR7E/i4awyctfzeKNWsjEYgdX0LtSki0zzDJhTSxC0bsY+w8u+rgyaG06Qdopxc6TRgFOicGo8ijknJKTCnJeRekUyj+ZFsRm0Py5mKE2CI/6Zx8snMWtA71TtTpS9qooUN2NtwAu/e4GFM8Tvg07Fe2XKtze/TPD/vai6+4ifZ0v53cKGoNDDeuwU="
+
+addons:
+    apt:
+        ssh_known_hosts:
+        - $REM_SERVER
+
+before_install:
+  # print the distro information
+  - lsb_release -a
+  - sudo apt-get update -qq
+  - sudo apt-get install -y gfortran
+
+  # add a group for apache on end server
+  - sudo groupadd -g 10000 apache
+
+  # install latex
+  - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
+
+  # Here we just install Miniconda, which you shouldn't have to change.
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - export F90=gfortran
+  - conda update --yes conda
+
+  # Decrypt rsync key
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+        sudo openssl aes-256-cbc -K $encrypted_43caa601570c_key -iv $encrypted_43caa601570c_iv -in travis_deploy_rsa.enc -out $HOME/travis_deploy_rsa -d;
+    fi
+
+  # Dropbox uploader key
+  # travis encrypt-file ~/.dropbox_uploader
+  # - '[ "$TRAVIS_SECURE_ENV_VARS" == "false" ] || sudo openssl aes-256-cbc -K $encrypted_43caa601570c_key -iv $encrypted_43caa601570c_iv -in .dropbox_uploader.enc -out $HOME/.dropbox_uploader -d'
+
+install:
+  # Make environment and activate
+  - conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION
+  - source $HOME/miniconda/etc/profile.d/conda.sh
+  - source activate rem3d
+  - conda install --yes -c conda-forge python-slugify
+
+  # Install REM3D requirements
+  - conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires
+
+  # This is for coverage testing
+  - conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat
+
+  # for sphinx documentation
+  - conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme
+
+script:
+  # Running pip install -e . --user directly causes errors
+  # Refer https://jeetblogs.org/post/strange-uninstall-failures-when-running-pip-install-in-editable-mode/
+  - cd ..
+  - pip install -e rem3d --user
+  - cd rem3d
+
+  # Add the required command for testing here
+  - pytest --cov-config setup.cfg --cov-report term --cov=.
+
+  # make docs; TODO: transfer to readthedocs.com
+  # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
+  # http://openmdao.org/twodocs/versions/2.0.2/developer_docs/automating_doc_build/automating_doc_build.html
+  - cd docs
+  - make html
+  - make latexpdf
+  #- ./dropbox_uploader.sh upload _build/html rem3d
+  - cd ..
+
+after_success:
+  #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
+  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
+
+before_deploy:
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+    eval "$(ssh-agent -s)";
+    chmod 600 $HOME/travis_deploy_rsa;
+    sudo echo -e "Host *\n\tStrictHostKeyChecking no\n\tPort 41557\n" >> ~/.ssh/config;
+    ssh-add $HOME/travis_deploy_rsa;
+  fi
+
+# deploy to pypi-test from master when tagged
+deploy:
+  provider: pypi
+  server: https://test.pypi.org/legacy/ # Remove for deployment to official PyPi repo
+  user: pmoulik
+  password:
+    secure: "tOx/5080t8weII1Cf8ElL4uaEsGVPZGDiPCMfg0Muae9D9SJ14sTz41rb8wnx7ilhs9p4jxRImqneUD7Hv4gJcwX57XQzKvOnjd3l/droARCYBu67v2283u9ShHk+glEZS1HUqhtSQN9KTgTChdKAZgpfp61Ox17VWt65r24S8GBtnlX5hBX5pRGYhwM6PgAa+3QcwdLrCr8D0a0sbQOpQiZV+ZYdeumKhIGOnGe22/N4teHgAQKlPcsMSX7MjnHSDgHXLvFr7gLvDQhAzcCqCy0bcbvRyuVbpy5c1O43TtMlyrYOALThLO4jw6a49sF4fSw8QGwPTKXeQZIhvxqIqgpOb3ptGBL1sb4emj1IVIl2J6txwk96X/OMju8vIFfNd4hblf6x4stw1AFsYX3PYO5K+26nlanMm/OhhBiVxLH3X1vLSfO2+R+n2k/jZ7ie04tsOlfLlqTiwY2F50z3YQEZXRuDP2073w+MLYk3BPYruBMjPrk8AulpnYCtsDC5i3AomeJ+X8cBEGF7dwOI1cRbgw2UYK2xAggY0dwCg/BKBDve3AQQ2SJcIUUiHF5qdaSvJQBht1d8zHNongv6X4PJeVt51esQCnZflNCAP9Q506Yl5h6FatFjGrfJtknjQG1r/1PX1KfJ8WXQoljlTfwdl92KSvwUbzGV77AV3g="
+  on:
+    branch: master
+    tags: true
+
+# deploy documents to devel and master (if tagged)
+deploy:
+  - provider: script
+    skip_cleanup: true
+    script:
+      - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+        sudo chgrp -R apache docs/_build;
+        rsync -r -g --delete-after -v docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        fi
+    on:
+      branch: devel
+  - provider: script
+    skip_cleanup: true
+    script:
+      - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+        sudo chgrp -R apache docs/_build;
+        rsync -r -g --delete-after -v docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        fi
+    on:
+      branch: master
+      tags: true
+
+#deploy:
+#  provider: script
+#  skip_cleanup: true
+#  script:
+#    - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+#        cd rem3d/docs;
+#        dropbox_uploader.sh upload _build/html rem3d;
+#      fi
+#  on:
+#    branch: devel
+
+# Slack notification
+notifications:
+  email: false    # default notification method
+  slack:
+    rooms:
+      # build channel
+      - secure: "gBQV5Uwq/PuIKbFgWms7r11Wz34xT8PhTPXqOtwliSEZ+I/3z/itwkrtlIpW8Rz0DQpwIaSd4PXFJpeb4HUUS8aHUeJzNvic+BrTdHm7zahyzHyNF2EyKK3OUBLb32A4iRqNyAra00bE9TpMW64jCI9O1u2WnMKbOjdBVQDYw/tHgCaMusSuz51sjviWKMWfBircWuqx7YkJcdTLghDX9/6As7+mo150LirdMu73M909KFjP4xrHIcC+6BNd66zTdoVhMLmn/E1oJWiAvjArSdqX/CQYz6+6pLXC/B1qrQMhglB8CfQKrd/LgCdVjKHNynC6OldvwncpEkXVK8R+qsavcelxeNzwhJLGpHK344iJts++p8uhZfmPA2XQc1zBfU/nuDBqc8qhQmc7dq7CRsR2ilEi8YM1VN+4PoQ7hk+I1xyeJFcj6cheT3JaPyzxy9vSDzAT/fBbV8+FLByEvv54z6NDcK2BDuJBobZT0p/WN5dtFB1w8UIV7oliR/eCdFb21yQFsuyScP3GiKvD5/oZLcfkRfNj802o4djRxSdQskRk9zzDPhfWIFHmcqLQmG0JHxz+IjgQ9YEAxi3WzJFb//spC88Z1aRV4w5fY3p1SR/YhrAbrrmR403taIkWwotcEBrGi+RB5UH+kOWBOxZB0WvrfyHs5gh7cbX0LAg="
+    on_success: always  # change: send a notification when the build status changes.
+    on_failure: always  # always: always send a notification.
+    template:
+      - "Repo `%{repository_slug}` *%{result}* build (<%{build_url}|#%{build_number}>) for commit (<%{compare_url}|%{commit}>) by %{author} on branch `%{branch}`."
+      - "Execution time: *%{duration}*"
+      - "Message: %{message}"

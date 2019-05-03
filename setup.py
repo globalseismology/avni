@@ -3,9 +3,9 @@
 from __future__ import absolute_import
 import re
 import os
-import sys
-import subprocess
-import glob
+#import sys
+#import subprocess
+#import glob
 
 # import numpy
 #---------------------------------------------------------------
@@ -51,7 +51,7 @@ elif F90 == "gfortran":
 elif F90 == "f90":
     f90_flags = ["-fopenmp", "-fPIC", "-O3", "-library=sunperf","-xopenmp"]
     omp_lib = [""]
-    
+
 elif F90 in ["pgfortran", "pgf90", "pgf95"]:
     f90_flags = ["-mp"]
     omp_lib = [""]
@@ -85,7 +85,8 @@ else:
 #---------------------------------------------------------------------------
 
 f90_dir='rem3d/f2py'
-packagelist=['rem3d']
+packagelist=['rem3d','rem3d.data','rem3d.models','rem3d.tools',
+             'rem3d.mapping','rem3d.plots']
 for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
 
 
@@ -111,7 +112,7 @@ versionstuff = dict(
 # Tried to use setuptools in order to check dependencies.
 # if the system does not have setuptools, fall back on
 # distutils.
-# Can only use numpy distutils with distutils as fortran codes 
+# Can only use numpy distutils with distutils as fortran codes
 # are not compiles otherwise
 #
 # Build the f2py fortran extension
@@ -119,7 +120,7 @@ versionstuff = dict(
 from os.path import join
 from numpy.distutils.core import Extension
 from numpy.distutils.core import setup
- 
+
 # Use this if you need import rem3d.module for every module folder
 # extf = [Extension(name='rem3d.'+module,
 #                 sources = [join(f90_dir,module,f) for f in os.listdir(join(f90_dir,module)) if f.endswith('.f')],
@@ -127,10 +128,10 @@ from numpy.distutils.core import setup
 #                 extra_f90_compile_args = f90_flags,
 #                 extra_link_args = omp_lib)
 #             for module in os.listdir(f90_dir)]
-# 
+#
 # Use this if you need a single module for all subroutines import rem3d.f2py
 sourcefiles = []
-for path,dir,filelist in os.walk(join(f90_dir)):
+for path,_,filelist in os.walk(join(f90_dir)):
     for f in filelist:
         if f.endswith('.f'): sourcefiles.append(join(path,f))
 extf = [Extension(name='rem3d.f2py',
@@ -149,10 +150,13 @@ metadata = dict(name = 'rem3d',
                 license='GPL',
                 packages = packagelist,
                 ext_modules = extf,
-                install_requires=['fortranformat','joblib','progressbar2',
-                'requests','future','msgpack','argparse','configobj','pint'],
+                install_requires=['fortranformat==0.2.5','joblib==0.11',
+                'progressbar2==3.38.0','requests==2.20.1','future==0.16.0',
+                'msgpack==0.5.6','argparse==1.4.0','configobj==5.0.6','pint==0.8.1',
+                'xarray==0.11.3','h5py==2.8.0','matplotlib==2.2.2','pygeodesy',
+                'pandas','scipy','numpy'],
                 data_files=[('rem3d', ['README.md']),
-                ('rem3d/config',['rem3d/config/attributes.ini'])],
+                ('rem3d/config',['rem3d/config/attributes.ini','rem3d/config/planets.ini','rem3d/config/units.ini'])],
                 keywords = ['earth-science','earth-observation','earthquake',
                 'earth','earthquake-data','geology','geophysics',
                 'geophysical-inversions','seismology','seismic-inversion',
@@ -162,8 +166,8 @@ metadata = dict(name = 'rem3d',
                 classifiers=[
                 'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                 'Programming Language :: Fortran',
-                'Programming Language :: Python :: 2.7',
-                'Programming Language :: Python :: 3',
+                'Programming Language :: Python :: 3.6',
+                'Programming Language :: Python :: 3.7',
                 'Intended Audience :: Science/Research',
                 'Topic :: Education',
                 'Natural Language :: English',

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # REM3D documentation build configuration file, created by
-# sphinx-quickstart on Wed Jun 28 16:39:46 2017.
+# sphinx-quickstart on Wed Apr 26 2019.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -16,21 +16,37 @@ import sys
 import os
 import shlex
 
-import rem3d
-import rem3d.version
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
+# avoid gfortran not being available on readthedocs
+# https://read-the-docs.readthedocs.io/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
+# if (sys.version_info[:2] < (3, 3)):
+#     from mock import Mock as MagicMock
+# else:
+#     from unittest.mock import MagicMock
+#
+# class Mock(MagicMock):
+#     @classmethod
+#     def __getattr__(cls, name):
+#         return MagicMock()
+#
+# MOCK_MODULES = ['rem3d']
+# sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
-# In order for the Sphinx MATLAB domain to auto-document MATLAB source code, 
-# set the config value of matlab_src_dir to the absolute path instead of adding 
-# them to sys.path. Currently only one MATLAB path can be specified, but all 
+import rem3d
+
+
+# -- Project information -----------------------------------------------------
+
+# In order for the Sphinx MATLAB domain to auto-document MATLAB source code,
+# set the config value of matlab_src_dir to the absolute path instead of adding
+# them to sys.path. Currently only one MATLAB path can be specified, but all
 # subfolders in that tree will be searched.
-matlab_src_dir = '../rem3d-matlab'
+#matlab_src_dir = '../rem3d-matlab'
 
 # -- General configuration ------------------------------------------------
 
@@ -50,19 +66,19 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'numpydoc',
-    'sphinx.ext.ifconfig', 
+    'sphinx.ext.ifconfig',
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
-    'sphinxcontrib.matlab',
 ]
+#    'sphinxcontrib.matlab',
 
 numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-# Add the Markdown parser to the source_parsers configuration 
+# Add the Markdown parser to the source_parsers configuration
 # variable in your Sphinx configuration file:
 # http://www.sphinx-doc.org/en/stable/markdown.html
 source_parsers = {
