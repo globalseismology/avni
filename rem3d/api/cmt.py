@@ -26,7 +26,9 @@ class CMT(object):
                     other keys are integer or float values.
                     API defaults mag_min to 5, no other defaults.
         '''
+        cmt_filters['key']=self.r3dc.key
         ds_json=self.r3dc.call(self.endpoint,cmt_filters,60) # returns column-oriented json string
         events=json.loads(ds_json) # load json as python dict
-        events=pd.DataFrame.from_dict(events).reset_index() # convert to dataframe
+        if 'call_incomplete' not in events.keys():
+            events=pd.DataFrame.from_dict(events).reset_index() # convert to dataframe
         return events

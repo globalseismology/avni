@@ -12,8 +12,9 @@ import pandas as pd
 
 class Client(object):
 
-    def __init__(self,timeout=300):
+    def __init__(self,api_key,timeout=300):
         self.timeout=timeout
+        self.key=api_key
         self.checkConnection()
         return
 
@@ -43,3 +44,11 @@ class Client(object):
             time_out=self.timeout
         r = requests.get(url,params=parameters,timeout=time_out)
         return r.json()
+
+    def checkUserStats(self):
+        '''
+        checks stats for a user
+        '''
+        args={'key':self.key}
+        output=self.call('/checkuserstats',args)
+        return output

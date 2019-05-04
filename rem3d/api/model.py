@@ -32,11 +32,13 @@ class Model(object):
         result: dictionary containing list of models and model info.
 
         '''
+        args['key']=self.r3dc.key
         args['task']='listModels'
         ModelList=json.loads(self.r3dc.call(self.endpoint,dict(args),60))
 
         # attach kernel list descriptions
-        ModelList=self.addConfigDescriptions(ModelList)
+        if ModelList['call_complete']:
+            ModelList=self.addConfigDescriptions(ModelList)
 
         return ModelList
 
@@ -102,6 +104,7 @@ class Model(object):
         result: dictionary with scalar/list/numpy array of same size as input
         '''
         args_in['task']='evaluate_points'
+        args_in['key']=self.r3dc.key
         args=dict(args_in)
         return_numpy=False
         for arg in ['lat','lon','depth']:
@@ -112,10 +115,10 @@ class Model(object):
         print(args)
 
         result=json.loads(self.r3dc.call(self.endpoint,args,5*60))
-
-        if return_numpy:
-            param=result['parameter']
-            result[param]=np.asarray(result[param])
+        if result['call_complete']:
+            if return_numpy:
+                param=result['parameter']
+                result[param]=np.asarray(result[param])
 
         return result
 
@@ -160,18 +163,22 @@ class Model(object):
                     }
         '''
         args['task']='crossSection'
+        args['key']=self.r3dc.key
         json_load = json.loads(self.r3dc.call(self.endpoint,dict(args),5*60))
 
-        results={}
-        not_arrays=['parameter']
-        for keyn in json_load.keys():
-            if keyn not in not_arrays:
-                results[keyn]=np.asarray(json_load[keyn])
-            else:
-                results[keyn]=json_load[keyn]
+        if json_load['call_complete']:
+            results={}
+            not_arrays=['parameter','call_complete']
+            for keyn in json_load.keys():
+                if keyn not in not_arrays:
+                    results[keyn]=np.asarray(json_load[keyn])
+                else:
+                    results[keyn]=json_load[keyn]
 
-        # calculate angular coord (distance along path)
-        Nlatlon=results['lat'].size
-        results['theta']=np.linspace(0,args['gcdelta'],Nlatlon)
+            # calculate angular coord (distance along path)
+            Nlatlon=results['lat'].size
+            results['theta']=np.linspace(0,args['gcdelta'],Nlatlon)
+        else:
+            results=json_load
 
         return results

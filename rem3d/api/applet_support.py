@@ -41,6 +41,7 @@ class SW(App):
             selections must exist in HDF keys.
         '''
         args['task']='buildCommonData'
+        args['key']=self.r3dc.key
         return self.r3dc.call(self.endpoint,args,60*5)
 
     def filterCommonData(self,args):
@@ -50,4 +51,5 @@ class SW(App):
             returns filename (file stored in cache)
         '''
         args['task']='filterCommonData'
+        args['key']=self.r3dc.key
         return self.r3dc.call(self.endpoint,args,60*5)
