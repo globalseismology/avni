@@ -1,16 +1,16 @@
 Frequently Asked Questions
 --------------------------
 
-  1. [General](#general)
-    * [Is it free?](#is-it-free)
-    * [Is all our code open-source?](#is-all-our-code-open-source)
-    * [How can we get involved?](#how-can-we-get-involved)
-    * [I am a domain expert in geosciences. Why should I get involved?](#why-should-I-get-involved)
-  2. [Installation](#installation)
-    * [What are the system requirements for REM3D?](#what-are-the-system-requirements)
-  3. [Privacy](#privacy)
-    * [Why do you provide APIs?](#why_do_you_provide_apis)
-    * [Is there a cap on the number of calls to the API?](#is-there-a-cap-on-the-number-of-calls-to-the-api)
+  1. [General](#general)  
+    * [Is it free?](#is-it-free)  
+    * [Is all our code open-source?](#is-all-our-code-open-source)  
+    * [How can we get involved?](#how-can-we-get-involved)  
+    * [I am a domain expert in geosciences. Why should I get involved?](#why-should-I-get-involved)  
+  2. [Installation](#installation)  
+    * [What are the system requirements for REM3D?](#what-are-the-system-requirements)  
+  3. [Privacy](#privacy)  
+    * [Why do you provide APIs?](#why_do_you_provide_apis)  
+    * [Is there a cap on the number of calls to the API?](#is-there-a-cap-on-the-number-of-calls-to-the-api) 
 
 
 General
