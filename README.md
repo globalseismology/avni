@@ -33,9 +33,8 @@ These instructions will get you a copy of the project up and running on your loc
 ### Basic Installation
 
 1. Install the [Anaconda Python Distribution](https://www.continuum.io/downloads). We recommend the 64-bit Python 3.7 version.
-2. Create a new environment for REM3D and activate it
+2. Create a new environment for REM3D and activate it  
 `conda create --name rem3d --clone base`  
-Activate the environment using
 `source $CONDA_ROOT/etc/profile.d/conda.csh`  
 `conda activate rem3d`  
 where `CONDA_ROOT` is the location of Anaconda directory (e.g. `/home/user/anaconda3`)
@@ -60,7 +59,7 @@ Please note the license terms below specific to developers. If you want to use R
 `git clone -b devel https://username:password@github.com/globalseismology/rem3d.git`  
 3. Install REM3D module by opening a terminal window, navigating to `rem3d` directory and entering  
 `pip install -e . --user`  
-This lets you to keep working on files inside the Github folder without recompiling the codes.
+This lets you keep working on files inside the Github folder without recompiling the codes.
 
 We maintain 3 major branches for our client libraries and these are relevant to public releases. Read/write access to these are restricted to main administrators and developers:
 * `devel` — Active development occurs on this branch or in branches that spin off from this.
