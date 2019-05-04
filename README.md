@@ -34,21 +34,21 @@ These instructions will get you a copy of the project up and running on your loc
 
 1. Install the [Anaconda Python Distribution](https://www.continuum.io/downloads). We recommend the 64-bit Python 3.7 version.
 2. Create a new environment for REM3D and activate it
-`conda create --name rem3d --clone base`
+`conda create --name rem3d --clone base`  
 Activate the environment using
-`source $CONDA_ROOT/etc/profile.d/conda.csh`
-`conda activate rem3d`
+`source $CONDA_ROOT/etc/profile.d/conda.csh`  
+`conda activate rem3d`  
 where `CONDA_ROOT` is the location of Anaconda directory (e.g. `/home/user/anaconda3`)
 
-3. Install some mapping toolboxes (Basemap and its data) with the following options to add topography at all resolutions:
-`conda install netcdf4`
-`conda install -c conda-forge basemap`
-`conda install -c conda-forge basemap-data-hires`
+3. Install some mapping toolboxes (Basemap and its data) with the following options to add topography at all resolutions:  
+`conda install netcdf4`  
+`conda install -c conda-forge basemap`  
+`conda install -c conda-forge basemap-data-hires`  
 Basemap installation may give errors for the PROJ4 library. We have found it useful to specify the location of the library using the following in our .tcshrc shell configuration
-`setenv PROJ_LIB $CONDA_PREFIX/share/proj`
+`setenv PROJ_LIB $CONDA_PREFIX/share/proj`  
 where `CONDA_PREFIX` is the location of Anaconda installation, which should be automatically initialized with step 2.
 4. Install the stable version of REM3D and its additional dependencies with
-`pip install rem3d`
+`pip install rem3d`  
 
 
 ### Advanced installation (for developers)
@@ -56,10 +56,10 @@ where `CONDA_PREFIX` is the location of Anaconda installation, which should be a
 Please note the license terms below specific to developers. If you want to use REM3D's development routines, you will need to do the following additional steps. This assumes that you have a free account at <https://github.com>
 
 1. Create an account on our [Web site](http://rem3d.org/login/register) and request access rights from [here](http://rem3d.org/join-us/github).
-2. Please accept the invitation through e-mail. Clone the development branch from the REM3D git repository through the terminal. This will create a directory that contains a folder called `rem3d`.
-`git clone -b devel https://username:password@github.com/globalseismology/rem3d.git`
-3. Install REM3D module by opening a terminal window, navigating to `rem3d` directory and entering
-`pip install -e . --user`
+2. Please accept the invitation through e-mail. Clone the development branch from the REM3D git repository through the terminal. This will create a directory that contains a folder called `rem3d`.  
+`git clone -b devel https://username:password@github.com/globalseismology/rem3d.git`  
+3. Install REM3D module by opening a terminal window, navigating to `rem3d` directory and entering  
+`pip install -e . --user`  
 This lets you to keep working on files inside the Github folder without recompiling the codes.
 
 We maintain 3 major branches for our client libraries and these are relevant to public releases. Read/write access to these are restricted to main administrators and developers:
@@ -67,10 +67,10 @@ We maintain 3 major branches for our client libraries and these are relevant to 
 * `public` — Development for bug fixes happens here. We also bump versions and update the changelog on this branch.
 * `master` — We squash commits from the release branch into single release commits on this branch as well as tagging releases.
 
-New branches may be created for individual projects and the relevant team. Please clone the `devel` branch to build upon the latest codes
-`git checkout -b new_branch devel`
-You can push this locally created branch to the remote `globalseismology/rem3d` with
-`git push -u origin new_branch`
+New branches may be created for individual projects and the relevant team. Please clone the `devel` branch to build upon the latest codes  
+`git checkout -b new_branch devel`  
+You can push this locally created branch to the remote `globalseismology/rem3d` with  
+`git push -u origin new_branch`  
 
 ## Start Here
 
