@@ -14,7 +14,7 @@ Source code: [github](https://github.com/globalseismology/rem3d)
 
 Requests/Bug Reports: [issues](https://github.com/globalseismology/rem3d/issues)
 
-Frequently Asked Questions: [FAQ](docs/faq.md)
+Frequently Asked Questions: [FAQ](docs/FAQ.md)
 
 A core team maintains the public repository and releases versions after benchmarking; if you do not see activity on Github, that does not mean improvements or bug fixes are not underway! We provide APIs that interface with heavy, legacy codes hosted our servers so that REM3D installation remains light to serve various applications. Contact the REM3D team at **info@rem3d.org** with any questions or suggestions.
 
@@ -89,7 +89,7 @@ See also the list of [Github contributors](https://github.com/globalseismology/r
 
 ## License
 
-The master branch of this project is licensed under the GNU GPL v3 or newer, is synced with public repositories and may be installed in any platform - see the [LICENSE](LICENSE) file for details. All other branches are copyrighted, must remain in our private organizational repository and may not be installed in platforms without permission from code contributors and repository administrators. Please write to **info@rem3d.org** or see our [FAQ](docs/faq.md) for more details.
+The master branch of this project is licensed under the GNU GPL v3 or newer, is synced with public repositories and may be installed in any platform - see the [LICENSE](LICENSE) file for details. All other branches are copyrighted, must remain in our private organizational repository and may not be installed in platforms without permission from code contributors and repository administrators. Please write to **info@rem3d.org** or see our [FAQ](docs/FAQ.md) for more details.
 
 ### Versioning
 
