@@ -77,7 +77,7 @@ To begin, the user may want to look at these examples to begin to understand wha
 
 ## Contributing
 
-Please read [contributing.md](docs/contributing.md) for details on our code of conduct, and the process for submitting pull requests to our public repository. Contributions to our private repository are made to custom branches and will not be merged to the public repository without approval of the whole REM3D team.
+Please read [contributing.md](docs/contributing.md) for details on our code of conduct, and the process for submitting pull requests to our public repository. Developer contributions to our private repository are made to custom branches and will not be merged to the public repository without approval of the contributors and REM3D administrators.
 
 ### Authors
 
