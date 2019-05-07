@@ -82,6 +82,7 @@ class Reference1D(object):
 
     def read_bases_coefficients(self,file):    
         # Use tools.eval_polynomial and tools.eval_splrem
+        raise IOError('not implemented yet')
 
     def readmineoscards(self,file):
         # Operations between PintArrays of different unit registry will not work.
