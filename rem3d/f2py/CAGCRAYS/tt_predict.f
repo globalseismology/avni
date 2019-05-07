@@ -59,7 +59,7 @@ c     #            '|   -v:o:1:Verbosity level [0]|')
 c      string=getunx('-t',1,nbyts)
 c      read(string,*) delstep
       write(6,"('step in delta, in degrees')")
-      read(5,*) iallpsv
+      read(5,*) delstep
 
       write(6,"('type name of the .RAYS file: ')")
       read(5,"(a)") filename
@@ -199,7 +199,6 @@ c               convert to geocentric coordinates as those are needed by cagcray
      #     maxraypts,nraypts,iraytp,iraylay,
      #     rayrad,raydelta,raylat,raylong,raytime,ireadagain)
 c
-
 
 	      		if(itypcalc.ge.1) then
     	    		if(narr.eq.0.or.narr.gt.1) write(6,"(a16,2x,i3,' arrivals at',f9.3,' degrees')") phase,narr,delta
