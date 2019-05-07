@@ -74,17 +74,24 @@ class Reference1D(object):
         Read a card deck file used in OBANI. Other formats not ready yet
         '''
         try:
-            self.readmineoscards(file)
+            self.read_mineos_cards(file)
         except:
             var1 = traceback.format_exc()
-            print(var1)
-            raise NotImplementedError('model format is not currently implemented in reference1D.read')
+            try:
+                self.read_bases_coefficients(file)
+            except:
+                var2 = traceback.format_exc()
+                print('############    Tried reading as mineos cards   ############')
+                print(var1)
+                print('############    Tried reading as bases coefficients   ############')
+                print(traceback.format_exc())
+                raise NotImplementedError('model format is not currently implemented in reference1D.read')
 
     def read_bases_coefficients(self,file):    
         # Use tools.eval_polynomial and tools.eval_splrem
-        raise IOError('not implemented yet')
+        pdb.set_trace()
 
-    def readmineoscards(self,file):
+    def read_mineos_cards(self,file):
         # Operations between PintArrays of different unit registry will not work.
         # We can change the unit registry that will be used in creating new
         # PintArrays to prevent this issue.

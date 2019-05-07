@@ -47,7 +47,7 @@ class Profiles(object):
         
     #########################       methods       #############################
         
-    def read_folder(self,folder):
+    def read(self,folder):
         """
         Try reading a folder containing ascii files for every location on the surface 
         """
@@ -59,8 +59,8 @@ class Profiles(object):
         self._folder = folder
         
     def write_to_hdf(self):
-    	"""writes profile class to an hdf5 container"""
-    	
+        """writes profile class to an hdf5 container"""
+        
     def evaluate_at_location(self,latitude, longitude,depth):
-    	"""evaluate the profiles at a particular point within the domain"""
-    	
+        """evaluate the profiles at a particular point within the domain"""
+        
