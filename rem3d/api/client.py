@@ -9,12 +9,20 @@ if (sys.version_info[:2] < (3, 0)):
 # imports for client:
 import json,requests
 import pandas as pd
+from configobj import ConfigObj
+from .. import tools
+import os
 
 class Client(object):
 
-    def __init__(self,api_key,timeout=300):
+    def __init__(self,api_key='',timeout=300,api_init_file=None):
         self.timeout=timeout
-        self.key=api_key
+
+        if api_key=='':
+            self.key=self.searchForApiKey(api_init_file)
+        else:
+            self.key=api_key
+
         self.checkConnection()
         return
 
@@ -55,3 +63,62 @@ class Client(object):
         args={'key':self.key}
         output=json.loads(self.call('/checkuserstats',args))
         return output
+
+    def searchForApiKey(self,api_init_file=None):
+        '''
+        searches for API Key
+        Input:
+        ------
+            api_init_file: the api.ini file full path. If None, will default to
+                           looking in rem3d/config/api.ini
+        Output:
+        -------
+            api_key: the api key. Empty string if not found
+        '''
+        parser=None
+        api_key=''
+        if api_init_file is None:
+            api_init_file = os.path.join(tools.get_configdir(),'api.ini')
+
+        if os.path.isfile(api_init_file):
+            parser=ConfigObj(api_init_file)
+            api_key=parser['API']['key']
+
+        return api_key
+
+    def setApiConfig(self,api_key='',api_init_file=None):
+        '''
+        builds the api.ini file
+        Input:
+        ------
+            api_key: the api key to store
+            api_init_file: the file to store key (subsequents calls to api will
+                            need to specify the directory if not using the
+                            default). Default is rem3d/config/api.ini
+        Output:
+        -------
+            no output
+        '''
+
+        if api_key=='':
+            if self.key=='':
+                msg="No api key to set! Initialize Client with api_key or  "
+                msg=msg+" call setApiConfig with api_key='APISTRING' "
+                print(msg)
+            else:
+                api_key=self.key
+
+        if api_init_file is None:
+            api_init_file = os.path.join(tools.get_configdir(),'api.ini')
+
+        if os.path.isfile(api_init_file):
+            print(api_init_file+' already exists. Remove it to reset.')
+        else:
+            config = ConfigObj()
+            config.filename = api_init_file
+            config['API'] = {}
+            config['API']['key'] = api_key
+            config.write()
+            print("API key stored in " + api_init_file)
+
+        return
