@@ -32,6 +32,9 @@ class Client(object):
                 print("rem3d api is live at ")
                 print(url)
                 self.base_url=url
+                stats=self.checkUserStats()
+                print(stats['message'])
+
 
         if self.base_url is None:
             print("no connection to rem3d api")
@@ -50,5 +53,5 @@ class Client(object):
         checks stats for a user
         '''
         args={'key':self.key}
-        output=self.call('/checkuserstats',args)
+        output=json.loads(self.call('/checkuserstats',args))
         return output
