@@ -16,6 +16,16 @@ import os
 class Client(object):
 
     def __init__(self,api_key='',timeout=300,api_init_file=None):
+        '''
+        Client class
+        Input:
+        ------
+            api_key: the api_key to use. If not set, will try to find one
+            api_init_file: if api_key is not set, this is the absolute path of
+                the api config file. Only needed if setApiConfig() was
+                called with api_init_file specified.
+            timeout: default timeout in seconds for api call.
+        '''
         self.timeout=timeout
 
         if api_key=='':
@@ -91,7 +101,8 @@ class Client(object):
         builds the api.ini file
         Input:
         ------
-            api_key: the api key to store
+            api_key: the api key to store. Will pull from self.key if not
+                     specified.
             api_init_file: the file to store key (subsequents calls to api will
                             need to specify the directory if not using the
                             default). Default is rem3d/config/api.ini
