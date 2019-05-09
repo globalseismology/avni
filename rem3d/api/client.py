@@ -39,7 +39,7 @@ class Client(object):
     def checkConnection(self):
         ''' checks if the rem3d api is accessible'''
         self.base_url=None
-        for url in ['http://127.0.0.1:5000']:
+        for url in ['http://127.0.0.1:5000','http://maurya.umd.edu:41559']:
 
             try:
                 r = requests.get(url, timeout=self.timeout)
