@@ -15,8 +15,8 @@ cache:
 
 branches:
   only:
-    - devel
     - travis
+    - devel
     - master
 
 env:
