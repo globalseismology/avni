@@ -62,8 +62,8 @@ else:
     raise RuntimeError( l1 + l2 )
 
 # use old version of memcpy
-#https://snorfalorpagus.net/blog/2016/07/17/compiling-python-extensions-for-old-glibc-versions/
-os.environ['CFLAGS']="-I. -include docs/.glibc_version_fix.h"
+# https://snorfalorpagus.net/blog/2016/07/17/compiling-python-extensions-for-old-glibc-versions/
+# os.environ['CFLAGS']="-I. -include docs/.glibc_version_fix.h"
 
 # for manual install comment out the above section and define
 # the variables f90_flags and omp_lib below
