@@ -5,6 +5,14 @@ language: python
 python:
   - "3.7"
 
+cache:
+  # More time is needed for caching due to the sheer size of the conda env.
+  timeout: 1000
+  directories:
+  # This directory gets cached by being stored as an archive
+  # Can add the necessary dependencies to this directory for more caching
+  - ${HOME}/cache
+
 branches:
   only:
     - devel
@@ -13,6 +21,7 @@ branches:
 
 env:
   global:
+    - CONDA_BASE_PATH=${HOME}/cache/miniconda
     # CODECOV_TOKEN
     # travis encrypt CODECOV_TOKEN="secretvalue"
     secure: "jb9II2WjGCIww4E1ULr6JhIj1WhcmwDlXOWqA9ld6C+UPqYePPb670vQk3pUmUdwSsqXXlvbVjVhse0KRsdFOhac5FmS3j6LjXn4H14jJNQU3gZIXt4Fz1ND0Z2qWsfzCa95VNqNfgLZI/PFMxmwSlBe8H/GQ/T7OaFFQaFNYVz70VnHW9PceRfCISVcCzCh3+LEO9AKz4YdR8Ac1GWcrt313pDIB3PFneIx5kRDeC9ckrnlkPPA186Mq7kICZTq65luNGwsLRvO81dmQ0JooP8mEsckaaozTlUyeQHwI8y3Vit89otaraWlELCloKT63sHmOzywgkCvJMbg8L+4XfJGIZEFKk3ZQd2f1nVuO50+Ajys/PBWlbV2x4nwmBPxMumP4r2m9XJUm8SP9p1LdaMq/bnCW+X0jgS0MUPJzF9rpjKYFVLd6fxgl7gVz0lhc/0Tgf8mu+48C3aaKLTkHsKwHuXfEm8wob5f9gKeqVqZuml8j1ZqpcB86zB+gqvq4LJy0+wmSQRVmM1FeuFjoxL008wqWD1DDO0Gu8vWFt2AjxIZjspCGgnOCq2TQCYQehr9vgeXPEwJEim9+dQBWpBIlz6ycFBLs1AwmRofRs6dNnI00dkUp9iZakJ+md05F7FocZ6/kpCLJTbJzjE382WSeOL7P1vMYSNIAoGQbxQ="
@@ -38,16 +47,20 @@ before_install:
   # install latex
   - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
 
-  # Here we just install Miniconda, which you shouldn't have to change.
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
+  # Here we just install Miniconda. If it is in the cache, then we don't need to do anything
+  - if [ -d "${CONDA_BASE_PATH}" ] && [ -e "${CONDA_BASE_PATH}/bin/conda" ]; then
+      echo "Miniconda install already present from cache";
+    else # if it does not exist, we need to install miniconda
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      bash miniconda.sh -b -p ${CONDA_BASE_PATH};
+    fi
+  - export PATH="${CONDA_BASE_PATH}/bin:$PATH"
   - export F90=gfortran
   - conda update --yes conda
 
   # Decrypt rsync key
   - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        sudo openssl aes-256-cbc -K $encrypted_43caa601570c_key -iv $encrypted_43caa601570c_iv -in travis_deploy_rsa.enc -out $HOME/travis_deploy_rsa -d;
+      sudo openssl aes-256-cbc -K $encrypted_43caa601570c_key -iv $encrypted_43caa601570c_iv -in travis_deploy_rsa.enc -out $HOME/travis_deploy_rsa -d;
     fi
 
   # Dropbox uploader key
@@ -56,19 +69,22 @@ before_install:
 
 install:
   # Make environment and activate
-  - conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION
-  - source $HOME/miniconda/etc/profile.d/conda.sh
-  - source activate rem3d
-  - conda install --yes -c conda-forge python-slugify
-
-  # Install REM3D requirements
-  - conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires
-
-  # This is for coverage testing
-  - conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat
-
-  # for sphinx documentation
-  - conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme
+  - if [ -d "${CONDA_BASE_PATH}/envs/rem3d" ]; then
+      echo "Environment available from cache";
+      source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
+      source activate rem3d;
+    else
+      conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION;
+      source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
+      source activate rem3d;
+      conda install --yes -c conda-forge python-slugify;
+      # Install REM3D requirements
+      conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
+      # This is for coverage testing
+      conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
+      # for sphinx documentation
+      conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme;
+    fi
 
 script:
   # Running pip install -e . --user directly causes errors
@@ -90,7 +106,7 @@ script:
   - cd ..
 
 after_success:
-  #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
+  # If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
   - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
 
 before_deploy:
