@@ -69,6 +69,8 @@ before_install:
 
 install:
   # Make environment and activate
+  # Do not add any comments in the if else blocks above or below
+  # The yml file will not be valid
   - if [ -d "${CONDA_BASE_PATH}/envs/rem3d" ]; then
       echo "Environment available from cache";
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
