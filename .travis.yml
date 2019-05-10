@@ -69,22 +69,22 @@ before_install:
 
 install:
   # Make environment and activate
-  - if [ -d "${CONDA_BASE_PATH}/envs/rem3d" ]; then
-      echo "Environment available from cache";
-      source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate rem3d;
-    else
-      conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION;
-      source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate rem3d;
-      conda install --yes -c conda-forge python-slugify;
-      # Install REM3D requirements
-      conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
-      # This is for coverage testing
-      conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
-      # for sphinx documentation
-      conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme;
-    fi
+  if [ -d "${CONDA_BASE_PATH}/envs/rem3d" ]; then
+    echo "Environment available from cache";
+    source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
+    source activate rem3d;
+  else
+    conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION;
+    source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
+    source activate rem3d;
+    conda install --yes -c conda-forge python-slugify;
+    # Install REM3D requirements
+    conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
+    # This is for coverage testing
+    conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
+    # for sphinx documentation
+    conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme;
+  fi
 
 script:
   # Running pip install -e . --user directly causes errors
