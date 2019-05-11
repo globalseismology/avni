@@ -119,10 +119,12 @@ script:
 
   # Make a latex file for the next step
   - make latex
+  - cd _build/latex
   # Texliveonfly will download packages automatically
-  - texliveonfly _build/latex/REM3D.tex
+  - texliveonfly REM3D.tex
   # Make a pdf now
-  - make latexpdf
+  - make
+  - cd ../..
   # - ./dropbox_uploader.sh upload _build/html rem3d
   - cd ..
 
