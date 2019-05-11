@@ -12,6 +12,7 @@ cache:
   # This directory gets cached by being stored as an archive
   # Can add the necessary dependencies to this directory for more caching
   - ${HOME}/cache
+  - ${HOME}/.cache/pip
 
 branches:
   only:
@@ -34,18 +35,22 @@ addons:
   apt:
     ssh_known_hosts:
     - $REM_SERVER
-
+    packages:
+    - gfortran
+    
 before_install:
   # print the distro information
   - lsb_release -a
   - sudo apt-get update -qq
-  - sudo apt-get install -y gfortran
+  #- sudo apt-get install -y gfortran
 
   # add a group for apache on end server
   - sudo groupadd -g 10000 apache
 
   # install latex
   - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
+  
+  - sudo dpkg --listfiles latexmk
 
   # Here we just install Miniconda. If it is in the cache, then we don't need to do anything
   - if [ -d "${CONDA_BASE_PATH}" ] && [ -e "${CONDA_BASE_PATH}/bin/conda" ]; then
@@ -84,6 +89,9 @@ install:
       conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
       conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme;
     fi
+    
+  - pip install -U pip wheel
+  - pip install --requirement=$TRAVIS_BUILD_DIR/requirements.txt
 
 script:
   # Running pip install -e . --user directly causes errors
