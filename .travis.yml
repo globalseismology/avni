@@ -20,7 +20,7 @@ branches:
     - devel
     - travis
     - master
-
+    - plotmodels
 env:
   global:
     - CONDA_BASE_PATH=${HOME}/cache/miniconda
