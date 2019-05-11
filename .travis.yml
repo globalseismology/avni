@@ -52,7 +52,7 @@ before_install:
 
   # install latex
   - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
-  - sudo dpkg --listfiles latexmk
+  #- sudo dpkg --listfiles latexmk
 
   # Here we just install Miniconda. If it is in the cache, then we don't need to do anything
   - if [ -d "${CONDA_BASE_PATH}" ] && [ -e "${CONDA_BASE_PATH}/bin/conda" ]; then
@@ -113,6 +113,7 @@ script:
   - make latexpdf
   #- ./dropbox_uploader.sh upload _build/html rem3d
   - cd ..
+
 
 after_success:
   # If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
