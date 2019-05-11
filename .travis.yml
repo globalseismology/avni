@@ -11,9 +11,8 @@ cache:
   directories:
   # This directory gets cached by being stored as an archive
   # Can add the necessary dependencies to this directory for more caching
-  #- ${HOME}/.cache/pip
+  - ${HOME}/.cache/pip
   - ${HOME}/cache
-
 
 branches:
   only:
@@ -38,6 +37,7 @@ addons:
     - $REM_SERVER
     packages:
     - gfortran
+    - fontconfig
     
 before_install:
   # print the distro information
