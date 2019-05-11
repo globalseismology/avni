@@ -103,7 +103,7 @@ install:
 script:
   # Running pip install -e . --user directly causes errors
   # Refer https://jeetblogs.org/post/strange-uninstall-failures-when-running-pip-install-in-editable-mode/
-  - cd ..
+  - cd ${HOME}
   - pip install -e rem3d --user
   - cd rem3d
 
