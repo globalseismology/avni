@@ -85,7 +85,7 @@ install:
       conda config --append channels conda-forge;
       pwd;
       ls;
-      conda install --yes --file rem3d/docs/requirements.txt;
+      conda install --yes --file docs/requirements.txt;
       conda install --yes -c conda-forge python-slugify;
       conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
       conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
