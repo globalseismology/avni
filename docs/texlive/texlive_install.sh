@@ -29,6 +29,7 @@ tlmgr install luatex
 
 # Then you can add one package per line in the texlive_packages file
 # We need to change the working directory before including a file
+currentdir = $(pwd)
 cd "$(dirname "${BASH_SOURCE[0]}")"
 tlmgr install $(cat texlive_packages)
 
@@ -38,4 +39,5 @@ tlmgr option -- autobackup 0
 # Update the TL install but add nothing new
 tlmgr update --self --all --no-auto-install
 
-cd ..
+cd $currentdir
+
