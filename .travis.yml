@@ -11,8 +11,8 @@ cache:
   directories:
   # This directory gets cached by being stored as an archive
   # Can add the necessary dependencies to this directory for more caching
+  #- ${HOME}/.cache/pip
   - ${HOME}/cache
-  - ${HOME}/.cache/pip
 
 branches:
   only:
@@ -88,7 +88,7 @@ install:
       conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme;
     fi
     
-  - pip install -U pip wheel
+  # - pip install -U pip wheel
   #- pip install --requirement=$TRAVIS_BUILD_DIR/requirements.txt
 
 script:
