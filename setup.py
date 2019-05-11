@@ -61,6 +61,9 @@ else:
     l2 = "Environment variable F90 not recognized.  \n"
     raise RuntimeError( l1 + l2 )
 
+# use old version of memcpy
+# https://snorfalorpagus.net/blog/2016/07/17/compiling-python-extensions-for-old-glibc-versions/
+# os.environ['CFLAGS']="-I. -include docs/.glibc_version_fix.h"
 
 # for manual install comment out the above section and define
 # the variables f90_flags and omp_lib below
@@ -150,11 +153,12 @@ metadata = dict(name = 'rem3d',
                 license='GPL',
                 packages = packagelist,
                 ext_modules = extf,
-                install_requires=['fortranformat==0.2.5','joblib==0.11',
+                install_requires=['fortranformat==0.2.5',
                 'progressbar2==3.38.0','requests==2.20.1','future==0.16.0',
-                'msgpack==0.5.6','argparse==1.4.0','configobj==5.0.6','pint==0.8.1',
-                'xarray==0.11.3','h5py==2.8.0','matplotlib==2.2.2','pygeodesy',
-                'pandas','scipy','numpy'],
+                'msgpack==0.5.6','pint==0.8.1','h5py==2.8.0',
+                'pygeodesy','argparse',
+                'matplotlib','xarray','configobj',
+                'joblib','pandas','scipy','numpy'],
                 data_files=[('rem3d', ['README.md']),
                 ('rem3d/config',['rem3d/config/attributes.ini','rem3d/config/planets.ini','rem3d/config/units.ini'])],
                 keywords = ['earth-science','earth-observation','earthquake',
