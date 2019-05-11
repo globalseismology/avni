@@ -13,10 +13,6 @@ cache:
   # Can add the necessary dependencies to this directory for more caching
   - ${HOME}/cache
   - ${HOME}/.cache/pip
-  - /usr/bin/latexmk
-  - /usr/share/man/man1/latexmk.1L.gz
-  - /usr/share/doc/latexmk
-  - /etc/LatexMk
 
 branches:
   only:
