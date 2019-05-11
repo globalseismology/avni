@@ -96,14 +96,16 @@ install:
 
   # Install TexLive
   # https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
-  - source docs/texlive/texlive_install.sh
+  # - source docs/texlive/texlive_install.sh
   # - pip install -U pip wheel
   # - pip install --requirement=$TRAVIS_BUILD_DIR/requirements.txt
 
 script:
   # Running pip install -e . --user directly causes errors
   # Refer https://jeetblogs.org/post/strange-uninstall-failures-when-running-pip-install-in-editable-mode/
+  - pwd
   - cd ${HOME}
+  - pwd
   - pip install -e rem3d --user
   - cd rem3d
 
