@@ -6,7 +6,7 @@ python:
   - 3.7
 
 cache:
-  # More time is needed for caching due to the sheer size of the conda env.
+  # More time is needed for caching due to the sheer size of conda env.
   timeout: 1000
   directories:
     # This directory gets cached by being stored as an archive
