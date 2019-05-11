@@ -6,9 +6,7 @@ numpy
 fortranformat==0.2.5
 joblib==0.11
 progressbar2==3.38.0
-requests==2.20.1
 future==0.16.0
-argparse==1.4.0
 configobj==5.0.6
 pint==0.8.1
 xarray==0.11.3
