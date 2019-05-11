@@ -3,7 +3,17 @@ dist: xenial
 
 language: python
 python:
-  - "3.7"
+  - 3.7
+
+cache:
+  # More time is needed for caching due to the sheer size of conda env.
+  timeout: 1000
+  directories:
+    # This directory gets cached by being stored as an archive
+    # Can add the necessary dependencies to this directory for more caching
+    - ${HOME}/cache
+    - /tmp/texlive
+    - ${HOME}/.texlive
 
 branches:
   only:
@@ -13,41 +23,48 @@ branches:
 
 env:
   global:
+    - CONDA_BASE_PATH=${HOME}/cache/miniconda
     # CODECOV_TOKEN
     # travis encrypt CODECOV_TOKEN="secretvalue"
-    secure: "jb9II2WjGCIww4E1ULr6JhIj1WhcmwDlXOWqA9ld6C+UPqYePPb670vQk3pUmUdwSsqXXlvbVjVhse0KRsdFOhac5FmS3j6LjXn4H14jJNQU3gZIXt4Fz1ND0Z2qWsfzCa95VNqNfgLZI/PFMxmwSlBe8H/GQ/T7OaFFQaFNYVz70VnHW9PceRfCISVcCzCh3+LEO9AKz4YdR8Ac1GWcrt313pDIB3PFneIx5kRDeC9ckrnlkPPA186Mq7kICZTq65luNGwsLRvO81dmQ0JooP8mEsckaaozTlUyeQHwI8y3Vit89otaraWlELCloKT63sHmOzywgkCvJMbg8L+4XfJGIZEFKk3ZQd2f1nVuO50+Ajys/PBWlbV2x4nwmBPxMumP4r2m9XJUm8SP9p1LdaMq/bnCW+X0jgS0MUPJzF9rpjKYFVLd6fxgl7gVz0lhc/0Tgf8mu+48C3aaKLTkHsKwHuXfEm8wob5f9gKeqVqZuml8j1ZqpcB86zB+gqvq4LJy0+wmSQRVmM1FeuFjoxL008wqWD1DDO0Gu8vWFt2AjxIZjspCGgnOCq2TQCYQehr9vgeXPEwJEim9+dQBWpBIlz6ycFBLs1AwmRofRs6dNnI00dkUp9iZakJ+md05F7FocZ6/kpCLJTbJzjE382WSeOL7P1vMYSNIAoGQbxQ="
+    - secure: "jb9II2WjGCIww4E1ULr6JhIj1WhcmwDlXOWqA9ld6C+UPqYePPb670vQk3pUmUdwSsqXXlvbVjVhse0KRsdFOhac5FmS3j6LjXn4H14jJNQU3gZIXt4Fz1ND0Z2qWsfzCa95VNqNfgLZI/PFMxmwSlBe8H/GQ/T7OaFFQaFNYVz70VnHW9PceRfCISVcCzCh3+LEO9AKz4YdR8Ac1GWcrt313pDIB3PFneIx5kRDeC9ckrnlkPPA186Mq7kICZTq65luNGwsLRvO81dmQ0JooP8mEsckaaozTlUyeQHwI8y3Vit89otaraWlELCloKT63sHmOzywgkCvJMbg8L+4XfJGIZEFKk3ZQd2f1nVuO50+Ajys/PBWlbV2x4nwmBPxMumP4r2m9XJUm8SP9p1LdaMq/bnCW+X0jgS0MUPJzF9rpjKYFVLd6fxgl7gVz0lhc/0Tgf8mu+48C3aaKLTkHsKwHuXfEm8wob5f9gKeqVqZuml8j1ZqpcB86zB+gqvq4LJy0+wmSQRVmM1FeuFjoxL008wqWD1DDO0Gu8vWFt2AjxIZjspCGgnOCq2TQCYQehr9vgeXPEwJEim9+dQBWpBIlz6ycFBLs1AwmRofRs6dNnI00dkUp9iZakJ+md05F7FocZ6/kpCLJTbJzjE382WSeOL7P1vMYSNIAoGQbxQ="
 
     # REM_SERVER
     # travis encrypt REM_SERVER="secretvalue"
-    secure: "FSy2beqe2qfRiRpss9XzT2gMIn1cgJm6IlCbupxQBff0RSSH7IZ5A6M0TOmjmneIjKJTUOcxm+MdoSzR15xy9OLFA7GxvGZsoxfLklQaJrzhK5/34Lqxo2Wzbeis0Q4XApjoLGHaRdNLufpxOUfhi5gOJpQ/hiBe/hOt3O6p71ZrSiM6R2M9IT52nJL6JjimS1AgI58LNStZvMC7B3F7T+5HBRQ4iHya0trTxUwp07qA3vz8+WFqcIbb5PEoOmdnhOXX1Vyk1bU8HJ9I4QoGMA+3MKAxyb5I5ovxQVJ9QxHGNSj0DifegbO+ATvB/qtLZAiTuQFQEzJCGY+PCzzQzcxzBcn+Pjl0ol0g1gxtl0dtwiU4Ikn12171pdtbS/CWAtGZJsaml2LKdgZnipROu+sQr91vZyMs8octOHqm2EmWBncFsHRNF3efl5bCxudnIAUEkd0d6uaxPgi9bU7Ke7ZWIUTIOoE09IzHHDaqH2S9NdeOQhR7E/i4awyctfzeKNWsjEYgdX0LtSki0zzDJhTSxC0bsY+w8u+rgyaG06Qdopxc6TRgFOicGo8ijknJKTCnJeRekUyj+ZFsRm0Py5mKE2CI/6Zx8snMWtA71TtTpS9qooUN2NtwAu/e4GFM8Tvg07Fe2XKtze/TPD/vai6+4ifZ0v53cKGoNDDeuwU="
+    - secure: "FSy2beqe2qfRiRpss9XzT2gMIn1cgJm6IlCbupxQBff0RSSH7IZ5A6M0TOmjmneIjKJTUOcxm+MdoSzR15xy9OLFA7GxvGZsoxfLklQaJrzhK5/34Lqxo2Wzbeis0Q4XApjoLGHaRdNLufpxOUfhi5gOJpQ/hiBe/hOt3O6p71ZrSiM6R2M9IT52nJL6JjimS1AgI58LNStZvMC7B3F7T+5HBRQ4iHya0trTxUwp07qA3vz8+WFqcIbb5PEoOmdnhOXX1Vyk1bU8HJ9I4QoGMA+3MKAxyb5I5ovxQVJ9QxHGNSj0DifegbO+ATvB/qtLZAiTuQFQEzJCGY+PCzzQzcxzBcn+Pjl0ol0g1gxtl0dtwiU4Ikn12171pdtbS/CWAtGZJsaml2LKdgZnipROu+sQr91vZyMs8octOHqm2EmWBncFsHRNF3efl5bCxudnIAUEkd0d6uaxPgi9bU7Ke7ZWIUTIOoE09IzHHDaqH2S9NdeOQhR7E/i4awyctfzeKNWsjEYgdX0LtSki0zzDJhTSxC0bsY+w8u+rgyaG06Qdopxc6TRgFOicGo8ijknJKTCnJeRekUyj+ZFsRm0Py5mKE2CI/6Zx8snMWtA71TtTpS9qooUN2NtwAu/e4GFM8Tvg07Fe2XKtze/TPD/vai6+4ifZ0v53cKGoNDDeuwU="
 
 addons:
-    apt:
-        ssh_known_hosts:
-        - $REM_SERVER
+  apt:
+    ssh_known_hosts:
+      - $REM_SERVER
+    packages:
+      - gfortran
+      - fontconfig
 
 before_install:
   # print the distro information
   - lsb_release -a
   - sudo apt-get update -qq
-  - sudo apt-get install -y gfortran
 
   # add a group for apache on end server
   - sudo groupadd -g 10000 apache
 
-  # install latex
-  - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
+  # install latex, using source command below instead
+  # - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
 
-  # Here we just install Miniconda, which you shouldn't have to change.
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
+  # Here we just install Miniconda. If it is in the cache, then we don't need to do anything
+  - if [ -d "${CONDA_BASE_PATH}" ] && [ -e "${CONDA_BASE_PATH}/bin/conda" ]; then
+      echo "Miniconda install already present from cache";
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      bash miniconda.sh -b -p ${CONDA_BASE_PATH};
+    fi
+  - export PATH="${CONDA_BASE_PATH}/bin:$PATH"
   - export F90=gfortran
   - conda update --yes conda
 
   # Decrypt rsync key
   - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-        sudo openssl aes-256-cbc -K $encrypted_43caa601570c_key -iv $encrypted_43caa601570c_iv -in travis_deploy_rsa.enc -out $HOME/travis_deploy_rsa -d;
+      sudo openssl aes-256-cbc -K $encrypted_43caa601570c_key -iv $encrypted_43caa601570c_iv -in travis_deploy_rsa.enc -out $HOME/travis_deploy_rsa -d;
     fi
 
   # Dropbox uploader key
@@ -56,19 +73,32 @@ before_install:
 
 install:
   # Make environment and activate
-  - conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION
-  - source $HOME/miniconda/etc/profile.d/conda.sh
-  - source activate rem3d
-  - conda install --yes -c conda-forge python-slugify
+  # Do not add any comments in the if else blocks above or below
+  # The yml file will not be valid
+  # Following did not work as was too slow
+  # while read requirement; do if [[ $requirement != "#"* ]]; then conda install --yes $requirement || pip install $requirement; fi; done < docs/requirements.txt;
+  - if [ -d "${CONDA_BASE_PATH}/envs/rem3d_${TRAVIS_PYTHON_VERSION}" ]; then
+      echo "Environment available from cache";
+      source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
+      source activate rem3d_${TRAVIS_PYTHON_VERSION};
+    else
+      conda create --yes --name rem3d_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION;
+      source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
+      source activate rem3d_${TRAVIS_PYTHON_VERSION};
+      conda config --append channels conda-forge;
+      conda install --yes --file docs/requirements.txt;
+      conda install --yes -c conda-forge python-slugify;
+      conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
+      conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
+      conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme;
+    fi
 
-  # Install REM3D requirements
-  - conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires
+  # Install TexLive
+  # https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
+  - source docs/texlive/texlive_install.sh
 
-  # This is for coverage testing
-  - conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat
-
-  # for sphinx documentation
-  - conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme
+  # Move to build directory for other commands
+  - cd ${TRAVIS_BUILD_DIR}
 
 script:
   # Running pip install -e . --user directly causes errors
@@ -85,12 +115,27 @@ script:
   # http://openmdao.org/twodocs/versions/2.0.2/developer_docs/automating_doc_build/automating_doc_build.html
   - cd docs
   - make html
-  - make latexpdf
-  #- ./dropbox_uploader.sh upload _build/html rem3d
-  - cd ..
+
+  # Make a latex file for the next step
+  - make latex
+  - cd _build/latex
+  # Texliveonfly will download packages automatically
+  - texliveonfly REM3D.tex
+  # Make a pdf now
+  - make
+  - cd ../..
+
+  # Upload html files to dropbox
+  # - ./dropbox_uploader.sh upload _build/html rem3d
+
+  # Move to build directory for other commands
+  - cd ${TRAVIS_BUILD_DIR}
+
+  # cleanup fontconfig to avoid re-caching every time
+  - rm ${CONDA_BASE_PATH}/envs/rem3d_${TRAVIS_PYTHON_VERSION}/var/cache/fontconfig/*cache*
 
 after_success:
-  #If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
+  # If Codecov fails to upload reports, ensure the CI build does not fail with a catch-all:
   - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
 
 before_deploy:
