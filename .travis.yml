@@ -77,7 +77,6 @@ install:
   # The yml file will not be valid
   # Following did not work as was too slow
   # while read requirement; do if [[ $requirement != "#"* ]]; then conda install --yes $requirement || pip install $requirement; fi; done < docs/requirements.txt;
-  # conda config --append channels conda-forge;
   - if [ -d "${CONDA_BASE_PATH}/envs/rem3d_${TRAVIS_PYTHON_VERSION}" ]; then
       echo "Environment available from cache";
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
@@ -86,7 +85,7 @@ install:
       conda create --yes --name rem3d_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION;
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
       source activate rem3d_${TRAVIS_PYTHON_VERSION};
-      while read requirement; do if [[ $requirement != "#"* ]]; then conda install --yes $requirement || pip install $requirement; fi; done < docs/requirements.txt;
+      conda config --append channels conda-forge;
       conda install --yes --file docs/requirements.txt;
       conda install --yes -c conda-forge python-slugify;
       conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
