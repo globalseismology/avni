@@ -12,6 +12,8 @@ cache:
     # This directory gets cached by being stored as an archive
     # Can add the necessary dependencies to this directory for more caching
     - ${HOME}/cache
+    - /tmp/texlive
+    - ${HOME}/.texlive
 
 branches:
   only:
@@ -94,7 +96,7 @@ install:
 
   # Install TexLive
   # https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
-  # - source $HOME/docs/texlive/texlive_install.sh
+  - source docs/texlive/texlive_install.sh
   # - pip install -U pip wheel
   # - pip install --requirement=$TRAVIS_BUILD_DIR/requirements.txt
 
@@ -113,6 +115,10 @@ script:
   # http://openmdao.org/twodocs/versions/2.0.2/developer_docs/automating_doc_build/automating_doc_build.html
   - cd docs
   - make html
+
+  # Texliveonfly will download packages automatically
+  - texliveonfly REM3D.tex
+
   - make latexpdf
   # - ./dropbox_uploader.sh upload _build/html rem3d
   - cd ..
