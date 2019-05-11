@@ -90,6 +90,7 @@ install:
       conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme;
     fi
 
+
   # Install TexLive
   # https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
   # - source $HOME/docs/texlive/texlive_install.sh
