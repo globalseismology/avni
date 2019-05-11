@@ -1,8 +1,13 @@
+#####################################################
+######## Dependencies for faster Travis builds ######
+#####################################################
+
 ###### Requirements without Version Specifiers ######
 pandas
 scipy
 numpy
-###### Requirements with Version Specifiers ######
+
+######## Requirements with Version Specifiers #######
 fortranformat==0.2.5
 joblib==0.11
 progressbar2==3.38.0
