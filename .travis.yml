@@ -125,6 +125,8 @@ script:
   # Make a pdf now
   - make
   - cd ../..
+
+  # Upload html files to dropbox
   # - ./dropbox_uploader.sh upload _build/html rem3d
   - cd ..
 
