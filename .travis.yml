@@ -75,14 +75,16 @@ install:
   # Make environment and activate
   # Do not add any comments in the if else blocks above or below
   # The yml file will not be valid
-  - if [ -d "${CONDA_BASE_PATH}/envs/rem3d" ]; then
+  - if [ -d "${CONDA_BASE_PATH}/envs/rem3d_${$TRAVIS_PYTHON_VERSION}" ]; then
       echo "Environment available from cache";
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate rem3d;
+      source activate rem3d_${$TRAVIS_PYTHON_VERSION};
     else
-      conda create --yes --name rem3d python=$TRAVIS_PYTHON_VERSION;
+      conda create --yes --name rem3d_${$TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION;
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate rem3d;
+      source activate rem3d_${$TRAVIS_PYTHON_VERSION};
+      conda config --append channels conda-forge;
+      conda install --yes --file docs/requirements.txt;
       conda install --yes -c conda-forge python-slugify;
       conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
       conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
