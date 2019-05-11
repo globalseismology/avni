@@ -11,7 +11,6 @@ cache:
   directories:
     # This directory gets cached by being stored as an archive
     # Can add the necessary dependencies to this directory for more caching
-    - ${HOME}/.cache/pip
     - ${HOME}/cache
 
 branches:
@@ -84,7 +83,10 @@ install:
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
       source activate rem3d_${TRAVIS_PYTHON_VERSION};
       conda config --append channels conda-forge;
-      conda install --yes --file ${HOME}/globalseismology/rem3d/docs/requirements.txt;
+      git clone git@github.com:${TRAVIS_REPO_SLUG}.git $TRAVIS_REPO_SLUG
+      cd $TRAVIS_REPO_SLUG
+      git checkout -qf $TRAVIS_COMMIT
+      conda install --yes --file docs/requirements.txt;
       conda install --yes -c conda-forge python-slugify;
       conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
       conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
