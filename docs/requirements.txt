@@ -1,5 +1,4 @@
 ###### Requirements without Version Specifiers ######
-pygeodesy
 pandas
 scipy
 numpy
@@ -9,7 +8,6 @@ joblib==0.11
 progressbar2==3.38.0
 requests==2.20.1
 future==0.16.0
-msgpack==0.5.6
 argparse==1.4.0
 configobj==5.0.6
 pint==0.8.1
