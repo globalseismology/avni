@@ -169,6 +169,7 @@ deploy:
         fi
     on:
       branch: devel
+
   - provider: script
     skip_cleanup: true
     script:
