@@ -39,19 +39,22 @@ class Client(object):
     def checkConnection(self):
         ''' checks if the rem3d api is accessible'''
         self.base_url=None
+
+        connected=False
         for url in ['http://127.0.0.1:5000','http://maurya.umd.edu:41559']:
+            if connected is False:
+                try:
+                    r = requests.get(url, timeout=self.timeout)
+                except:
+                    r = None
 
-            try:
-                r = requests.get(url, timeout=self.timeout)
-            except:
-                r = None
-
-            if r is not None:
-                print("rem3d api is live at ")
-                print(url)
-                self.base_url=url
-                stats=self.checkUserStats()
-                print(stats['message'])
+                if r is not None:
+                    print("rem3d api is live at ")
+                    print(url)
+                    self.base_url=url
+                    stats=self.checkUserStats()
+                    print(stats['message'])
+                    connected=True
 
 
         if self.base_url is None:
