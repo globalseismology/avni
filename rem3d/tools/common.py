@@ -15,6 +15,8 @@ from configobj import ConfigObj
 from six import string_types # to check if variable is string using isinstance
 import ntpath
 import ast
+import pint # For SI units
+import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
@@ -39,12 +41,14 @@ def stage(file,overwrite=False):
 
 def convert2nparray(value,int2float = True):
     """
-    Converts input value to a float numpy array
+    Converts input value to a float numpy array. Boolean are returned as Boolean arrays.
 
     int2float: convert integer to floats, if true
     """
     if isinstance(value, (list,tuple,np.ndarray)):
         outvalue = np.asarray(value)
+    elif isinstance(value, bool):
+        outvalue = np.asarray([value])
     elif isinstance(value, float):
         outvalue = np.asarray([value])
     elif isinstance(value, (int,np.int64)):
@@ -84,11 +88,18 @@ def alphanum_key(s):
     return [int(c) if c.isdigit() else c for c in re.split('([0-9]+)', s)]
 
 def diffdict(first_dict,second_dict):
-    '''
-    helper tool to get difference in two dictionaries
+    '''helper tool to get difference in two dictionaries
     '''
     return { k : second_dict[k] for k in set(second_dict) - set(first_dict) }
 
+def equaldict(first_dict,second_dict):
+    '''helper tool to check if two dictionaries are equal
+    '''
+    #checks=[]
+    #for k in set(realization.metadata):
+    #    checks.extend(convert2nparray(first_dict==second_dict))
+    #return np.all(checks)
+    
 def df2nparray(dataframe):
     '''
     helper tool to return the named numpy array of the pandas dataframe
@@ -308,6 +319,37 @@ def sanitised_input(prompt, type_=None, min_=None, max_=None, range_=None):
         else:
             return ui
 
+def appendunits(ureg=constants.ureg,system='mks',unitsfile = get_configdir()+'/'+constants.customunits):
+    """
+    Append the custom units from unitsfile to ureg registry
+
+    Input parameters:
+    ----------------
+    ureg: input unit registry. If None, initialize within to system
+
+    system: default unit system. If not the same as ureg, change it.
+
+    unitsfile: additional definitions to add to ureg
+    """
+    if ureg is None:
+        ureg = pint.UnitRegistry(system=system)
+    else:
+        if ureg.default_system != system: ureg.default_system = system
+    ureg.load_definitions(unitsfile)
+    constants.ureg = ureg
+
+def convert2units(valstring):
+    """
+    Returns the value with units. Only space allowed is that between value and unit.
+    """
+    vals = valstring.split()
+    if len(vals) == 1: #if no unit is provided
+        return ast.literal_eval(vals[0])*constants.ureg('dimensionless')
+    elif len(vals) == 2: # first is value, second unit
+        return ast.literal_eval(vals[0])*constants.ureg(vals[1])
+    else:
+        raise ValueError('only space allowed is that between value and unit')
+
 def getplanetconstants(planet = constants.planetpreferred, configfile = get_configdir()+'/'+constants.planetconstants):
     """
     Read the constants from configfile relevant to a planet to constants.py
@@ -330,22 +372,22 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
         parser_select = parser[planet]
     except:
         raise IOError('No planet '+planet+' found in file '+configfile)
-    constants.a_e = ast.literal_eval(parser_select['a_e']) # Equatorial radius
-    constants.GM = ast.literal_eval(parser_select['GM']) # Geocentric gravitational constant m^3s^-2
-    constants.G = ast.literal_eval(parser_select['G']) # Gravitational constant m^3kg^-1s^-2
+    constants.a_e = convert2units(parser_select['a_e']) # Equatorial radius
+    constants.GM = convert2units(parser_select['GM']) # Geocentric gravitational constant m^3s^-2
+    constants.G = convert2units(parser_select['G']) # Gravitational constant m^3kg^-1s^-2
     try:
-        constants.f = ast.literal_eval(parser_select['f']) #flattening
+        constants.f = convert2units(parser_select['f']) #flattening
     except KeyError:
         try:
-            constants.f = 1./ast.literal_eval(parser_select['1/f']) #flattening
+            constants.f = 1./convert2units(parser_select['1/f']) #flattening
         except:
             raise KeyError('need either flattening (f) or inverse flattening (1/f) for '+planet+' in '+configfile)
-    constants.omega = ast.literal_eval(parser_select['omega']) #Angular velocity in rad/s
-    constants.M_true = ast.literal_eval(parser_select['M_true']) # Solid Earth mass in kg
-    constants.I_true = ast.literal_eval(parser_select['I_true']) # Moment of inertia in m^2 kg
-    constants.R = ast.literal_eval(parser_select['R']) # Radius of the Earth in m
-    constants.rhobar = ast.literal_eval(parser_select['rhobar']) # Average density in kg/m^3
-    constants.deg2km = ast.literal_eval(parser_select['deg2km']) #length of 1 degree in km
+    constants.omega = convert2units(parser_select['omega']) #Angular velocity in rad/s
+    constants.M_true = convert2units(parser_select['M_true']) # Solid Earth mass in kg
+    constants.I_true = convert2units(parser_select['I_true'])# Moment of inertia in m^2 kg
+    constants.R = convert2units(parser_select['R']) # Radius of the Earth in m
+    constants.rhobar = convert2units(parser_select['rhobar']) # Average density in kg/m^3
+    constants.deg2km = convert2units(parser_select['deg2km']) #length of 1 degree in km
     constants.deg2m = constants.deg2km * 1000. #length of 1 degree in m
     # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
     try:

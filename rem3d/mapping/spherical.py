@@ -8,7 +8,7 @@ if (sys.version_info[:2] < (3, 0)):
 
 import numpy as np #for numerical analysis
 from pygeodesy.sphericalNvector import LatLon
-
+import pdb
 ############################### PLOTTING ROUTINES ################################
 from ..tools.common import convert2nparray
 from .. import constants
@@ -249,7 +249,7 @@ def cart2polar(xy):
 def getDestination(lat,lng,azimuth,distance):
     '''returns the lat an long of destination point
     given the start lat, long, aziuth, and distance (in meters)'''
-    R = constants.R #Radius of the Earth in m
+    R = constants.R.to_base_units().magnitude #Radius of the Earth in m
     d = distance #Distance m
     if lng > 180.: lng = lng -360.
     start = LatLon(lat,lng)

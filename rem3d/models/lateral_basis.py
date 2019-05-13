@@ -15,7 +15,7 @@ from .. import tools
 #######################################################################################
 # Horizontal basis parameter class that defines an unique combination of parameters, their radial parameterization and any scaling
 # 3D model class
-class lateral_basis(object):
+class Lateral_basis(object):
     '''
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.

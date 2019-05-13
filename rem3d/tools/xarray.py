@@ -11,6 +11,7 @@ import numpy as np
 import xarray as xr
 from scipy.spatial import cKDTree
 import pickle
+import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .trigd import sind
@@ -86,7 +87,7 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km =
             dep = f.variables[lonlatdepth[2]][::stride]
         else:
             dep = f.variables[lonlatdepth[2]]
-        rad = constants.R/1000. - dep
+        rad = constants.R.to('km').magnitude - dep
     else:
         rad = xr.IndexVariable('rad',[radius_in_km])
     f.close() #close netcdf file

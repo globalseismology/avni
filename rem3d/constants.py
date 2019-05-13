@@ -4,11 +4,6 @@ from __future__ import absolute_import, division, print_function
 
 #import scipy.constants
 
-### Add units like this in future releases
-#import pint # For SI units
-#ureg = pint.UnitRegistry()
-#R = 6371000. * ureg.m    #Radius of the Earth in m
-
 #download files
 downloadpage = 'https://maurya.umd.edu/files/common'
 localfilefolder = 'files'
@@ -22,6 +17,13 @@ cptfolder = 'CPT'
 #Mapping constants
 planetconstants = 'planets.ini'
 planetpreferred = 'Earth'
+
+#Attribute information for the parameterizations
+attributes = 'attributes.ini'
+
+#Add custom definitions of units
+ureg = None # this is initialized to MKS units in _init_.py
+customunits = 'units.ini'
 
 #Color scales
 colorscale = {
