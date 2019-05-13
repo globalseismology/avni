@@ -113,7 +113,6 @@ class Model(object):
                 args[arg]=args[arg].tolist()
             args[arg]=json.dumps({'vals':args[arg]})
         print(args)
-
         result=json.loads(self.r3dc.call(self.endpoint,args,5*60))
         if result['call_complete']:
             if return_numpy:
