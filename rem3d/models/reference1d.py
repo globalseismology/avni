@@ -20,6 +20,7 @@ import traceback
 import pandas as pd
 import pdb
 import pint
+import re
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
@@ -89,6 +90,64 @@ class Reference1D(object):
 
     def read_bases_coefficients(self,file):    
         # Use tools.eval_polynomial and tools.eval_splrem
+        self.metadata['attributes'] = '' # replace with the PARAMETERS row the file
+        self.metadata['regions'] = []
+        self.metadata['bot_coe'] = []
+        self.metadata['top_coe'] = []
+        # REFERENCE PERIOD   :   1.000
+        # NORMALIZING RADIUS :     6371.0
+        # NUMBER OF REGIONS  :5
+        rx_dict = {
+            'model': re.compile(r'EARTH MODEL\s*:\s*(?P<model>.*)\n'),
+            'ref_period': re.compile(r'REFERENCE PERIOD\s*:\s*(?P<ref_period>.*)\n'),
+            'num_region': re.compile(r'NUMBER OF REIGION\s*:\s*(?P<num_region>.*)\n'),
+            'attributes': re.compile(r'#PARAMETERS\s*:\s*(?P<attributes>.*)\n'),
+            'regions': re.compile(r'REGION\s*:\s*(?P<regions>.*)\n'),
+            'bot_coe': re.compile(r'BOTTOM\s*:\s*(?P<bot_coe>.*)\n'),
+            'top_coe': re.compile(r'TOP\s*:\s*(?P<top_coe>.*)\n'),
+        }
+        def _parse_line(line):
+            """
+            Do a regex search against all defined regexes and
+            return the key and match result of the first matching regex
+            """
+            
+            for key, rx in rx_dict.items():
+                match = rx.search(line)
+                if match:
+                    return key, match
+            # if there are no matches
+            return None, None
+        with open(file,'r') as f:
+            line = f.readline()
+            while line:
+            # at each line check for a match with a regex
+                key, match = _parse_line(line)
+                if key == 'model':
+                    self.metadata['model'] = match.group('model')
+                if key == 'ref_period':
+                    ref_temp = match.group('ref_period')
+                    self.metadata['ref_period'] = float(ref_temp)
+                if key == 'num_region':
+                    reg_temp = match.group('num_region')
+                    self.metadata['num_region'] = int(reg_temp)
+                if key == 'attributes':
+                    att_temp = match.group('attributes')
+                    self.metadata['attributes'] = att_temp.split()
+                if key == 'regions':
+                    self.metadata['regions'].append(match.group('regions'))
+                if key == 'bot_coe':
+                    bot_temp=match.group('bot_coe')
+                    bot_fl = [float(x) for x in bot_temp.split()]
+                    self.metadata['bot_coe'].append(bot_fl)
+                if key == 'top_coe':
+                    top_temp=match.group('top_coe')
+                    top_fl = [float(x) for x in top_temp.split()]
+                    self.metadata['top_coe'].append(top_fl)
+                line = f.readline()
+            pdb.set_trace()
+        self.metadata['description'] = 'Read from '+file
+        self.metadata['filename'] = file
         pdb.set_trace()
 
     def read_mineos_cards(self,file):
