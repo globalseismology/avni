@@ -3,7 +3,7 @@ example for using the rem3d api client: filter the CMT catalogue and plot result
 
 python api_fetchCMT_events api_key
 
-where api_key is the user's api key.
+api_key is optional if api_initialization has been run.
 '''
 
 from rem3d.api.client import Client as r3d
@@ -12,7 +12,10 @@ import matplotlib.pyplot as plt
 import sys
 
 
-conn=r3d(api_key=sys.argv[1])
+if len(sys.argv)>1:
+    conn=r3d(api_key=sys.argv[1]) # the connection object
+else:
+    conn=r3d()
 CMTinstance=CMT(conn)
 
 filters={'min_depth_km':15}

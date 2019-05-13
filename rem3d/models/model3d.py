@@ -427,7 +427,7 @@ class model3d(object):
         #compute values for each resolution
         for index,res in enumerate(resolution):
             # get the model array
-            modelarr = self.coeff2modelarrFAST(resolution=res,realization=realization)
+            modelarr = self.coeff2modelarr(resolution=res,realization=realization)
             if not interpolated:
                 # get the projection matrix
                 project = self.calculateproj(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res)
@@ -490,51 +490,8 @@ class model3d(object):
         # convert to numpy arrays
         resolution = tools.convert2nparray(resolution,int2float=False)
 
-        # Loop over resolution levels, adding coefficients
+        # Loop over resolution levels, adding coefficients        
         for ir,_ in enumerate(resolution):
-            try:
-                coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef']
-                #if modelarr is already made use it
-                try:
-                    modelarr = self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr']
-                except:
-                    # Loop over all kernel basis
-                    for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])):
-                        # number of coefficients for this radial kernel
-                        ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
-                        # first radial kernel and first tesselation level
-                        if ii == 0 and ir == 0:
-                            modelarr = coefficients.iloc[ii][:ncoef]
-                        else:
-                            modelarr = modelarr.append(coefficients.iloc[ii][:ncoef],ignore_index=True)
-                    # Convert to sparse matrix
-                    # take the transpose to make dot products easy
-                    modelarr = sparse.csr_matrix(modelarr).transpose()
-                    self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr'] = modelarr
-            except AttributeError:
-                raise ValueError('resolution '+str(resolution[ir])+' and realization '+str(realization)+' not filled up yet.')
-        return modelarr
-
-    def coeff2modelarrFAST(self,resolution=0,realization=0):
-        """
-        Convert the coeffiecient matrix from the file to a sparse model array. Add
-        up all the resolutions if a list is provided.
-
-        realization : index of the set of coefficients in an ensemble. Default is 0
-        as there is only one set of coefficients when read from a model file.
-
-        resolution : list of resolutions to include the the modelarray
-        """
-        if self.type != 'rem3d': raise NotImplementedError('model format ',self.type,' is not currently implemented in reference1D.coeff2modelarr')
-        if self.name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
-
-        # convert to numpy arrays
-        resolution = tools.convert2nparray(resolution,int2float=False)
-
-        # Loop over resolution levels, adding coefficients
-        print("resolution loop")
-        for ir,_ in enumerate(resolution):
-            print(ir)
             try:
                 coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef']
                 #if modelarr is already made use it

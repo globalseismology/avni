@@ -4,7 +4,7 @@ example for using the rem3d api client: fetch model evaluations and cross-sectio
 
 python api_model_explorer api_key
 
-where api_key is the user's api key
+api_key is optional if api_initialization has been run.
 
 (this example will include simple plotting for the call results)
 
@@ -15,7 +15,11 @@ from rem3d.api.model import Model
 import numpy as np
 import sys
 
-conn=r3d(api_key=sys.argv[1]) # the connection object
+if len(sys.argv)>1:
+    conn=r3d(api_key=sys.argv[1]) # the connection object
+else:
+    conn=r3d()
+
 ModelInstance=Model(conn) # give the model instance the connection object
 
 # list available models & kernels
