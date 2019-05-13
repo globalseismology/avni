@@ -20,6 +20,7 @@ branches:
     - devel
     - travis
     - master
+    - api
 
 env:
   global:
@@ -168,7 +169,10 @@ deploy:
         rsync -r -g --delete-after -v docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
         fi
     on:
-      branch: devel
+      branch:
+        - devel
+        - api
+        - plotmodels
 
   - provider: script
     skip_cleanup: true
