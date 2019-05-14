@@ -94,6 +94,10 @@ class Reference1D(object):
         self.metadata['regions'] = []
         self.metadata['bot_coe'] = []
         self.metadata['top_coe'] = []
+        self.metadata['bot_dep'] = []
+        self.metadata['top_dep'] = []
+        self.metadata['lvl'] = []
+        self.metadata['poly'] = []
         # REFERENCE PERIOD   :   1.000
         # NORMALIZING RADIUS :     6371.0
         # NUMBER OF REGIONS  :5
@@ -105,6 +109,10 @@ class Reference1D(object):
             'regions': re.compile(r'REGION\s*:\s*(?P<regions>.*)\n'),
             'bot_coe': re.compile(r'BOTTOM\s*:\s*(?P<bot_coe>.*)\n'),
             'top_coe': re.compile(r'TOP\s*:\s*(?P<top_coe>.*)\n'),
+            'bot_dep': re.compile(r'BOT DEPTH\s*:\s*(?P<bot_dep>.*)\n'),
+            'top_dep': re.compile(r'TOP DEPTH\s*:\s*(?P<top_dep>.*)\n'),
+            'lvl': re.compile(r'LEVELS\s*:\s*(?P<lvl>.*)\n'),
+            'poly': re.compile(r'POLYNOMIAL\s*:\s*(?P<poly>.*)\n'),
         }
         def _parse_line(line):
             """
@@ -136,6 +144,10 @@ class Reference1D(object):
                     self.metadata['attributes'] = att_temp.split()
                 if key == 'regions':
                     self.metadata['regions'].append(match.group('regions'))
+                if key == 'poly':
+                    self.metadata['poly'].append(match.group('poly'))
+                if key == 'lvl':
+                    self.metadata['lvl'].append(int(match.group('lvl')))
                 if key == 'bot_coe':
                     bot_temp=match.group('bot_coe')
                     bot_fl = [float(x) for x in bot_temp.split()]
@@ -144,8 +156,13 @@ class Reference1D(object):
                     top_temp=match.group('top_coe')
                     top_fl = [float(x) for x in top_temp.split()]
                     self.metadata['top_coe'].append(top_fl)
+                if key == 'bot_dep':
+                    bd_temp=match.group('bot_dep')
+                    self.metadata['bot_dep'].append(float(bd_temp))
+                if key == 'top_dep':
+                    td_temp=match.group('top_dep')
+                    self.metadata['top_dep'].append(float(td_temp))
                 line = f.readline()
-            pdb.set_trace()
         self.metadata['description'] = 'Read from '+file
         self.metadata['filename'] = file
         pdb.set_trace()
