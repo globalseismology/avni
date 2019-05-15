@@ -49,7 +49,7 @@ class Model(object):
         filepath = os.path.join(tools.get_configdir(),'attributes.ini')
         if os.path.isfile(filepath):
             # get config file loaded
-            parser=ConfigObj(filepath)
+            parser=ConfigObj(filepath,unrepr=True)
 
             # compile kernel list to fetch
             kernel_list=[]
