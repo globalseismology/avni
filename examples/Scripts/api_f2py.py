@@ -3,6 +3,7 @@
 from rem3d.api.client import Client as r3d
 from rem3d.api.f2py import f2pyWrapper
 import argparse
+import numpy as np
 
 
 def main():
@@ -23,18 +24,31 @@ def main():
     # list available functions and arguments
     funlist=f2py.listf2py()
     print("\nf2py function list")
-    print(funlist['function_list'])
-    print("funlist['argument'][function_name] will return arguments")
+    for fun in funlist.keys():
+        print("\nfunction: "+fun)
+        print("description: "+funlist[fun]['description'])
+        print("input arguments: ")
+        print(funlist[fun]['arguments'])
+        print("output expected:")
+        print(funlist[fun]['output'])
 
-
-    print("\n begin function testing")
-    f2pyresult=f2py.callf2py(f2pyfun='FUNCTIONNAME',f2py_args=[])
-    print("\nf2py.callf2py(f2pyfun='FUNCTIONNAME',f2py_args=[])")
+    print("\nBegin function testing!")
+    print("\nf2py.callf2py(function='FUNCTIONNAME',args={})")
+    f2pyresult=f2py.callf2py(function='FUNCTIONNAME',args={})
     print(f2pyresult)
 
     # subroutine ddelazgc(eplat,eplong,stlat,stlong,delta,azep,azst)
-    f2pyresult=f2py.callf2py(f2pyfun='ddelazgc',f2py_args=[-25.,191.,-22.,160.])
-    print("\nf2py.callf2py(f2pyfun='ddelazgc',f2py_args=[-25.,191.,-22.,160.])")
+    print("\nf2py.callf2py(function='ddelazgc',args={'lat1':-25.,'lon1':191.,'lat2':-22.,'lon2':160.})")
+    f2pyresult=f2py.callf2py(function='ddelazgc',args={'lat1':-25.,'lon1':191.,'lat2':-22.,'lon2':160.})
+    print("Output tuple, "+funlist['ddelazgc']['output']+":")    
+    print(f2pyresult)
+
+
+    splpts=np.linspace(0,3000,50) # will be order F'd on server
+    f2py_args={'depth':125.,'Nsplts':len(splpts),'splpts':splpts}
+    print("\nf2py.callf2py(function='vbspl',args=f2py_args)")
+    f2pyresult=f2py.callf2py(function='vbspl',args=f2py_args)
+    print("Output tuple, "+funlist['vbspl']['output']+":")
     print(f2pyresult)
 
     print("\n")
