@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 example for using the rem3d api client: filter the CMT catalogue and plot result
 
@@ -9,22 +10,33 @@ api_key is optional if api_initialization has been run.
 from rem3d.api.client import Client as r3d
 from rem3d.api.cmt import CMT
 import matplotlib.pyplot as plt
-import sys
+import argparse
+
+def main():
+    # parse
+    parser = argparse.ArgumentParser(description='f2py calls via API')
+    parser.add_argument('-k', '--key', type=str,default='',help='api key')
+    arg = parser.parse_args()
+
+    # initialize API connection
+    if arg.key=='':
+        conn=r3d()
+    else:
+        conn=r3d(api_key=arg.key) # the connection object
+
+    CMTinstance=CMT(conn)
+
+    filters={'min_depth_km':15}
+
+    print("fetching events")
+    events=CMTinstance.fetchCMTevents(filters)
+
+    print("plotting events")
+    plt.plot(events['ep.depth'],events['centroid.cmtdepth'],'.k')
+    plt.xlabel('reported depth')
+    plt.ylabel('centroid depth')
+    plt.show()
 
 
-if len(sys.argv)>1:
-    conn=r3d(api_key=sys.argv[1]) # the connection object
-else:
-    conn=r3d()
-CMTinstance=CMT(conn)
-
-filters={'min_depth_km':15}
-
-print("fetching events")
-events=CMTinstance.fetchCMTevents(filters)
-
-print("plotting events")
-plt.plot(events['ep.depth'],events['centroid.cmtdepth'],'.k')
-plt.xlabel('reported depth')
-plt.ylabel('centroid depth')
-plt.show()
+if __name__== "__main__":
+    main()

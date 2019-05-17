@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 example for using the rem3d api client: initializing API key storage
 
@@ -11,7 +12,16 @@ initialize Client object do not need api_key argument.
 '''
 
 from rem3d.api.client import Client as r3d
-import sys
+import argparse
 
-conn=r3d(api_key=sys.argv[1])
-conn.setApiConfig()
+def main():
+    # parse
+    parser = argparse.ArgumentParser(description='f2py calls via API')
+    parser.add_argument('-k', '--key', type=str,default='',help='api key')
+    arg = parser.parse_args()
+
+    conn=r3d(api_key=sys.key) # api connection object
+    conn.setApiConfig() # store the api key in default config
+
+if __name__== "__main__":
+    main()
