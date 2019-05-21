@@ -38,6 +38,9 @@ class Reference1D(object):
         self.__nlayers__ = None
         self.data = None
         self.metadata = {}
+        # assume that information about the native parameterization is not available
+        # this is typical for a card deck file
+        for field in ['model','ref_period','parameters']: self.metadata[field] = None
         self.name = None
         self.radius_max = None
         if file is not None:
@@ -90,81 +93,163 @@ class Reference1D(object):
 
     def read_bases_coefficients(self,file):    
         # Use tools.eval_polynomial and tools.eval_splrem
-        self.metadata['attributes'] = '' # replace with the PARAMETERS row the file
-        self.metadata['regions'] = []
-        self.metadata['bot_coe'] = []
-        self.metadata['top_coe'] = []
-        self.metadata['bot_dep'] = []
-        self.metadata['top_dep'] = []
-        self.metadata['lvl'] = []
-        self.metadata['poly'] = []
-        # REFERENCE PERIOD   :   1.000
-        # NORMALIZING RADIUS :     6371.0
-        # NUMBER OF REGIONS  :5
-        rx_dict = {
-            'model': re.compile(r'EARTH MODEL\s*:\s*(?P<model>.*)\n'),
-            'ref_period': re.compile(r'REFERENCE PERIOD\s*:\s*(?P<ref_period>.*)\n'),
-            'num_region': re.compile(r'NUMBER OF REIGION\s*:\s*(?P<num_region>.*)\n'),
-            'attributes': re.compile(r'#PARAMETERS\s*:\s*(?P<attributes>.*)\n'),
-            'regions': re.compile(r'REGION\s*:\s*(?P<regions>.*)\n'),
-            'bot_coe': re.compile(r'BOTTOM\s*:\s*(?P<bot_coe>.*)\n'),
-            'top_coe': re.compile(r'TOP\s*:\s*(?P<top_coe>.*)\n'),
-            'bot_dep': re.compile(r'BOT DEPTH\s*:\s*(?P<bot_dep>.*)\n'),
-            'top_dep': re.compile(r'TOP DEPTH\s*:\s*(?P<top_dep>.*)\n'),
-            'lvl': re.compile(r'LEVELS\s*:\s*(?P<lvl>.*)\n'),
-            'poly': re.compile(r'POLYNOMIAL\s*:\s*(?P<poly>.*)\n'),
-        }
-        def _parse_line(line):
+        coef_names=['bottom','top','spline','constant','linear','quadratic','cubic']
+        # function used to parse line with key word from rx_dict
+        def _parse_line(line,rx_dict):
             """
             Do a regex search against all defined regexes and
             return the key and match result of the first matching regex
             """
-            
             for key, rx in rx_dict.items():
                 match = rx.search(line)
                 if match:
                     return key, match
             # if there are no matches
             return None, None
+        
+        # regex dict for common metadata info 
+        rx_dict_common = {
+            'model': re.compile(r'EARTH MODEL\s*:\s*(?P<model>.*)\n'),
+            'ref_period': re.compile(r'REFERENCE PERIOD\s*:\s*(?P<ref_period>.*)\n'),
+            'norm_radius': re.compile(r'NORMALIZING RADIUS\s*:\s*(?P<norm_radius>.*)\n'),
+            'parameters': re.compile(r'#PARAMETERS\s*:\s*(?P<parameters>.*)\n'),
+            'num_region': re.compile(r'NUMBER OF REGIONS\s*:\s*(?P<num_region>.*)\n'),
+            'regions': re.compile(r'REGION\s*:\s*(?P<regions>.*)\n'),
+        }
+
+        # Check if it is the first file read for the model
+        if self.metadata['model'] == None:
+            # make parameterization 2D lists of dicts,first dimension associated with file
+            # number, here we assume the parameterization within each file are the same
+            self.metadata['parameterization'] = []
+            self.metadata['parameterization'].append([])
+            # make parameters list of dicts, PARAMETERS should not be the same
+            self.metadata['parameters'] = {}
+            self.metadata['filename'] = file
+            self.metadata['num_file'] = 1 # use this as index for file number
+            self.metadata['description'] = 'No.' + str(self.metadata['num_file']) + 'read from '+file
+            regions = []
+            # loop through lines in file, extract info
+            with open(file,'r') as f:
+                line = f.readline()
+                while line:
+                # at each line check for a match with a regex
+                    key, match = _parse_line(line,rx_dict_common)
+                    if key == 'model':
+                        self.metadata['model'] = match.group('model')
+                    if key == 'ref_period':
+                        ref_temp = match.group('ref_period')
+                        self.metadata['ref_period'] = float(ref_temp)
+                    if key == 'norm_radius':
+                        rad_temp = match.group('norm_radius')
+                        self.metadata['normalizing_radius'] = float(rad_temp)
+                    if key == 'parameters':
+                        para_list = match.group('parameters').split()
+                        self.metadata['parameter_list']=para_list
+                    if key == 'num_region':
+                        nr_temp = match.group('num_region')
+                        num_region = int(nr_temp)
+                    if key == 'regions':
+                        regions.append(match.group('regions').strip())
+                    line = f.readline()
+        else:
+            self.metadata['parameterization'].append([])
+            self.metadata['filename'].append(file)
+            self.metadata['num_file'] += 1
+            self.metadata['description'] = 'No.' + str(self.metadata['num_file']) + 'read from '+file
+            regions = []
+            with open(file,'r') as f:
+                line = f.readline()
+                while line:
+                # at each line check for a match with a regex
+                    key, match = _parse_line(line,rx_dict_common)
+                    if key == 'parameters':
+                        para_list = match.group('parameters').split()
+                        self.metadata['parameter_list'].append(para_list)
+                    if key == 'num_region':
+                        nr_temp = match.group('num_region')
+                        num_region = int(nr_temp)
+                    if key == 'regions':
+                        regions.append(match.group('regions'))
+                    line = f.readline()
+        # Now start read parameterization from the file
+        rx_dict_para = {
+            'bot_dep': re.compile(r'BOT DEPTH\s*:\s*(?P<bot_dep>.*)\n'),
+            'top_dep': re.compile(r'TOP DEPTH\s*:\s*(?P<top_dep>.*)\n'),
+            'bot_rad': re.compile(r'BOT RADIUS\s*:\s*(?P<bot_rad>.*)\n'),
+            'top_rad': re.compile(r'TOP RADIUS*:\s*(?P<top_rad>.*)\n'),
+            'lvl': re.compile(r'LEVELS\s*:\s*(?P<lvl>.*)\n'),
+            'poly': re.compile(r'POLYNOMIAL\s*:\s*(?P<poly>.*)\n'),
+        }
+        bot_deps = []
+        top_deps = []
+        bot_rads = []
+        top_rads = []
+        levels = []
+        polys = []
+        radius_flag = 0 #The depth info could be saved as radius or depth, use this to mark
         with open(file,'r') as f:
             line = f.readline()
             while line:
             # at each line check for a match with a regex
-                key, match = _parse_line(line)
-                if key == 'model':
-                    self.metadata['model'] = match.group('model')
-                if key == 'ref_period':
-                    ref_temp = match.group('ref_period')
-                    self.metadata['ref_period'] = float(ref_temp)
-                if key == 'num_region':
-                    reg_temp = match.group('num_region')
-                    self.metadata['num_region'] = int(reg_temp)
-                if key == 'attributes':
-                    att_temp = match.group('attributes')
-                    self.metadata['attributes'] = att_temp.split()
-                if key == 'regions':
-                    self.metadata['regions'].append(match.group('regions'))
+                key, match = _parse_line(line,rx_dict_para)
                 if key == 'poly':
-                    self.metadata['poly'].append(match.group('poly'))
+                    polys.append(match.group('poly'))
                 if key == 'lvl':
-                    self.metadata['lvl'].append(int(match.group('lvl')))
-                if key == 'bot_coe':
-                    bot_temp=match.group('bot_coe')
-                    bot_fl = [float(x) for x in bot_temp.split()]
-                    self.metadata['bot_coe'].append(bot_fl)
-                if key == 'top_coe':
-                    top_temp=match.group('top_coe')
-                    top_fl = [float(x) for x in top_temp.split()]
-                    self.metadata['top_coe'].append(top_fl)
+                    levels.append(int(match.group('lvl')))
                 if key == 'bot_dep':
                     bd_temp=match.group('bot_dep')
-                    self.metadata['bot_dep'].append(float(bd_temp))
+                    bot_deps.append(float(bd_temp))
                 if key == 'top_dep':
                     td_temp=match.group('top_dep')
-                    self.metadata['top_dep'].append(float(td_temp))
+                    top_deps.append(float(td_temp))
+                if key == 'bot_rad':
+                    br_temp=match.group('bot_rad')
+                    bot_rads.append(float(br_temp))
+                    radius_flag = 1
+                if key == 'top_rad':
+                    tr_temp=match.group('top_rad')
+                    top_rads.append(float(tr_temp))
                 line = f.readline()
-        self.metadata['description'] = 'Read from '+file
-        self.metadata['filename'] = file
+        if radius_flag == 0:
+            bot_rads = self.metadata['normalizing_radius']-np.array(bot_deps)
+            top_rads = self.metadata['normalizing_radius']-np.array(top_deps)
+        elif radius_flag == 1:
+            bot_rads = np.array(bot_rads)
+            top_rads = np.array(top_rads)
+        # assign the num of regions to the n th parameterization 
+        self.metadata['parameterization'][self.metadata['num_file']-1]={'num_regions':num_region}
+        for idx,(region,poly,level,bot_rad,top_rad) in enumerate(zip(regions,polys,levels,bot_rads,top_rads)):
+            self.metadata['parameterization'][self.metadata['num_file']-1].update({region:{'polynomial':poly,'levels':level,'top_radius':top_rad,'bottom_radius':bot_rad}})
+        
+        # Now start to read parameter coefficient from the file
+        # regex for model coefficient info 
+        rx_dict_coef = {
+            'regions': re.compile(r'REGION\s*:\s*(?P<regions>.*)\n'),
+            'poly': re.compile(r'POLYNOMIAL\s*:\s*(?P<poly>.*)\n'),
+            'comment':re.compile(r'#--*\n')
+        }
+        for para in para_list:
+            self.metadata['parameters'].update({para:{'param_index':self.metadata['num_file']-1}})
+        with open(file,'r') as f:
+            line = f.readline()
+            while line:
+            # at each line check for a match with a regex
+                key, match = _parse_line(line,rx_dict_coef)
+                if key == 'regions':
+                    reg_temp = (match.group('regions').strip())
+                    for para in para_list: self.metadata['parameters'][para].update({reg_temp:{}})
+                if key == 'poly':
+                    line=f.readline()
+                    while line:
+                        key, match = _parse_line(line,rx_dict_coef)
+                        if key == 'comment': break
+                        att,coef = line.split(":",1)
+                        coef = np.array(coef.split())
+                        for idx, para in enumerate(para_list): 
+                            self.metadata['parameters'][para][reg_temp].update({att.strip():coef[idx].astype(float)})
+                        line = f.readline()
+                line = f.readline()
         pdb.set_trace()
 
     def read_mineos_cards(self,file):
@@ -368,19 +453,31 @@ class Reference1D(object):
         '''
         values=None
         depth_in_km = tools.convert2nparray(depth_in_km)
+        
+        # detailed information about the native parameterization which went into the
+        # inversion is available
+        if self.metadata['parameters'] is not None:
+        # CHAO FILL THIS UP BY USING 
+            self.metadata['parameters'][parameter] 
+            # USE this appropriuately
+            vercof,dvercof = rem3d.tools.bases.eval_polynomial(rnorm-30.,radius_range=[rnorm-35.,rnorm-20.] ,rnorm=rnorm,types=['CONSTANT','LINEAR'])
 
-        if self.data is not None and self.__nlayers__ > 0:
-            if parameter in self.data.dtype.names:
-                values = self.data[parameter]
-                depth_array = (constants.R.to_base_units().magnitude - self.data['radius'])/1000. # in km
-                # Sort to make interpolation possible
-                indx = depth_array.argsort()
-                values = griddata(depth_array[indx], values[indx], depth_in_km, method=interpolation)
-                if len(depth_in_km)==1: values = values.item()
-            else:
-                raise ValueError('parameter '+parameter+' not defined in array')
+
+        # If detailed metadata regarding the basis parameterization is not available
+        # interpolated based on the card deck file
         else:
-            raise ValueError('reference1D object is not allocated')
+            if self.data is not None:
+                if parameter in self.data.dtype.names:
+                    values = self.data[parameter]
+                    depth_array = (constants.R.to_base_units().magnitude - self.data['radius'])/1000. # in km
+                    # Sort to make interpolation possible
+                    indx = depth_array.argsort()
+                    values = griddata(depth_array[indx], values[indx], depth_in_km, method=interpolation)
+                    if len(depth_in_km)==1: values = values.item()
+                else:
+                    raise ValueError('parameter '+parameter+' not defined in array')
+            else:
+                raise ValueError('reference1D object is not allocated')
         return values
 
     def to_mineoscards(self,directory='.',fmt='cards'):
