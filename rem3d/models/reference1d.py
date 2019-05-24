@@ -21,6 +21,7 @@ import pandas as pd
 import pdb
 import pint
 import re
+import ntpath
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
@@ -45,9 +46,10 @@ class Reference1D(object):
         self.radius_max = None
         if file is not None:
             self.read(file)
-            self.get_Love_elastic()
-            self.get_discontinuity()
-            self.get_mineralogical()
+            if self.data is not None:
+                self.get_Love_elastic()
+                self.get_discontinuity()
+                self.get_mineralogical()
 
     def __str__(self):
         if self.data is not None and self.__nlayers__ > 0:
@@ -57,7 +59,7 @@ class Reference1D(object):
         return output
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self.name,self.radius_max})'.format(self=self)
+        return '{self.__class__.__name__}({self.name})'.format(self=self)
 
     def __copy__(self):
         cls = self.__class__
@@ -91,7 +93,7 @@ class Reference1D(object):
                 print(traceback.format_exc())
                 raise NotImplementedError('model format is not currently implemented in reference1D.read')
 
-    def read_bases_coefficients(self,file):    
+    def read_bases_coefficients(self,file):
         # Use tools.eval_polynomial and tools.eval_splrem
         coef_names=['bottom','top','spline','constant','linear','quadratic','cubic']
         # function used to parse line with key word from rx_dict
@@ -106,8 +108,8 @@ class Reference1D(object):
                     return key, match
             # if there are no matches
             return None, None
-        
-        # regex dict for common metadata info 
+
+        # regex dict for common metadata info
         rx_dict_common = {
             'model': re.compile(r'EARTH MODEL\s*:\s*(?P<model>.*)\n'),
             'ref_period': re.compile(r'REFERENCE PERIOD\s*:\s*(?P<ref_period>.*)\n'),
@@ -121,13 +123,9 @@ class Reference1D(object):
         if self.metadata['model'] == None:
             # make parameterization 2D lists of dicts,first dimension associated with file
             # number, here we assume the parameterization within each file are the same
-            self.metadata['parameterization'] = []
-            self.metadata['parameterization'].append([])
+            self.metadata['parameterization'] = [[]]
             # make parameters list of dicts, PARAMETERS should not be the same
             self.metadata['parameters'] = {}
-            self.metadata['filename'] = file
-            self.metadata['num_file'] = 1 # use this as index for file number
-            self.metadata['description'] = 'No.' + str(self.metadata['num_file']) + 'read from '+file
             regions = []
             # loop through lines in file, extract info
             with open(file,'r') as f:
@@ -137,12 +135,13 @@ class Reference1D(object):
                     key, match = _parse_line(line,rx_dict_common)
                     if key == 'model':
                         self.metadata['model'] = match.group('model')
+                        self.name = self.metadata['model']
                     if key == 'ref_period':
                         ref_temp = match.group('ref_period')
                         self.metadata['ref_period'] = float(ref_temp)
                     if key == 'norm_radius':
                         rad_temp = match.group('norm_radius')
-                        self.metadata['normalizing_radius'] = float(rad_temp)
+                        self.metadata['norm_radius'] = float(rad_temp)
                     if key == 'parameters':
                         para_list = match.group('parameters').split()
                         self.metadata['parameter_list']=para_list
@@ -153,16 +152,18 @@ class Reference1D(object):
                         regions.append(match.group('regions').strip())
                     line = f.readline()
         else:
+            # append a new parameterization
             self.metadata['parameterization'].append([])
-            self.metadata['filename'].append(file)
-            self.metadata['num_file'] += 1
-            self.metadata['description'] = 'No.' + str(self.metadata['num_file']) + 'read from '+file
             regions = []
             with open(file,'r') as f:
                 line = f.readline()
                 while line:
                 # at each line check for a match with a regex
                     key, match = _parse_line(line,rx_dict_common)
+                    # Check if model name is the same
+                    if key == 'model':
+                        if self.name != match.group('model'):
+                            raise ValueError('model names should match between input files')
                     if key == 'parameters':
                         para_list = match.group('parameters').split()
                         self.metadata['parameter_list'].append(para_list)
@@ -212,25 +213,26 @@ class Reference1D(object):
                     top_rads.append(float(tr_temp))
                 line = f.readline()
         if radius_flag == 0:
-            bot_rads = self.metadata['normalizing_radius']-np.array(bot_deps)
-            top_rads = self.metadata['normalizing_radius']-np.array(top_deps)
+            bot_rads = self.metadata['norm_radius']-np.array(bot_deps)
+            top_rads = self.metadata['norm_radius']-np.array(top_deps)
         elif radius_flag == 1:
             bot_rads = np.array(bot_rads)
             top_rads = np.array(top_rads)
-        # assign the num of regions to the n th parameterization 
-        self.metadata['parameterization'][self.metadata['num_file']-1]={'num_regions':num_region}
+        # assign the num of regions to the n th parameterization
+        iparam = len(self.metadata['parameterization']) - 1
+        self.metadata['parameterization'][iparam] = {'num_regions':num_region,'filename':file,'description':'read from '+file}
         for idx,(region,poly,level,bot_rad,top_rad) in enumerate(zip(regions,polys,levels,bot_rads,top_rads)):
-            self.metadata['parameterization'][self.metadata['num_file']-1].update({region:{'polynomial':poly,'levels':level,'top_radius':top_rad,'bottom_radius':bot_rad}})
-        
+            self.metadata['parameterization'][iparam].update({region:{'polynomial':poly,'levels':level,'top_radius':top_rad,'bottom_radius':bot_rad}})
+
         # Now start to read parameter coefficient from the file
-        # regex for model coefficient info 
+        # regex for model coefficient info
         rx_dict_coef = {
             'regions': re.compile(r'REGION\s*:\s*(?P<regions>.*)\n'),
             'poly': re.compile(r'POLYNOMIAL\s*:\s*(?P<poly>.*)\n'),
             'comment':re.compile(r'#--*\n')
         }
         for para in para_list:
-            self.metadata['parameters'].update({para:{'param_index':self.metadata['num_file']-1}})
+            self.metadata['parameters'].update({para:{'param_index':iparam}})
         with open(file,'r') as f:
             line = f.readline()
             while line:
@@ -246,10 +248,14 @@ class Reference1D(object):
                         if key == 'comment': break
                         att,coef = line.split(":",1)
                         coef = np.array(coef.split())
-                        for idx, para in enumerate(para_list): 
+                        for idx, para in enumerate(para_list):
                             self.metadata['parameters'][para][reg_temp].update({att.strip():coef[idx].astype(float)})
                         line = f.readline()
                 line = f.readline()
+
+    def coefficients_to_cards(self):
+        """evaluates bases coefficients at prescribed depth levels to get a card deck file
+        """
         pdb.set_trace()
 
     def read_mineos_cards(self,file):
@@ -453,12 +459,12 @@ class Reference1D(object):
         '''
         values=None
         depth_in_km = tools.convert2nparray(depth_in_km)
-        
+
         # detailed information about the native parameterization which went into the
         # inversion is available
         if self.metadata['parameters'] is not None:
-        # CHAO FILL THIS UP BY USING 
-            self.metadata['parameters'][parameter] 
+        # CHAO FILL THIS UP BY USING
+            self.metadata['parameters'][parameter]
             # USE this appropriuately
             vercof,dvercof = rem3d.tools.bases.eval_polynomial(rnorm-30.,radius_range=[rnorm-35.,rnorm-20.] ,rnorm=rnorm,types=['CONSTANT','LINEAR'])
 
