@@ -187,7 +187,7 @@ class Reference1D(object):
         top_rads = []
         levels = []
         polys = []
-        radius_flag = 0 #The depth info could be saved as radius or depth, use this to mark
+        #radius_flag = 0 #The depth info could be saved as radius or depth, use this to mark
         with open(file,'r') as f:
             line = f.readline()
             while line:
@@ -199,10 +199,10 @@ class Reference1D(object):
                     levels.append(int(match.group('lvl')))
                 if key == 'bot_dep':
                     bd_temp=match.group('bot_dep')
-                    bot_deps.append(float(bd_temp))
+                    bot_rads.append(self.metadata['normalizing_radius']-float(bd_temp))
                 if key == 'top_dep':
                     td_temp=match.group('top_dep')
-                    top_deps.append(float(td_temp))
+                    top_rads.append(self.metadata['normalizing_radius']-float(td_temp))
                 if key == 'bot_rad':
                     br_temp=match.group('bot_rad')
                     bot_rads.append(float(br_temp))
@@ -211,12 +211,12 @@ class Reference1D(object):
                     tr_temp=match.group('top_rad')
                     top_rads.append(float(tr_temp))
                 line = f.readline()
-        if radius_flag == 0:
-            bot_rads = self.metadata['normalizing_radius']-np.array(bot_deps)
-            top_rads = self.metadata['normalizing_radius']-np.array(top_deps)
-        elif radius_flag == 1:
-            bot_rads = np.array(bot_rads)
-            top_rads = np.array(top_rads)
+        #if radius_flag == 0:
+        #    bot_rads = self.metadata['normalizing_radius']-np.array(bot_deps)
+        #    top_rads = self.metadata['normalizing_radius']-np.array(top_deps)
+        #elif radius_flag == 1:
+        bot_rads = np.array(bot_rads)
+        top_rads = np.array(top_rads)
         # assign the num of regions to the n th parameterization 
         self.metadata['parameterization'][self.metadata['num_file']-1]={'num_regions':num_region}
         for idx,(region,poly,level,bot_rad,top_rad) in enumerate(zip(regions,polys,levels,bot_rads,top_rads)):
