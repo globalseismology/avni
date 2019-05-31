@@ -166,12 +166,13 @@ class Reference1D(object):
                             raise ValueError('model names should match between input files')
                     if key == 'parameters':
                         para_list = match.group('parameters').split()
-                        self.metadata['parameter_list'].append(para_list)
+                        for para in para_list:
+                            self.metadata['parameter_list'].append(para)
                     if key == 'num_region':
                         nr_temp = match.group('num_region')
                         num_region = int(nr_temp)
                     if key == 'regions':
-                        regions.append(match.group('regions'))
+                        regions.append(match.group('regions').strip())
                     line = f.readline()
         # Now start read parameterization from the file
         rx_dict_para = {
@@ -200,10 +201,10 @@ class Reference1D(object):
                     levels.append(int(match.group('lvl')))
                 if key == 'bot_dep':
                     bd_temp=match.group('bot_dep')
-                    bot_rads.append(self.metadata['normalizing_radius']-float(bd_temp))
+                    bot_rads.append(self.metadata['norm_radius']-float(bd_temp))
                 if key == 'top_dep':
                     td_temp=match.group('top_dep')
-                    top_rads.append(self.metadata['normalizing_radius']-float(td_temp))
+                    top_rads.append(self.metadata['norm_radius']-float(td_temp))
                 if key == 'bot_rad':
                     br_temp=match.group('bot_rad')
                     bot_rads.append(float(br_temp))
@@ -212,10 +213,6 @@ class Reference1D(object):
                     tr_temp=match.group('top_rad')
                     top_rads.append(float(tr_temp))
                 line = f.readline()
-        if radius_flag == 0:
-            bot_rads = self.metadata['norm_radius']-np.array(bot_deps)
-            top_rads = self.metadata['norm_radius']-np.array(top_deps)
-        elif radius_flag == 1:
             bot_rads = np.array(bot_rads)
             top_rads = np.array(top_rads)
         # assign the num of regions to the n th parameterization
@@ -459,27 +456,25 @@ class Reference1D(object):
         '''
         values=None
         depth_in_km = tools.convert2nparray(depth_in_km)
-        radius_in_km = self.metadata['normalizing_radius'] - depth_in_km
+        radius_in_km = self.metadata['norm_radius'] - depth_in_km
         # detailed information about the native parameterization which went into the
         # inversion is available
         if self.metadata['parameters'] is not None:
         # CHAO FILL THIS UP BY USING 
             param_indx = self.metadata['parameters'][parameter.upper()]['param_index']
-            for region in self.metadata['parameterization'][param_indx]:
-                if region['top_radius']  is not None:
-                    dep_flag = (region['top_radius'] - radius_in_km)*(region['bottom_radius']-radius_in_km)
-                    if dep_flag <= 0:
-                        target_region = region
-                        break
-            if target_region is None:
-                #raise error
-            else:
-                rnorm = self.metadata['normalizing_radius']
-                types = self.metadata['parameterization'][param_indx][target_region]['polynomial']
-                radius_range = [self.metadata['parameterization'][param_indx][target_region]['bottom_radius'],
-                                self.metadata['parameterization'][param_indx][target_region]['top_radius']]
-            # USE this appropriuately
-            vercof,dvercof = rem3d.tools.bases.eval_polynomial(radius_in_km,radius_range ,rnorm,types)
+#             for region in self.metadata['parameterization'][param_indx]:
+#                 if region['top_radius']  is not None:
+#                     dep_flag = (region['top_radius'] - radius_in_km)*(region['bottom_radius']-radius_in_km)
+#                     if dep_flag <= 0:
+#                         target_region = region
+#                         break
+#             if target_region is not None:
+#                 rnorm = self.metadata['norm_radius']
+#                 types = self.metadata['parameterization'][param_indx][target_region]['polynomial']
+#                 radius_range = [self.metadata['parameterization'][param_indx][target_region]['bottom_radius'],
+#                                 self.metadata['parameterization'][param_indx][target_region]['top_radius']]
+#             # USE this appropriuately
+#             vercof,dvercof = rem3d.tools.bases.eval_polynomial(radius_in_km,radius_range ,rnorm,types)
 
         # If detailed metadata regarding the basis parameterization is not available
         # interpolated based on the card deck file
