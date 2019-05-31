@@ -211,10 +211,6 @@ class Reference1D(object):
                     tr_temp=match.group('top_rad')
                     top_rads.append(float(tr_temp))
                 line = f.readline()
-        #if radius_flag == 0:
-        #    bot_rads = self.metadata['normalizing_radius']-np.array(bot_deps)
-        #    top_rads = self.metadata['normalizing_radius']-np.array(top_deps)
-        #elif radius_flag == 1:
         bot_rads = np.array(bot_rads)
         top_rads = np.array(top_rads)
         # assign the num of regions to the n th parameterization 
@@ -453,14 +449,28 @@ class Reference1D(object):
         '''
         values=None
         depth_in_km = tools.convert2nparray(depth_in_km)
-        
+        radius_in_km = self.metadata['normalizing_radius'] - depth_in_km
         # detailed information about the native parameterization which went into the
         # inversion is available
         if self.metadata['parameters'] is not None:
         # CHAO FILL THIS UP BY USING 
-            self.metadata['parameters'][parameter] 
+            param_indx = self.metadata['parameters'][parameter.upper()]['param_index']
+            for region in self.metadata['parameterization'][param_indx]:
+                if region['top_radius']  is not None:
+                    dep_flag = (region['top_radius'] - radius_in_km)*(region['bottom_radius']-radius_in_km)
+                    if dep_flag <= 0:
+                        target_region = region
+                        break
+            if target_region is None:
+                #raise error
+            else:
+                rnorm = self.metadata['normalizing_radius']
+                types = self.metadata['parameterization'][param_indx][target_region]['polynomial']
+                radius_range = [self.metadata['parameterization'][param_indx][target_region]['bottom_radius'],
+                                self.metadata['parameterization'][param_indx][target_region]['top_radius']]
+                    
             # USE this appropriuately
-            vercof,dvercof = rem3d.tools.bases.eval_polynomial(rnorm-30.,radius_range=[rnorm-35.,rnorm-20.] ,rnorm=rnorm,types=['CONSTANT','LINEAR'])
+            vercof,dvercof = rem3d.tools.bases.eval_polynomial(radius_in_km,radius_range ,rnorm,types)
 
 
         # If detailed metadata regarding the basis parameterization is not available
