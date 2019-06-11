@@ -14,6 +14,7 @@ import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .reference1d import Reference1D
+from .common import readepixfile
 #######################################################################################
 
 # Profiles of 1D Earth models
@@ -47,17 +48,39 @@ class Profiles(object):
         
     #########################       methods       #############################
         
-    def read(self,folder):
-        """
+    def read(self,setup_file='setup.cfg',model_dir='.'):
+        '''
         Try reading a folder containing ascii files for every location on the surface 
-        """
-        if (not os.path.isdir(folder)): raise IOError("Folder ("+folder+") does not exist")
-        pdb.set_trace()
+
+        Input parameters:
+        ----------------
+
+        setup_file: setup file containing metadata for the model
+
+        '''
         # use reference1d class and read_bases_coefficients function here
         # go through all files in the folder
         # temp1d = Reference1D(file)
-        self._folder = folder
-        
+
+        cfg_file = model_dir+'/'+setup_file
+
+        if not os.path.isfile(cfg_file):
+            raise IOError('No configuration file found.'\
+	                 'Model directory must contain '+setup_file)
+        else:
+            parser = ConfigObj(cfg_file)
+        self._folder = parser['metadata']['folder']
+        self._index = parser['metadata']['index']
+        # loop over all files as rem3d.models.reference1d
+        #   save as a list of classes
+        epixarr,metadata,comments = readepixfile(self._index)
+        profiles = {}
+        for loc in np.unique(epixarr['val']):
+            file_name = self._folder + '/' + parser['metadata']['prefix'] + str(loc)
+            profile = reference1D(file_name)
+            profiles[(lat,lon)] = profile
+             
+    
     def write_to_hdf(self):
         """writes profile class to an hdf5 container"""
         

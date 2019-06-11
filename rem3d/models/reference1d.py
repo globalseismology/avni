@@ -143,13 +143,13 @@ class Reference1D(object):
                         rad_temp = match.group('norm_radius')
                         self.metadata['norm_radius'] = float(rad_temp)
                     if key == 'parameters':
-                        para_list = match.group('parameters').split()
+                        para_list = match.group('parameters').lower().split()
                         self.metadata['parameter_list']=para_list
                     if key == 'num_region':
                         nr_temp = match.group('num_region')
                         num_region = int(nr_temp)
                     if key == 'regions':
-                        regions.append(match.group('regions').strip())
+                        regions.append(match.group('regions').strip().lower())
                     line = f.readline()
         else:
             # append a new parameterization
@@ -164,15 +164,23 @@ class Reference1D(object):
                     if key == 'model':
                         if self.name != match.group('model'):
                             raise ValueError('model names should match between input files')
+                    if key == 'ref_period':
+                        ref_temp2 = match.group('ref_period')
+                        if self.metadata['ref_period'] != float(ref_temp2):
+                            print('reference period not consistent!')
+                    if key == 'norm_radius':
+                        rad_temp2 = match.group('norm_radius')
+                        if self.metadata['norm_radius'] != float(rad_temp2):
+                            print('normalizing period not consistent!')
                     if key == 'parameters':
-                        para_list = match.group('parameters').split()
+                        para_list = match.group('parameters').lower().split()
                         for para in para_list:
                             self.metadata['parameter_list'].append(para)
                     if key == 'num_region':
                         nr_temp = match.group('num_region')
                         num_region = int(nr_temp)
                     if key == 'regions':
-                        regions.append(match.group('regions').strip())
+                        regions.append(match.group('regions').strip().lower())
                     line = f.readline()
         # Now start read parameterization from the file
         rx_dict_para = {
@@ -182,6 +190,7 @@ class Reference1D(object):
             'top_rad': re.compile(r'TOP RADIUS*:\s*(?P<top_rad>.*)\n'),
             'lvl': re.compile(r'LEVELS\s*:\s*(?P<lvl>.*)\n'),
             'poly': re.compile(r'POLYNOMIAL\s*:\s*(?P<poly>.*)\n'),
+            'spln': re.compile(r'SPLINEPNTS\s*:\s*(?P<spln>.*)\n'),
         }
         bot_deps = []
         top_deps = []
@@ -197,6 +206,8 @@ class Reference1D(object):
                 key, match = _parse_line(line,rx_dict_para)
                 if key == 'poly':
                     polys.append(match.group('poly'))
+                if key == 'spln':
+                    polys.append('SPLINEPNTS : ' + match.group('spln'))
                 if key == 'lvl':
                     levels.append(int(match.group('lvl')))
                 if key == 'bot_dep':
@@ -225,7 +236,7 @@ class Reference1D(object):
         # regex for model coefficient info
         rx_dict_coef = {
             'regions': re.compile(r'REGION\s*:\s*(?P<regions>.*)\n'),
-            'poly': re.compile(r'POLYNOMIAL\s*:\s*(?P<poly>.*)\n'),
+            'poly': re.compile(r'(POLYNOMIAL|SPLINEPNTS)\s*:\s*(?P<poly>.*)\n'),
             'comment':re.compile(r'#--*\n')
         }
         for para in para_list:
@@ -236,7 +247,7 @@ class Reference1D(object):
             # at each line check for a match with a regex
                 key, match = _parse_line(line,rx_dict_coef)
                 if key == 'regions':
-                    reg_temp = (match.group('regions').strip())
+                    reg_temp = (match.group('regions').strip().lower())
                     for para in para_list: self.metadata['parameters'][para].update({reg_temp:{}})
                 if key == 'poly':
                     line=f.readline()
@@ -450,32 +461,36 @@ class Reference1D(object):
         else:
             raise ValueError('reference1D object is not allocated')
 
-    def evaluate_at_depth(self,depth_in_km,parameter='vs',interpolation='linear'):
+    def evaluate_at_depth(self,depth_in_km,parameter='vsh',interpolation='linear'):
         '''
         Get the values of a parameter at a given depth
         '''
         values=None
         depth_in_km = tools.convert2nparray(depth_in_km)
-        radius_in_km = self.metadata['norm_radius'] - depth_in_km
         # detailed information about the native parameterization which went into the
         # inversion is available
         if self.metadata['parameters'] is not None:
-        # CHAO FILL THIS UP BY USING 
-            param_indx = self.metadata['parameters'][parameter.upper()]['param_index']
-#             for region in self.metadata['parameterization'][param_indx]:
-#                 if region['top_radius']  is not None:
-#                     dep_flag = (region['top_radius'] - radius_in_km)*(region['bottom_radius']-radius_in_km)
-#                     if dep_flag <= 0:
-#                         target_region = region
-#                         break
-#             if target_region is not None:
-#                 rnorm = self.metadata['norm_radius']
-#                 types = self.metadata['parameterization'][param_indx][target_region]['polynomial']
-#                 radius_range = [self.metadata['parameterization'][param_indx][target_region]['bottom_radius'],
-#                                 self.metadata['parameterization'][param_indx][target_region]['top_radius']]
-#             # USE this appropriuately
-#             vercof,dvercof = rem3d.tools.bases.eval_polynomial(radius_in_km,radius_range ,rnorm,types)
-
+        # check if norm_radius is within reasonable range 
+            if  0.98*constants.R.to('km').magnitude <= self.metadata['norm_radius'] <= 1.02*constants.R.to('km').magnitude :
+                radius_in_km = self.metadata['norm_radius'] - depth_in_km
+                param_indx = self.metadata['parameters'][parameter.lower()]['param_index']
+                for region in self.metadata['parameterization'][param_indx]:
+                    if region['top_radius']  is not None:
+                        dep_flag = (region['top_radius'] - radius_in_km)*(region['bottom_radius']-radius_in_km)
+                        if dep_flag <= 0:
+                            target_region = region
+                if target_region is not None:
+                    rnorm = self.metadata['norm_radius']
+                    types = self.metadata['parameterization'][param_indx][target_region]['polynomial']
+                    radius_range = [self.metadata['parameterization'][param_indx][target_region]['bottom_radius'],
+                                    self.metadata['parameterization'][param_indx][target_region]['top_radius']]
+                    # evaluate value of the polynomial coefficients and derivative at each depth
+                    vercof,dvercof = rem3d.tools.bases.eval_polynomial(radius_in_km,radius_range ,rnorm,types)
+                    # seem eval_poly does not handle spline right now
+                    coef = []
+                    for val in self.metadata['parameters'][parameter][target_region].keys():
+                        coef.append(self.metadata['parameters'][parameter][target_region][val])
+                    values = coef.*vercof # check on single depth and vector 
         # If detailed metadata regarding the basis parameterization is not available
         # interpolated based on the card deck file
         else:
