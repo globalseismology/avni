@@ -22,7 +22,6 @@ import pdb
 import pint
 import re
 import ntpath
-
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import constants
 from .. import tools
@@ -117,6 +116,7 @@ class Reference1D(object):
             'parameters': re.compile(r'#PARAMETERS\s*:\s*(?P<parameters>.*)\n'),
             'num_region': re.compile(r'NUMBER OF REGIONS\s*:\s*(?P<num_region>.*)\n'),
             'regions': re.compile(r'REGION\s*:\s*(?P<regions>.*)\n'),
+            'units': re.compile(r'#UNITS\s*:\s*(?P<units>.*)\n'),
         }
 
         # Check if it is the first file read for the model
@@ -145,6 +145,9 @@ class Reference1D(object):
                     if key == 'parameters':
                         para_list = match.group('parameters').lower().split()
                         self.metadata['parameter_list']=para_list
+                    if key == 'units':
+                        unit_list = match.group('units').split()
+                        self.metadata['unit_list']=unit_list
                     if key == 'num_region':
                         nr_temp = match.group('num_region')
                         num_region = int(nr_temp)
@@ -176,6 +179,10 @@ class Reference1D(object):
                         para_list = match.group('parameters').lower().split()
                         for para in para_list:
                             self.metadata['parameter_list'].append(para)
+                    if key == 'units':
+                        unit_list = match.group('units').split()
+                        for unit in unit_list:
+                            self.metadata['unit_list'].append(unit)
                     if key == 'num_region':
                         nr_temp = match.group('num_region')
                         num_region = int(nr_temp)
@@ -264,7 +271,18 @@ class Reference1D(object):
     def coefficients_to_cards(self):
         """evaluates bases coefficients at prescribed depth levels to get a card deck file
         """
+
+        # make an array of radii based on the first paramaterization that is read
+        
+        # initizalize a panda dataframe modelarr_ with the length of radii
+        names=['rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
+        # loop over names and call evaluate_at_depth
+
+
         pdb.set_trace()
+        self.metadata['attributes'] = names
+        self.data = modelarr_
+        self.radius_max = max(self.data['radius']).magnitude
 
     def read_mineos_cards(self,file):
         # Operations between PintArrays of different unit registry will not work.
@@ -465,32 +483,56 @@ class Reference1D(object):
         '''
         Get the values of a parameter at a given depth
         '''
-        values=None
-        depth_in_km = tools.convert2nparray(depth_in_km)
+        # need to update so it can deal with vectors
+        depth_in_km = tools.convert2nparray(depth_in_km)        
+        values = np.zeros_like(depth_in_km,dtype=np.float)
+        uniqueregions = {}
+        target_region = np.empty_like(depth_in_km,dtype="U40"); target_region[:] = ''
         # detailed information about the native parameterization which went into the
         # inversion is available
         if self.metadata['parameters'] is not None:
         # check if norm_radius is within reasonable range 
-            if  0.98*constants.R.to('km').magnitude <= self.metadata['norm_radius'] <= 1.02*constants.R.to('km').magnitude :
-                radius_in_km = self.metadata['norm_radius'] - depth_in_km
-                param_indx = self.metadata['parameters'][parameter.lower()]['param_index']
-                for region in self.metadata['parameterization'][param_indx]:
-                    if region['top_radius']  is not None:
-                        dep_flag = (region['top_radius'] - radius_in_km)*(region['bottom_radius']-radius_in_km)
-                        if dep_flag <= 0:
-                            target_region = region
-                if target_region is not None:
-                    rnorm = self.metadata['norm_radius']
-                    types = self.metadata['parameterization'][param_indx][target_region]['polynomial']
-                    radius_range = [self.metadata['parameterization'][param_indx][target_region]['bottom_radius'],
-                                    self.metadata['parameterization'][param_indx][target_region]['top_radius']]
-                    # evaluate value of the polynomial coefficients and derivative at each depth
-                    vercof,dvercof = rem3d.tools.bases.eval_polynomial(radius_in_km,radius_range ,rnorm,types)
-                    # seem eval_poly does not handle spline right now
-                    coef = []
-                    for val in self.metadata['parameters'][parameter][target_region].keys():
-                        coef.append(self.metadata['parameters'][parameter][target_region][val])
-                    values = coef.*vercof # check on single depth and vector 
+            if not 0.98*constants.R.to('km').magnitude <= self.metadata['norm_radius'] <= 1.02*constants.R.to('km').magnitude :
+                raise ValueError('Normalizing radius not compatible')
+            radius_in_km = self.metadata['norm_radius'] - depth_in_km
+            param_indx = self.metadata['parameters'][parameter.lower()]['param_index']
+            # finding target region in depth
+            for region in self.metadata['parameterization'][param_indx]:
+                if region not in ['num_regions','filename','description']:
+                    dep_flag = (self.metadata['parameterization'][param_indx][region]['top_radius'] 
+                    - radius_in_km)*(self.metadata['parameterization'][param_indx][region]['bottom_radius']-radius_in_km)
+                    
+                    flag_array = (dep_flag <=0)
+                    for idx,flag in enumerate(flag_array):
+                        if flag:
+                            target_region[idx] = region
+                            # store unique regions
+                            if region not in [*uniqueregions]:
+                                uniqueregions[region] = {'radius_range': 
+                                [self.metadata['parameterization'][param_indx][region]['bottom_radius'],
+                                self.metadata['parameterization'][param_indx][region]['top_radius']],
+                                'types': [*self.metadata['parameters'][parameter.lower()][region]]}
+            if np.any(target_region == ''): raise ValueError('target regions not found')
+            # create arguments for bases evaluations
+            rnorm = self.metadata['norm_radius']
+            #loop over all regions that are relevant to these depths
+            for region  in [*uniqueregions]:
+                # find all depth queires that are in this region
+                indx = np.where(target_region==region)[0]
+                # evaluate value of the polynomial coefficients and derivative at each depth
+                vercof,dvercof = tools.bases.eval_polynomial(radius_in_km[indx],
+                        uniqueregions[region]['radius_range'] ,rnorm,
+                        uniqueregions[region]['types'])
+                # build up the coefficient array
+                coef = []
+                for key in uniqueregions[region]['types']:
+                    coef.append(self.metadata['parameters'][parameter][region][key])
+                temp = np.dot(vercof,np.array([coef]).T)
+                for key, val in enumerate(indx): 
+                    if temp.ndim == 1: 
+                        values[val] = temp[key]
+                    else:
+                        values[val] = temp[key][0]
         # If detailed metadata regarding the basis parameterization is not available
         # interpolated based on the card deck file
         else:
