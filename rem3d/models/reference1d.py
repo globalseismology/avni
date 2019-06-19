@@ -45,10 +45,10 @@ class Reference1D(object):
         self.radius_max = None
         if file is not None:
             self.read(file)
-            if self.data is not None:
-                self.get_Love_elastic()
-                self.get_discontinuity()
-                self.get_mineralogical()
+#             if self.data is not None:
+#                 self.get_Love_elastic()
+#                 self.get_discontinuity()
+#                 self.get_mineralogical()
 
     def __str__(self):
         if self.data is not None and self.__nlayers__ > 0:
@@ -271,15 +271,32 @@ class Reference1D(object):
     def coefficients_to_cards(self):
         """evaluates bases coefficients at prescribed depth levels to get a card deck file
         """
+        pint.PintType.ureg = constants.ureg
 
         # make an array of radii based on the first paramaterization that is read
-        
+        param_indx = 0
+        radii = np.array([])
+        for region in self.metadata['parameterization'][param_indx]:
+            if region not in ['num_regions','filename','description']:
+                top_temp = self.metadata['parameterization'][param_indx][region]['top_radius']
+                bot_temp = self.metadata['parameterization'][param_indx][region]['bottom_radius']
+                lvl_temp = self.metadata['parameterization'][param_indx][region]['levels']
+                rad_temp = np.linspace(top_temp,bot_temp,num=lvl_temp)
+                radii=np.append(radii,rad_temp)
+        radii.sort()
         # initizalize a panda dataframe modelarr_ with the length of radii
-        names=['rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
+        #names=['rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
+        #use units from the elas/anelas file
+        names = self.metadata['parameter_list']
+        units = self.metadata['unit_list']
+        fields=list(zip(names,units))
+
         # loop over names and call evaluate_at_depth
 
-
         pdb.set_trace()
+        self.__nlayers__ = len(modelarr['radius'])
+        modelarr_['depth'] = PA_((constants.R.magnitude - modelarr_['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
+        self.name = self.metadata['model']
         self.metadata['attributes'] = names
         self.data = modelarr_
         self.radius_max = max(self.data['radius']).magnitude
@@ -376,7 +393,6 @@ class Reference1D(object):
                 for field in ['gravity','Brunt-Vaisala','Bullen','pressure']: self.metadata['attributes'].append(field)
 
                 # Add data fields
-                pdb.set_trace()
                 self.data=append_fields(self.data, 'gravity', grav, usemask=False)
                 self.data=append_fields(self.data, 'Brunt-Vaisala', vaisala, usemask=False)
                 self.data=append_fields(self.data, 'Bullen', bullen, usemask=False)
