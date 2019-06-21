@@ -196,7 +196,7 @@ def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
             g4 = g3.require_group('arrival/paths')
             g4.attrs['desc'] = 'ipath is the unique path in CMT_STATION-NETWORK format'
             columns = ['distkm', 'path','delellphase']
-            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/arrival/paths'),format='table',mode='r+',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
+            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/arrival/paths'),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
 
             #### store source ####
             g4 = g3.require_group('source/'+metadata['EQTYPE'])
