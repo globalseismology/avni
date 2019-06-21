@@ -370,7 +370,7 @@ class Model3D(object):
         # convert to numpy arrays
         resolution = tools.convert2nparray(resolution,int2float=False)
 
-        # Loop over resolution levels, adding coefficients
+        # Loop over resolution levels, adding coefficients        
         for ir,_ in enumerate(resolution):
             try:
                 coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef']
@@ -378,17 +378,9 @@ class Model3D(object):
                 try:
                     modelarr = self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr']
                 except:
-                    # Loop over all kernel basis
-                    for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])):
-                        # number of coefficients for this radial kernel
-                        ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
-                        # first radial kernel and first tesselation level
-                        if ii == 0 and ir == 0:
-                            modelarr = coefficients.iloc[ii][:ncoef]
-                        else:
-                            modelarr = modelarr.append(coefficients.iloc[ii][:ncoef],ignore_index=True)
-                    # Convert to sparse matrix
-                    # take the transpose to make dot products easy
+                    # coefficients is a pandas dataframe
+                    Nhopar=len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])
+                    modelarr=coefficients.iloc[0:Nhopar].to_numpy().ravel()
                     modelarr = sparse.csr_matrix(modelarr).transpose()
                     self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr'] = modelarr
             except AttributeError:
@@ -692,6 +684,4 @@ class Model3D(object):
                 np.savetxt(filename,arr, fmt='%7.3f %7.3f %7.3f')
                 print(".... written "+filename)
         return
-
-
 #######################################################################################
