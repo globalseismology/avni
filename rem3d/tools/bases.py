@@ -179,7 +179,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
 
     # keys in coefficients should be acceptable
     choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
-    if not np.all([key in choices for key in types]): raise AssertionError()
+    if not np.all([key in choices for key in types]): raise AssertionError('Only polynomial bases can be used')
     npoly = len(radius_range)*len(types)
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
     for radii in radius_range:

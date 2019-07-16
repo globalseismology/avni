@@ -292,19 +292,20 @@ class Reference1D(object):
 
         # loop over names and call evaluate_at_depth
         val_matrix = np.empty([len(radii),len(names)])
+        
         for paraindx,param in enumerate(names):
-            pdb.set_trace()
-            val_matrix[paraindx,:] = self.evaluate_at_depth(radii,param)
+            val_temp = self.evaluate_at_depth(radii,param)
+            if '/' in param: # convert from fractions
+                frac = param.split('/')
+                numerator = float(frac[0])
+                new_param = frac[-1]
+                val_temp = numerator/val_temp;
+                pdb.set_trace()
+            val_matrix[:,paraindx] = val_temp
         pdb.set_trace()
         # convert from fractions to absolute parameter (Qkappa, Qmu)
         # loop over names and check if there's /name; modify units if needed
-        self.__nlayers__ = len(modelarr['radius'])
-        modelarr_['depth'] = PA_((constants.R.magnitude - modelarr_['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
-        self.name = self.metadata['model']
-        self.metadata['attributes'] = names
-        self.data = modelarr_
-        self.radius_max = max(self.data['radius']).magnitude
-
+        
     def read_mineos_cards(self,file):
         # Operations between PintArrays of different unit registry will not work.
         # We can change the unit registry that will be used in creating new
@@ -499,9 +500,11 @@ class Reference1D(object):
         else:
             raise ValueError('reference1D object is not allocated')
 
-    def evaluate_at_depth(self,depth_in_km,parameter='vsh',interpolation='linear'):
+    def evaluate_at_depth(self,depth_in_km,parameter='vsh',interpolation='linear',boundary='+'):
         '''
         Get the values of a parameter at a given depth
+        
+        boundary: + for value at larger radius at a discontinuity
         '''
         # need to update so it can deal with vectors
         depth_in_km = tools.convert2nparray(depth_in_km)        
@@ -519,10 +522,20 @@ class Reference1D(object):
             # finding target region in depth
             for region in self.metadata['parameterization'][param_indx]:
                 if region not in ['num_regions','filename','description']:
-                    dep_flag = (self.metadata['parameterization'][param_indx][region]['top_radius'] 
-                    - radius_in_km)*(self.metadata['parameterization'][param_indx][region]['bottom_radius']-radius_in_km)
+                    # difference with top and bottom radii
+                    difftop = self.metadata['parameterization'][param_indx][region]['top_radius'] - radius_in_km
+                    diffbot = self.metadata['parameterization'][param_indx][region]['bottom_radius']-radius_in_km
+                    dep_flag = difftop*diffbot
                     
-                    flag_array = (dep_flag <=0)
+                    # within a region if dep_flag is neative
+                    flag_array = (dep_flag < 0)
+                    # if it is 0 then choose the flag based on boundary
+                    findzeroindx = np.where(dep_flag==0.)[0]
+                    if len(findzeroindx) != 0:
+                        for indx in findzeroindx: #depth corresponds to the bottom of a region
+                            if diffbot[indx] == 0 and boundary == '+': flag_array[indx] = True
+                            if difftop[indx] == 0 and boundary == '-': flag_array[indx] = True
+                    
                     for idx,flag in enumerate(flag_array):
                         if flag:
                             target_region[idx] = region
@@ -561,15 +574,18 @@ class Reference1D(object):
                             isspl[typekey] = True
                         else:
                             nonspltype.append(spltype)
-                    # evaluate other non-spline bases
-                    # doesnt seem correct
-                    vercof2,dvercof2 = tools.bases.eval_polynomial(radius_in_km[indx],
-                            uniqueregions[region]['radius_range'] ,rnorm,nonspltype)
-                    vercof = np.zeros(len(uniqueregions[region]['types']));
-                    dvercof = np.zeros(len(uniqueregions[region]['types']));
-                    vercof[isspl] = vercof1[splindx]; dvercof[isspl] = dvercof1[splindx];
-                    vercof[~isspl] = vercof2; dvercof[~isspl] = dvercof2;
-                    # combine polynomials and splines in the original order
+                    if np.all(isspl):
+                        vercof = vercof1; dvercof = dvercof1
+                    else:
+                        # evaluate other non-spline bases
+                        # doesnt seem correct
+                        vercof2,dvercof2 = tools.bases.eval_polynomial(radius_in_km[indx],
+                                uniqueregions[region]['radius_range'] ,rnorm,nonspltype)
+                        # combine polynomials and splines in the original order
+                        vercof = np.zeros([len(indx),len(uniqueregions[region]['types'])]);
+                        dvercof = np.zeros([len(indx),len(uniqueregions[region]['types'])]);
+                        vercof[:,isspl] = vercof1[:,splindx]; dvercof[:,isspl] = dvercof1[:,splindx];
+                        vercof[:,~isspl] = vercof2; dvercof[:,~isspl] = dvercof2
                 # build up the coefficient array
                 coef = []
                 for key in uniqueregions[region]['types']:
