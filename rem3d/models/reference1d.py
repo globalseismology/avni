@@ -165,7 +165,7 @@ class Reference1D(object):
                     key, match = _parse_line(line,rx_dict_common)
                     # Check if model name is the same
                     if key == 'model':
-                        if self.name != match.group('model'):
+                        if self.metadata['model'] != match.group('model'):
                             raise ValueError('model names should match between input files')
                     if key == 'ref_period':
                         ref_temp2 = match.group('ref_period')
@@ -275,7 +275,7 @@ class Reference1D(object):
 
         # make an array of radii based on the first paramaterization that is read
         param_indx = 0
-        radii = np.array([])
+        radii = np.array([],dtype=float)
         for region in self.metadata['parameterization'][param_indx]:
             if region not in ['num_regions','filename','description']:
                 top_temp = self.metadata['parameterization'][param_indx][region]['top_radius']
@@ -284,7 +284,6 @@ class Reference1D(object):
                 rad_temp = np.linspace(top_temp,bot_temp,num=lvl_temp)
                 radii=np.append(radii,rad_temp)
         radii.sort()
-        # initizalize a panda dataframe modelarr_ with the length of radii
         #names=['rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
         #use units from the elas/anelas file
         names = self.metadata['parameter_list']
@@ -292,8 +291,13 @@ class Reference1D(object):
         fields=list(zip(names,units))
 
         # loop over names and call evaluate_at_depth
-
+        val_matrix = np.empty([len(radii),len(names)])
+        for paraindx,param in enumerate(names):
+            pdb.set_trace()
+            val_matrix[paraindx,:] = self.evaluate_at_depth(radii,param)
         pdb.set_trace()
+        # convert from fractions to absolute parameter (Qkappa, Qmu)
+        # loop over names and check if there's /name; modify units if needed
         self.__nlayers__ = len(modelarr['radius'])
         modelarr_['depth'] = PA_((constants.R.magnitude - modelarr_['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
         self.name = self.metadata['model']
@@ -533,12 +537,39 @@ class Reference1D(object):
             rnorm = self.metadata['norm_radius']
             #loop over all regions that are relevant to these depths
             for region  in [*uniqueregions]:
-                # find all depth queires that are in this region
+                # find all depth queries that are in this region
                 indx = np.where(target_region==region)[0]
-                # evaluate value of the polynomial coefficients and derivative at each depth
-                vercof,dvercof = tools.bases.eval_polynomial(radius_in_km[indx],
-                        uniqueregions[region]['radius_range'] ,rnorm,
-                        uniqueregions[region]['types'])
+                radial_splines = False # assume that no splines are included
+                choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
+                if not np.all([key in choices for key in uniqueregions[region]['types']]): radial_splines = True
+                if not radial_splines:
+                    # evaluate value of the polynomial coefficients and derivative at each depth
+                    vercof,dvercof = tools.bases.eval_polynomial(radius_in_km[indx],
+                            uniqueregions[region]['radius_range'] ,rnorm,
+                            uniqueregions[region]['types'])
+                else:
+                    spline_config = self.metadata['parameterization'][param_indx][region]['polynomial'].split(':')
+                    if spline_config[0].strip() != 'SPLINEPNTS':
+                        raise AssertionError('Polynomial type should be SPLINEPNTS in ' + region)
+                    nsplines = int(spline_config[-1])
+                    vercof1,dvercof1 = tools.bases.eval_splrem(radius_in_km[indx], uniqueregions[region]['radius_range'], nsplines)
+                    # select the relevant splines
+                    splindx = []; nonspltype = []; isspl = np.zeros(len(uniqueregions[region]['types']),dtype='bool')
+                    for typekey,spltype in enumerate(uniqueregions[region]['types']):
+                        if spltype.startswith('SPLINE'): 
+                            splindx.append(int(spltype.split()[-1])-1)
+                            isspl[typekey] = True
+                        else:
+                            nonspltype.append(spltype)
+                    # evaluate other non-spline bases
+                    # doesnt seem correct
+                    vercof2,dvercof2 = tools.bases.eval_polynomial(radius_in_km[indx],
+                            uniqueregions[region]['radius_range'] ,rnorm,nonspltype)
+                    vercof = np.zeros(len(uniqueregions[region]['types']));
+                    dvercof = np.zeros(len(uniqueregions[region]['types']));
+                    vercof[isspl] = vercof1[splindx]; dvercof[isspl] = dvercof1[splindx];
+                    vercof[~isspl] = vercof2; dvercof[~isspl] = dvercof2;
+                    # combine polynomials and splines in the original order
                 # build up the coefficient array
                 coef = []
                 for key in uniqueregions[region]['types']:
