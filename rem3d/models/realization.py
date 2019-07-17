@@ -42,7 +42,7 @@ class Realization(object):
         return output
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self._infile})'.format(self=self)
+        return '{self.__class__.__name__}({self._name})'.format(self=self)
 
     #########################       decorators       ##########################
     @property
@@ -199,4 +199,4 @@ class Realization(object):
 
         #rename the name field only if it is None
         self._type = 'netcdf4'
-        self._refmodel = model['metadata']['refmodel']
+        self._refmodel = ds.attrs['refmodel']

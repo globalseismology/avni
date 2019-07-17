@@ -26,15 +26,16 @@ def stage(file,overwrite=False):
     """
     Stages a file in the rem3d file directories for testing
     """
-    filedir = get_filedir()
-    if not os.path.isfile(file): raise IOError(file+' not found')
+    filedir = get_filedir() #REM3D file directory
+    stagedfile = get_fullpath(file)
+    if not os.path.isfile(stagedfile): raise IOError(stagedfile+' not found')
     outlink = filedir+'/'+ntpath.basename(file)
     try:
-        os.symlink(file, outlink)
+        os.symlink(stagedfile, outlink)
     except OSError:
         if overwrite:
             os.unlink(outlink)
-            os.symlink(file, outlink)
+            os.symlink(stagedfile, outlink)
         else:
             print('Warning: a link to file '+ntpath.basename(file)+' exists within REM3D. Use overwrite=True to overwrite the staged link.')
     return
@@ -99,7 +100,7 @@ def equaldict(first_dict,second_dict):
     #for k in set(realization.metadata):
     #    checks.extend(convert2nparray(first_dict==second_dict))
     #return np.all(checks)
-    
+
 def df2nparray(dataframe):
     '''
     helper tool to return the named numpy array of the pandas dataframe
@@ -174,10 +175,12 @@ def get_fullpath(path):
     """
     Provides the full path by replacing . and ~ in path.
     """
+    # if only file name provided append current directory
+    if ntpath.basename(path) == path: path = os.path.abspath('./'+path)
     # Get the current directory
-    if path[0]=='.': path = os.path.dirname(os.path.abspath(__file__))+path[1:]
+    if path[0]=='.' or path[0]=='..': path = os.path.abspath(path)
     # If the path starts with tilde, replace with home directory
-    if path[0]=='~': path=os.path.expanduser("~")+path[1:]
+    if path[0]=='~': path = os.path.expanduser(path)
     return path
 
 def listfolders(path):
