@@ -173,6 +173,7 @@ deploy:
         - devel
         - api
         - plotmodels
+        - travis
 
   - provider: script
     skip_cleanup: true
