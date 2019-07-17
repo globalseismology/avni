@@ -310,7 +310,7 @@ class Reference1D(object):
         pdb.set_trace()
         # convert from fractions to absolute parameter (Qkappa, Qmu)
         # loop over names and check if there's /name; modify units if needed
-        
+
     def read_mineos_cards(self,file):
         # Operations between PintArrays of different unit registry will not work.
         # We can change the unit registry that will be used in creating new
@@ -505,21 +505,21 @@ class Reference1D(object):
         else:
             raise ValueError('reference1D object is not allocated')
 
-    def evaluate_at_depth(self,depth_in_km,parameter='vsh',interpolation='linear',boundary='+'):
+    def evaluate_at_depth(self,depth_in_km,parameter='vsh',boundary='+',interpolation='linear'):
         '''
         Get the values of a parameter at a given depth
-        
+
         boundary: + for value at larger radius at a discontinuity
         '''
         # need to update so it can deal with vectors
-        depth_in_km = tools.convert2nparray(depth_in_km)        
+        depth_in_km = tools.convert2nparray(depth_in_km)
         values = np.zeros_like(depth_in_km,dtype=np.float)
         uniqueregions = {}
         target_region = np.empty_like(depth_in_km,dtype="U40"); target_region[:] = ''
         # detailed information about the native parameterization which went into the
         # inversion is available
         if self.metadata['parameters'] is not None:
-        # check if norm_radius is within reasonable range 
+        # check if norm_radius is within reasonable range
             if not 0.98*constants.R.to('km').magnitude <= self.metadata['norm_radius'] <= 1.02*constants.R.to('km').magnitude :
                 raise ValueError('Normalizing radius not compatible')
             radius_in_km = self.metadata['norm_radius'] - depth_in_km
@@ -531,7 +531,7 @@ class Reference1D(object):
                     difftop = self.metadata['parameterization'][param_indx][region]['top_radius'] - radius_in_km
                     diffbot = self.metadata['parameterization'][param_indx][region]['bottom_radius']-radius_in_km
                     dep_flag = difftop*diffbot
-                    
+
                     # within a region if dep_flag is neative
                     flag_array = (dep_flag < 0)
                     # if it is 0 then choose the flag based on boundary
@@ -543,13 +543,13 @@ class Reference1D(object):
                             else:
                                 if diffbot[indx] == 0 and boundary == '+': flag_array[indx] = True
                                 if difftop[indx] == 0 and boundary == '-': flag_array[indx] = True
-                    
+
                     for idx,flag in enumerate(flag_array):
                         if flag:
                             target_region[idx] = region
                             # store unique regions
                             if region not in [*uniqueregions]:
-                                uniqueregions[region] = {'radius_range': 
+                                uniqueregions[region] = {'radius_range':
                                 [self.metadata['parameterization'][param_indx][region]['bottom_radius'],
                                 self.metadata['parameterization'][param_indx][region]['top_radius']],
                                 'types': [*self.metadata['parameters'][parameter.lower()][region]]}
@@ -580,7 +580,7 @@ class Reference1D(object):
                     # select the relevant splines
                     splindx = []; nonspltype = []; isspl = np.zeros(len(uniqueregions[region]['types']),dtype='bool')
                     for typekey,spltype in enumerate(uniqueregions[region]['types']):
-                        if spltype.startswith('SPLINE'): 
+                        if spltype.startswith('SPLINE'):
                             splindx.append(int(spltype.split()[-1])-1)
                             isspl[typekey] = True
                         else:
@@ -602,8 +602,8 @@ class Reference1D(object):
                 for key in uniqueregions[region]['types']:
                     coef.append(self.metadata['parameters'][parameter][region][key])
                 temp = np.dot(vercof,np.array([coef]).T)
-                for key, val in enumerate(indx): 
-                    if temp.ndim == 1: 
+                for key, val in enumerate(indx):
+                    if temp.ndim == 1:
                         values[val] = temp[key]
                     else:
                         values[val] = temp[key][0]
