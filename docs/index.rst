@@ -6,10 +6,22 @@
 Welcome to rem3d's documentation!
 =================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+Automatic API documentation:
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Contents:
+   :glob:
+
+   rem3d*
+
+Manual classes
+==============
+
+.. automodule:: rem3d.gui
+
+.. autoclass:: SelectFromCollection
+   :members:
 
 
 Indices and tables

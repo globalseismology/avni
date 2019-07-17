@@ -6,10 +6,16 @@
 pandas
 scipy
 numpy
+numpydoc
 joblib
 configobj
 xarray
 matplotlib
+sphinx
+sphinx_rtd_theme
+sphinxcontrib
+sphinxcontrib-bibtex
+recommonmark
 
 ######## Requirements with Version Specifiers #######
 fortranformat==0.2.5
