@@ -99,7 +99,7 @@ def equaldict(first_dict,second_dict):
     #for k in set(realization.metadata):
     #    checks.extend(convert2nparray(first_dict==second_dict))
     #return np.all(checks)
-    
+
 def df2nparray(dataframe):
     '''
     helper tool to return the named numpy array of the pandas dataframe
@@ -196,7 +196,7 @@ def get_installdir(module='rem3d',checkwrite=True,checkenv=True):
     if checkenv:
         if os.environ.get(module+'_dir') is not None:
             installdir=os.environ.get(module+'_dir')
-            print("Warning: Reading "+module+"_dir"+" from environment variables - "+installdir)
+            # print("Warning: Reading "+module+"_dir"+" from environment variables - "+installdir)
 
     if installdir is None:
         loader=pkgutil.find_loader(module)
@@ -395,4 +395,3 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
         constants.geoco = (1.0 - constants.f)**2.
     except AttributeError:
         constants.geoco = (1.0 - constants.f)**2.
-
