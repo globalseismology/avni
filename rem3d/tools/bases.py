@@ -197,7 +197,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
             rbot = min(radius_range[irange])
             rtop = max(radius_range[irange])
             #Undefined if depth does not lie within the depth extents of knot points
-            if radiusin[irad] <= rbot or radiusin[irad] > rtop:
+            if radiusin[irad] < rbot or radiusin[irad] > rtop:
                 # <= so that the boundary depth belongs to only one radial kernel
                 for itype in range(len(types)):
                     ii = irange*len(types)+itype

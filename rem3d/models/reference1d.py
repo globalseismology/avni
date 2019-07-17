@@ -283,7 +283,7 @@ class Reference1D(object):
                 lvl_temp = self.metadata['parameterization'][param_indx][region]['levels']
                 rad_temp = np.linspace(top_temp,bot_temp,num=lvl_temp)
                 radii=np.append(radii,rad_temp)
-        radii.sort()
+        radii.sort() # sort from center to surface
         #names=['rho','vpv','vsv','Qkappa','Qmu','vph','vsh','eta']
         #use units from the elas/anelas file
         names = self.metadata['parameter_list']
@@ -292,16 +292,21 @@ class Reference1D(object):
 
         # loop over names and call evaluate_at_depth
         val_matrix = np.empty([len(radii),len(names)])
-        
+        self.evaluate_at_depth(24.4,'vsv')
+        pdb.set_trace()
         for paraindx,param in enumerate(names):
-            val_temp = self.evaluate_at_depth(radii,param)
-            if '/' in param: # convert from fractions
-                frac = param.split('/')
-                numerator = float(frac[0])
-                new_param = frac[-1]
-                val_temp = numerator/val_temp;
-                pdb.set_trace()
-            val_matrix[:,paraindx] = val_temp
+            val_temp = self.evaluate_at_depth(constants.R.to('km').magnitude-radii,param)
+            # overwrite the repeated radii at bottom
+            bottom_indx = np.where(np.ediff1d(radii)==0)[0]
+            val_temp2 = self.evaluate_at_depth(constants.R.to('km').magnitude-radii[bottom_indx],param,boundary='-')
+            for indx,val in enumerate(val_temp2): val_temp[bottom_indx[indx]] = val
+#             if '/' in param: # convert from fractions
+#                 frac = param.split('/')
+#                 numerator = float(frac[0])
+#                 new_param = frac[-1]
+#                 val_temp = numerator/val_temp;
+#                 pdb.set_trace()
+#             val_matrix[:,paraindx] = val_temp
         pdb.set_trace()
         # convert from fractions to absolute parameter (Qkappa, Qmu)
         # loop over names and check if there's /name; modify units if needed
@@ -533,8 +538,11 @@ class Reference1D(object):
                     findzeroindx = np.where(dep_flag==0.)[0]
                     if len(findzeroindx) != 0:
                         for indx in findzeroindx: #depth corresponds to the bottom of a region
-                            if diffbot[indx] == 0 and boundary == '+': flag_array[indx] = True
-                            if difftop[indx] == 0 and boundary == '-': flag_array[indx] = True
+                            if depth_in_km[indx] == 0: # surface of the solid earth
+                                flag_array[indx] = True
+                            else:
+                                if diffbot[indx] == 0 and boundary == '+': flag_array[indx] = True
+                                if difftop[indx] == 0 and boundary == '-': flag_array[indx] = True
                     
                     for idx,flag in enumerate(flag_array):
                         if flag:
@@ -566,6 +574,9 @@ class Reference1D(object):
                         raise AssertionError('Polynomial type should be SPLINEPNTS in ' + region)
                     nsplines = int(spline_config[-1])
                     vercof1,dvercof1 = tools.bases.eval_splrem(radius_in_km[indx], uniqueregions[region]['radius_range'], nsplines)
+                    # in case there's only one depth, make sure the shape of vercof1 fit vercof
+                    vercof1 = vercof1.reshape([len(indx),nsplines])
+                    dvercof1 = dvercof1.reshape([len(indx),nsplines])
                     # select the relevant splines
                     splindx = []; nonspltype = []; isspl = np.zeros(len(uniqueregions[region]['types']),dtype='bool')
                     for typekey,spltype in enumerate(uniqueregions[region]['types']):
@@ -584,7 +595,7 @@ class Reference1D(object):
                         # combine polynomials and splines in the original order
                         vercof = np.zeros([len(indx),len(uniqueregions[region]['types'])]);
                         dvercof = np.zeros([len(indx),len(uniqueregions[region]['types'])]);
-                        vercof[:,isspl] = vercof1[:,splindx]; dvercof[:,isspl] = dvercof1[:,splindx];
+                        vercof[:,isspl] = vercof1[:,splindx]; dvercof[:,isspl] = dvercof1[:,splindx]
                         vercof[:,~isspl] = vercof2; dvercof[:,~isspl] = dvercof2
                 # build up the coefficient array
                 coef = []
