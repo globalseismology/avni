@@ -3,26 +3,27 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to rem3d's documentation!
+Welcome to REM3D's documentation!
 =================================
 
-Automatic API documentation:
+Write a few sentences about what REM3D is here. You can also link to other documents such as the 
+
+.. include:: contributing.md
+
+
+
+
+
 
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
-   :glob:
+   :titlesonly:
 
-   rem3d*
-
-Manual classes
-==============
-
-.. automodule:: rem3d.gui
-
-.. autoclass:: SelectFromCollection
-   :members:
-
+   FAQ
+   versioning_conventions
+   contributing
+   API
 
 Indices and tables
 ==================
