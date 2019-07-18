@@ -272,7 +272,127 @@ latex_elements = {
 'pointsize': '11pt',
 
 # Additional stuff for the LaTeX preamble.
-#'preamble': '',
+'preamble': r'''
+\usepackage{lmodern}
+\usepackage{subfigure}
+\usepackage{textpos}
+
+% This adds space between the Appendix number (e.g., A.101) and the title.
+\renewcommand{\numberline}[1]{#1~}
+
+% If your page numbers stick out into the right-hand margin but using lengths 
+% appropriate to your document. See the Introduction to the "The tocloft 
+% package" for additional information.
+\makeatletter
+ \renewcommand{\@pnumwidth}{1.75em}
+ \renewcommand{\@tocrmarg}{3.25em}
+\makeatother
+
+% have an index. we use the imakeidx' replacement of the 'multind' package so
+% that we can have an index of all run-time parameters separate from other
+% items (if we ever wanted one)
+\usepackage{imakeidx}
+\makeindex[name=prmindex, title=Index of run-time parameter entries]
+\makeindex[name=prmindexfull, title=Index of run-time parameters with section names]
+
+\newcommand{\manual}{\textsc{Software Manual Template}}
+    ''',
+
+    'maketitle': r'''
+\definecolor{dark_grey}{gray}{0.3}
+\definecolor{aspect_blue}{rgb}{0.3125,0.6875,0.9375}
+
+%LINE 1%
+{
+\renewcommand{\familydefault}{\sfdefault}
+
+\pagenumbering{gobble}
+\begin{center}
+\resizebox{\textwidth}{!}{\textcolor{dark_grey}{\fontfamily{\sfdefault}\selectfont
+COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
+}}
+
+\hrule
+
+%LINE 2%
+\color{dark_grey}
+\rule{\textwidth}{2pt}
+
+%LINE 3%
+\color{dark_grey}
+% FILL: additional organizations
+% e.g.: {\Large Organization 1\\Organization 2}
+{\Large }
+\end{center}
+
+%COLOR AND CODENAME BLOCK%
+\begin{center}
+\resizebox{\textwidth}{!}{\colorbox
+% FILL: color of code name text box
+% e.g. blue
+{aspect_blue}{\fontfamily{\rmdefault}\selectfont \textcolor{white} {
+% FILL: name of the code
+% You may want to add \hspace to both sides of the codename to better center it, such as:
+% \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
+\hspace{0.1in}\manual{}\hspace{0.1in}} }}
+\\[12pt]
+{\Large LaTeX Template for CIG Software User Manuals}
+\end{center}
+
+%MAIN PICTURE%
+\begin{textblock*}{0in}(1.5in,0.3in)
+% FILL: image height
+% e.g. height=6.5in
+\begin{center}
+\vspace{1em}
+\includegraphics[height=3.5in]{rem3dlogo.png}
+\hspace{5em}
+\end{center}
+\end{textblock*}
+
+%USER MANUAL%
+\color{dark_grey}
+\hfill{\Huge \fontfamily{\sfdefault}\selectfont Example User Manual \\
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version
+% keep the following line as is so that we can replace this using a script:
+0.1.0-pre %VERSION-INFO%
+\\\large(generated \today)\\
+{\Large Lorraine Hwang\\John Naliboff\\Juliane Dannberg\\Rene Gassm{\"o}ller\\Louise Kellogg\\Hiro Matsui\\}
+}
+
+%AUTHOR(S) & WEBSITE%
+\null
+\vspace{17em}
+\color{dark_grey}
+{\fontfamily{\sfdefault}\selectfont
+% FILL: author list
+% e.g. Author One\\Author Two\\Author Three\\
+% be sure to have a newline (\\) after the final author
+\large
+\noindent with contributions by: \\
+    John Doe,
+    Jane Doe\\
+\vspace{1.0em}
+
+{\noindent
+{\href{https://geodynamics.org}{geodynamics.org}}
+}
+}
+
+
+%LINE%
+{\noindent
+\color{dark_grey}
+\rule{\textwidth}{2pt}
+}
+
+%COPYRIGHT STATEMENT
+\textcopyright Copyright 2018, Regents of the University of California
+
+}
+
+\pagebreak
+        '''
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
