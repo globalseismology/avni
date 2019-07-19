@@ -27,7 +27,7 @@ class Profiles(object):
         self.metadata = None
         self.data = None
         self._name = None
-        self._infile = None    
+        self._infile = None
         if file is not None:  success = self._read(file)
 
     def __str__(self):
@@ -45,12 +45,12 @@ class Profiles(object):
     @property
     def name(self):
         return self._name
-        
+
     #########################       methods       #############################
-        
+
     def read(self,setup_file='setup.cfg',model_dir='.'):
         '''
-        Try reading a folder containing ascii files for every location on the surface 
+        Try reading a folder containing ascii files for every location on the surface
 
         Input parameters:
         ----------------
@@ -66,7 +66,7 @@ class Profiles(object):
 
         if not os.path.isfile(cfg_file):
             raise IOError('No configuration file found.'\
-	                 'Model directory must contain '+setup_file)
+                 'Model directory must contain '+setup_file)
         else:
             parser = ConfigObj(cfg_file)
         self._folder = parser['metadata']['folder']
@@ -77,13 +77,12 @@ class Profiles(object):
         profiles = {}
         for loc in np.unique(epixarr['val']):
             file_name = self._folder + '/' + parser['metadata']['prefix'] + str(loc)
-            profile = reference1D(file_name)
+            profile = Reference1D(file_name)
             profiles[(lat,lon)] = profile
-             
-    
+
+
     def write_to_hdf(self):
         """writes profile class to an hdf5 container"""
-        
+
     def evaluate_at_location(self,latitude, longitude,depth):
         """evaluate the profiles at a particular point within the domain"""
-        

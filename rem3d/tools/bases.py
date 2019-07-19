@@ -167,13 +167,13 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
 
     # convert to numpy arrays
     radiusin = convert2nparray(radius)
-    radius_temp = convert2nparray(radius_range)        
+    radius_temp = convert2nparray(radius_range)
     if radius_temp.ndim == 1:
         radius_range = convert2nparray([radius_temp.tolist()])
-        if radius_range.shape[1] != 2: raise TypeError('Only two values allowed within radius_range') 
+        if radius_range.shape[1] != 2: raise TypeError('Only two values allowed within radius_range')
     elif radius_temp.ndim == 2:
         radius_range = radius_temp
-        if radius_range.shape[1] != 2: raise TypeError('Only two values allowed within radius_range') 
+        if radius_range.shape[1] != 2: raise TypeError('Only two values allowed within radius_range')
     if not isinstance(radius_range, (list,tuple,np.ndarray)):
         raise TypeError('radius_range must be list , not %s' % type(radius_range))
 
@@ -184,7 +184,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
     for radii in radius_range:
         if not np.all(np.sort(radii)==radii): raise AssertionError('radius_range needs to be sorted')
-        
+
     # see if either TOP/BOT or CONSTANT/LINEAR exists
     findtopbot = np.any([key in ['BOTTOM','TOP'] for key in types])
     findconstantlinear = np.any([key in ['CONSTANT','LINEAR'] for key in types])
@@ -194,10 +194,10 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
         temp = np.zeros(npoly)
         dtemp = np.zeros(npoly)
         for irange,_ in enumerate(radius_range):
-            rbot = min(radius_range[irange])
-            rtop = max(radius_range[irange])
+            rbot = min(radius_range[irange])/rnorm
+            rtop = max(radius_range[irange])/rnorm
             #Undefined if depth does not lie within the depth extents of knot points
-            if radiusin[irad] < rbot or radiusin[irad] > rtop:
+            if radiusin[irad]/rnorm < rbot or radiusin[irad]/rnorm > rtop:
                 # <= so that the boundary depth belongs to only one radial kernel
                 for itype in range(len(types)):
                     ii = irange*len(types)+itype

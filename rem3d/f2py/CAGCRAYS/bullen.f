@@ -1,10 +1,10 @@
       subroutine getbullen(emodel,maxlay,capom,capg,grav,
-     #                     vaisala,bullen,pressure) 
+     #                     vaisala,bullen,pressure)
       implicit double precision (a-h,o-z)
 Cf2py intent(inout) emodel,maxlay,capom,capg
 Cf2py intent(out) grav,vaisala,bullen,pressure
 Cf2py depend(maxlay) grav,vaisala,bullen,pressure
-      character*80 emodel
+      character*250 emodel
       include 'emcommonb.h'
       double precision xb(maxlay)
       double precision xt(maxlay)
@@ -19,7 +19,7 @@ Cf2py depend(maxlay) grav,vaisala,bullen,pressure
 c     To make it generic for any planet, input argument instead
 c      parameter (capom=7.292115d-5)
 c      parameter (capg=6.6723d-11)
-      
+
       if (maxlay.gt.maxlev) then
          write(6,"('Warning: Maximum layer maxlay cannot be greater than ',i5,' in emcommonb.h')") maxlev
         return

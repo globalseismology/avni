@@ -39,6 +39,20 @@ def stage(file,overwrite=False):
             print('Warning: a link to file '+ntpath.basename(file)+' exists within REM3D. Use overwrite=True to overwrite the staged link.')
     return
 
+def parse_line(line,rx_dict):
+    """
+    Function used to parse line with key word from rx_dict
+
+    Do a regex search against all defined regexes and
+    return the key and match result of the first matching regex
+    """
+    for key, rx in rx_dict.items():
+        match = rx.search(line)
+        if match:
+            return key, match
+    # if there are no matches
+    return None, None
+
 def convert2nparray(value,int2float = True):
     """
     Converts input value to a float numpy array. Boolean are returned as Boolean arrays.
@@ -99,7 +113,7 @@ def equaldict(first_dict,second_dict):
     #for k in set(realization.metadata):
     #    checks.extend(convert2nparray(first_dict==second_dict))
     #return np.all(checks)
-    
+
 def df2nparray(dataframe):
     '''
     helper tool to return the named numpy array of the pandas dataframe
