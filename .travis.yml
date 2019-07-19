@@ -115,7 +115,7 @@ script:
   # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
   # http://openmdao.org/twodocs/versions/2.0.2/developer_docs/automating_doc_build/automating_doc_build.html
   - cd docs
-  - sphinx-apidoc -o . ../rem3d
+  - sphinx-apidoc -o api/ ../rem3d
   - make html
 
   # Make a latex file for the next step
