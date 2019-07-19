@@ -322,7 +322,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \color{dark_grey}
 % FILL: additional organizations
 % e.g.: {\Large Organization 1\\Organization 2}
-{\Large University of Maryland - College Park}
+{\Large }
 \end{center}
 
 %COLOR AND CODENAME BLOCK%
@@ -377,7 +377,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \vspace{1.0em}
 
 {\noindent
-{\href{https://geodynamics.org}{geodynamics.org}} \href{https://rem3d.org}{rem3d.org}}
+{\href{https://geodynamics.org}{geodynamics.org} \\ \href{https://rem3d.org}{rem3d.org}}
 }
 }
 
@@ -389,7 +389,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 }
 
 %COPYRIGHT STATEMENT
-\textcopyright Copyright 2020, Pritwiraj Moulik, University of Maryland, Regents of the University of California
+\textcopyright Copyright 2020, Pritwiraj Moulik, REM3D Project and Regents of the University of California
 
 }
 

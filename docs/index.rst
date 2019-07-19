@@ -17,11 +17,12 @@ Write a few sentences about what REM3D is here. You can also link to other docum
    :titlesonly:
    :glob:
 
-   rem3d*
    FAQ
    versioning_conventions
    contributing
    API
+   rem3d*
+
 
 Manual classes
 ==============
