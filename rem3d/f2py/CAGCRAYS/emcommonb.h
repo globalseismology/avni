@@ -1,4 +1,4 @@
-      character*80 emtitle
+      character*250 emtitle
 c
       common /empar1/ emtitle
 c
@@ -37,7 +37,7 @@ c
       real*8 prespl(3,maxlev)
 c
       real*8 work(3,maxlev)
-c      
+c
       common /empar2/ radlev,
      #       rholev,rhospl,
      #       vpvlev,vpvspl,
@@ -67,4 +67,4 @@ c
      #       itoplev,
      #       ibotlev,
      #       numemreg
-     
+

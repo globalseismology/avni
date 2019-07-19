@@ -9,6 +9,7 @@ if (sys.version_info[:2] < (3, 0)):
 import numpy as np
 from collections import Counter
 from scipy import sparse
+import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from rem3d.f2py import vbspl,dbsplrem,ylm
@@ -166,31 +167,37 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
 
     # convert to numpy arrays
     radiusin = convert2nparray(radius)
-    radius_range = convert2nparray(radius_range)
-
-    if radius_range.shape[1] != 2 or not isinstance(radius_range, (list,tuple,np.ndarray)):
+    radius_temp = convert2nparray(radius_range)
+    if radius_temp.ndim == 1:
+        radius_range = convert2nparray([radius_temp.tolist()])
+        if radius_range.shape[1] != 2: raise TypeError('Only two values allowed within radius_range')
+    elif radius_temp.ndim == 2:
+        radius_range = radius_temp
+        if radius_range.shape[1] != 2: raise TypeError('Only two values allowed within radius_range')
+    if not isinstance(radius_range, (list,tuple,np.ndarray)):
         raise TypeError('radius_range must be list , not %s' % type(radius_range))
 
     # keys in coefficients should be acceptable
     choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
-    if not np.all([key in choices for key in types]): raise AssertionError()
+    if not np.all([key in choices for key in types]): raise AssertionError('Only polynomial bases can be used')
     npoly = len(radius_range)*len(types)
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
     for radii in radius_range:
         if not np.all(np.sort(radii)==radii): raise AssertionError('radius_range needs to be sorted')
-    rbot=radius_range[0]/rnorm
-    rtop=radius_range[1]/rnorm
+
+    # see if either TOP/BOT or CONSTANT/LINEAR exists
     findtopbot = np.any([key in ['BOTTOM','TOP'] for key in types])
     findconstantlinear = np.any([key in ['CONSTANT','LINEAR'] for key in types])
-
     if findtopbot and findconstantlinear: raise ValueError('Cannot have both BOTTOM/TOP and CONSTANT/LINEAR as types in eval_polynomial')
 
     for irad,_ in enumerate(radiusin):
         temp = np.zeros(npoly)
         dtemp = np.zeros(npoly)
         for irange,_ in enumerate(radius_range):
+            rbot = min(radius_range[irange])/rnorm
+            rtop = max(radius_range[irange])/rnorm
             #Undefined if depth does not lie within the depth extents of knot points
-            if radiusin[irad] <= min(radius_range[irange]) or radiusin[irad] > max(radius_range[irange]):
+            if radiusin[irad]/rnorm < rbot or radiusin[irad]/rnorm > rtop:
                 # <= so that the boundary depth belongs to only one radial kernel
                 for itype in range(len(types)):
                     ii = irange*len(types)+itype
