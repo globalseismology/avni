@@ -6,24 +6,30 @@
 Welcome to REM3D's documentation!
 =================================
 
-Write a few sentences about what REM3D is here. You can also link to other documents such as the 
+Write a few sentences about what REM3D is here. You can also link to other documents such as the
 
 .. include:: contributing.md
-
-
-
-
 
 
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
    :titlesonly:
+   :glob:
 
+   rem3d*
    FAQ
    versioning_conventions
    contributing
    API
+
+Manual classes
+==============
+
+.. automodule:: rem3d.gui
+
+.. autoclass:: SelectFromCollection
+   :members:
 
 Indices and tables
 ==================
