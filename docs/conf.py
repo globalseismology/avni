@@ -280,8 +280,8 @@ latex_elements = {
 % This adds space between the Appendix number (e.g., A.101) and the title.
 \renewcommand{\numberline}[1]{#1~}
 
-% If your page numbers stick out into the right-hand margin but using lengths 
-% appropriate to your document. See the Introduction to the "The tocloft 
+% If your page numbers stick out into the right-hand margin but using lengths
+% appropriate to your document. See the Introduction to the "The tocloft
 % package" for additional information.
 \makeatletter
  \renewcommand{\@pnumwidth}{1.75em}
@@ -295,7 +295,7 @@ latex_elements = {
 \makeindex[name=prmindex, title=Index of run-time parameter entries]
 \makeindex[name=prmindexfull, title=Index of run-time parameters with section names]
 
-\newcommand{\manual}{\textsc{Software Manual Template}}
+\newcommand{\manual}{\textsc{Reference Earth Model}}
     ''',
 
     'maketitle': r'''
@@ -322,7 +322,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \color{dark_grey}
 % FILL: additional organizations
 % e.g.: {\Large Organization 1\\Organization 2}
-{\Large }
+{\Large University of Maryland - College Park}
 \end{center}
 
 %COLOR AND CODENAME BLOCK%
@@ -336,7 +336,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
 \hspace{0.1in}\manual{}\hspace{0.1in}} }}
 \\[12pt]
-{\Large LaTeX Template for CIG Software User Manuals}
+{\Large REM3D Software User Manual}
 \end{center}
 
 %MAIN PICTURE%
@@ -352,12 +352,12 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 
 %USER MANUAL%
 \color{dark_grey}
-\hfill{\Huge \fontfamily{\sfdefault}\selectfont Example User Manual \\
+\hfill{\Huge \fontfamily{\sfdefault}\selectfont REM3D \\
 \raggedleft \huge \fontfamily{\sfdefault}\selectfont Version
 % keep the following line as is so that we can replace this using a script:
 0.1.0-pre %VERSION-INFO%
 \\\large(generated \today)\\
-{\Large Lorraine Hwang\\John Naliboff\\Juliane Dannberg\\Rene Gassm{\"o}ller\\Louise Kellogg\\Hiro Matsui\\}
+{\Large Pritwiraj Moulik\\Vedran Lekic\\G{\"o}ran Ekstr{\"o}m\\Barbara Romanowicz\\}
 }
 
 %AUTHOR(S) & WEBSITE%
@@ -369,13 +369,15 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % e.g. Author One\\Author Two\\Author Three\\
 % be sure to have a newline (\\) after the final author
 \large
-\noindent with contributions by: \\
-    John Doe,
-    Jane Doe\\
+\noindent with contributions by (in alphabetical order): \\
+    Anant Hariharan,
+    Chao Gao,
+    Chris Havlin,
+    Ross Maguire\\
 \vspace{1.0em}
 
 {\noindent
-{\href{https://geodynamics.org}{geodynamics.org}}
+{\href{https://geodynamics.org}{geodynamics.org}} \href{https://rem3d.org}{rem3d.org}}
 }
 }
 
@@ -387,7 +389,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 }
 
 %COPYRIGHT STATEMENT
-\textcopyright Copyright 2018, Regents of the University of California
+\textcopyright Copyright 2020, Pritwiraj Moulik, University of Maryland, Regents of the University of California
 
 }
 
