@@ -11,6 +11,7 @@ if (sys.version_info[:2] < (3, 0)):
 
 import numpy as np #for numerical analysis
 from scipy import sparse
+import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .lateral_basis import Lateral_basis
@@ -118,7 +119,7 @@ class Kernel_set(object):
         # select corresponding lateral bases
         lateral_basis = self.data['lateral_basis']
         try:
-            lateral_select = Lateral_basis[self.metadata['ihorpar']-1][findrad['index']]
+            lateral_select = lateral_basis[self.metadata['ihorpar']-1][findrad['index']]
         except:
             raise ValueError('ihorpar needs to be defined for a kernel set. The HPAR for each radial kernel')
 

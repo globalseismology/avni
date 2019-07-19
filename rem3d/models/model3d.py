@@ -21,6 +21,8 @@ import struct
 import h5py
 import traceback
 import pandas as pd
+import progressbar
+
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
 from .. import constants
@@ -378,17 +380,9 @@ class Model3D(object):
                 try:
                     modelarr = self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr']
                 except:
-                    # Loop over all kernel basis
-                    for ii in range(len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])):
-                        # number of coefficients for this radial kernel
-                        ncoef = self.metadata['resolution_'+str(resolution[ir])]['ncoefhor'][self.metadata['resolution_'+str(resolution[ir])]['ihorpar'][ii]-1]
-                        # first radial kernel and first tesselation level
-                        if ii == 0 and ir == 0:
-                            modelarr = coefficients.iloc[ii][:ncoef]
-                        else:
-                            modelarr = modelarr.append(coefficients.iloc[ii][:ncoef],ignore_index=True)
-                    # Convert to sparse matrix
-                    # take the transpose to make dot products easy
+                    # coefficients is a pandas dataframe
+                    Nhopar=len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])
+                    modelarr=coefficients.iloc[0:Nhopar].to_numpy().ravel()
                     modelarr = sparse.csr_matrix(modelarr).transpose()
                     self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr'] = modelarr
             except AttributeError:
@@ -568,40 +562,66 @@ class Model3D(object):
         if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
         # convert to numpy arrays
-        latitude = tools.convert2nparray(latitude)
-        longitude = tools.convert2nparray(longitude)
-        depth_in_km = tools.convert2nparray(depth_in_km)
+        lat = tools.convert2nparray(latitude)
+        lon = tools.convert2nparray(longitude)
+        dep = tools.convert2nparray(depth_in_km)
         parameter = tools.convert2nparray(parameter)
+
+        # make the combinations of repeating the same lat/lon at all depths
+        latitude=np.tile(lat,len(depth_in_km))
+        longitude=np.tile(lon,len(depth_in_km))
+        depth_in_km=np.repeat(dep,len(lat))
 
         if not len(latitude)==len(longitude)==len(depth_in_km): raise AssertionError('latitude, longitude and depth_in_km should be of same length')
 
         # Get the radial projection file
         kernel = self.metadata['resolution_'+str(resolution)]['kernel_set']
 
+        # Write to a dictionary
+        # write to a projection file if it does not exist or existing one has different attributes than projection[param]
+        projection = {}
+        projection['kernel'] = kernel.name
+        projection['deptharr']=dep
+        projection['xlat']=lat
+        projection['xlon']=lon
+        projection['ndp']=len(dep)
+        projection['npx']=len(lat)
+        projection['refstrarr']=parameter
+
         # loop through parameter and append the projection for each location
-        refstrarr=[]
+        projarr = sparse.csr_matrix((len(latitude), kernel.metadata['ncoefcum'][-1]), dtype=np.float64)
         for param in parameter:
-            for iloc,_ in enumerate(latitude):
+            #for iloc in progressbar.progressbar(range(len(latitude))):
+            for iloc in progressbar.progressbar(range(3)):
                 lat = latitude[iloc]
                 lon = longitude[iloc]
                 dep = depth_in_km[iloc]
-                if iloc == 0:
-                    projarr = kernel.getprojection(lat,lon,dep,param)
-                else:
-                    projarr = sparse.vstack([projarr,kernel.getprojection(lat,lon,dep,param)])
-                refstrarr.append(param)
-
-        # Write to a dictionary
-        projection = {}
+                temp = kernel.getprojection(lat,lon,dep,param)
+                projarr = projarr + sparse.csr_matrix( (temp.data,(iloc*np.ones(temp.nnz,dtype=int),temp.indices)),shape=(len(latitude), kernel.metadata['ncoefcum'][-1]))
         projection['projarr']=projarr
-        projection['ndp']=len(depth_in_km)
-        projection['deptharr']=depth_in_km
-        projection['refstrarr']=np.array(refstrarr)
-#         projection['ndp']=ndp; projection['npx']=npx; projection['nhorcum']=nhorcum;
-#         projection['neval']=neval; projection['deptharr']=deptharr; projection['refstrarr']=refstrarr
-#         projection['xlat']=xlat; projection['xlon']=xlon; projection['area']=area
-#         projection['refvalarr']=refvalarr;
-#         projection['model']=model; projection['param']=lateral_basis
+
+        # store the lateral and radial param of this variable
+        radial_type = []
+        for rker in kernel.data['radial_basis'][param]: radial_type.append(rker.type)
+        if len(np.unique(radial_type)) != 1: raise AssertionError('more than one radial parameterization for  '+param)
+        projection['radial_basis']=radial_type[0]
+        projection['radial_metadata']=kernel.data['radial_basis'][param][0].metadata
+
+        # same check for lateral parameterization
+        selfmeta = self.metadata['resolution_'+str(resolution)]
+        selfkernel = selfmeta['kernel_set']
+        ivarfind =np.where(selfmeta['varstr']==param)[0]
+        if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in eval_kernel_set')
+        findvar = selfmeta['varstr'][ivarfind[0]]
+        dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
+        findrad = np.array([(ii, selfmeta['desckern'][ii]) for ii in np.arange(len(selfmeta['ivarkern'])) if ivarfind[0]+1 == selfmeta['ivarkern'][ii]],dtype=dt)
+
+        if len(np.unique(selfmeta['ihorpar'][findrad['index']])) != 1: raise AssertionError('more than one lateral parameterization for  '+param)
+        ihorpar = selfmeta['ihorpar'][findrad['index']][0]
+        projection['lateral_metadata']= selfkernel.data['lateral_basis'][ihorpar-1].metadata
+        projection['lateral_basis']= selfkernel.data['lateral_basis'][ihorpar-1].type
+
+
         return projection
 
 
@@ -629,11 +649,12 @@ class Model3D(object):
         """
         Inverts for new coefficients in self.data from the coefficients in model3d class
         """
-        if type(model3d).__name__ != 'model3d': raise ValueError('input model class should be a model3d instance')
+        if type(model3d).__name__ != 'Model3D': raise ValueError('input model class should be a Model3D instance')
 
         # Get the radial projection file
         selfmeta = self.metadata['resolution_'+str(resolution)]
         newmeta = model3d.metadata['resolution_'+str(resolution)]
+        pdb.set_trace()
         selfkernel = selfmeta['kernel_set']
         newkernel = newmeta['kernel_set']
 
@@ -645,31 +666,44 @@ class Model3D(object):
             findvar = selfmeta['varstr'][ivarfind[0]]
             findrad = np.array([(ii, selfmeta['desckern'][ii]) for ii in np.arange(len(selfmeta['ivarkern'])) if ivarfind[0]+1 == selfmeta['ivarkern'][ii]],dtype=dt)
 
+            # Check if the selected radial kernels are boxcar in self
+            for rker in selfkernel.data['radial_basis'][variable]:
+                if rker.type != 'boxcar': raise AssertionError('radial kernel is not boxcar for '+variable)
+            # same check for lateral parameterization
+            for hpar in selfmeta['ihorpar'][findrad['index']]:
+                if selfkernel.data['lateral_basis'][hpar-1].type != 'PIXELS': raise AssertionError('lateral kernel is not PIXELS for '+variable)
+
             # find the corresponding radial kernels in newmeta
             ivarfind2 =np.where(newmeta['varstr']==variable)[0]
-            pdb.set_trace()
             if len(ivarfind2) != 1:
-                stringout = ''
-                for ii in range(len(newmeta['varstr'])): stringout=stringout+str(ii)+'. '+newmeta['varstr'][ii]+'\n'
-                print('')
-                print(stringout)
-                try:
-                    x = int(input('Warning: no unique corresponding variable found for '+variable+'. Select one index from above: - default is 1:'))
-                except (ValueError,EOFError):
-                    x = 1
-                ivarfind2 = np.array([x])
-            findvar2 = newmeta['varstr'][ivarfind2[0]]
-            findrad2 = np.array([(ii, newmeta['desckern'][ii]) for ii in np.arange(len(newmeta['ivarkern'])) if ivarfind2[0]+1 == newmeta['ivarkern'][ii]],dtype=dt)
+                ifselected = [False for x in range(len(newmeta['varstr']))]
+                ivarfind2 = []
+                ifdone = False
+                while not ifdone:
+                    stringout = ''
+                    for ii in range(len(newmeta['varstr'])): stringout=stringout+str(ii)+'. '+newmeta['varstr'][ii]+' '+str(ifselected[ii] if ifselected[ii] else '')+'\n'
+                    print('')
+                    print(stringout)
+                    try:
+                        x = int(input('Warning: no unique corresponding variable found for '+variable+'. Select one index from above to assign parameterization:'))
+                        ifselected[x] = True
+                        ivarfind2.append(x)
+                    except (ValueError,EOFError):
+                        if len(ivarfind2) is not 0: ifdone = True
 
-            pdb.set_trace()
-            # calculate the projection matrix for all locations
-            longitude = selfmeta['xlopix'][0]; latitude = selfmeta['xlapix'][0]
-            radialinfo = selfkernel.data['radial_basis'][variable][0].metadata
-            depth_in_km = np.average(np.array([radialinfo['depthtop'],radialinfo['depthbottom']]),axis=0)
-            # loop over depths and append the projection matrices
-            proj = model3d.calculateproj(latitude=np.tile(latitude,len(depth_in_km)),longitude=np.tile(longitude,len(depth_in_km)),depth_in_km=np.repeat(depth_in_km,len(latitude)),parameter=findvar2,resolution=resolution)
+            # loop over selected variables
+            for ivar in ivarfind2:
+                findvar2 = newmeta['varstr'][ivar]
+                findrad2 = np.array([(ii, newmeta['desckern'][ii]) for ii in np.arange(len(newmeta['ivarkern'])) if newmeta['ivarkern'][ii] == ivar+1],dtype=dt)
 
-            pdb.set_trace()
+                # calculate the projection matrix for all locations
+                longitude = selfmeta['xlopix'][0]; latitude = selfmeta['xlapix'][0]
+                radialinfo = selfkernel.data['radial_basis'][variable][0].metadata
+                depth_in_km = np.average(np.array([radialinfo['depthtop'],radialinfo['depthbottom']]),axis=0)
+                # loop over depths and append the projection matrices
+                pdb.set_trace()
+                proj = model3d.calculateproj(latitude,longitude,depth_in_km,parameter=findvar2,resolution=resolution)
+                pdb.set_trace()
 
 
     def printsplinefiles(self):
@@ -692,6 +726,4 @@ class Model3D(object):
                 np.savetxt(filename,arr, fmt='%7.3f %7.3f %7.3f')
                 print(".... written "+filename)
         return
-
-
 #######################################################################################

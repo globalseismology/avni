@@ -121,3 +121,6 @@ ENV/
 *.eps
 *.png
 *.pdf
+
+# api config file
+rem3d/config/api.ini

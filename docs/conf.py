@@ -261,10 +261,11 @@ htmlhelp_basename = 'REM3Ddoc'
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+'papersize': 'letterpaper',
+'babel': '\usepackage[english]{babel}',
 
 # The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+'pointsize': '11pt',
 
 # Additional stuff for the LaTeX preamble.
 #'preamble': '',
@@ -283,7 +284,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#latex_logo = None
+latex_logo = 'rem3dlogo.png'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.

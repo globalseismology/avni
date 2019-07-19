@@ -41,21 +41,21 @@ class Reference1D(object):
     '''
 
     def __init__(self,file=None):
-        self.__nlayers__ = None
         self.data = None
         self.metadata = {}
         # assume that information about the native parameterization is not available
         # this is typical for a card deck file
         for field in ['model','ref_period','parameters']: self.metadata[field] = None
         self.name = None
-        self.radius_max = None
+        self._radius_max = None
+        self._nlayers = None
         if file is not None:
             self.read(file)
             self.derive()
 
     def __str__(self):
-        if self.data is not None and self.__nlayers__ > 0:
-            output = "%s is a one-dimensional model with %s layers and radius up to %s km" % (self.name, self.__nlayers__,self.radius_max/1000.)
+        if self.data is not None and self._nlayers > 0:
+            output = "%s is a one-dimensional model with %s layers and radius up to %s km" % (self.name, self._nlayers,self._radius_max/1000.)
         else:
             output = "No model has been read into this reference1D instance yet"
         return output
@@ -89,6 +89,7 @@ class Reference1D(object):
         try:
             self.read_mineos_cards(file)
         except:
+            pdb.set_trace()
             var1 = traceback.format_exc()
             try:
                 self.read_bases_coefficients(file)
@@ -474,6 +475,7 @@ class Reference1D(object):
 
             # delete a file
             with contextlib.suppress(FileNotFoundError): os.remove(file)
+              
         else:
             print('Warning: mineralogical parameters not evaluated for '+constants.planetpreferred)
 
@@ -514,6 +516,7 @@ class Reference1D(object):
                 if field == 'radius' or field == 'depth':
                     disc['delta'][field][icount] = sel[field].iat[0]
                     disc['average'][field][icount] = sel[field].iat[0]
+                    pdb.set_trace()
                     disc['contrast'][field][icount] = sel[field].iat[0]
                 else:
                     disc['delta'][field][icount] = sel[field].iat[0]-sel[field].iat[1]
@@ -562,7 +565,7 @@ class Reference1D(object):
         '''
         Get the arrays of custom parameters defined in various Earth models
         '''
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             # convert to array for ease of looping
             if isinstance(parameters,string_types): parameters = np.array([parameters])
 
@@ -703,7 +706,7 @@ class Reference1D(object):
         parameters = ['radius','rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
         if self.data is not None and self.__nlayers__ > 0:
             model_name = self.name
-            ntotlev = self.__nlayers__
+            ntotlev = self._nlayers
             itopic = self.metadata['discontinuities']['itopic']
             itopoc = self.metadata['discontinuities']['itopoc']
             itopmantle = self.metadata['discontinuities']['itopmantle']
@@ -733,7 +736,7 @@ class Reference1D(object):
           To work around this, zero values an ocean layer will be written
           as 1e-4.
         '''
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             model_name = self.name
             f = open(directory+'/'+model_name+'.'+fmt,'w')
             f.write('{} - P\n'.format(model_name))
@@ -741,7 +744,7 @@ class Reference1D(object):
 
             for i in range(0,len(self.data)):
                 f.write('{:2.4f}   {:2.4f}   {:2.4f}    {:2.4f}\n'.format(
-                   (self.radius_max - self.data['radius'][::-1][i]) / 1000.0,
+                   (self._radius_max - self.data['radius'][::-1][i]) / 1000.0,
                    self.data['vp'][::-1][i] / 1000.0,
                    self.data['vs'][::-1][i] / 1000.0,
                    self.data['rho'][::-1][i] / 1000.0))
@@ -757,7 +760,7 @@ class Reference1D(object):
         '''
          Write 1D model to be used as an external model in axisem
         '''
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             model_name = self.name
             f = open(directory+'/'+model_name+'.bm','w')
             n_discon = 0
@@ -790,7 +793,7 @@ class Reference1D(object):
                 self.data['eta'][::-1][i]) )
 
                 if i < len(self.data)-1 and self.data['radius'][::-1][i] == self.data['radius'][::-1][i+1]:
-                    depth_here = (self.radius_max - self.data['radius'][::-1][i]) / 1000.0
+                    depth_here = (self._radius_max - self.data['radius'][::-1][i]) / 1000.0
                     n_discon += 1
                     f.write('#    Discontinuity {}, depth {:6.2f} km\n'.format(n_discon,depth_here))
         else:
