@@ -20,6 +20,7 @@ branches:
     - devel
     - travis
     - master
+    - api
 
 env:
   global:
@@ -114,6 +115,7 @@ script:
   # https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
   # http://openmdao.org/twodocs/versions/2.0.2/developer_docs/automating_doc_build/automating_doc_build.html
   - cd docs
+  - sphinx-apidoc -o . ../rem3d
   - make html
 
   # Make a latex file for the next step
@@ -168,7 +170,11 @@ deploy:
         rsync -r -g --delete-after -v docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
         fi
     on:
-      branch: devel
+      branch:
+        - devel
+        - api
+        - plotmodels
+        - travis
 
   - provider: script
     skip_cleanup: true

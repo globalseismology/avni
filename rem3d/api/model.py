@@ -49,7 +49,7 @@ class Model(object):
         filepath = os.path.join(tools.get_configdir(),'attributes.ini')
         if os.path.isfile(filepath):
             # get config file loaded
-            parser=ConfigObj(filepath)
+            parser=ConfigObj(filepath,unrepr=True)
 
             # compile kernel list to fetch
             kernel_list=[]
@@ -61,8 +61,8 @@ class Model(object):
                     if kern not in kernel_list:
                         kernel_list.append(kern)
 
-                if model in parser['Model3D'].keys():
-                    ModelList['3d']['details'][model]['meta']=parser['Model3D'][model]
+                # if model in parser['Model3D'].keys():
+                #     ModelList['3d']['details'][model]['meta']=parser['Model3D'][model]
 
             descs={}
             for kern in kernel_list:
