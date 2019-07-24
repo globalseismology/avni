@@ -34,7 +34,7 @@ def main():
 
     try:
         # stage the file for plotting
-        stage(arg.file)
+        ierror = stage(arg.file,overwrite=True)
         model3d = ntpath.basename(arg.file)
     except:
         # update the file from the server

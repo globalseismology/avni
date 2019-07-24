@@ -594,17 +594,23 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             # read the 1D model if any of the reference values are not defined
             ifread1D = np.any(np.array(ref_dict[parameter]['refvalue'])<0.)
             if ifread1D:
+                # check if the refmodel file exists
+                if not os.path.isfile(ref_dict[parameter]['refmodel']):
+                    ifread1D = False
+                    print ('WARNING: Could not fill some reference values as the 1D reference model file could not be found : '+ref_dict[parameter]['refmodel'])
+            if ifread1D:
                 try: # try reading the 1D file in card format
                     ref1d = Reference1D(ref_dict[parameter]['refmodel'])
                     if mod_type == 'heterogeneity': ref1d.get_custom_parameter(parameter)
                 except:
+                    print ('WARNING: Could not fill some reference values as the 1D reference model file could not be read as Reference1D instance : '+ref_dict[parameter]['refmodel'])
                     ifread1D = False
 
             #write model coefficients
+            print('writing coefficients for '+parameter+' # '+str(k)+' - '+str(k+len(epix_files)-1)+' out of '+str(np.sum(epix_lengths))+' radial kernels/layers.')
             line = ff.FortranRecordWriter('(6E12.4)')
-            for j, epix_file in enumerate(epix_files):
-                f = np.loadtxt(epix_file)
-                print('writing coefficients for layer ', k)
+            for j in progressbar(range(len(epix_files))):
+                f = np.loadtxt(epix_files[j])
                 coefs = f[:,3]
 
                 #check if the reference value is negative.
@@ -799,11 +805,17 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
 
             model_dict[variable]['layers'][i] = layer_coefs
 
+    # check if we can  read 1D model
     ifread1D = True
-    try: # try reading the 1D file in card format
-        ref1d = Reference1D(parser['metadata']['refmodel'])
-    except:
+    if not os.path.isfile(parser['metadata']['refmodel']):
         ifread1D = False
+        print ('WARNING: Could not fill some reference values as the 1D reference model file could not be found : '+parser['metadata']['refmodel'])
+    if ifread1D:
+        try: # try reading the 1D file in card format
+            ref1d = Reference1D(parser['metadata']['refmodel'])
+        except:
+            ifread1D = False
+            print ('WARNING: Could not fill some reference values as the 1D reference model file could not be read as Reference1D instance : '+parser['metadata']['refmodel'])
 
     #open xarray dataset
     ds = xr.Dataset()

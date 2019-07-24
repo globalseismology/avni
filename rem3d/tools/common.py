@@ -33,11 +33,12 @@ def stage(file,overwrite=False):
     try:
         os.symlink(stagedfile, outlink)
     except OSError:
-        if overwrite:
+        if overwrite and os.path.islink(outlink):
             os.unlink(outlink)
             os.symlink(stagedfile, outlink)
+            print('WARNING: overwriting an existing staged link named '+ntpath.basename(file))
         else:
-            print('Warning: a link to file '+ntpath.basename(file)+' exists within REM3D. Use overwrite=True to overwrite the staged link.')
+            raise IOError('A link to an actual file '+ntpath.basename(file)+' (not symlink) exists within REM3D. Delete the file '+outlink+' first before proceeding.')
     return
 
 def parse_line(line,rx_dict):
