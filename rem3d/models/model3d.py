@@ -13,7 +13,7 @@ import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
 
-from scipy import sparse
+from scipy import sparse,linalg
 from configobj import ConfigObj
 import re
 from copy import deepcopy
@@ -757,7 +757,7 @@ class Model3D(object):
                 end = newmeta['ncoefcum'][findrad2['index'][-1]]
 
                 GTG= proj['matrix'].T*proj['matrix']
-                GTG_inv = scipy.linalg.inv(GTG[start:end,start:end].todense())
+                GTG_inv = linalg.inv(GTG[start:end,start:end].todense())
                 #d = GTG_inv * values
                 pdb.set_trace()
 
