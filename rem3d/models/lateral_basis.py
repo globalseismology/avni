@@ -13,13 +13,15 @@ import pdb    #for the debugger pdb.set_trace()
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
 #######################################################################################
-# Horizontal basis parameter class that defines an unique combination of parameters, their radial parameterization and any scaling
-# 3D model class
+# Horizontal basis parameter class that defines an unique combination of parameters, their lateral parameterization
+
 class Lateral_basis(object):
     '''
     A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.
     '''
+    #########################       magic       ##########################
+
     def __init__(self, name, types, metadata = None):
         """
         types : 'epix','ylm','sh','wavelet','slepians'
@@ -31,6 +33,61 @@ class Lateral_basis(object):
             self.metadata = {}
         else:
             self.metadata = metadata
+
+    def __eq__(self, other):
+
+        # convert to array to allow multiple lateral bases to be compared
+        other = tools.common.convert2nparray(other)
+        result = np.ones_like(other, dtype=bool)
+
+        # check if the instances have all required metadata
+        self.check()
+        for indx,oth in enumerate(other):
+            try:
+                oth.check()
+            except AttributeError: # if either is not this class instance
+                result[indx] = False
+
+            # check type
+            if self.type != oth.type: result[indx] = False
+
+            # check all keys
+            for key in self.metadata.keys():
+                if not np.array_equal(self.metadata[key],oth.metadata[key]): result[indx] = False
+        # assume equal otherwise
+        return result[0] if len(result)==1 else result
+
+    #########################       methods       #############################
+
+    def check(self):
+        """
+        Checks that object contains all attributes required for evaluating a
+        particular basis set.
+        """
+        if self.type == 'SPHERICAL SPLINES':
+            for key in ['xlaspl','xlospl','xraspl']:
+                try:
+                    knots = self.metadata[key]
+                except KeyError:
+                    print('Current attributes : ',self.metadata.keys())
+                    raise KeyError('Attribute '+key+' missing for lateral basis type '+self.type)
+        elif self.type == 'SPHERICAL HARMONICS':
+            for key in ['lmaxhor']:
+                try:
+                    knots = self.metadata[key]
+                except KeyError:
+                    print('Current attributes : ',self.metadata.keys())
+                    raise KeyError('Attribute '+key+' missing for lateral basis type '+self.type)
+        elif self.type == 'PIXELS':
+            for key in ['xlapix','xlopix','xsipix']:
+                try:
+                    knots = self.metadata[key]
+                except KeyError:
+                    print('Current attributes : ',self.metadata.keys())
+                    raise KeyError('Attribute '+key+' missing for lateral basis type '+self.type)
+        else:
+            raise NotImplementedError(self.type+' has not been implemented in lateral_basis.')
+        return
 
     def addtypes(self, names, types):
         """
@@ -44,33 +101,6 @@ class Lateral_basis(object):
             if types[ii] not in self.proj.keys() and types[ii] != self.metadata['type']:
                 self.proj[types[ii]] = {}
                 self.proj[types[ii]][to_name[ii]] = {'data':None,'attributes':{}}
-
-    def readprojfile(self,infile):
-        """
-        Reads a projection matrix file that evaluates the radial bases at various depths.
-        """
-
-        if (not os.path.isfile(infile)): raise IOError("Filename ("+infile+") does not exist. Use shell script print_projmatrix to create it.")
-        #nbytes = os.path.getsize(infile)
-
-        cc = 0 #initialize byte counter
-        ifswp = '' # Assuem that byte order is not be swapped unless elat is absurdly high
-
-        with open(infile, "rb") as f:
-            # preliminary metadata
-            indata = f.read(4); cc = cc+4 # try to read iflag
-            iflag = struct.unpack(ifswp+'i',indata)[0] # Read flag
-            if iflag != 1:
-                ifswp = '!' # swap endianness from now on
-                iflag = struct.unpack(ifswp+'i',indata)[0]
-                if iflag != 1: raise ValueError("iflag != 1")
-            self.metadata['from_type'] = struct.unpack('20s',f.read(20))[0].strip(); cc = cc+20
-            pdb.set_trace()
-            self.proj['to_type'] = struct.unpack('20s',f.read(20))[0].strip(); cc = cc+20
-            #ndp = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
-            #npx = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
-            #nhorcum = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
-
 
     def eval_lateral(self,lat,lon,store=False):
         """
@@ -91,9 +121,3 @@ class Lateral_basis(object):
             self.data['horcof'] = horcof
         else:
             return horcof
-
-    def project_lateral(self,lateral_basis):
-        """
-        Project from current horizontal basis to another orthogonal basis
-        and return the coefficients.
-        """

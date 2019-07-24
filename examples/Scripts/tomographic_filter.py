@@ -36,10 +36,19 @@ def main():
     simulation = Model3D(arg.simulation)
     print('.... reading seismic model from '+arg.seismic)
     seismic = Model3D(arg.seismic)
-
-    # reparameterize
-    simulation.reparameterize(seismic)
     pdb.set_trace()
+
+    # reparameterize the simulation to seismic
+    reparam = simulation.reparameterize(seismic)
+    pdb.set_trace()
+
+    # get the resolution matrix of the seismic from the same folder
+    outsparse,modelarr = seismic.get_resolution()
+
+    # m_filtered = R X m_reparam
+    # m_out = outsparse * reparam
+
+    # save and plot m_out reparam
     return
 
 if __name__== "__main__":

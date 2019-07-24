@@ -21,13 +21,14 @@ import struct
 import h5py
 import traceback
 import pandas as pd
-import progressbar
+from progressbar import progressbar
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
 from .. import constants
 from .kernel_set import Kernel_set
 from .realization import Realization
+from .common import getLU2symmetric,readResCov
 #######################################################################################
 
 # 3D model class
@@ -96,6 +97,7 @@ class Model3D(object):
         return result
 
     #########################       decorators       ##########################
+
     @property
     def num_resolutions(self):
         return len(self.metadata)
@@ -105,6 +107,7 @@ class Model3D(object):
         output = []
         for res in self.metadata: output.append(len(self.data[res]))
         return output
+
     #########################       methods       #############################
 
     def _read(self,file,**kwargs):
@@ -345,11 +348,11 @@ class Model3D(object):
             return values
 
     def getpixeldepths(self,resolution,parameter):
-        typehpar = self.metadata['resolution_'+str(resolution)]['typehpar']
+        typehpar = self[resolution]['typehpar']
         if not len(typehpar) == 1: raise AssertionError('only one type of horizontal parameterization allowed')
         for types in typehpar:
             if not types == 'PIXELS': raise AssertionError('for interpolation with tree3D')
-        kernel_set = self.metadata['resolution_'+str(resolution)]['kernel_set']
+        kernel_set = self[resolution]['kernel_set']
         kernel_param = kernel_set.data['radial_basis'][parameter]
         depths = []
         for index,radker in enumerate(kernel_param):
@@ -375,16 +378,26 @@ class Model3D(object):
         # Loop over resolution levels, adding coefficients
         for ir,_ in enumerate(resolution):
             try:
-                coefficients =self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['coef']
+                coefficients =self[resolution[ir],realization]['coef']
                 #if modelarr is already made use it
                 try:
-                    modelarr = self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr']
+                    modelarr = self[resolution[ir],realization]['modelarr']
                 except:
                     # coefficients is a pandas dataframe
-                    Nhopar=len(self.metadata['resolution_'+str(resolution[ir])]['ihorpar'])
-                    modelarr=coefficients.iloc[0:Nhopar].to_numpy().ravel()
+                    Nhopar=len(self[resolution[ir]]['ihorpar'])
+
+                    # if only a single parameterization, simply unravel
+                    if len(np.unique(self[resolution]['ihorpar'])) is 1:
+                        modelarr=coefficients.iloc[0:Nhopar].to_numpy().ravel()
+                    else:
+                        for irow,ihorpar in enumerate(self[resolution[ir]]['ihorpar']):
+                            ncoef = self[resolution]['ncoefhor'][ihorpar-1]
+                            if irow == 0:
+                                modelarr = coefficients.iloc[irow][:ncoef].to_numpy().ravel()
+                            else:
+                                modelarr = np.concatenate((modelarr,coefficients.iloc[irow][:ncoef].to_numpy().ravel()))
                     modelarr = sparse.csr_matrix(modelarr).transpose()
-                    self.data['resolution_'+str(resolution[ir])]['realization_'+str(realization)]['modelarr'] = modelarr
+                    self[resolution[ir],realization]['modelarr'] = modelarr
             except AttributeError:
                 raise ValueError('resolution '+str(resolution[ir])+' and realization '+str(realization)+' not filled up yet.')
         return modelarr
@@ -482,7 +495,7 @@ class Model3D(object):
                             print("deptharr # "+str(ii+1)+" out of "+str(ndp)+", pixel # "+str(jj+1)+" out of "+str(npx))
                         neval = struct.unpack(ifswp+'i',f.read(4))[0]; cc = cc+4
                         for kk in np.arange(neval):
-                            refstr = struct.unpack('80s',f.read(80))[0].strip(); cc = cc+80
+                            refstr = struct.unpack('80s',f.read(80))[0].strip().decode('utf-8'); cc = cc+80
                             refval=struct.unpack(ifswp+'f',f.read(4))[0]; cc = cc+4
                             if ii==0 and jj==0: refstrarr.append(refstr)
                             if jj==0: refvalarr[ii,kk]=refval
@@ -555,50 +568,80 @@ class Model3D(object):
         projection['model']=model; projection['param']=lateral_basis
         return projection
 
-    def calculateproj(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5',resolution=0):
+    def calculateproj(self,parameter,latitude,longitude,depth_in_km = None, resolution = 0):
         """
         Get the projection matrix from a lateral basis to another and for particular depths
+
+        depth_in_km : depth in km where the projection matrix is needed.
+                      If None, returns the projection matrix for the lat/lon
+                      and radial basis as a dirac delta.
+
         """
         if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
+        if np.all(latitude==None) and np.all(longitude==None) and np.all(depth_in_km==None): raise ValueError("Need to provide atleast one of latitude, longitude or depth_in_km")
 
         # convert to numpy arrays
         lat = tools.convert2nparray(latitude)
         lon = tools.convert2nparray(longitude)
-        dep = tools.convert2nparray(depth_in_km)
+        if np.all(depth_in_km==None):
+            nrows = len(lat)
+        else:
+            dep = tools.convert2nparray(depth_in_km)
+            nrows = len(lat)*len(dep)
         parameter = tools.convert2nparray(parameter)
 
         # make the combinations of repeating the same lat/lon at all depths
-        latitude=np.tile(lat,len(depth_in_km))
-        longitude=np.tile(lon,len(depth_in_km))
-        depth_in_km=np.repeat(dep,len(lat))
+        #latitude=np.tile(lat,len(depth_in_km))
+        #longitude=np.tile(lon,len(depth_in_km))
+        #depth_in_km=np.repeat(dep,len(lat))
 
-        if not len(latitude)==len(longitude)==len(depth_in_km): raise AssertionError('latitude, longitude and depth_in_km should be of same length')
+        if not len(latitude)==len(longitude): raise AssertionError('latitude and longitude should be of same length')
 
         # Get the radial projection file
-        kernel = self.metadata['resolution_'+str(resolution)]['kernel_set']
+        kernel = self[resolution]['kernel_set']
 
         # Write to a dictionary
         # write to a projection file if it does not exist or existing one has different attributes than projection[param]
         projection = {}
         projection['kernel'] = kernel.name
-        projection['deptharr']=dep
+        projection['deptharr']=dep if not np.all(depth_in_km==None) else depth_in_km
         projection['xlat']=lat
         projection['xlon']=lon
-        projection['ndp']=len(dep)
-        projection['npx']=len(lat)
         projection['refstrarr']=parameter
 
         # loop through parameter and append the projection for each location
-        projarr = sparse.csr_matrix((len(latitude), kernel.metadata['ncoefcum'][-1]), dtype=np.float64)
+        proj = sparse.csr_matrix((nrows, kernel.metadata['ncoefcum'][-1]), dtype=np.float64)
         for param in parameter:
-            #for iloc in progressbar.progressbar(range(len(latitude))):
-            for iloc in progressbar.progressbar(range(3)):
-                lat = latitude[iloc]
-                lon = longitude[iloc]
-                dep = depth_in_km[iloc]
-                temp = kernel.getprojection(lat,lon,dep,param)
-                projarr = projarr + sparse.csr_matrix( (temp.data,(iloc*np.ones(temp.nnz,dtype=int),temp.indices)),shape=(len(latitude), kernel.metadata['ncoefcum'][-1]))
-        projection['projarr']=projarr
+            horcof, vercof = kernel.evaluate_bases(param,lat,lon,dep)
+            # convert vercof to sparse for easy multiplication
+            vercof = sparse.csr_matrix(vercof)
+
+            # find radial indices of a given physical parameter
+            findrad = kernel.find_radial(parameter)
+
+            # loop over all depths
+            for idep in progressbar(range(len(depth_in_km))):
+                # loop over all radial kernels that belong to this parameter and add up
+                for ii in np.arange(len(findrad)):
+                    # start and end of indices to write to
+                    indend = kernel.metadata['ncoefcum'][findrad['index'][ii]]-1
+                    indstart = 0 if findrad['index'][ii] == 0 else kernel.metadata['ncoefcum'][findrad['index'][ii]-1]
+
+                    # append indstart columns to beginning of horcof and some at the end
+                    prefix = sparse.csr_matrix((horcof.shape[0],indstart))
+                    suffix = sparse.csr_matrix((horcof.shape[0],kernel.metadata['ncoefcum'][-1]-indend-1))
+                    temp = sparse.hstack([prefix,horcof,suffix])
+
+                    # append idep*len(lat) rows at the begining and some at the end
+                    prefix = sparse.csr_matrix((idep*len(lat),temp.shape[1]))
+                    suffix = sparse.csr_matrix(((len(depth_in_km)-idep-1)*len(lat),temp.shape[1]))
+                    temp = sparse.vstack([prefix,temp,suffix]).tocsr()
+
+                    # convert to numpy arrays
+                    if vercof[idep,ii] != 0.: proj = proj + temp*vercof[idep,ii]
+
+            # store the projection matrix
+            projection['matrix'] = proj
 
         # store the lateral and radial param of this variable
         radial_type = []
@@ -608,7 +651,7 @@ class Model3D(object):
         projection['radial_metadata']=kernel.data['radial_basis'][param][0].metadata
 
         # same check for lateral parameterization
-        selfmeta = self.metadata['resolution_'+str(resolution)]
+        selfmeta = self[resolution]
         selfkernel = selfmeta['kernel_set']
         ivarfind =np.where(selfmeta['varstr']==param)[0]
         if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in eval_kernel_set')
@@ -621,9 +664,7 @@ class Model3D(object):
         projection['lateral_metadata']= selfkernel.data['lateral_basis'][ihorpar-1].metadata
         projection['lateral_basis']= selfkernel.data['lateral_basis'][ihorpar-1].type
 
-
         return projection
-
 
     def projslices(self,projection,variable,depth,resolution=0,realization=0):
         """
@@ -645,16 +686,18 @@ class Model3D(object):
         modelselect=projarr[depindex,varindex[0]]*modelarr
         return modelselect,deptharr[depindex]
 
-    def reparameterize(self, model3d,resolution=0,realization=0):
+    def reparameterize(self, model3d,resolution=0,realization=0,write=False):
         """
         Inverts for new coefficients in self.data from the coefficients in model3d class
+
+        write : output the reparamterized model as a text file
+
         """
         if type(model3d).__name__ != 'Model3D': raise ValueError('input model class should be a Model3D instance')
 
         # Get the radial projection file
-        selfmeta = self.metadata['resolution_'+str(resolution)]
-        newmeta = model3d.metadata['resolution_'+str(resolution)]
-        pdb.set_trace()
+        selfmeta = self[resolution]
+        newmeta = model3d[resolution]
         selfkernel = selfmeta['kernel_set']
         newkernel = newmeta['kernel_set']
 
@@ -701,10 +744,68 @@ class Model3D(object):
                 radialinfo = selfkernel.data['radial_basis'][variable][0].metadata
                 depth_in_km = np.average(np.array([radialinfo['depthtop'],radialinfo['depthbottom']]),axis=0)
                 # loop over depths and append the projection matrices
-                pdb.set_trace()
-                proj = model3d.calculateproj(latitude,longitude,depth_in_km,parameter=findvar2,resolution=resolution)
+                proj = model3d.calculateproj(findvar2,latitude,longitude,depth_in_km,resolution=resolution)
+
+                # get areas for the grid and multiply the proj
+
+                # invert for the coefficients, if not invertible perform L curve inversion
+                # find optimal fraction of max(GTG_diag) to use for damping by
+                # inflection point
+
+                # select the sub-array with non-zero values to invert
+                start = newmeta['ncoefcum'][findrad2['index'][0]-1] if findrad2['index'][0] > 0 else 0
+                end = newmeta['ncoefcum'][findrad2['index'][-1]]
+
+                GTG= proj['matrix'].T*proj['matrix']
+                GTG_inv = scipy.linalg.inv(GTG[start:end,start:end].todense())
+                #d = GTG_inv * values
                 pdb.set_trace()
 
+    def get_resolution(self,rescovfile=None,LU2symmetric=True,resolution=0, realization=0):
+        """
+        Reads Resolution or Covariance matrix created by invwdata_pm64 with option -r.
+        R=inv(ATA+DTD)ATA and the name of file is typically outmodel.Resolution.bin
+        First read the matrix and model file, perform checks and create a sparse matrix.
+        """
+        # Read metadata from the 3D model
+        refmodel1 = self[resolution]['refmodel'];kerstr1 = self[resolution]['kerstr']
+        modelarr = self.coeff2modelarr(resolution,realization)
+
+        # default location of resolution file
+        if rescovfile is None: rescovfile = self._infile+'.Resolution.bin'
+        outfile=rescovfile+'.npz'
+
+        if (not os.path.isfile(outfile)):
+            if (not os.path.isfile(rescovfile)): raise IOError("Filename ("+rescovfile+") does not exist")
+            # Read the binary covariance matrix, check for metadata
+            refmodel2, kerstr2, ntot, indexrad1, indexrad2, indexhor1, indexhor2, out = \
+                readResCov(rescovfile,onlymetadata=True)
+
+            # Checks
+            if refmodel1 != refmodel2: print("Warning: refmodel in model3d instance : "+refmodel1+" not equal to the one in the binary file: "+refmodel2)
+            if kerstr1 != kerstr2: raise ValueError("kerstr: "+kerstr1+" not equal to the one in the binary file: "+kerstr2)
+            #if ntot != modelarr.size: raise ValueError("Number of variables: ",str(ntot)," not equal to ",str(modelarr.size))
+
+            # Read the binary covariance matrix, check for metadata
+            refmodel2, kerstr2, ntot, indexrad1, indexrad2, indexhor1, indexhor2, out = \
+                readResCov(rescovfile,onlymetadata=False)
+
+            # Create the sparse matrix
+            ncoefcum = self[resolution]['ncoefcum'] # cumulative number of coeffients for each radial kernel
+            row=np.zeros(len(indexrad2),dtype=int);col=np.zeros(len(indexrad2),dtype=int)
+            for ii in np.arange(len(indexrad2)):
+                row[ii] = ncoefcum[indexrad2[ii]-2]+(indexhor2[ii]-1) if indexrad2[ii] > 1 else indexhor2[ii]-1
+                col[ii] = ncoefcum[indexrad1[ii]-2]+(indexhor1[ii]-1) if indexrad1[ii] > 1 else indexhor1[ii]-1
+            outsparse = sparse.csr_matrix((out, (row, col)), shape=(modelarr.shape[0], modelarr.shape[0]))
+            sparse.save_npz(outfile,outsparse)
+            print(".... written "+outfile)
+        else:
+            print(".... reading "+outfile)
+            outsparse=sparse.load_npz(outfile)
+
+        # Get the full symmetric matrix
+        if LU2symmetric: outsparse=getLU2symmetric(outsparse)
+        return outsparse,modelarr
 
     def printsplinefiles(self):
         """
@@ -719,10 +820,10 @@ class Model3D(object):
         if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
         for ii in np.arange(len(self.metadata)):
 
-            ifindspline=np.where(self.metadata['resolution_'+str(ii)]['typehpar']=='SPHERICAL SPLINES')[0]
+            ifindspline=np.where(self[ii]['typehpar']=='SPHERICAL SPLINES')[0]
             for ifind in ifindspline:
-                filename=self.metadata['resolution_'+str(ii)]['hsplfile'][ifind]
-                arr = np.vstack([self.metadata['resolution_'+str(ii)]['xlospl'][ifind],self.metadata['resolution_'+str(ii)]['xlaspl'][ifind],self.metadata['resolution_'+str(ii)]['xraspl'][ifind]]).transpose()
+                filename=self[ii]['hsplfile'][ifind]
+                arr = np.vstack([self[ii]['xlospl'][ifind],self[ii]['xlaspl'][ifind],self[ii]['xraspl'][ifind]]).transpose()
                 np.savetxt(filename,arr, fmt='%7.3f %7.3f %7.3f')
                 print(".... written "+filename)
         return

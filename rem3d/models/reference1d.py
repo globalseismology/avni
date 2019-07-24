@@ -89,7 +89,6 @@ class Reference1D(object):
         try:
             self.read_mineos_cards(file)
         except:
-            pdb.set_trace()
             var1 = traceback.format_exc()
             try:
                 self.read_bases_coefficients(file)
@@ -475,7 +474,7 @@ class Reference1D(object):
 
             # delete a file
             with contextlib.suppress(FileNotFoundError): os.remove(file)
-              
+
         else:
             print('Warning: mineralogical parameters not evaluated for '+constants.planetpreferred)
 
@@ -516,7 +515,6 @@ class Reference1D(object):
                 if field == 'radius' or field == 'depth':
                     disc['delta'][field][icount] = sel[field].iat[0]
                     disc['average'][field][icount] = sel[field].iat[0]
-                    pdb.set_trace()
                     disc['contrast'][field][icount] = sel[field].iat[0]
                 else:
                     disc['delta'][field][icount] = sel[field].iat[0]-sel[field].iat[1]

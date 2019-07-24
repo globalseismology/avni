@@ -24,6 +24,7 @@ MANIFEST
 # Distribution / packaging
 .Python
 build/
+docs/api/
 develop-eggs/
 dist/
 downloads/

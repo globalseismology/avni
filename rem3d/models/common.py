@@ -21,6 +21,9 @@ from copy import deepcopy
 import ntpath
 import warnings
 import pandas as pd
+import struct
+from progressbar import progressbar
+import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
@@ -884,4 +887,63 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     if writenc4 and outfile != None: ds.to_netcdf(outfile,engine=engine,encoding=encoding)
 
     return ds
+
+def getLU2symmetric(insparse):
+    """
+    Get the full symmetric matrix
+    """
+    print(".... Converting from LU matrix to symmetric matrix")
+    outsparse=insparse.tolil(copy=True)
+    outsparse.setdiag(0.)
+    outsparse=outsparse.tocsr()
+    outsparse=outsparse+insparse.T
+    return outsparse
+
+def readResCov(infile,onlymetadata=False):
+    """
+    Reads Resolution or Covariance matrix created by invwdata_pm64 with option -r.
+    R=inv(ATA+DTD)ATA and the name of file is typically outmodel.Resolution.bin
+    """
+    #read all the bytes to indata
+    if (not os.path.isfile(infile)): raise IOError("Filename (",infile,") does not exist")
+    nbytes = os.path.getsize(infile)
+
+    ii = 0 #initialize byte counter
+    ifswp = '' # Assuem that byte order is not be swapped unless elat is absurdly high
+    start_time = timeit.default_timer()
+
+    with open(infile, "rb") as f:
+        # preliminary metadata
+        indata = f.read(4) # try to read iflag
+        iflag = struct.unpack(ifswp+'i',indata)[0] # Read flag
+        if iflag != 1:
+            ifswp = '!' # swap endianness from now on
+            iflag = struct.unpack(ifswp+'i',indata)[0]
+            if iflag != 1: raise ValueError("Error: iflag != 1")
+        refmdl = struct.unpack('80s',f.read(80))[0].strip().decode('utf-8')
+        kerstr = struct.unpack('80s',f.read(80))[0].strip().decode('utf-8')
+        ntot = struct.unpack(ifswp+'i',f.read(4))[0]
+        ndtd = int(((ntot+1)*ntot)/2)
+
+        # pre-allocate matrices
+        indexrad1 = None if onlymetadata else np.zeros(ndtd,dtype=int)
+        indexrad2 = None if onlymetadata else np.zeros(ndtd,dtype=int)
+        indexhor1 = None if onlymetadata else np.zeros(ndtd,dtype=int)
+        indexhor2 = None if onlymetadata else np.zeros(ndtd,dtype=int)
+        out = None if onlymetadata else np.zeros(ndtd)
+
+        if not onlymetadata:
+            # Now start reading data
+            for jj in progressbar(range(ndtd)):
+                indexrad1[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
+                indexrad2[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
+                indexhor1[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
+                indexhor2[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
+                out[jj] = struct.unpack(ifswp+'d', f.read(8))[0]
+    ii=168+ndtd*24
+    if ii != nbytes: raise ValueError("Error: number of bytes read ",str(ii)," do not match expected ones ",str(nbytes))
+    elapsed = timeit.default_timer() - start_time
+    if not onlymetadata: print(".... read "+str(ndtd)+" rows for the Res or Cov matrix in "+str(round(elapsed/60*10)/10)+" min.")
+
+    return refmdl, kerstr, ntot, indexrad1, indexrad2, indexhor1, indexhor2, out
 
