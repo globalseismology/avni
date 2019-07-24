@@ -563,8 +563,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         else:
             px_w = pxs[i][0]
 
-        #shape = (int(180.0/px_w),int(360.0/px_w))
-        f_out.write(u'HPAR   {}: PIXELS,  {:3.2f} X {:3.2f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats[i])))
+        f_out.write(u'HPAR   {}: PIXELS,  {:5.3f} X {:5.3f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats[i])))
 
         if not np.all(sorted(np.unique(lons))==np.unique(lons)): raise AssertionError()
         if not np.all(sorted(np.unique(lats))==np.unique(lats)): raise AssertionError()
@@ -756,8 +755,9 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         if hpar_name.lower().startswith('pixel'):
              pxw_lon = float(line.strip().split()[3].strip(','))
              pxw_lat = float(line.strip().split()[5].strip(','))
+             nlines_input = line.strip().split()[6].strip(',')
              nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
-             if not nlines == float(line.strip().split()[6].strip(',')): raise AssertionError()
+             if not nlines == float(nlines_input): raise AssertionError('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines),',  not '+str(nlines_input)+' as reported.')
         else:
             raise ValueError('only PIXEL parameterizations enabled')
 
@@ -958,4 +958,3 @@ def readResCov(infile,onlymetadata=False):
     if not onlymetadata: print(".... read "+str(ndtd)+" rows for the Res or Cov matrix in "+str(round(elapsed/60*10)/10)+" min.")
 
     return refmdl, kerstr, ntot, indexrad1, indexrad2, indexhor1, indexhor2, out
-
