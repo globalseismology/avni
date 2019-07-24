@@ -755,9 +755,9 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         if hpar_name.lower().startswith('pixel'):
              pxw_lon = float(line.strip().split()[3].strip(','))
              pxw_lat = float(line.strip().split()[5].strip(','))
-             nlines_input = line.strip().split()[6].strip(',')
+             nlines_input = int(line.strip().split()[6].strip(','))
              nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
-             if not nlines == float(nlines_input): raise AssertionError('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines),',  not '+str(nlines_input)+' as reported.')
+             if not nlines == nlines_input: raise AssertionError('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines),',  not '+str(nlines_input)+' as reported.')
         else:
             raise ValueError('only PIXEL parameterizations enabled')
 
