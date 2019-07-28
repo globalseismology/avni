@@ -740,6 +740,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     # check that information on variables in ascii file exists in setup.cfg
     for var in variables:
         if not var in parser['parameters'].keys(): raise AssertionError(var+' not found as shortname in '+setup_file)
+        for indx in ['rpar_idx','hpar_idx']:
+            if not indx in model_dict[var].keys(): raise AssertionError(var+' not read properfly with index '+indx)
 
     for i in range(nhpar):
 
