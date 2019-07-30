@@ -25,6 +25,7 @@ import ntpath
 import uuid
 import contextlib
 import os
+from progressbar import progressbar
 
 if sys.version_info[0] >= 3: unicode = str
 
@@ -78,7 +79,7 @@ class Reference1D(object):
         return result
 
     def derive(self):
-        if self.data is not None and self.__nlayers__ > 0:
+        if self.data is not None and self._nlayers > 0:
             self.get_Love_elastic()
             self.get_discontinuity()
 
@@ -318,12 +319,12 @@ class Reference1D(object):
             for col in modelarr.columns: modelarr[col] = modelarr[col].pint.to_base_units()
         modelarr['depth'] = PA_((constants.R.magnitude - modelarr['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
 
-        self.__nlayers__ = len(modelarr['radius'])
+        self._nlayers = len(modelarr['radius'])
         self.data = modelarr
-        self.radius_max = max(self.data['radius']).magnitude
+        self._radius_max = max(self.data['radius'])
 
     def write_mineos_cards(self,file):
-        if self.data is None or self.__nlayers__ is 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
         names=['radius','rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
         units =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
 
@@ -336,7 +337,7 @@ class Reference1D(object):
         # first write the header
         printstr  =  [unicode(self.name+"\n")]
         printstr.append(unicode("1 %.1f 1 1\n" % (self.metadata['ref_period'])))
-        printstr.append(unicode("  %d  %d  %d  %d  %d\n" % (self.__nlayers__,disc['itopic'],disc['itopoc'],disc['itopmantle'],disc['itopcrust'])))
+        printstr.append(unicode("  %d  %d  %d  %d  %d\n" % (self._nlayers,disc['itopic'],disc['itopoc'],disc['itopmantle'],disc['itopcrust'])))
 
         shape = self.data[names].shape
         output = np.zeros(shape)
@@ -375,7 +376,7 @@ class Reference1D(object):
         PA_ = pint.PintArray
         modelarr_['depth'] = PA_((constants.R.magnitude - modelarr_['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
         self.data = modelarr_
-        self.radius_max = max(self.data['radius']).magnitude
+        self._radius_max = max(self.data['radius'])
         self.metadata['parameters'] = names[1:]
         self.metadata['units'] = units[1:]
         # Get the other metadata from the first 3 line header
@@ -389,7 +390,7 @@ class Reference1D(object):
         # store rest of the metadata
         self.metadata['description'] = 'Read from '+file
         self.metadata['filename'] = file
-        self.__nlayers__ = len(modelarr['radius'])
+        self._nlayers = len(modelarr['radius'])
 
     def get_Love_elastic(self):
         '''
@@ -409,7 +410,7 @@ class Reference1D(object):
 
         Zs, Zp: S and P impedances
         '''
-        if self.data is None or self.__nlayers__ is 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
 
         # Add data fields
         self.data['a'] = self.data['rho']*self.data['vph']**2
@@ -450,14 +451,14 @@ class Reference1D(object):
 
         pressure: pressure at each depth
         '''
-        if self.data is None or self.__nlayers__ is 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
 
         if constants.planetpreferred == 'Earth':
             file = tools.get_filedir()+'/'+self.name+'.'+str(uuid.uuid4())
             # write a temporary cards file
             self.write_mineos_cards(file)
 
-            layers = self.__nlayers__
+            layers = self._nlayers
             grav,vaisala,bullen,pressure = getbullen(file,layers,constants.omega.to_base_units().magnitude,constants.G.to_base_units().magnitude)
 
             # Add data fields
@@ -493,7 +494,7 @@ class Reference1D(object):
 
         contrasts: containing contrast in parameters (in %)
         '''
-        if self.data is None or self.__nlayers__ is 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
 
         disc_depths = [item.magnitude for item, count in Counter(self.data['depth']).items() if count > 1]
         disc = {}
@@ -702,7 +703,8 @@ class Reference1D(object):
         Writes a model file that is compatible with MINEOS.
         '''
         parameters = ['radius','rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
-        if self.data is not None and self.__nlayers__ > 0:
+        units =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
+        if self.data is not None and self._nlayers > 0:
             model_name = self.name
             ntotlev = self._nlayers
             itopic = self.metadata['discontinuities']['itopic']
@@ -710,7 +712,8 @@ class Reference1D(object):
             itopmantle = self.metadata['discontinuities']['itopmantle']
             itopcrust = self.metadata['discontinuities']['itopcrust']
 
-            f = open(directory+'/'+model_name+'.'+fmt,'w')
+            outfile = directory+'/'+model_name+'.'+fmt
+            f = open(outfile,'w')
             f.write(model_name+'\n')
             f.write('1 1. 1 1\n')
             line = ff.FortranRecordWriter('(5I5)')
@@ -718,9 +721,13 @@ class Reference1D(object):
             line = ff.FortranRecordWriter('(f8.0,3f9.2,2f9.1,2f9.2,f9.5)')
 
             write = self.data[parameters]
-            for _,val in enumerate(write):
-                f.write(line.write(val)+u'\n')
+            for i in progressbar(range(self._nlayers)):
+                eachline = []
+                for indx,param in enumerate(parameters):
+                    eachline.append(write.iloc[i][param].to(units[indx]).magnitude)
+                f.write(line.write(eachline)+u'\n')
             f.close()
+            print('... written mineos file '+outfile)
         else:
             raise ValueError('reference1D object is not allocated')
 
@@ -736,31 +743,34 @@ class Reference1D(object):
         '''
         if self.data is not None and self._nlayers > 0:
             model_name = self.name
-            f = open(directory+'/'+model_name+'.'+fmt,'w')
+            outfile = directory+'/'+model_name+'.'+fmt
+            f = open(outfile,'w')
             f.write('{} - P\n'.format(model_name))
             f.write('{} - S\n'.format(model_name))
 
-            for i in range(0,len(self.data)):
+            for i in progressbar(range(self._nlayers)):
                 f.write('{:2.4f}   {:2.4f}   {:2.4f}    {:2.4f}\n'.format(
-                   (self._radius_max - self.data['radius'][::-1][i]) / 1000.0,
-                   self.data['vp'][::-1][i] / 1000.0,
-                   self.data['vs'][::-1][i] / 1000.0,
-                   self.data['rho'][::-1][i] / 1000.0))
+                   (self._radius_max - self.data['radius'][::-1][i]).to('km').magnitude,
+                   self.data['vp'][::-1][i].to('km/s').magnitude,
+                   self.data['vs'][::-1][i].to('km/s').magnitude,
+                   self.data['rho'][::-1][i].to('g/cm^3').magnitude))
             f.close()
+            print('... written TauP file '+outfile)
         else:
             raise ValueError('reference1D object is not allocated')
 
-        if self.data['vp'][-1] == 0 or self.data['vs'][-1] == 0:
+        if self.data['vp'].iloc[-1] == 0 or self.data['vs'].iloc[-1] == 0:
             raise Warning('zero velocity layer detected at surface ...\n \
                       TauP raytracing may not work')
 
-    def to_axisem(self,directory='.',anelastic=True,anisotropic=True):
+    def to_axisem(self,directory='.',anelastic=True,anisotropic=True,fmt='bm'):
         '''
          Write 1D model to be used as an external model in axisem
         '''
         if self.data is not None and self._nlayers > 0:
             model_name = self.name
-            f = open(directory+'/'+model_name+'.bm','w')
+            outfile = directory+'/'+model_name+'.'+fmt
+            f = open(outfile,'w')
             n_discon = 0
 
             if anelastic:
@@ -778,21 +788,30 @@ class Reference1D(object):
             if anisotropic:
                 f.write('COLUMNS   radius    rho    vpv    vsv    qka    qmu    vph    vsh    eta\n')
 
-            for i in range(0,len(self.data)):
-                f.write('{}    {}    {}    {}    {}    {}    {}    {}    {}\n'.format(
-                self.data['radius'][::-1][i],
-                self.data['rho'][::-1][i],
-                self.data['vpv'][::-1][i],
-                self.data['vsv'][::-1][i],
-                self.data['qkappa'][::-1][i],
-                self.data['qmu'][::-1][i],
-                self.data['vph'][::-1][i],
-                self.data['vsh'][::-1][i],
-                self.data['eta'][::-1][i]) )
+            keys = ['radius','rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
+            values =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
+            units = dict(zip(keys, values))
 
-                if i < len(self.data)-1 and self.data['radius'][::-1][i] == self.data['radius'][::-1][i+1]:
+            for i in progressbar(range(self._nlayers)):
+
+                f.write('{}    {}    {}    {}    {}    {}    {}    {}    {}\n'.format(
+                self.data['radius'][::-1][i].to(units['radius']).magnitude,
+                self.data['rho'][::-1][i].to(units['rho']).magnitude,
+                self.data['vpv'][::-1][i].to(units['vpv']).magnitude,
+                self.data['vsv'][::-1][i].to(units['vsv']).magnitude,
+                self.data['qkappa'][::-1][i].to(units['qkappa']).magnitude,
+                self.data['qmu'][::-1][i].to(units['qmu']).magnitude,
+                self.data['vph'][::-1][i].to(units['vph']).magnitude,
+                self.data['vsh'][::-1][i].to(units['vsh']).magnitude,
+                self.data['eta'][::-1][i].to(units['eta']).magnitude) )
+
+                if i < self._nlayers-1 and self.data['radius'][::-1][i] == self.data['radius'][::-1][i+1]:
                     depth_here = (self._radius_max - self.data['radius'][::-1][i]) / 1000.0
                     n_discon += 1
                     f.write('#    Discontinuity {}, depth {:6.2f} km\n'.format(n_discon,depth_here))
+
+            f.close()
+            print('... written AXISEM file '+outfile)
+
         else:
             raise ValueError('reference1D object is not allocated')
