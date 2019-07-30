@@ -749,11 +749,12 @@ class Reference1D(object):
             f.write('{} - S\n'.format(model_name))
 
             for i in progressbar(range(self._nlayers)):
+                d_idx = self._nlayers-i-1
                 f.write('{:2.4f}   {:2.4f}   {:2.4f}    {:2.4f}\n'.format(
-                   (self._radius_max - self.data['radius'][::-1][i]).to('km').magnitude,
-                   self.data['vp'][::-1][i].to('km/s').magnitude,
-                   self.data['vs'][::-1][i].to('km/s').magnitude,
-                   self.data['rho'][::-1][i].to('g/cm^3').magnitude))
+                   (self._radius_max - self.data['radius'][d_idx]).to('km').magnitude,
+                   self.data['vp'][d_idx].to('km/s').magnitude,
+                   self.data['vs'][d_idx].to('km/s').magnitude,
+                   self.data['rho'][d_idx].to('g/cm^3').magnitude))
             f.close()
             print('... written TauP file '+outfile)
         else:
