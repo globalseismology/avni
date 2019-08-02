@@ -125,6 +125,8 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
     # reorder according to FIELDS
     data = data.reindex(namelist,axis=1)
 
+    f = open(filename,'w')
+    f.writelines(printstr)
     for ii in progressbar.progressbar(range(len(data))):
         line=[]
         for val in data.values[ii]:
@@ -135,10 +137,8 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
         try:
             arow = header_line.write(line)
         except:
-            pdb.set_trace()
-        printstr.append(unicode(arow+'\n'))
-    f = open(filename,'w')
-    f.writelines(printstr)
+            raise IOError('No line to print')
+        f.write(unicode(arow+'\n'))
     f.close()
     print("....written "+str(len(data))+" observations to "+filename)
     return
