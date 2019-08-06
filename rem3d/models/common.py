@@ -357,7 +357,7 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
         print('... written ASCII file '+asciibuffer+'. evaluations took '+str(elapsed)+' s')
     ncfile = output_dir+'/{}.{}.rem3d.nc4'.format(model_name,kernel_set)
     print('... writing netcdf file '+ncfile)
-    ds = ascii2xarray(asciibuffer,outfile=ncfile,setup_file=setup_file)
+    ds = ascii2xarray(asciibuffer,model_dir=model_dir,outfile=ncfile,setup_file=setup_file)
 
     return ds
 
@@ -632,7 +632,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     else:
         return outfile
 
-def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, engine='netcdf4', writenc4 = True):
+def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',complevel=9, engine='netcdf4', writenc4 = True):
     '''
     write an xarrary dataset from a rem3d formatted ascii file
 
@@ -652,13 +652,14 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     '''
 
     model_dict = {}
+    cfg_file = model_dir+'/'+setup_file
 
     # check for configuration file
-    if not os.path.isfile(setup_file):
+    if not os.path.isfile(cfg_file):
         raise IOError('No configuration file found.'\
                      'Model directory must contain '+setup_file)
     else:
-        parser = ConfigObj(setup_file)
+        parser = ConfigObj(cfg_file)
 
     try: #attempt buffer
         asciioutput.seek(0)
@@ -717,11 +718,16 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
                     model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx
                     var_idx += 1
 
-                if len(rpar) > 0 and rpar in rpar_list:
+                elif len(rpar) > 0 and rpar in rpar_list:
                     rpar_list.append(rpar)
                     model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx
                     var_idx += 1
                     rpar = []
+
+                elif len(rpar) == 0 and rpar not in rpar_list:
+                    rpar_list.append(rpar)
+                    model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx
+                    var_idx += 1
 
             try:
                 rpar_start = float(line.strip().split(',')[-1].split('-')[0].strip('km'))
