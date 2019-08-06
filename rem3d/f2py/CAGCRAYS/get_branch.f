@@ -1,4 +1,5 @@
-      subroutine get_branch(imodel,phase,narr,delta,slowness,ddeltadp,branch,ierror)
+      subroutine get_branch(imodel,phase,narr,delta,slowness,ddeltadp,
+     #branch,ierror)
       character*16 phase
       parameter (maxarr=20)
       character*3 branch(maxarr)

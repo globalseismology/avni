@@ -1,8 +1,9 @@
-c---- this gives the branches in 1,2,3 for main phases (1 stands for large delta
-c     when we have ne arrival for S  and P. more branches are added at smaller delta
-c
+      subroutine tt_predict(delstep,filename,iallpsv,iellip,
+     #epla,eplo,depth,phase_file)
       character*80 filename,string
       character*16 phase
+      real*8 delstep,epla,eplo,depth
+      integer iallpsv,iellip
 c
       parameter (maxarr=20)
       dimension ttime(maxarr)
@@ -49,6 +50,9 @@ c
 c
       common/plevel/iprtlv
 c-------------------------------------------------------------------------------
+c---- this gives the branches in 1,2,3 for main phases (1 stands for large delta
+c     when we have ne arrival for S  and P. more branches are added at smaller delta
+c
 c
 c      call chekcl('|     :r:1:RAYS file'//
 c     #            '|   -s:o:1:Assume all phases are PSV [0]'//
@@ -59,22 +63,22 @@ c     #            '|   -v:o:1:Verbosity level [0]|')
 c      string=getunx('-t',1,nbyts)
 c      read(string,*) delstep
       write(6,"('step in delta, in degrees')")
-      read(5,*) delstep
+c      read(5,*) delstep
 
       write(6,"('type name of the .RAYS file: ')")
-      read(5,"(a)") filename
+c      read(5,"(a)") filename
 c      filename=getunx('',1,lfile)
 
 c      string=getunx('-s',1,nbyts)
 c      read(string,*) iallpsv
       write(6,"('Assume all phases are PSV')")
-      read(5,*) iallpsv
+c      read(5,*) iallpsv
 
 c     string=getunx('-v',1,nbyts)
 c      read(string,*) iprtlv
       iprtlv= 0
       write(6,"('type if ellipticity is needed')")
-      read(5,*) iellip
+c      read(5,*) iellip
 c      string=getunx('-e',1,nbyts)
 c      read(string,*) iellip
 c	  if only calculating tt and t* use itypcalc=1, otherwise use itypcalc=3
@@ -82,14 +86,15 @@ c	  if only calculating tt and t* use itypcalc=1, otherwise use itypcalc=3
 c
 c------------
       write(6,"('type epla,eplo,dep')")
-      read(5,*) epla,eplo,depth
+c      read(5,*) epla,eplo,depth
 
 c
 c-----read in phase file
 c
       write(6,"('type phasefile')")
-      read(5,"(a)") phase_file
+c      read(5,"(a)") phase_file
 c      phase_file='phasefile'
+      print *, 'READING PHASE FILE'
       open(1,file=phase_file)
       ios=0
       np=0
@@ -127,6 +132,7 @@ c      phase_file='phasefile'
 		endif
       enddo
       close(1)
+      print *, 'DONE READING PHASE FILE'
       if(np.eq.0) stop'np.eq.0'
 	  print*,'phaselist     distrange(1)-distrange(2)    branchlist    imodel'
       do ii=1,np
@@ -329,7 +335,4 @@ C						   		 		write(6,"(f10.4,f9.5,f9.3,f13.3,f7.3,a3)")
 		endif
 
 	  enddo
-      end
-
-
-
+      end subroutine

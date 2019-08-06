@@ -1,4 +1,5 @@
-      subroutine evemdr(ilay,rad,isotropic,rho,vpv,vph,vsv,vsh,eta,qmu,qka)
+      subroutine evemdr(ilay,rad,isotropic,rho,vpv,vph,vsv,vsh,
+     #eta,qmu,qka)
 c
 c---- this returns the radial derivative of the different variables
 c

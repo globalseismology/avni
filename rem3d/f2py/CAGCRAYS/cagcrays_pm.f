@@ -1,7 +1,7 @@
       subroutine cagcrays_pm(lu,filename,epla,eplo,depth,stla,stlo,
      #       phase,ishflag,ianisoflag,itypcalc,delta,azep,azst,
-     #       maxarr,narr,arrivaltime,slowness,dtddepth,ddeltadp,tstar,ellcorr,
-     #       maxraypts,nrayptsx,iraytpx,iraylayx,
+     #       maxarr,narr,arrivaltime,slowness,dtddepth,ddeltadp,tstar,
+     #       ellcorr,maxraypts,nrayptsx,iraytpx,iraylayx,
      #       rayradx,raydeltax,raylatx,raylongx,raytimex,ireadagain)
 c-----------------------------------------------------------------------
 c---- This subroutine calculates rays and ray parameters in a geocentric
@@ -696,7 +696,7 @@ c
       endif
 c
       if(ierr.eq.1) then
-	write("('ierr= ',i5,' in cagcrays')")ierr
+	write(6,"('ierr= ',i5,' in cagcrays')")ierr
 	narr=0
       endif
       return

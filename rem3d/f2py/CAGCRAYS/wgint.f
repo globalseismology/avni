@@ -1,5 +1,5 @@
-          subroutine wgint(ilay,r1,r2,xnorm,iturn,fxtpp,dxtdp,pray,isotropic,iraytype,nint,
-     #               deltainc,ttimeinc,dddpinc,tstarinc)
+      subroutine wgint(ilay,r1,r2,xnorm,iturn,fxtpp,dxtdp,pray,isotropic
+     #               ,iraytype,nint,deltainc,ttimeinc,dddpinc,tstarinc)
 c action: performs gauss-legendre integrations
 c input parameters (supplied by routine integr):
 c     r1,r2  - integration bounds

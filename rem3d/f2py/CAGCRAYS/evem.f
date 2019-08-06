@@ -1,4 +1,5 @@
-      subroutine evem(ilay,rad,isotropic,rho,vpv,vph,vsv,vsh,eta,qmu,qka,ierr)
+      subroutine evem(ilay,rad,isotropic,rho,vpv,vph,vsv,vsh,
+     #eta,qmu,qka,ierr)
       implicit double precision (a-h,o-z)
       logical isotropic
       include 'emcommon.h'

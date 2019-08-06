@@ -1,4 +1,5 @@
-      subroutine fqs(ilay,x,xnorm,iturn,fxtpp,dxtdp,pray,isotropic,iraytype,nvals,vals)
+      subroutine fqs(ilay,x,xnorm,iturn,fxtpp,dxtdp,pray,isotropic,
+     #iraytype,nvals,vals)
       implicit double precision (a-h,o-z)
       logical isotropic
       real*8 vals(4)

@@ -9,8 +9,17 @@ c     output: nrays   =  number of geometrical arrivals
 c             pr,tr,dddpr  =  values for found rays
 c
 c      dimension p(1),t(1),d(1),dddp(1),q(1),turn(1)
-      dimension p(maxray),t(maxray),d(maxray),dddp(maxray),q(maxray),turn(maxray)
-      dimension pr(maxray),tr(maxray),dddpr(maxray),qr(maxray),turad(maxray)
+      dimension p(maxray)
+      dimension t(maxray)
+      dimension d(maxray)
+      dimension dddp(maxray)
+      dimension q(maxray)
+      dimension turn(maxray)
+      dimension pr(maxray)
+      dimension tr(maxray)
+      dimension dddpr(maxray)
+      dimension qr(maxray)
+      dimension turad(maxray)
       data caustic /1.e-6/
 c
       rtod=180./3.141592

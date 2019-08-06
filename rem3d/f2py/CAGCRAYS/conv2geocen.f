@@ -18,7 +18,7 @@ c	data fac /1.d0/
 	if(theta.gt.1.0e-20) then 
 		theta = 1.570796326794895-atan2(fac*cos(theta),sin(theta))
 	else
-		theta = 1.570796326794895-atan2(fac*cos(theta),1.0e-20)
+		theta = 1.570796326794895-atan2(fac*cos(theta),1.0d-20)
 	endif
 
 	eplaout=90.d0-theta/rad
