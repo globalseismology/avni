@@ -173,7 +173,7 @@ deploy:
       branch:
         - devel
         - api
-        - plotmodels
+        - forward
         - travis
 
   - provider: script
