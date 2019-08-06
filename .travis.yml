@@ -20,7 +20,7 @@ branches:
     - devel
     - travis
     - master
-    - plotmodels
+    - forward
     - api
 
 env:
@@ -174,7 +174,7 @@ deploy:
       branch:
         - devel
         - api
-        - plotmodels
+        - forward
         - travis
 
   - provider: script
