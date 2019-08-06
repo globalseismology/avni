@@ -387,6 +387,9 @@ class Reference1D(object):
         self.metadata['ref_period'] = float(head[1].split()[1])
         self.metadata['norm_radius'] = constants.R.to('km').magnitude
 
+        # No original metadata found
+        self.metadata['attributes'] = None
+
         # store rest of the metadata
         self.metadata['description'] = 'Read from '+file
         self.metadata['filename'] = file
@@ -565,15 +568,20 @@ class Reference1D(object):
         Get the arrays of custom parameters defined in various Earth models
         '''
         if self.data is not None and self._nlayers > 0:
+            PA_ = pint.PintArray
             # convert to array for ease of looping
             if isinstance(parameters,string_types): parameters = np.array([parameters])
-
             for ii in np.arange(parameters.size):
-                if parameters[ii] not in list(self.data.dtype.names):
+                if parameters[ii] not in self.metadata['parameters']:
                     if 'as' in parameters[ii]:
-                        self.data=append_fields(self.data, parameters[ii], np.divide(self.data['vsh'] - self.data['vsv'],self.data['vs'],out=np.zeros_like(self.data['vs']), where= self.data['vs'] != 0.)*100. , usemask=False)
+                        # Add data fields
+                        self.data[parameters[ii]] = PA_(np.divide(self.data['vsh'].values.quantity.magnitude - self.data['vsv'].values.quantity.magnitude,self.data['vs'].values.quantity.magnitude,out=np.zeros(self._nlayers), where= self.data['vs'] != 0.)*100., dtype="pint[percent]")
+                        self.metadata['parameters'].append(parameters[ii])
+                        self.metadata['units'].append('percent')
                     elif 'ap' in parameters[ii]:
-                        self.data=append_fields(self.data, parameters[ii], np.divide(self.data['vph'] - self.data['vpv'],self.data['vp'],out=np.zeros_like(self.data['vp']), where= self.data['vp'] != 0.)*100. , usemask=False)
+                        self.data[parameters[ii]] = PA_(np.divide(self.data['vph'].values.quantity.magnitude - self.data['vpv'].values.quantity.magnitude,self.data['vp'].values.quantity.magnitude,out=np.zeros(self._nlayers), where= self.data['vp'] != 0.)*100., dtype="pint[percent]")
+                        self.metadata['parameters'].append(parameters[ii])
+                        self.metadata['units'].append('percent')
                     else:
                         raise NotImplementedError('parameter ',parameters[ii],' is not currently implemented in reference1D.get_custom_parameter')
         else:
@@ -685,9 +693,9 @@ class Reference1D(object):
         # interpolated based on the card deck file
         else:
             if self.data is not None:
-                if parameter in self.data.dtype.names:
-                    values = self.data[parameter]
-                    depth_array = (constants.R.to_base_units().magnitude - self.data['radius'])/1000. # in km
+                if parameter in self.metadata['parameters']:
+                    values = self.data[parameter].values.quantity.magnitude
+                    depth_array = constants.R.to('km').magnitude - self.data['radius'].pint.to('km').values.quantity.magnitude # in km
                     # Sort to make interpolation possible
                     indx = depth_array.argsort()
                     values = griddata(depth_array[indx], values[indx], depth_in_km, method=interpolation)
@@ -695,7 +703,7 @@ class Reference1D(object):
                 else:
                     raise ValueError('parameter '+parameter+' not defined in array')
             else:
-                raise ValueError('reference1D object is not allocated')
+                raise ValueError('data in reference1D object is not allocated')
         return values
 
     def to_mineoscards(self,directory='.',fmt='cards'):

@@ -574,6 +574,27 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             f_out.write(u'{:6.2f} {:6.2f} {:6.2f}\n'.format(lon_here,lat_here, px_here))
 
     if not onlyheaders:
+        # read the 1D model if any of the reference values are not defined
+        ifread1D = {} #stores whether the references values have been read from a file
+        fileread = False
+        for _, parameter in enumerate(parser['parameters']):
+            mod_type = parser['parameters'][parameter]['type']
+            ifread1D[parameter] = np.any(np.array(ref_dict[parameter]['refvalue'])<0.)
+            if ifread1D[parameter]:
+                # check if the refmodel file exists
+                if not os.path.isfile(ref_dict[parameter]['refmodel']):
+                    ifread1D[parameter] = False
+                    print ('WARNING: Could not fill reference values for '+parameter+' as the 1D reference model file could not be found : '+ref_dict[parameter]['refmodel'])
+            if ifread1D[parameter] :
+                if not fileread:
+                    try: # try reading the 1D file in card format
+                        ref1d = Reference1D(ref_dict[parameter]['refmodel'])
+                        fileread = True
+                    except:
+                        print ('WARNING: Could not fill reference values for '+parameter+' as the 1D reference model file could not be read as Reference1D instance : '+ref_dict[parameter]['refmodel'])
+                        ifread1D[parameter] = False
+            if mod_type == 'heterogeneity' and ifread1D[parameter]: ref1d.get_custom_parameter(parameter)
+
         # write coefficients
         k = 1
         for i, parameter in enumerate(parser['parameters']):
@@ -589,21 +610,6 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*'+parameter+'.epix')
             else:
                 raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
-
-            # read the 1D model if any of the reference values are not defined
-            ifread1D = np.any(np.array(ref_dict[parameter]['refvalue'])<0.)
-            if ifread1D:
-                # check if the refmodel file exists
-                if not os.path.isfile(ref_dict[parameter]['refmodel']):
-                    ifread1D = False
-                    print ('WARNING: Could not fill some reference values as the 1D reference model file could not be found : '+ref_dict[parameter]['refmodel'])
-            if ifread1D:
-                try: # try reading the 1D file in card format
-                    ref1d = Reference1D(ref_dict[parameter]['refmodel'])
-                    if mod_type == 'heterogeneity': ref1d.get_custom_parameter(parameter)
-                except:
-                    print ('WARNING: Could not fill some reference values as the 1D reference model file could not be read as Reference1D instance : '+ref_dict[parameter]['refmodel'])
-                    ifread1D = False
 
             #write model coefficients
             print('writing coefficients for '+parameter+' # '+str(k)+' - '+str(k+len(epix_files)-1)+' out of '+str(np.sum(epix_lengths))+' radial kernels/layers.')
