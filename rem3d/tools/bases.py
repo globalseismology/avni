@@ -9,6 +9,10 @@ if (sys.version_info[:2] < (3, 0)):
 import numpy as np
 from collections import Counter
 from scipy import sparse
+import pdb
+from timeit import default_timer as timer
+from numba import jit,int64
+from progressbar import progressbar
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from rem3d.f2py import vbspl,dbsplrem,ylm
@@ -166,31 +170,37 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
 
     # convert to numpy arrays
     radiusin = convert2nparray(radius)
-    radius_range = convert2nparray(radius_range)
-
-    if radius_range.shape[1] != 2 or not isinstance(radius_range, (list,tuple,np.ndarray)):
+    radius_temp = convert2nparray(radius_range)
+    if radius_temp.ndim == 1:
+        radius_range = convert2nparray([radius_temp.tolist()])
+        if radius_range.shape[1] != 2: raise TypeError('Only two values allowed within radius_range')
+    elif radius_temp.ndim == 2:
+        radius_range = radius_temp
+        if radius_range.shape[1] != 2: raise TypeError('Only two values allowed within radius_range')
+    if not isinstance(radius_range, (list,tuple,np.ndarray)):
         raise TypeError('radius_range must be list , not %s' % type(radius_range))
 
     # keys in coefficients should be acceptable
     choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
-    if not np.all([key in choices for key in types]): raise AssertionError()
+    if not np.all([key in choices for key in types]): raise AssertionError('Only polynomial bases can be used')
     npoly = len(radius_range)*len(types)
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
     for radii in radius_range:
         if not np.all(np.sort(radii)==radii): raise AssertionError('radius_range needs to be sorted')
-    rbot=radius_range[0]/rnorm
-    rtop=radius_range[1]/rnorm
+
+    # see if either TOP/BOT or CONSTANT/LINEAR exists
     findtopbot = np.any([key in ['BOTTOM','TOP'] for key in types])
     findconstantlinear = np.any([key in ['CONSTANT','LINEAR'] for key in types])
-
     if findtopbot and findconstantlinear: raise ValueError('Cannot have both BOTTOM/TOP and CONSTANT/LINEAR as types in eval_polynomial')
 
     for irad,_ in enumerate(radiusin):
         temp = np.zeros(npoly)
         dtemp = np.zeros(npoly)
         for irange,_ in enumerate(radius_range):
+            rbot = min(radius_range[irange])/rnorm
+            rtop = max(radius_range[irange])/rnorm
             #Undefined if depth does not lie within the depth extents of knot points
-            if radiusin[irad] <= min(radius_range[irange]) or radiusin[irad] > max(radius_range[irange]):
+            if radiusin[irad]/rnorm < rbot or radiusin[irad]/rnorm > rtop:
                 # <= so that the boundary depth belongs to only one radial kernel
                 for itype in range(len(types)):
                     ii = irange*len(types)+itype
@@ -259,22 +269,24 @@ def eval_splcon(latitude,longitude,xlaspl,xlospl,xraspl):
 
     ncoefhor = len(xlaspl)
     values = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
-    for iloc,lat in enumerate(latitude):
+
+    for iloc in progressbar(range(len(latitude))):
+        lat = latitude[iloc]
         lon = longitude[iloc]
         #--- make lon go from 0-360
         if lon<0.: lon=lon+360.
         xlospl[np.where(xlospl<0.)]=xlospl[np.where(xlospl<0.)]+360.
-        ncon,icon,con = splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl)
+        ncon,colind,con = splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl)
         rowind = iloc*np.ones(ncon)
-        colind = []
-        for ii in range(ncon): colind.append(icon[ii])
-        colind = np.array(colind)
         # update values
-        values = values + sparse.csr_matrix((con[:ncon], (rowind, colind)), shape=(len(latitude),ncoefhor))
+        values = values + sparse.csr_matrix((con, (rowind, colind)), shape=(len(latitude),ncoefhor))
     return values
 
+@jit(nopython=True)
 def splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl):
-    ncon=0;con=[];icon=[]
+    ncon=0
+    con=np.zeros(ncoefhor)
+    icon=np.zeros(ncoefhor,dtype=int64)
     for iver in range(ncoefhor):
         if lat>xlaspl[iver]-2.*xraspl[iver]:
             if lat<xlaspl[iver]+2.*xraspl[iver]:
@@ -282,18 +294,17 @@ def splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl):
                 dd=dd+cosd(xlaspl[iver])*cosd(lat)*cosd(lon-xlospl[iver])
                 dd=acosd(dd)
                 if dd <= xraspl[iver]*2.:
-                    ncon=ncon+1
-                    icon.append(iver)
+                    icon[ncon] = iver
                     rn=dd/xraspl[iver]
                     dr=rn-1.
                     if rn <= 1.:
-                        con.append((0.75*rn-1.5)*(rn**2)+1.)
+                        con[ncon] = (0.75*rn-1.5)*(rn**2)+1.
                     elif rn > 1.:
-                        con.append(((-0.25*dr+0.75)*dr-0.75)*dr+0.25)
+                        con[ncon] = ((-0.25*dr+0.75)*dr-0.75)*dr+0.25
                     else:
-                        con.append(0.)
-    con=np.array(con);icon=np.array(icon)
-    return ncon,icon,con
+                        con[ncon] = 0.
+                    ncon=ncon+1
+    return ncon,icon[:ncon],con[:ncon]
 
 def eval_ylm(latitude,longitude,lmaxhor):
     """
@@ -389,5 +400,3 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
         horcof = horcof + sparse.csr_matrix((values, (rowind, colind)), shape=(len(latitude),len(xsipix)))
 
     return horcof
-
-

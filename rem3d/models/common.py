@@ -21,6 +21,9 @@ from copy import deepcopy
 import ntpath
 import warnings
 import pandas as pd
+import struct
+from progressbar import progressbar
+import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
@@ -354,7 +357,7 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
         print('... written ASCII file '+asciibuffer+'. evaluations took '+str(elapsed)+' s')
     ncfile = output_dir+'/{}.{}.rem3d.nc4'.format(model_name,kernel_set)
     print('... writing netcdf file '+ncfile)
-    ds = ascii2xarray(asciibuffer,outfile=ncfile,setup_file=setup_file)
+    ds = ascii2xarray(asciibuffer,model_dir=model_dir,outfile=ncfile,setup_file=setup_file)
 
     return ds
 
@@ -560,8 +563,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         else:
             px_w = pxs[i][0]
 
-        #shape = (int(180.0/px_w),int(360.0/px_w))
-        f_out.write(u'HPAR   {}: PIXELS,  {:3.2f} X {:3.2f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats[i])))
+        f_out.write(u'HPAR   {}: PIXELS,  {:5.3f} X {:5.3f}, {}\n'.format(stru_indx[0],px_w,px_w,len(lats[i])))
 
         if not np.all(sorted(np.unique(lons))==np.unique(lons)): raise AssertionError()
         if not np.all(sorted(np.unique(lats))==np.unique(lats)): raise AssertionError()
@@ -572,6 +574,27 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             f_out.write(u'{:6.2f} {:6.2f} {:6.2f}\n'.format(lon_here,lat_here, px_here))
 
     if not onlyheaders:
+        # read the 1D model if any of the reference values are not defined
+        ifread1D = {} #stores whether the references values have been read from a file
+        fileread = False
+        for _, parameter in enumerate(parser['parameters']):
+            mod_type = parser['parameters'][parameter]['type']
+            ifread1D[parameter] = np.any(np.array(ref_dict[parameter]['refvalue'])<0.)
+            if ifread1D[parameter]:
+                # check if the refmodel file exists
+                if not os.path.isfile(ref_dict[parameter]['refmodel']):
+                    ifread1D[parameter] = False
+                    print ('WARNING: Could not fill reference values for '+parameter+' as the 1D reference model file could not be found : '+ref_dict[parameter]['refmodel'])
+            if ifread1D[parameter] :
+                if not fileread:
+                    try: # try reading the 1D file in card format
+                        ref1d = Reference1D(ref_dict[parameter]['refmodel'])
+                        fileread = True
+                    except:
+                        print ('WARNING: Could not fill reference values for '+parameter+' as the 1D reference model file could not be read as Reference1D instance : '+ref_dict[parameter]['refmodel'])
+                        ifread1D[parameter] = False
+            if mod_type == 'heterogeneity' and ifread1D[parameter]: ref1d.get_custom_parameter(parameter)
+
         # write coefficients
         k = 1
         for i, parameter in enumerate(parser['parameters']):
@@ -588,20 +611,11 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             else:
                 raise ValueError('model type not recognized... should be either "heterogeneity" or "topography"')
 
-            # read the 1D model if any of the reference values are not defined
-            ifread1D = np.any(np.array(ref_dict[parameter]['refvalue'])<0.)
-            if ifread1D:
-                try: # try reading the 1D file in card format
-                    ref1d = Reference1D(ref_dict[parameter]['refmodel'])
-                    if mod_type == 'heterogeneity': ref1d.get_custom_parameter(parameter)
-                except:
-                    ifread1D = False
-
             #write model coefficients
+            print('writing coefficients for '+parameter+' # '+str(k)+' - '+str(k+len(epix_files)-1)+' out of '+str(np.sum(epix_lengths))+' radial kernels/layers.')
             line = ff.FortranRecordWriter('(6E12.4)')
-            for j, epix_file in enumerate(epix_files):
-                f = np.loadtxt(epix_file)
-                print('writing coefficients for layer ', k)
+            for j in progressbar(range(len(epix_files))):
+                f = np.loadtxt(epix_files[j])
                 coefs = f[:,3]
 
                 #check if the reference value is negative.
@@ -624,7 +638,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     else:
         return outfile
 
-def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, engine='netcdf4', writenc4 = True):
+def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',complevel=9, engine='netcdf4', writenc4 = True):
     '''
     write an xarrary dataset from a rem3d formatted ascii file
 
@@ -644,13 +658,14 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     '''
 
     model_dict = {}
+    cfg_file = model_dir+'/'+setup_file
 
     # check for configuration file
-    if not os.path.isfile(setup_file):
+    if not os.path.isfile(cfg_file):
         raise IOError('No configuration file found.'\
                      'Model directory must contain '+setup_file)
     else:
-        parser = ConfigObj(setup_file)
+        parser = ConfigObj(cfg_file)
 
     try: #attempt buffer
         asciioutput.seek(0)
@@ -709,11 +724,16 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
                     model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx
                     var_idx += 1
 
-                if len(rpar) > 0 and rpar in rpar_list:
+                elif len(rpar) > 0 and rpar in rpar_list:
                     rpar_list.append(rpar)
                     model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx
                     var_idx += 1
                     rpar = []
+
+                elif len(rpar) == 0 and rpar not in rpar_list:
+                    rpar_list.append(rpar)
+                    model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx
+                    var_idx += 1
 
             try:
                 rpar_start = float(line.strip().split(',')[-1].split('-')[0].strip('km'))
@@ -732,6 +752,8 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
     # check that information on variables in ascii file exists in setup.cfg
     for var in variables:
         if not var in parser['parameters'].keys(): raise AssertionError(var+' not found as shortname in '+setup_file)
+        for indx in ['rpar_idx','hpar_idx']:
+            if not indx in model_dict[var].keys(): raise AssertionError(var+' not read properfly with index '+indx)
 
     for i in range(nhpar):
 
@@ -747,8 +769,9 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
         if hpar_name.lower().startswith('pixel'):
              pxw_lon = float(line.strip().split()[3].strip(','))
              pxw_lat = float(line.strip().split()[5].strip(','))
+             nlines_input = int(line.strip().split()[6].strip(','))
              nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
-             if not nlines == float(line.strip().split()[6].strip(',')): raise AssertionError()
+             if not nlines == nlines_input: raise AssertionError('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines),',  not '+str(nlines_input)+' as reported.')
         else:
             raise ValueError('only PIXEL parameterizations enabled')
 
@@ -796,11 +819,17 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
 
             model_dict[variable]['layers'][i] = layer_coefs
 
+    # check if we can  read 1D model
     ifread1D = True
-    try: # try reading the 1D file in card format
-        ref1d = Reference1D(parser['metadata']['refmodel'])
-    except:
+    if not os.path.isfile(parser['metadata']['refmodel']):
         ifread1D = False
+        print ('WARNING: Could not fill some reference values as the 1D reference model file could not be found : '+parser['metadata']['refmodel'])
+    if ifread1D:
+        try: # try reading the 1D file in card format
+            ref1d = Reference1D(parser['metadata']['refmodel'])
+        except:
+            ifread1D = False
+            print ('WARNING: Could not fill some reference values as the 1D reference model file could not be read as Reference1D instance : '+parser['metadata']['refmodel'])
 
     #open xarray dataset
     ds = xr.Dataset()
@@ -885,3 +914,61 @@ def ascii2xarray(asciioutput,outfile=None,setup_file='setup.cfg',complevel=9, en
 
     return ds
 
+def getLU2symmetric(insparse):
+    """
+    Get the full symmetric matrix
+    """
+    print(".... Converting from LU matrix to symmetric matrix")
+    outsparse=insparse.tolil(copy=True)
+    outsparse.setdiag(0.)
+    outsparse=outsparse.tocsr()
+    outsparse=outsparse+insparse.T
+    return outsparse
+
+def readResCov(infile,onlymetadata=False):
+    """
+    Reads Resolution or Covariance matrix created by invwdata_pm64 with option -r.
+    R=inv(ATA+DTD)ATA and the name of file is typically outmodel.Resolution.bin
+    """
+    #read all the bytes to indata
+    if (not os.path.isfile(infile)): raise IOError("Filename (",infile,") does not exist")
+    nbytes = os.path.getsize(infile)
+
+    ii = 0 #initialize byte counter
+    ifswp = '' # Assuem that byte order is not be swapped unless elat is absurdly high
+    start_time = timeit.default_timer()
+
+    with open(infile, "rb") as f:
+        # preliminary metadata
+        indata = f.read(4) # try to read iflag
+        iflag = struct.unpack(ifswp+'i',indata)[0] # Read flag
+        if iflag != 1:
+            ifswp = '!' # swap endianness from now on
+            iflag = struct.unpack(ifswp+'i',indata)[0]
+            if iflag != 1: raise ValueError("Error: iflag != 1")
+        refmdl = struct.unpack('80s',f.read(80))[0].strip().decode('utf-8')
+        kerstr = struct.unpack('80s',f.read(80))[0].strip().decode('utf-8')
+        ntot = struct.unpack(ifswp+'i',f.read(4))[0]
+        ndtd = int(((ntot+1)*ntot)/2)
+
+        # pre-allocate matrices
+        indexrad1 = None if onlymetadata else np.zeros(ndtd,dtype=int)
+        indexrad2 = None if onlymetadata else np.zeros(ndtd,dtype=int)
+        indexhor1 = None if onlymetadata else np.zeros(ndtd,dtype=int)
+        indexhor2 = None if onlymetadata else np.zeros(ndtd,dtype=int)
+        out = None if onlymetadata else np.zeros(ndtd)
+
+        if not onlymetadata:
+            # Now start reading data
+            for jj in progressbar(range(ndtd)):
+                indexrad1[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
+                indexrad2[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
+                indexhor1[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
+                indexhor2[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
+                out[jj] = struct.unpack(ifswp+'d', f.read(8))[0]
+    ii=168+ndtd*24
+    if ii != nbytes: raise ValueError("Error: number of bytes read ",str(ii)," do not match expected ones ",str(nbytes))
+    elapsed = timeit.default_timer() - start_time
+    if not onlymetadata: print(".... read "+str(ndtd)+" rows for the Res or Cov matrix in "+str(round(elapsed/60*10)/10)+" min.")
+
+    return refmdl, kerstr, ntot, indexrad1, indexrad2, indexhor1, indexhor2, out

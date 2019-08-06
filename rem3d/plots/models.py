@@ -880,20 +880,31 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
     if height_ratios is None: height_ratios=[2, 2, 1]
     if zoomdepth is None: zoomdepth=[0.,1000.]
 
-    depthkmarr = (constants.R - ref1d.data['radius'])/1000. # in km
+    # extract values
+    depthkmarr = (constants.R-ref1d.data['radius']).pint.to('km').values.quantity.magnitude
+    rho = ref1d.data['rho'].pint.to('g/cm^3').values.quantity.magnitude
+    vs = ref1d.data['vs'].pint.to('km/s').values.quantity.magnitude
+    vp = ref1d.data['vp'].pint.to('km/s').values.quantity.magnitude
+    vsv = ref1d.data['vsv'].pint.to('km/s').values.quantity.magnitude
+    vsh = ref1d.data['vsh'].pint.to('km/s').values.quantity.magnitude
+    vpv = ref1d.data['vpv'].pint.to('km/s').values.quantity.magnitude
+    vph = ref1d.data['vph'].pint.to('km/s').values.quantity.magnitude
+    eta = ref1d.data['eta'].values.quantity.magnitude
+    qmu = ref1d.data['qmu'].values.quantity.magnitude
+
     #Set default fontsize for plots
     updatefont(10)
     fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
     gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios)
     fig.patch.set_facecolor('white')
     ax01=plt.subplot(gs[0])
-    ax01.plot(depthkmarr,ref1d.data['rho']/1000.,'k')
-    ax01.plot(depthkmarr,ref1d.data['vsv']/1000.,'b')
-    ax01.plot(depthkmarr,ref1d.data['vsh']/1000.,'b:')
-    ax01.plot(depthkmarr,ref1d.data['vpv']/1000.,'r')
-    ax01.plot(depthkmarr,ref1d.data['vph']/1000.,'r:')
+    ax01.plot(depthkmarr,rho,'k')
+    ax01.plot(depthkmarr,vsv,'b')
+    ax01.plot(depthkmarr,vsh,'b:')
+    ax01.plot(depthkmarr,vpv,'r')
+    ax01.plot(depthkmarr,vph,'r:')
     mantle=np.where( depthkmarr < 2891.)
-    ax01.plot(depthkmarr[mantle],ref1d.data['eta'][mantle],'g')
+    ax01.plot(depthkmarr[mantle],eta[mantle],'g')
     ax01.set_xlim([0., constants.R.to('km').magnitude])
     ax01.set_ylim([0, 14])
 
@@ -923,20 +934,20 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
 
     ax11=plt.subplot(gs[1])
     depthselect=np.intersect1d(np.where( depthkmarr >= zoomdepth[0]),np.where( depthkmarr <= zoomdepth[1]))
-    ax11.plot(depthkmarr[depthselect],ref1d.data['rho'][depthselect]/1000.,'k')
+    ax11.plot(depthkmarr[depthselect],rho[depthselect],'k')
     if isotropic:
-        ax11.plot(depthkmarr[depthselect],ref1d.data['vs'][depthselect]/1000.,'b')
+        ax11.plot(depthkmarr[depthselect],vs[depthselect],'b')
     else:
-        ax11.plot(depthkmarr[depthselect],ref1d.data['vsv'][depthselect]/1000.,'b')
-        ax11.plot(depthkmarr[depthselect],ref1d.data['vsh'][depthselect]/1000.,'b:')
+        ax11.plot(depthkmarr[depthselect],vsv[depthselect],'b')
+        ax11.plot(depthkmarr[depthselect],vsh[depthselect],'b:')
     ax12 = ax11.twinx()
     if isotropic:
-        ax12.plot(depthkmarr[depthselect],ref1d.data['vp'][depthselect]/1000.,'r')
+        ax12.plot(depthkmarr[depthselect],vp[depthselect],'r')
     else:
-        ax12.plot(depthkmarr[depthselect],ref1d.data['vpv'][depthselect]/1000.,'r')
-        ax12.plot(depthkmarr[depthselect],ref1d.data['vph'][depthselect]/1000.,'r:')
+        ax12.plot(depthkmarr[depthselect],vpv[depthselect],'r')
+        ax12.plot(depthkmarr[depthselect],vph[depthselect],'r:')
 
-    ax11.plot(depthkmarr[depthselect],ref1d.data['eta'][depthselect],'g')
+    ax11.plot(depthkmarr[depthselect],eta[depthselect],'g')
     ax11.set_xlim(zoomdepth)
     ax11.set_ylim([0, 7])
     ax12.set_xlim(zoomdepth)
@@ -960,8 +971,8 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
 
     ax21=plt.subplot(gs[2], sharex=ax11)
     with np.errstate(divide='ignore', invalid='ignore'): # Ignore warning about dividing by zero
-        anisoVs=(ref1d.data['vsh']-ref1d.data['vsv'])*200./(ref1d.data['vsh']+ref1d.data['vsv'])
-    anisoVp=(ref1d.data['vph']-ref1d.data['vpv'])*200./(ref1d.data['vph']+ref1d.data['vpv'])
+        anisoVs=(vsh-vsv)*200./(vsh+vsv)
+    anisoVp=(vph-vpv)*200./(vph+vpv)
     ax21.plot(depthkmarr[depthselect],anisoVs[depthselect],'b')
     ax21.plot(depthkmarr[depthselect],anisoVp[depthselect],'r')
     ax21.set_ylim([0, 5])
@@ -981,7 +992,7 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
 
 
     ax22 = ax21.twinx()
-    ax22.plot(depthkmarr[depthselect],ref1d.data['Qmu'][depthselect],'k')
+    ax22.plot(depthkmarr[depthselect],qmu[depthselect],'k')
     ax21.set_xlabel('Depth (km)')
     ax21.set_ylabel("$V_P$"+' or '+"$V_S$"+' anisotropy (%)')
     ax22.set_ylabel('Shear attenuation Q'+'$_{\mu}$')

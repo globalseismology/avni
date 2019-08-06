@@ -26,18 +26,34 @@ def stage(file,overwrite=False):
     """
     Stages a file in the rem3d file directories for testing
     """
-    filedir = get_filedir()
-    if not os.path.isfile(file): raise IOError(file+' not found')
+    filedir = get_filedir() #REM3D file directory
+    stagedfile = get_fullpath(file)
+    if not os.path.isfile(stagedfile): raise IOError(stagedfile+' not found')
     outlink = filedir+'/'+ntpath.basename(file)
     try:
-        os.symlink(file, outlink)
+        os.symlink(stagedfile, outlink)
     except OSError:
-        if overwrite:
+        if overwrite and os.path.islink(outlink):
             os.unlink(outlink)
-            os.symlink(file, outlink)
+            os.symlink(stagedfile, outlink)
+            print('WARNING: overwriting an existing staged link named '+ntpath.basename(file))
         else:
-            print('Warning: a link to file '+ntpath.basename(file)+' exists within REM3D. Use overwrite=True to overwrite the staged link.')
+            raise IOError('A link to an actual file '+ntpath.basename(file)+' (not symlink) exists within REM3D. Delete the file '+outlink+' first before proceeding.')
     return
+
+def parse_line(line,rx_dict):
+    """
+    Function used to parse line with key word from rx_dict
+
+    Do a regex search against all defined regexes and
+    return the key and match result of the first matching regex
+    """
+    for key, rx in rx_dict.items():
+        match = rx.search(line)
+        if match:
+            return key, match
+    # if there are no matches
+    return None, None
 
 def convert2nparray(value,int2float = True):
     """
@@ -99,7 +115,7 @@ def equaldict(first_dict,second_dict):
     #for k in set(realization.metadata):
     #    checks.extend(convert2nparray(first_dict==second_dict))
     #return np.all(checks)
-    
+
 def df2nparray(dataframe):
     '''
     helper tool to return the named numpy array of the pandas dataframe
@@ -174,10 +190,12 @@ def get_fullpath(path):
     """
     Provides the full path by replacing . and ~ in path.
     """
+    # if only file name provided append current directory
+    if ntpath.basename(path) == path: path = os.path.abspath('./'+path)
     # Get the current directory
-    if path[0]=='.': path = os.path.dirname(os.path.abspath(__file__))+path[1:]
+    if path[0]=='.' or path[0]=='..': path = os.path.abspath(path)
     # If the path starts with tilde, replace with home directory
-    if path[0]=='~': path=os.path.expanduser("~")+path[1:]
+    if path[0]=='~': path = os.path.expanduser(path)
     return path
 
 def listfolders(path):
@@ -196,7 +214,7 @@ def get_installdir(module='rem3d',checkwrite=True,checkenv=True):
     if checkenv:
         if os.environ.get(module+'_dir') is not None:
             installdir=os.environ.get(module+'_dir')
-            print("Warning: Reading "+module+"_dir"+" from environment variables - "+installdir)
+            # print("Warning: Reading "+module+"_dir"+" from environment variables - "+installdir)
 
     if installdir is None:
         loader=pkgutil.find_loader(module)
@@ -395,4 +413,3 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
         constants.geoco = (1.0 - constants.f)**2.
     except AttributeError:
         constants.geoco = (1.0 - constants.f)**2.
-

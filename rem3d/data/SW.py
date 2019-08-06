@@ -13,6 +13,7 @@ import fortranformat as ff #reading/writing fortran formatted text
 import pandas as pd
 import h5py
 import progressbar
+import pdb
 
 if sys.version_info[0] >= 3: unicode = str
 
@@ -124,6 +125,8 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
     # reorder according to FIELDS
     data = data.reindex(namelist,axis=1)
 
+    f = open(filename,'w')
+    f.writelines(printstr)
     for ii in progressbar.progressbar(range(len(data))):
         line=[]
         for val in data.values[ii]:
@@ -131,10 +134,11 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
                 line.append(val.ljust(15))
             else:
                 line.append(val)
-        arow = header_line.write(line)
-        printstr.append(unicode(arow+'\n'))
-    f = open(filename,'w')
-    f.writelines(printstr)
+        try:
+            arow = header_line.write(line)
+        except:
+            raise IOError('No line to print')
+        f.write(unicode(arow+'\n'))
     f.close()
     print("....written "+str(len(data))+" observations to "+filename)
     return

@@ -6,6 +6,9 @@
 # Update rem3d module locally
 #pip install --upgrade rem3d
 
+# Update the API files
+sphinx-apidoc -o api/ ../rem3d
+
 #Make the html and pdf versions in local /docs/_build directory
 make latexpdf
 make html

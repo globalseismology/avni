@@ -277,3 +277,29 @@ def getIntermediate(lat1,lng1,azimuth,distance,interval):
         coord = getDestination(lat1,lng1,azimuth,counter)
         coords.append(coord)
     return coords
+
+def calculateDistance(lat1,lng1,lat2,lng2,final_units='m',radius_in_km=6371.):
+    '''
+    returns the distance in between two coordiante pairs
+    Input:
+    ------
+        lat1,lng1,lat2,lng2 : lat/lon coordinate pairs
+        final_units : 'm' or 'deg' for meters, degrees
+        radius_in_km : radius in km, used if final_units=='deg'
+    Output:
+    -------
+        float value: distance between coordinate pairs in m or deg
+    '''
+    if lng1 > 180.: lng1 = lng1 -360.
+    if lng2 > 180.: lng2 = lng2 -360.
+    start = LatLon(lat1,lng1)
+    end = LatLon(lat2,lng2)
+    dist = start.distanceTo(end)
+    if final_units=='m':
+        return dist
+    elif final_units=='deg':
+        gcdist = dist / (radius_in_km * 1000.) * 180. / np.pi
+        return gcdist
+    else:
+        return None
+    

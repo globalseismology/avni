@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, print_function
 
 import multiprocessing
 from joblib import Parallel, delayed
-
+import pdb
 ############################### PLOTTING ROUTINES ################################
 from ..tools.trigd import atand,tand
 from ..f2py import ddelazgc # geolib library from NSW
@@ -15,7 +15,7 @@ from .. import constants
 def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
     """Get the distance and azimuths from positions in geographic coordinates"""
 
-    geoco = constants.geoco
+    geoco = constants.geoco.magnitude
     if isinstance(eplat,list): # if the input is a list loop
         delta=[];azep=[];azst=[]
         # Standard checks on number of cores

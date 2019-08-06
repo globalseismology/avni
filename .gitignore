@@ -27,6 +27,7 @@ MANIFEST
 # Distribution / packaging
 .Python
 build/
+docs/api/
 develop-eggs/
 dist/
 downloads/
@@ -44,7 +45,8 @@ wheels/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+#  before PyInstaller builds the exe, 
+#  so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -124,3 +126,6 @@ ENV/
 *.eps
 *.png
 *.pdf
+
+# api config file
+rem3d/config/api.ini
