@@ -40,3 +40,31 @@ def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
 
 def delazgc_helper(args):
     return ddelazgc(*args)
+
+def geographic_to_geocentric(latin):
+    """
+    convert a geographic coordinate to geocentric coordinate
+    """
+    xlat=latin
+    fac = constants.geoco.magnitude
+    theta = radians(90.0-xlat)
+    theta = pi/2.-atan2(fac*cos(theta),sin(theta))
+    latout=90.0-degrees(theta)
+
+    return latout
+
+def geocentric_to_geographic(latin):
+    """
+    convert a geocentric coordinate to geographic coordinate
+    """
+    xlat=latin
+    fac = constants.geoco.magnitude
+    if xlat != 0.:
+        theta = radians(90.0-xlat)
+        theta = atan(fac/tan(pi/2.-theta))
+        latout=90.0-degrees(theta)
+    else:
+        latout=xlat
+    if xlat < 0.: latout = latout - 180.
+
+    return latout
