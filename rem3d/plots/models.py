@@ -43,7 +43,7 @@ from .. import mapping
 from .. import tools
 from .. import data
 from .. import constants
-from .common import standardcolorpalette,updatefont
+from .common import initializecolor,updatefont
 
 ############################### PLOTTING ROUTINES ################################
 def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
@@ -222,10 +222,8 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
     m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth)
 
     # Get the color map
-    try:
-        cpalette = plt.get_cmap(colorpalette)
-    except ValueError:
-        cpalette=standardcolorpalette(colorpalette)
+    cpalette = initializecolor(colorpalette)
+
     # define the 10 bins and normalize
     if isinstance(colorcontour,np.ndarray) or isinstance(colorcontour,list): # A list of boundaries for color bar
         if isinstance(colorcontour,list):
@@ -765,10 +763,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     #grid_x_zoom, grid_y_zoom = np.meshgrid(np.linspace(theta[0],theta[1],numevalx*zoom),np.linspace(radii[0],radii[1],numevalz*zoom))
 
     # Get the color map
-    try:
-        cpalette = plt.get_cmap(colorpalette)
-    except ValueError:
-        cpalette=standardcolorpalette(colorpalette)
+    cpalette = initializecolor(colorpalette)
 
     interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
 

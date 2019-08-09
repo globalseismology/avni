@@ -16,6 +16,7 @@ import numpy as np #for numerical analysis
 import matplotlib.cm as cmx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import traceback
 
 ####################       IMPORT OWN MODULES     ######################################
 from .. import tools
@@ -53,6 +54,43 @@ def updatefont(fontsize=15,fontname='sans-serif',ax=None):
         ax.title.set_fontsize(fontsize+3)
         ax.title.set_fontname(fontname)
     return ax if ax is not None else None
+
+def initializecolor(name,**kwargs):
+    """
+    Initialize a color palette instance from standard Python, constants.py or downloadable from server
+
+    name : name of color palette.Can have _r appended to standard ones
+                    for reversed color scales
+
+    kwargs : optional arguments for Basemap
+    """
+    success1 = True; success2 = True; success3 = True # assume colorscale is read somehow
+    try:
+        cpalette = plt.get_cmap(name)
+    except ValueError:
+        success1 = False
+        var1 = traceback.format_exc()
+        try: # try getting color palette from standard ones in constants.py
+            cpalette = standardcolorpalette(name)
+        except KeyError:
+            success2 = False
+            var2 = traceback.format_exc()
+            try:
+                if kwargs:
+                    cpalette = customcolorpalette(name,**kwargs)
+                else:
+                    cpalette = customcolorpalette(name)
+            except:
+                success3 = False
+                print('#########   Tried reading as standard Python palette   ##########')
+                print(var1)
+                print('#########   Tried reading as  ones from constant.py   ##########')
+                print(var2)
+                print('############    Tried downloading from server   ############')
+                print(traceback.format_exc())
+    if not success1 and not success2 and not success3:
+        raise IOError('unable to read color palette '+name+' from standard Python, constants.py or downloadable from server.')
+    return cpalette
 
 def standardcolorpalette(name='rem3d'):
     """
