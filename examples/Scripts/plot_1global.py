@@ -43,7 +43,7 @@ def main():
 
     # Read the file
     try:
-        latlonval,metadata,_ =rem3d.models.readepixfile(model)
+        latlonval,metadata,_ = rem3d.models.readepixfile(rem3d.tools.get_filedir()+'/'+model)
         title = 'Depth : '+metadata['DEPTH_RANGE']+' km'
     except:
         raise NotImplementedError('netcdf not implemented yet')
