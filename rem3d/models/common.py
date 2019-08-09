@@ -700,6 +700,8 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
     variables = []
     rpar_list = []
     hpar_list = []
+    rpar_starts = []
+    rpar_ends = []
     rpar = []
     variable_idxs = []
     hpar_idx = 0
@@ -738,7 +740,10 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             try:
                 rpar_start = float(line.strip().split(',')[-1].split('-')[0].strip('km'))
                 rpar_end = float(line.strip().split(',')[-1].split('-')[1].strip('km'))
+                rpar_starts.append(rpar_start)
+                rpar_ends.append(rpar_end)
                 rpar.append((rpar_start + rpar_end)/2.)
+
             except IndexError:
                 model_dict[variable]['rpar_idx'] = None
             line = asciioutput.readline()
@@ -905,6 +910,9 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             attrs[key] = parser['metadata'][key]
         else:
             attrs[key] = parser['metadata'][key].decode('utf-8')
+
+    attrs['start_depths'] = np.array(rpar_starts)
+    attrs['end_depths'] = np.array(rpar_ends)
     ds.attrs = attrs
 
     # write to netcdf
