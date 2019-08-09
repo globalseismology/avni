@@ -571,7 +571,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
             lon_here = lons[i][j]
             lat_here = lats[i][j]
             px_here = pxs[i][j]
-            f_out.write(u'{:6.2f} {:6.2f} {:6.2f}\n'.format(lon_here,lat_here, px_here))
+            f_out.write(u'{:7.3f} {:7.3f} {:7.3f}\n'.format(lon_here,lat_here, px_here))
 
     if not onlyheaders:
         # read the 1D model if any of the reference values are not defined
@@ -621,7 +621,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                 #check if the reference value is negative.
                 # if so, make an instance of the 1D
                 # model class to read from
-                if ifread1D and ref_dict[parameter]['refvalue'][j] < 0:
+                if ifread1D[parameter] and ref_dict[parameter]['refvalue'][j] < 0:
                     depth_in_km = ref_dict[parameter]['depth_in_km'][j]
                     ref_dict[parameter]['refvalue'][j] = ref1d.evaluate_at_depth(depth_in_km,parameter)
 

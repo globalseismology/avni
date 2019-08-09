@@ -16,6 +16,7 @@ from six import string_types # to check if variable is string using isinstance
 import ntpath
 import ast
 import pint # For SI units
+import decimal
 import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -413,3 +414,10 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
         constants.geoco = (1.0 - constants.f)**2.
     except AttributeError:
         constants.geoco = (1.0 - constants.f)**2.
+
+def decimals(value):
+    """
+    Returns the number of decimals in a float
+    """
+    d = decimal.Decimal(str(value))
+    return abs(d.as_tuple().exponent)
