@@ -114,8 +114,8 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
     """
     if not isinstance(data, xr.DataArray): raise ValueError("date must be an xray DataArray")
 
-    pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
-    pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
+    pix_lat = np.unique(np.round(np.ediff1d(np.sort(data.coords[latname].values)),1))
+    pix_lon = np.unique(np.round(np.ediff1d(np.sort(data.coords[lonname].values)),1))
     if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
     if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
 

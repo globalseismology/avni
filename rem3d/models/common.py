@@ -840,7 +840,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         hpar_idx = model_dict[variable]['hpar_idx']
         lon = np.unique(hpar_list[hpar_idx][0])
         lat = np.unique(hpar_list[hpar_idx][1])
-        pxw = np.unique(hpar_list[hpar_idx][2])
+        pxw = np.unique(np.round(hpar_list[hpar_idx][2],1))
         if not len(pxw)==1: raise AssertionError('only 1 pixel size allowed')
         print(variable,': PXW', pxw[0])
 
