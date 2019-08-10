@@ -11,6 +11,7 @@ import numpy as np
 import xarray as xr
 from scipy.spatial import cKDTree
 import pickle
+import warnings
 import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -18,6 +19,7 @@ from .trigd import sind
 from ..mapping import spher2cart
 from .. import constants
 from .common import precision_and_scale,convert2nparray
+from ..tools import decimals
 #######################################################################################
 
 def tree3D(treefile,latitude,longitude,radius_in_km):
@@ -109,15 +111,31 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
     Returns
     -------
 
-    pass: if true, is a compatible dataarray
+    pix: size of the uniform pixel
 
     """
     if not isinstance(data, xr.DataArray): raise ValueError("date must be an xray DataArray")
 
     pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
     pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
+    # restrict comparison to the minimum number of decimal points
+    dec_lat = decimals(pix_lat)
+    dec_lon = decimals(pix_lon)
+    pix_lat = np.unique(np.round(pix_lat, min(dec_lat)))
+    pix_lon = np.unique(np.round(pix_lon, min(dec_lon)))
+
+    # checks
     if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
     if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
+    # check number of poxels
+    pix_width = pix_lat.item()
+    nlat = 180./pix_width; nlon = 360./pix_width
+    if not np.mod(nlat,1.)==0.: warnings.warn ('pixel width should be ideally be a factor of 180')
+    if not np.mod(nlon,1.)==0.: warnings.warn ('pixel width should be ideally be a factor of 180')
+    nlat = int(nlat); nlon = int(nlon)
+    if nlat*nlon != data.size: raise AssertionError('number of pixels expected for '+str(pix_width)+'X'+str(pix_width)+' is '+str(nlat*nlon),',  not '+str(data.size)+' as specified in the data array.')
+
+    return pix_width,nlat,nlon
 
 
 def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
@@ -136,16 +154,11 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
 
     """
     # check if it is a compatible dataarray
-    checkDataArray(data,latname, lonname)
-    pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
+    pix_width,nlat,nlon = checkDataArray(data,latname, lonname)
+    dlat = dlon = pix_width
 
     #---- calculate the grid of test points and their weights
-    dlat=dlon=pix_lat.item()
     xlat = []; xlon = []; area = []
-    nlat = 180./dlat; nlon = 360./dlon
-    if not np.mod(nlat,1.)==0.: raise AssertionError('nlat should be an integer')
-    if not np.mod(nlon,1.)==0.: raise AssertionError('nlon should be an integer')
-    nlat = int(nlat); nlon = int(nlon)
     for ilat in range(nlat):
         xlat.append(90.0-0.5*dlat-(ilat*dlat))
     for ilon in range(nlon):
@@ -212,7 +225,8 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
     """
 
     # check if it is a compatible dataarray
-    checkDataArray(data,latname, lonname)
+    pix_width,nlat,nlon = checkDataArray(data,latname, lonname)
+    dlat = dlon = pix_width
 
     # take weights
     # drop the variables for weights

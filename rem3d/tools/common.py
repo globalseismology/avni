@@ -419,5 +419,9 @@ def decimals(value):
     """
     Returns the number of decimals in a float
     """
-    d = decimal.Decimal(str(value))
-    return abs(d.as_tuple().exponent)
+    value = convert2nparray(value)
+    output = np.zeros(len(value), dtype=int)
+    for indx, val in enumerate(value):
+        d = decimal.Decimal(str(val))
+        output[indx] = abs(d.as_tuple().exponent)
+    return output if len(output) > 1 else output[0]
