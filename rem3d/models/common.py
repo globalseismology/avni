@@ -776,7 +776,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
              pxw_lat = float(line.strip().split()[5].strip(','))
              nlines_input = int(line.strip().split()[6].strip(','))
              nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
-             if not nlines == nlines_input: raise AssertionError('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines),',  not '+str(nlines_input)+' as reported.')
+             if not nlines == nlines_input: raise warnings.warn('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines),',  not '+str(nlines_input)+' as provided.')
         else:
             raise ValueError('only PIXEL parameterizations enabled')
 
@@ -846,8 +846,8 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         lon = np.unique(hpar_list[hpar_idx][0])
         lat = np.unique(hpar_list[hpar_idx][1])
         pxw = np.unique(hpar_list[hpar_idx][2])
-        if not len(pxw)==1: raise AssertionError('only 1 pixel size allowed')
-        print(variable,': PXW', pxw[0])
+        if not len(pxw)==1: raise warnings.warn('more than 1 pixel size in variable '+variable, pxw)
+        print(variable,': PXW', pxw)
 
         #create dims arrays
         stru_idx = model_dict[variable]['rpar_idx']
@@ -883,20 +883,28 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             # get the variable values
             if ifread1D: ref1d.get_custom_parameter(variable)
             av_depth = deepcopy(data_array.depth.values)
-            refvalue = []; avgvalue = []
-            for depth in av_depth:
+            refvalue = []; avgvalue = []; ifaverage =  True
+            for _,depth in enumerate(av_depth):
                 if ifread1D: refvalue.append(ref1d.evaluate_at_depth(depth,parameter=variable))
                 # select the appropriate map
                 mapval = data_array.sel(depth=depth)
                 # get the average, use an earlier evaluation of area if possible
-                globalav,area, _  = tools.MeanDataArray(mapval,area=area)
-                avgvalue.append(globalav)
+                if ifaverage:
+                    try:
+                        globalav,area, _  = tools.MeanDataArray(mapval,area=area)
+                        avgvalue.append(globalav)
+                        warnings.warn('Could not read mean values for parameter '+variable)
+                    except:
+                        ifaverage = False
             if ifread1D: av_attrs['refvalue'] = np.array(refvalue)
-            av_attrs['average'] = np.array(avgvalue)
+            if ifaverage: av_attrs['average'] = np.array(avgvalue)
         else:
             # get the average, use an earlier evaluation of area if possible
-            globalav,area,_ = tools.MeanDataArray(data_array,area=area)
-            av_attrs['average'] = globalav
+            try:
+                globalav,area,_ = tools.MeanDataArray(data_array,area=area)
+                av_attrs['average'] = globalav
+            except:
+                warnings.warn('Could not read mean values for parameter '+variable)
             av_attrs['depth'] = float(av_attrs['depth'])
 
         #add Data_Array object to Data_Set

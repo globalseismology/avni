@@ -119,10 +119,10 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
     pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
     pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
     # restrict comparison to the minimum number of decimal points
-    dec_lat = decimals(pix_lat)
-    dec_lon = decimals(pix_lon)
-    pix_lat = np.unique(np.round(pix_lat, min(dec_lat)))
-    pix_lon = np.unique(np.round(pix_lon, min(dec_lon)))
+    # dec_lat = decimals(pix_lat)
+    # dec_lon = decimals(pix_lon)
+    # pix_lat = np.unique(np.round(pix_lat, min(dec_lat)))
+    # pix_lon = np.unique(np.round(pix_lon, min(dec_lon)))
 
     # checks
     if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')

@@ -41,6 +41,7 @@ def main():
         # update the file from the server
         update_file(arg.file)
     model3d = ntpath.basename(arg.file)
+    prefix = model3d.split('rem3d.nc4')[0]
 
     ##### Example of a regional transects
     print("PLOTTING SECTION 1")
@@ -48,7 +49,7 @@ def main():
     lat1 = -25.;lng1 = 191.;lat2 = -22.;lng2 = 160.
     delta,azep, _  = ddelazgc(lat1,lng1,lat2,lng2)
     if arg.output:
-        outfile = 'Kermadec.'+arg.parameter+'.'+arg.format
+        outfile = prefix+'Kermadec.'+arg.parameter+'.'+arg.format
     else:
         outfile = None
     topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=model3d,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta$'+' '+arg.parameter+' / '+arg.parameter+'(%)',outfile=outfile,vexaggerate=arg.elev_exxagerate,nelevinter=arg.elev_interval,colorcontour=arg.colorcontour,colorpalette=arg.color)
@@ -57,7 +58,7 @@ def main():
     lat1 = -29.;lng1 = -50.;lat2 = -29.;lng2 = -80.
     delta,azep, _  = ddelazgc(lat1,lng1,lat2,lng2)
     if arg.output:
-        outfile = 'NorthChile.'+arg.parameter+'.'+arg.format
+        outfile = prefix+'NorthChile.'+arg.parameter+'.'+arg.format
     else:
         outfile = None
     plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta$'+' '+arg.parameter+' / '+arg.parameter+'(%)',vexaggerate=arg.elev_exxagerate,nelevinter=arg.elev_interval,outfile=outfile,colorcontour=arg.colorcontour,colorpalette=arg.color)
@@ -66,7 +67,7 @@ def main():
     lat1 = 34.;lng1 = 152.;lat2 = 40.;lng2 = 117.
     delta,azep,_ = ddelazgc(lat1,lng1,lat2,lng2)
     if arg.output:
-        outfile = 'Japan.'+arg.parameter+'.'+arg.format
+        outfile = prefix+'Japan.'+arg.parameter+'.'+arg.format
     else:
         outfile = None
     plot1section(lat1,lng1,azep,delta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta$'+' '+arg.parameter+' / '+arg.parameter+'(%)',vexaggerate=arg.elev_exxagerate,nelevinter=arg.elev_interval,outfile=outfile,colorcontour=arg.colorcontour,colorpalette=arg.color)
@@ -76,7 +77,7 @@ def main():
     print("PLOTTING SECTION 2")
     lat1 = 0.;lng1 = 0.;azimuth = -30.;gcdelta = 180.
     if arg.output:
-        outfile = 'transect180.'+arg.parameter+'.'+arg.format
+        outfile = prefix+'transect180.'+arg.parameter+'.'+arg.format
     else:
         outfile = None
     plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta$'+' '+arg.parameter+' / '+arg.parameter+'(%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=360,numevalz=360,outfile=outfile,colorcontour=arg.colorcontour,colorpalette=arg.color)
@@ -85,7 +86,7 @@ def main():
     print("PLOTTING SECTION 3")
     lat1 = 0.;lng1 = 150.;azimuth = 90.;gcdelta = 360.
     if arg.output:
-        outfile = 'transect360.'+arg.parameter+'.'+arg.format
+        outfile = prefix+'transect360.'+arg.parameter+'.'+arg.format
     else:
         outfile = None
     plot1section(lat1,lng1,azimuth,gcdelta,topo=topo,topotree=topo_tree,modeltree=tomo_tree,model=tomo,parameter=arg.parameter,vmin=arg.lower_bound,vmax=arg.upper_bound,colorlabel='$\delta$'+' '+arg.parameter+' / '+arg.parameter+'(%)',vexaggerate=0,figuresize=[8,4],width_ratios=[1,4],numevalx=720,numevalz=720,outfile=outfile,colorcontour=arg.colorcontour,colorpalette=arg.color)
