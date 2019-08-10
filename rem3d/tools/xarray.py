@@ -133,7 +133,7 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
     if not np.mod(nlat,1.)==0.: warnings.warn ('pixel width should be ideally be a factor of 180')
     if not np.mod(nlon,1.)==0.: warnings.warn ('pixel width should be ideally be a factor of 180')
     nlat = int(nlat); nlon = int(nlon)
-    if nlat*nlon != data.size: raise AssertionError('number of pixels expected for '+str(pix_width)+'X'+str(pix_width)+' is '+str(nlat*nlon),',  not '+str(data.size)+' as specified in the data array.')
+    if nlat*nlon != data.size: raise warnings.warn('number of pixels expected for '+str(pix_width)+'X'+str(pix_width)+' is '+str(nlat*nlon),',  not '+str(data.size)+' as specified in the data array.')
 
     return pix_width,nlat,nlon
 
