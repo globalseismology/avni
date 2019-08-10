@@ -28,29 +28,30 @@ def main():
         help='Color palette e.g. rem3d or bk')
     parser.add_argument('-t', '--colorcontour', type=int, default=20,
         help='color contour levels')
-    parser.add_argument('-o', '--format', type=str,default='.pdf',
+    parser.add_argument('-o', '--format', type=str,default='png',
         help='Output file format')
     arg = parser.parse_args()
 
     try:
         # stage the file for plotting
         rem3d.tools.stage(arg.file)
-        model = ntpath.basename(arg.file)
     except:
         # update the file from the server
         rem3d.data.update_file(arg.file)
-        model = arg.file
+    model = ntpath.basename(arg.file)
 
     # Read the file
     try:
         latlonval,metadata,_ = rem3d.models.readepixfile(rem3d.tools.get_filedir()+'/'+model)
         title = 'Depth : '+metadata['DEPTH_RANGE']+' km'
+        outfile = model+'.'+arg.parameter+'.'+metadata['DEPTH_IN_KM']+'km.'+arg.format
     except:
         raise NotImplementedError('netcdf not implemented yet')
         metadata = {}
         ds = xr.open_dataset(rem3d.tools.get_filedir()+'/'+model)
         metadata['WHAT'] = arg.parameter
         metadata['UNIT'] = '%' if ds[arg.parameter].attrs['unit']=='percent' else ds['vs'].attrs['unit']
+        outfile = model+'.'+arg.parameter+'.'+str(arg.depth)+'km.'+arg.format
         title = 'Depth : '+str(arg.depth)+' km'
         #title = 'Depth : '+str(arg.depth)+' km ['+str+' - '+str+' km]'
 
@@ -66,7 +67,7 @@ def main():
         rem3d.plots.globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
     ax.set_title(title)
     plt.show()
-    fig.savefig(model+arg.format,dpi=300)
+    fig.savefig(outfile,dpi=300)
 
     return
 
