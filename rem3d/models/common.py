@@ -702,49 +702,34 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
     hpar_list = []
     rpar_starts = {}
     rpar_ends = {}
-    rpar = []
+    rpar = {}
     variable_idxs = []
     hpar_idx = 0
-    rpar_idx = -1
+    rpar_idx = 0
     var_idx = 0
 
     i = 0
     line = asciioutput.readline()
     while line:
         if i < nrad_krnl:
-
             variable = line.strip().split()[2].split(',')[0]
             if variable not in variables:
                 variables.append(variable)
                 rpar_starts[variable] = []
                 rpar_ends[variable] = []
+                rpar[variable] = []
                 model_dict[variable] = {}
                 model_dict[variable]['hpar_idx'] = None
                 variable_idxs.append(var_idx)
+                var_idx += 1
 
-                if len(rpar) > 0 and rpar not in rpar_list:
-                    rpar_idx += 1
-                    rpar_list.append(rpar)
-                    model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx
-                    var_idx += 1
-
-                elif len(rpar) > 0 and rpar in rpar_list:
-                    rpar_list.append(rpar)
-                    model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx
-                    var_idx += 1
-                    rpar = []
-
-                elif len(rpar) == 0 and rpar not in rpar_list:
-                    rpar_list.append(rpar)
-                    model_dict[variables[var_idx]]['rpar_idx'] = rpar_idx
-                    var_idx += 1
-
+            # first try to find start and end of radial param
             try:
                 rpar_start = float(line.strip().split(',')[-1].split('-')[0].strip('km'))
                 rpar_end = float(line.strip().split(',')[-1].split('-')[1].strip('km'))
                 rpar_starts[variable].append(rpar_start)
                 rpar_ends[variable].append(rpar_end)
-                rpar.append((rpar_start + rpar_end)/2.)
+                rpar[variable].append((rpar_start + rpar_end)/2.)
             except IndexError:
                 model_dict[variable]['rpar_idx'] = None
             line = asciioutput.readline()
@@ -755,11 +740,23 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             nhpar = int(line.strip().split()[-1])
             break
 
+    # Now get rparindex
+    for variable in variables:
+        if len(rpar[variable]) is not 0: # if it is an empty list like in discontinuity
+            if len(rpar[variable]) > 1:
+                if sorted(rpar[variable]) != rpar[variable]: raise AssertionError('depths not sorted',rpar[variable])
+            if rpar[variable] not in rpar_list:
+                rpar_list.append(rpar[variable])
+                model_dict[variable]['rpar_idx'] = rpar_idx
+                rpar_idx += 1
+            else:
+                model_dict[variable]['rpar_idx'] = rpar_list.index(rpar[variable])
+
     # check that information on variables in ascii file exists in setup.cfg
     for var in variables:
         if not var in parser['parameters'].keys(): raise AssertionError(var+' not found as shortname in '+setup_file)
         for indx in ['rpar_idx','hpar_idx']:
-            if not indx in model_dict[var].keys(): raise AssertionError(var+' not read properfly with index '+indx)
+            if not indx in model_dict[var].keys(): raise AssertionError(var+' not read properly with index '+indx)
 
     for i in range(nhpar):
 
@@ -777,7 +774,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
              pxw_lat = float(line.strip().split()[5].strip(','))
              nlines_input = int(line.strip().split()[6].strip(','))
              nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
-             if not nlines == nlines_input: raise AssertionError('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines),',  not '+str(nlines_input)+' as reported.')
+             if not nlines == nlines_input: raise warnings.warn('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines),',  not '+str(nlines_input)+' as provided.')
         else:
             raise ValueError('only PIXEL parameterizations enabled')
 
@@ -839,8 +836,17 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
 
     # check that indices have been read properly
     for var in variables:
-        for indx in ['rpar_idx','hpar_idx']:
-            if model_dict[var][indx] is None or model_dict[var][indx] < 0: raise AssertionError(var+' not read properfly with index '+indx)
+        if model_dict[var]['hpar_idx'] is None: raise AssertionError(var+' not read properly with hpar_idx ')
+
+    # Get all depths
+    alldepths = []; allstartdepths = []; allenddepths = []
+    for rpar_temp in rpar_list: alldepths.extend(rpar_temp)
+    alldepths = np.sort(np.unique(np.asarray(alldepths)))
+    for variable in rpar_starts.keys():
+        allstartdepths.extend(rpar_starts[variable])
+        allenddepths.extend(rpar_ends[variable])
+    allstartdepths = np.sort(np.unique(np.asarray(allstartdepths)))
+    allenddepths = np.sort(np.unique(np.asarray(allenddepths)))
 
     #open xarray dataset
     ds = xr.Dataset()
@@ -852,19 +858,21 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         lon = np.unique(hpar_list[hpar_idx][0])
         lat = np.unique(hpar_list[hpar_idx][1])
         pxw = np.unique(hpar_list[hpar_idx][2])
-        if not len(pxw)==1: raise AssertionError('only 1 pixel size allowed')
-        print(variable,': PXW', pxw[0])
+        if not len(pxw)==1: raise warnings.warn('more than 1 pixel size in variable '+variable, pxw)
+        print(variable,': PXW', pxw)
 
         #create dims arrays
         stru_idx = model_dict[variable]['rpar_idx']
 
         if stru_idx is not None:
             dep = rpar_list[stru_idx]
-            data_array = xr.DataArray(np.zeros((len(dep),len(lat),len(lon))),
+            # find depth indices
+            dep_indx = np.searchsorted(alldepths,dep)
+            data_array = xr.DataArray(np.zeros((len(alldepths),len(lat),len(lon))),
                                       dims = ['depth','latitude','longitude'],
-                                      coords=[dep,lat,lon])
+                                      coords=[alldepths,lat,lon])
             for i,layer in enumerate(model_dict[variable]['layers']):
-                data_array[i,:,:] = np.reshape(model_dict[variable]['layers'][layer],
+                data_array[dep_indx[i],:,:] = np.reshape(model_dict[variable]['layers'][layer],
                                     (len(lat),len(lon)),order='F')
         else:
             data_array = xr.DataArray(np.zeros((len(lat),len(lon))),
@@ -889,22 +897,30 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             # get the variable values
             if ifread1D: ref1d.get_custom_parameter(variable)
             av_depth = deepcopy(data_array.depth.values)
-            refvalue = []; avgvalue = []
-            for depth in av_depth:
+            refvalue = []; avgvalue = []; ifaverage =  True
+            for _,depth in enumerate(av_depth):
                 if ifread1D: refvalue.append(ref1d.evaluate_at_depth(depth,parameter=variable))
                 # select the appropriate map
                 mapval = data_array.sel(depth=depth)
                 # get the average, use an earlier evaluation of area if possible
-                globalav,area, _  = tools.MeanDataArray(mapval,area=area)
-                avgvalue.append(globalav)
+                if ifaverage:
+                    try:
+                        globalav,area, _  = tools.MeanDataArray(mapval,area=area)
+                        avgvalue.append(globalav)
+                    except:
+                        warnings.warn('Could not read mean values for parameter '+variable)
+                        ifaverage = False
             if ifread1D: av_attrs['refvalue'] = np.array(refvalue)
-            av_attrs['average'] = np.array(avgvalue)
-            av_attrs['start_depths'] = np.array(rpar_starts[variable])
-            av_attrs['end_depths'] = np.array(rpar_ends[variable])
+            if ifaverage: av_attrs['average'] = np.array(avgvalue)
+            av_attrs['start_depths'] = allstartdepths
+            av_attrs['end_depths'] = allenddepths
         else:
             # get the average, use an earlier evaluation of area if possible
-            globalav,area,_ = tools.MeanDataArray(data_array,area=area)
-            av_attrs['average'] = globalav
+            try:
+                globalav,area,_ = tools.MeanDataArray(data_array,area=area)
+                av_attrs['average'] = globalav
+            except:
+                warnings.warn('Could not read mean values for parameter '+variable)
             av_attrs['depth'] = float(av_attrs['depth'])
 
         #add Data_Array object to Data_Set
