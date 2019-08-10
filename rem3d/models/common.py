@@ -700,8 +700,8 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
     variables = []
     rpar_list = []
     hpar_list = []
-    rpar_starts = []
-    rpar_ends = []
+    rpar_starts = {}
+    rpar_ends = {}
     rpar = []
     variable_idxs = []
     hpar_idx = 0
@@ -716,6 +716,8 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             variable = line.strip().split()[2].split(',')[0]
             if variable not in variables:
                 variables.append(variable)
+                rpar_starts[variable] = []
+                rpar_ends[variable] = []
                 model_dict[variable] = {}
                 model_dict[variable]['hpar_idx'] = None
                 variable_idxs.append(var_idx)
@@ -740,10 +742,9 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             try:
                 rpar_start = float(line.strip().split(',')[-1].split('-')[0].strip('km'))
                 rpar_end = float(line.strip().split(',')[-1].split('-')[1].strip('km'))
-                rpar_starts.append(rpar_start)
-                rpar_ends.append(rpar_end)
+                rpar_starts[variable].append(rpar_start)
+                rpar_ends[variable].append(rpar_end)
                 rpar.append((rpar_start + rpar_end)/2.)
-
             except IndexError:
                 model_dict[variable]['rpar_idx'] = None
             line = asciioutput.readline()
@@ -836,6 +837,11 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             ifread1D = False
             print ('WARNING: Could not fill some reference values as the 1D reference model file could not be read as Reference1D instance : '+parser['metadata']['refmodel'])
 
+    # check that indices have been read properly
+    for var in variables:
+        for indx in ['rpar_idx','hpar_idx']:
+            if model_dict[var][indx] is None or model_dict[var][indx] < 0: raise AssertionError(var+' not read properfly with index '+indx)
+
     #open xarray dataset
     ds = xr.Dataset()
 
@@ -893,6 +899,8 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
                 avgvalue.append(globalav)
             if ifread1D: av_attrs['refvalue'] = np.array(refvalue)
             av_attrs['average'] = np.array(avgvalue)
+            av_attrs['start_depths'] = np.array(rpar_starts[variable])
+            av_attrs['end_depths'] = np.array(rpar_ends[variable])
         else:
             # get the average, use an earlier evaluation of area if possible
             globalav,area,_ = tools.MeanDataArray(data_array,area=area)
@@ -910,9 +918,6 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             attrs[key] = parser['metadata'][key]
         else:
             attrs[key] = parser['metadata'][key].decode('utf-8')
-
-    attrs['start_depths'] = np.array(rpar_starts)
-    attrs['end_depths'] = np.array(rpar_ends)
     ds.attrs = attrs
 
     # write to netcdf
