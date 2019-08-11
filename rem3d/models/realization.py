@@ -65,12 +65,12 @@ class Realization(object):
         if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
         success = True
         try:# try ascii
-            self.readascii(file)
+            self._readascii(file)
         except:
             var1 = traceback.format_exc()
             try: # try nc4
                 ds = xr.open_dataset(file)
-                self.readnc4(ds)
+                self._readnc4(ds)
                 ds.close()
             except:
                 try: #first close the dataset if opened with xarray above
@@ -83,7 +83,7 @@ class Realization(object):
                 success = False
         if success: self._infile = file
 
-    def readascii(self,modelfile):
+    def _readascii(self,modelfile):
         """
         Reads a standard 3D model file. maxkern is the maximum number of radial kernels
         and maxcoeff is the maximum number of corresponding lateral basis functions.
@@ -101,7 +101,7 @@ class Realization(object):
         self._type = 'ascii'
         self._refmodel = model['metadata']['refmodel']
 
-    def readnc4(self,ds):
+    def _readnc4(self,ds):
         """
         Read netCDF4 file into a resolution and realization of model3D class.
 
@@ -132,31 +132,15 @@ class Realization(object):
         metadata['xlopix'] = np.zeros([1,lenarr])
         # get data keys
         data_keys = []
-        for key,_ in ds.data_vars.items(): data_keys.append(key)
+        for key in ds.data_vars:
+            if key != 'pixel_width': data_keys.append(key)
         indx = 0
-        idep = 0
-        if len(ds.dims) == 3:
-            _ , nlat, nlon = ds[data_keys[0]].shape
-            for ilat in range(nlat):
-                metadata['xlapix'][0][indx:indx+nlon]=ds[data_keys[0]][idep,ilat,:].latitude.values
-                metadata['xlopix'][0][indx:indx+nlon]=ds[data_keys[0]][idep,ilat,:].longitude.values
-                indx += nlon
-        else:
-            raise ValueError('dimensions != 3')
-
-
-
-        #depth differences and get depth extents
-        depdiff = np.ediff1d(ds.depth)
-        deptop = np.copy(ds.depth)
-        depbottom = np.copy(ds.depth)
-
-        for ii in range(len(depdiff)-2):
-            deptop[ii] = deptop[ii] - (2.*depdiff[ii]-depdiff[ii+1])/2.
-            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii]-depdiff[ii+1])/2.
-        for ii in range(len(depdiff),len(depdiff)-3,-1):
-            deptop[ii] = deptop[ii] - (2.*depdiff[ii-1]-depdiff[ii-2])/2.
-            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+        nlat = ds.dims['latitude']
+        nlon = ds.dims['longitude']
+        for ilat in range(nlat):
+            metadata['xlapix'][0][indx:indx+nlon]=ds['latitude'].values[ilat]
+            metadata['xlopix'][0][indx:indx+nlon]=ds['longitude'].values
+            indx += nlon
 
         ## create keys
         metadata['numvar']=len(data_keys)
@@ -167,18 +151,20 @@ class Realization(object):
         coef_ndepth=0
         coef_nlatnon=nlat*nlon
         for key in data_keys:
-            if 'topo' in key:
+            if len(ds[key].dims) == 2:
                 coef_ndepth=coef_ndepth+1
-            else:
-                ndepth , nlat, nlon = ds[key].shape
+            elif len(ds[key].dims) == 3:
+                ndepth , _, _ = ds[key].shape
                 coef_ndepth=coef_ndepth+ndepth
+            else:
+                raise ValueError('dimension of key '+key+' cannot be anything except 2/3')
         coef=np.zeros([coef_ndepth,nlat*nlon])
 
         desckern = []; ivarkern = []; icount=0; idepth=0
         for key in data_keys:
             icount = icount+1
-            if 'topo' in key:
-                depth_range = key.split('topo')[1]
+            if len(ds[key].dims) == 2:
+                depth_range = ds[key].attrs['depth']
                 nlat, nlon = ds[key].shape
                 descstring = u'{}, delta, {} km'.format(key,depth_range)
                 coef[idepth,:]=ds[key].values.flatten()
@@ -187,8 +173,8 @@ class Realization(object):
                 ivarkern.append(icount)
             else:
                 ndepth , nlat, nlon = ds[key].shape
-                for ii,_ in enumerate(deptop):
-                    descstring = u'{}, boxcar, {} - {} km'.format(key,deptop[ii],depbottom[ii])
+                for ii,deptop in enumerate(ds[key].attrs['start_depths']):
+                    descstring = u'{}, boxcar, {} - {} km'.format(key,deptop,ds[key].attrs['end_depths'][ii])
                     desckern.append(descstring)
                     ivarkern.append(icount)
                 coef[idepth:idepth+ndepth,:]=np.reshape(ds[key].values,[ndepth,nlat*nlon])
