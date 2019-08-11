@@ -22,6 +22,7 @@ import ntpath
 import warnings
 import pandas as pd
 import struct
+import traceback
 from progressbar import progressbar
 import pdb
 
@@ -774,11 +775,11 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
              pxw_lat = float(line.strip().split()[5].strip(','))
              nlines_input = int(line.strip().split()[6].strip(','))
              nlines = int(360.0/pxw_lon) * int(180/pxw_lat)
-             if not nlines == nlines_input: raise warnings.warn('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines),',  not '+str(nlines_input)+' as provided.')
+             if not nlines == nlines_input: warnings.warn('number of pixels expected for '+str(pxw_lat)+'X'+str(pxw_lon)+' is '+str(nlines)+',  not '+str(nlines_input)+' as provided.')
         else:
             raise ValueError('only PIXEL parameterizations enabled')
 
-        for j in range(nlines):
+        for j in range(nlines_input):
             line = asciioutput.readline()
             lons.append(float(line.strip().split()[0]))
             lats.append(float(line.strip().split()[1]))
@@ -787,6 +788,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         hpar_list.append([lons,lats,pxwd])
 
     #read coefficients
+    num_coefficients = None
     for variable in variables:
         stru_idx = model_dict[variable]['rpar_idx']
         model_dict[variable]['layers'] = {}
@@ -821,6 +823,13 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
                     layer_coefs.append(float(coef))
 
             model_dict[variable]['layers'][i] = layer_coefs
+
+            # Check if the same number of coefficients are used
+            if num_coefficients is None:
+                num_coefficients = len(model_dict[variable]['layers'][i])
+            else:
+                if num_coefficients != len(model_dict[variable]['layers'][i]):
+                    raise AssertionError('number of coefficients for variable '+variable+' and layer '+str(i)+' is not equal to that of another one '+str(num_coefficients)+'. All variables should use the same grid.')
 
     # check if we can  read 1D model
     ifread1D = True
@@ -864,6 +873,14 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         #create dims arrays
         stru_idx = model_dict[variable]['rpar_idx']
 
+        # get the grid sizes stored
+        pixel_array = xr.DataArray(np.zeros((len(lat),len(lon))),
+                        dims = ['latitude','longitude'],
+                        coords = [lat,lon])
+        pixel_array[:,:] = np.reshape(hpar_list[hpar_idx][2],
+                            (len(lat),len(lon)),order='F')
+        ds['pixel_width'] = pixel_array
+
         if stru_idx is not None:
             dep = rpar_list[stru_idx]
             # find depth indices
@@ -905,9 +922,10 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
                 # get the average, use an earlier evaluation of area if possible
                 if ifaverage:
                     try:
-                        globalav,area, _  = tools.MeanDataArray(mapval,area=area)
+                        globalav,area, _  = tools.MeanDataArray(mapval,area=area,pix_width = ds['pixel_width'])
                         avgvalue.append(globalav)
                     except:
+                        print(traceback.format_exc())
                         warnings.warn('Could not read mean values for parameter '+variable)
                         ifaverage = False
             if ifread1D: av_attrs['refvalue'] = np.array(refvalue)
@@ -917,7 +935,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         else:
             # get the average, use an earlier evaluation of area if possible
             try:
-                globalav,area,_ = tools.MeanDataArray(data_array,area=area)
+                globalav,area,_ = tools.MeanDataArray(data_array,area=area,pix_width = ds['pixel_width'])
                 av_attrs['average'] = globalav
             except:
                 warnings.warn('Could not read mean values for parameter '+variable)
