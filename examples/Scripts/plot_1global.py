@@ -5,10 +5,14 @@ import argparse #parsing arguments
 import matplotlib.pyplot as plt
 import ntpath
 import xarray as xr
+import numpy as np
 import pdb
 
 ########################### IMPORT REM3D MODULES   #####################################
-import rem3d
+from rem3d.tools import stage,get_fullpath,get_filedir
+from rem3d.data import update_file
+from rem3d.models import readepixfile
+from rem3d.plots import globalmap
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
@@ -28,47 +32,56 @@ def main():
         help='Color palette e.g. rem3d or bk')
     parser.add_argument('-t', '--colorcontour', type=int, default=20,
         help='color contour levels')
-    parser.add_argument('-o', '--format', type=str,default='png',
+    parser.add_argument('-f', '--format', type=str,default='png',
         help='Output file format')
+    parser.add_argument('-o', '--output', action='store_true',
+        help='Save the figures in files')
     arg = parser.parse_args()
 
     try:
         # stage the file for plotting
-        rem3d.tools.stage(arg.file)
+        ierror = stage(get_fullpath(arg.file),overwrite=True)
     except:
         # update the file from the server
-        rem3d.data.update_file(arg.file)
+        update_file(arg.file)
     model = ntpath.basename(arg.file)
 
     # Read the file
     try:
-        latlonval,metadata,_ = rem3d.models.readepixfile(rem3d.tools.get_filedir()+'/'+model)
+        latlonval,metadata,_ = readepixfile(get_filedir()+'/'+model)
         title = 'Depth : '+metadata['DEPTH_RANGE']+' km'
         outfile = model+'.'+arg.parameter+'.'+metadata['DEPTH_IN_KM']+'km.'+arg.format
     except:
-        raise NotImplementedError('netcdf not implemented yet')
         metadata = {}
-        ds = xr.open_dataset(rem3d.tools.get_filedir()+'/'+model)
+        ds = xr.open_dataset(get_filedir()+'/'+model)
         metadata['WHAT'] = arg.parameter
         metadata['UNIT'] = '%' if ds[arg.parameter].attrs['unit']=='percent' else ds['vs'].attrs['unit']
-        outfile = model+'.'+arg.parameter+'.'+str(arg.depth)+'km.'+arg.format
-        title = 'Depth : '+str(arg.depth)+' km'
-        #title = 'Depth : '+str(arg.depth)+' km ['+str+' - '+str+' km]'
+        outfile = model.split('rem3d.nc4')[0]+arg.parameter+'.'+str(arg.depth)+'km.'+arg.format
+
+        # find the index, choosing the first if multiple ones available
+        start_depths = ds[arg.parameter].attrs['start_depths']
+        end_depths = ds[arg.parameter].attrs['end_depths']
+        depindex = np.where(np.logical_and(start_depths <= arg.depth,end_depths >= arg.depth))[0][0]
+        start_depth = start_depths[depindex]
+        end_depth = end_depths[depindex]
+        title = 'Depth : '+str(arg.depth)+' km ['+str(start_depth)+' - '+str(end_depth)+' km]'
+        latlonval = ds[arg.parameter][depindex]
 
     # Plot the file
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
     projection=arg.projection; vmin = arg.lower_bound; vmax = arg.upper_bound
     if projection=='ortho':
-        rem3d.plots.globalmap(ax,latlonval,vmin,vmax,grid=[30.,30.],gridwidth=1,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
+        globalmap(ax,latlonval,vmin,vmax,grid=[30.,30.],gridwidth=1,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
     elif projection=='robin':
-        rem3d.plots.globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
+        globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
     else:
-        rem3d.plots.globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
+        globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
     ax.set_title(title)
-    plt.show()
-    fig.savefig(outfile,dpi=300)
-
+    if arg.output:
+        fig.savefig(outfile,dpi=300)
+    else:
+        plt.show()
     return
 
 if __name__== "__main__":
