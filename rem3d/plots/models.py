@@ -204,22 +204,24 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
     """
     # defaults
     if grid is None: grid=[30.,90.]
+    parallels = np.arange(-90.,90.,grid[0])
+    meridians = np.arange(-180.,180.,grid[1])
 
     # set up map
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
     else:
+        projection='robin'
         m = Basemap(ax=ax,projection='robin', lon_0=150, resolution='c')
     #clip_path = m.drawmapboundary()
     m.drawcoastlines(linewidth=1.5)
     # draw parallels and meridians.
     # label parallels on right and top
     # meridians on bottom and left
-    parallels = np.arange(-90.,90.,grid[0])
     # labels = [left,right,top,bottom]
-    m.drawparallels(parallels,labels=[True,False,False,False],linewidth=gridwidth)
-    meridians = np.arange(-180.,180.,grid[1])
-    m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth)
+    if not(m.projection  == 'hammer' and gridwidth == 0):
+        m.drawparallels(parallels,labels=[True,False,False,False],linewidth=gridwidth)
+        m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth)
 
     # Get the color map
     cpalette = initializecolor(colorpalette)
@@ -243,65 +245,76 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
         raise ValueError("Undefined colorcontour in globalmap; should be a numpy array, list or integer")
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
 
-    # plot the model
-    for ii in np.arange(len(valarray['lon'])):
-        if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
-    #numlon=len(np.unique(valarray['lon']))
-    #numlat=len(np.unique(valarray['lat']))
-    # grid spacing assuming a even grid
-    # Get the unique lat and lon spacing, avoiding repeated lat/lon
-    spacing_lat = np.ediff1d(np.sort(valarray['lat']))
-    spacing_lat = np.unique(spacing_lat[spacing_lat != 0])
-    spacing_lon = np.ediff1d(np.sort(valarray['lon']))
-    spacing_lon = np.unique(spacing_lon[spacing_lon != 0])
-    # Check if an unique grid spacing exists for both lat and lon
-    if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon):
-        print("Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation")
-        # compute native map projection coordinates of lat/lon grid.
-        #x, y = m(valarray['lon'], valarray['lat'])
-        rlatlon = np.vstack([np.ones(len(valarray['lon'])),valarray['lat'],valarray['lon']]).transpose()
-        xyz = mapping.spher2cart(rlatlon)
+    #################################################################
+    # perform the analysis based on expanded nparray or xarray
+    if type(valarray).__name__ == 'ndarray':
+        # plot the model
+        for ii in np.arange(len(valarray['lon'])):
+            if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
+        #numlon=len(np.unique(valarray['lon']))
+        #numlat=len(np.unique(valarray['lat']))
+        # grid spacing assuming a even grid
+        # Get the unique lat and lon spacing, avoiding repeated lat/lon
+        spacing_lat = np.ediff1d(np.sort(valarray['lat']))
+        spacing_lat = np.unique(spacing_lat[spacing_lat != 0])
+        spacing_lon = np.ediff1d(np.sort(valarray['lon']))
+        spacing_lon = np.unique(spacing_lon[spacing_lon != 0])
+        # Check if an unique grid spacing exists for both lat and lon
+        if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon):
+            print("Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation")
+            # compute native map projection coordinates of lat/lon grid.
+            #x, y = m(valarray['lon'], valarray['lat'])
+            rlatlon = np.vstack([np.ones(len(valarray['lon'])),valarray['lat'],valarray['lon']]).transpose()
+            xyz = mapping.spher2cart(rlatlon)
 
-        # Create a grid
-        grid_spacing = 1.
-        lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
-        lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
-        lons,lats=np.meshgrid(lon,lat)
+            # Create a grid
+            grid_spacing = 1.
+            lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
+            lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
+            lons,lats=np.meshgrid(lon,lat)
 
-        # evaluate in cartesian
-        rlatlon = np.vstack([np.ones_like(lons.flatten()),lats.flatten(),lons.flatten()]).transpose()
-        xyz_new = mapping.spher2cart(rlatlon)
+            # evaluate in cartesian
+            rlatlon = np.vstack([np.ones_like(lons.flatten()),lats.flatten(),lons.flatten()]).transpose()
+            xyz_new = mapping.spher2cart(rlatlon)
 
-        # grid the data.
-        val = spint.griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)
-        #s = m.transform_scalar(val,lon,lat, 1000, 500)
-        #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
-        im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+            # grid the data.
+            val = spint.griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)
+            #s = m.transform_scalar(val,lon,lat, 1000, 500)
+            #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+            im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
 
-    else:
-        grid_spacing = spacing_lat
-        # Create a grid
-        lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
-        lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
-        X,Y=np.meshgrid(lon,lat)
-        val = np.empty_like(X)
-        val[:] = np.nan;
-        for i in range(0, valarray['lat'].size):
-            # Get the indices
-            try: # if unique values exist
-                ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
-                ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
-            except IndexError: # take nearest points if unique lat/lon not available
-            # This is a case when converting pix to epix.
-                array = np.asarray(X[0,:])
-                ilon = (np.abs(array - valarray['lon'][i])).argmin()
-                array = np.asarray(Y[:,0])
-                ilat = (np.abs(array - valarray['lat'][i])).argmin()
-            val[ilat,ilon] = valarray['val'][i]
-        #s = m.transform_scalar(val,lon,lat, 1000, 500)
-        #im=m.pcolormesh(grid_x,grid_y,s,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
+        else:
+            grid_spacing = spacing_lat
+            # Create a grid
+            lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
+            lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
+            X,Y=np.meshgrid(lon,lat)
+            val = np.empty_like(X)
+            val[:] = np.nan;
+            for i in range(0, valarray['lat'].size):
+                # Get the indices
+                try: # if unique values exist
+                    ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
+                    ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
+                except IndexError: # take nearest points if unique lat/lon not available
+                # This is a case when converting pix to epix.
+                    array = np.asarray(X[0,:])
+                    ilon = (np.abs(array - valarray['lon'][i])).argmin()
+                    array = np.asarray(Y[:,0])
+                    ilat = (np.abs(array - valarray['lat'][i])).argmin()
+                val[ilat,ilon] = valarray['val'][i]
+            #s = m.transform_scalar(val,lon,lat, 1000, 500)
+            #im=m.pcolormesh(grid_x,grid_y,s,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
+            im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+            #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+    elif type(valarray).__name__ == 'DataArray':
+        if valarray.dims[0] == 'longitude': valarray = valarray.T
+        val = valarray.data
+        X,Y = np.meshgrid(valarray['longitude'].data,valarray['latitude'].data)
         im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
-        #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+    else:
+        raise ValueError(type(valarray).__name__+' input type cannot be plotted by globalmap')
+
     # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
     plot_plates(m, dbs_path=dbs_path, color='w', linewidth=1.5)

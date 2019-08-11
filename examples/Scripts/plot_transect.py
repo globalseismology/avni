@@ -7,7 +7,7 @@ import ntpath
 ################################ IMPORT REM3D MODULES   #####################################
 from rem3d.f2py import ddelazgc # geolib library from NSW
 from rem3d.plots import plot1section
-from rem3d.tools import stage
+from rem3d.tools import stage,get_fullpath
 from rem3d.data import update_file
 #########################################################
 def main():
@@ -36,7 +36,7 @@ def main():
 
     try:
         # stage the file for plotting
-        ierror = stage(arg.file,overwrite=True)
+        ierror = stage(get_fullpath(arg.file),overwrite=True)
     except:
         # update the file from the server
         update_file(arg.file)

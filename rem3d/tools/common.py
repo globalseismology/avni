@@ -191,12 +191,15 @@ def get_fullpath(path):
     """
     Provides the full path by replacing . and ~ in path.
     """
-    # if only file name provided append current directory
-    if ntpath.basename(path) == path: path = os.path.abspath('./'+path)
     # Get the current directory
-    if path[0]=='.' or path[0]=='..': path = os.path.abspath(path)
+    if path[0]=='.': path = os.path.abspath(path)
+    if len(path) > 2 :
+        if path[:2]=='..': path = os.path.abspath(path)
     # If the path starts with tilde, replace with home directory
     if path[0]=='~': path = os.path.expanduser(path)
+    # if the expanded path does not have / as first character it is from current directory
+    # if only file name provided append current directory
+    if ntpath.basename(path) == path or path[0] != '/': path = os.path.abspath('./'+path)
     return path
 
 def listfolders(path):
