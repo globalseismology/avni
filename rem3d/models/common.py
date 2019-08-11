@@ -864,9 +864,22 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
     area = None # calculate area the first time around
     for variable in variables:
         hpar_idx = model_dict[variable]['hpar_idx']
-        lon = np.unique(hpar_list[hpar_idx][0])
-        lat = np.unique(hpar_list[hpar_idx][1])
-        pxw = np.unique(hpar_list[hpar_idx][2])
+
+        # sort them by increaing lon if needed since reshape requires that
+        sortbylon = hpar_list[hpar_idx][0] == sorted(hpar_list[hpar_idx][0])
+
+        # unique values for reshaping
+        if sortbylon:
+            lon = np.unique(hpar_list[hpar_idx][0])
+            lat = np.unique(hpar_list[hpar_idx][1])
+            pxw = np.unique(hpar_list[hpar_idx][2])
+        else:
+            arr=pd.DataFrame(np.asarray(hpar_list[hpar_idx]).T,columns =['lon', 'lat', 'pxw'])
+            arr = arr.sort_values(by=['lon','lat'])
+            lon = pd.unique(arr['lon'])
+            lat = pd.unique(arr['lat'])
+            pxw = pd.unique(arr['pxw'])
+
         if not len(pxw)==1: raise warnings.warn('more than 1 pixel size in variable '+variable, pxw)
         print(variable,': PXW', pxw)
 
@@ -889,13 +902,25 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
                                       dims = ['depth','latitude','longitude'],
                                       coords=[alldepths,lat,lon])
             for i,layer in enumerate(model_dict[variable]['layers']):
-                data_array[dep_indx[i],:,:] = np.reshape(model_dict[variable]['layers'][layer],
+                # if sorting is needed before reshaping
+                values = model_dict[variable]['layers'][layer]
+                if not sortbylon:
+                    arr=pd.DataFrame(np.vstack([hpar_list[hpar_idx],values]).T,columns =['lon', 'lat', 'pxw','values'])
+                    arr = arr.sort_values(by=['lon','lat'])
+                    values = arr['values'].values
+                data_array[dep_indx[i],:,:] = np.reshape(values,
                                     (len(lat),len(lon)),order='F')
         else:
             data_array = xr.DataArray(np.zeros((len(lat),len(lon))),
                                       dims = ['latitude','longitude'],
                                       coords = [lat,lon])
-            data_array[:,:] = np.reshape(model_dict[variable]['layers'][0],
+            # if sorting is needed before reshaping
+            values = model_dict[variable]['layers'][0]
+            if not sortbylon:
+                arr=pd.DataFrame(np.vstack([hpar_list[hpar_idx],values]).T,columns =['lon', 'lat', 'pxw','values'])
+                arr = arr.sort_values(by=['lon','lat'])
+                values = arr['values'].values
+            data_array[:,:] = np.reshape(values,
                                     (len(lat),len(lon)),order='F')
         #-------------------------------------------------------------------------
         #add reference values at each depth as metadata to the Data_Array
