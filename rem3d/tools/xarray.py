@@ -125,20 +125,22 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
     # pix_lon = np.unique(np.round(pix_lon, min(dec_lon)))
 
     # checks
-    if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
-    if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
+    if len(pix_lat)==len(pix_lon)==1:
+        if not pix_lat.item()==pix_lon.item(): warnings.warn('same pixel size in both lat and lon in xarray')
+    else:
+        warnings.warn('multiple pixel sizes have been found for xarray',pix_lat,pix_lon)
     # check number of poxels
     pix_width = pix_lat.item()
     nlat = 180./pix_width; nlon = 360./pix_width
     if not np.mod(nlat,1.)==0.: warnings.warn ('pixel width should be ideally be a factor of 180')
     if not np.mod(nlon,1.)==0.: warnings.warn ('pixel width should be ideally be a factor of 180')
     nlat = int(nlat); nlon = int(nlon)
-    if nlat*nlon != data.size: raise warnings.warn('number of pixels expected for '+str(pix_width)+'X'+str(pix_width)+' is '+str(nlat*nlon),',  not '+str(data.size)+' as specified in the data array.')
+    if nlat*nlon != data.size: warnings.warn('number of pixels expected for '+str(pix_width)+'X'+str(pix_width)+' is '+str(nlat*nlon)+',  not '+str(data.size)+' as specified in the data array.')
 
     return pix_width,nlat,nlon
 
 
-def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
+def AreaDataArray(data,latname = 'latitude', lonname = 'longitude',pix_width=None):
     """
     weighted average for xray data geographically averaged
 
@@ -147,61 +149,62 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
     data : Dataset or DataArray
         the xray object to average over
 
+    pix_width: width of pixels if not the default derived from data
+
     Returns
     -------
 
     area: a DataArray object with area of each pixel
 
     """
-    # check if it is a compatible dataarray
-    pix_width,nlat,nlon = checkDataArray(data,latname, lonname)
-    dlat = dlon = pix_width
 
-    #---- calculate the grid of test points and their weights
-    xlat = []; xlon = []; area = []
-    for ilat in range(nlat):
-        xlat.append(90.0-0.5*dlat-(ilat*dlat))
-    for ilon in range(nlon):
-        val = 0.5*dlon+(ilon*dlon)
-        if min(data.coords[lonname].values) < 0.: # if xarray goes from (-180,180)
-            if val>360.:
-                xlon.append(val-360.)
-            else:
-                xlon.append(val)
-        else:
-            xlon.append(val)
-    for ilat in range(nlat):
-        area.append(2.*np.pi*(sind(xlat[ilat]+0.5*dlat)-             sind(xlat[ilat]-0.5*dlat))/float(nlon))
+    # check if it is a compatible dataarray
+    pix,nlat,nlon = checkDataArray(data,latname, lonname)
+
+    if pix_width is not None:
+        if pix_width.shape != data.shape: raise AssertionError('pix_width.shape != data.shape')
+        uniq_pix = np.unique(pix_width)
+        # if the pix_width array has only one value and that
+        # is consistent with the one derived from data
+        if len(uniq_pix) is 1 and uniq_pix[0] is pix: pix_width = None
 
     # now fill the areas
-    areaarray = []
-    if data.shape[0] == 0.5*data.shape[1]:
-        rowvar = latname
-        colvar = lonname
-        latdim = 'row'
-    elif data.shape[1] == 0.5*data.shape[0]:
-        rowvar = lonname
-        colvar = latname
-        latdim = 'col'
-    else:
-        raise ValueError('dimensions should be data.shape[0] == 0.5*data.shape[1]')
+    area = {}
     areaarray = np.zeros(data.shape)
-    if latdim == 'row':
-        for irow in range(len(data.coords[rowvar])):
-            ifind = int((90.0-0.5*dlat-data.coords[rowvar][irow].item())/dlat)
+
+    # find the index of the latitude
+    lat_index = data.dims.index(latname)
+    if lat_index is not 0: # transpose to (lat,lon) for caculations
+        data = data.T
+        if pix_width is not None: pix_width = pix_width.T
+
+    # now calculate area
+    for irow in range(len(data.coords[latname])):
+        xlat = data.coords[latname][irow].item()
+        # if no px width array is provided
+        if pix_width is None:
+            dlat = dlon = pix
+            ifind = int((90.0-0.5*dlat-xlat)/dlat)
+            if ifind not in area.keys():
+                nlon = int(180./pix)
+                area[ifind] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
             areaarray[ifind,:]=area[ifind]
-    elif latdim == 'col':
-        for icol in range(len(data.coords[colvar])):
-            ifind = int((90.0-0.5*dlat-data.coords[colvar][icol].item())/dlat)
-            areaarray[:,ifind]=area[ifind]
+        else:
+            for icol in range(len(pix_width[lonname])):
+                nlon = int(180./pix_width[irow,icol])
+                dlat = dlon = pix_width[irow,icol].item()
+                areaarray[irow,icol] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
 
     # drop the variables for weights
     drops = [var for var in data.coords.keys() if var not in [latname,lonname]]
     area  = xr.DataArray(areaarray,name='area',coords=data.drop(drops).coords)
+
+    # transpose the area array if needed
+    if lat_index is not 0: area = area.T
     return area
 
 
-def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
+def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude', pix_width=None):
     """
     weighted average for xray data geographically averaged
 
@@ -213,6 +216,8 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
     area: DataArray containing area weights. Obtained from AreaDataArray.
           If None, calculate again.
 
+    pix_width: width of pixels if not the default derived from data
+
     Returns
     -------
 
@@ -223,10 +228,8 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
     percentglobal: percentage of global area covered by this basis set
 
     """
-
-    # check if it is a compatible dataarray
-    pix_width,nlat,nlon = checkDataArray(data,latname, lonname)
-    dlat = dlon = pix_width
+    if pix_width is not None:
+        if pix_width.shape != data.shape: raise AssertionError('pix_width.shape != data.shape')
 
     # take weights
     # drop the variables for weights
@@ -234,7 +237,7 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
     try:
         totarea = np.sum(area.values)
     except:# if area does not exist, evaluate it
-        area = AreaDataArray(data.drop(drops),latname,lonname)
+        area = AreaDataArray(data.drop(drops),latname,lonname,pix_width)
         totarea = np.sum(area.values)
     percentglobal = np.round(totarea/(4.*np.pi)*100.,3)
     weighted = area*data
