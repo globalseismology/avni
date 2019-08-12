@@ -12,6 +12,7 @@ if (sys.version_info[:2] < (3, 0)):
 import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
+from six import string_types # to check if variable is string using isinstance
 
 import struct
 import xarray as xr
@@ -114,9 +115,16 @@ class Realization(object):
 
         # Store in a dictionary
         metadata = {}
-        for key in ds.attrs.keys(): metadata[key] = ds.attrs[key]
+
+        # change None to string since it cannot be stored in netcdf
+        for key in ds.attrs.keys(): metadata[key] = None if ds.attrs[key].lower() == 'none' else ds.attrs[key]
+        for var in ds.data_vars:
+            for key in ds[var].attrs.keys():
+                val = ds[var].attrs[key]
+                if isinstance(val,string_types):
+                    if ds[var].attrs[key].lower() == 'none': ds[var].attrs[key] = None
+
         metadata['nhorpar']=1
-        metadata['null_model']=None
         metadata['shortcite']=ds.attrs['name']
         metadata['ityphpar']=np.array([3])
         metadata['typehpar']=np.array(['PIXELS'], dtype='<U40')
