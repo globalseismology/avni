@@ -20,7 +20,7 @@ def main():
     parser.add_argument('-k', '--key', type=str,default='',help='api key')
     arg = parser.parse_args()
 
-    conn=r3d(api_key=sys.key) # api connection object
+    conn=r3d(api_key=arg.key) # api connection object
     conn.setApiConfig() # store the api key in default config
 
 if __name__== "__main__":
