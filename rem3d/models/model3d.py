@@ -29,6 +29,7 @@ from .. import constants
 from .kernel_set import Kernel_set
 from .realization import Realization
 from .common import getLU2symmetric,readResCov
+from .profiles import Profiles
 #######################################################################################
 
 # 3D model class
@@ -291,7 +292,7 @@ class Model3D(object):
         hf.close()
         print('... written to '+outfile)
 
-    def evaluate(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1,dbs_path=tools.get_filedir()):
+    def evaluate_at_location(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1,dbs_path=tools.get_filedir()):
         """
         Evaluate the mode at a location (latitude, longitude,depth)
 
@@ -763,6 +764,21 @@ class Model3D(object):
                 GTG_inv = linalg.inv(GTG[start:end,start:end].todense())
                 #d = GTG_inv * values
                 pdb.set_trace()
+
+    def to_profiles(self):
+        """
+        converts a model3d class to profiles class
+        """
+        raise NotImplementedError('needs to be implemented soon')
+        profiles = Profiles()
+
+        #profiles._name = self._name
+        #profiles._interpolant = None
+        #profiles._infile = None
+        # fill the following structures
+        #profiles.metadata ={}
+        #profiles.data = {}
+
 
     def get_resolution(self,rescovfile=None,LU2symmetric=True,resolution=0, realization=0):
         """

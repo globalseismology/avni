@@ -11,6 +11,7 @@ if (sys.version_info[:2] < (3, 0)):
 
 import traceback
 from configobj import ConfigObj
+import warnings
 import numpy as np #for numerical analysis
 import pdb
 
@@ -30,8 +31,8 @@ class Profiles(object):
         self.data = {}
         self._name = None
         self._interpolant = None
-        self._infile = file
-        self.read(self._infile,**kwargs)
+        self._infile = None
+        if file is not None: self.read(file,**kwargs)
 
     def __str__(self):
         if self._name is not None:
@@ -54,18 +55,10 @@ class Profiles(object):
     #########################       methods       #############################
 
     def read(self,file,**kwargs):
-        try:# try setup.cfg on this folder
-            success1 = True
-            self.read_setup() if file is None else self.read_setup(file)
-        except:
-            success1 = False
-            var1 = traceback.format_exc()
-        if not success1:
-            print(var1)
-            raise IOError('unable to read '+file+' as cfg file')
+        # try setup.cfg on this folder
+        self.read_setup(file)
 
-
-    def read_setup(self,setup_file='setup.cfg'):
+    def read_setup(self,file='setup.cfg'):
         '''
         Try reading a folder containing ascii files for every location on the surface
 
@@ -79,21 +72,22 @@ class Profiles(object):
         # go through all files in the folder
         # temp1d = Reference1D(file)
 
-        if not os.path.isfile(setup_file):
+        if not os.path.isfile(file):
             raise IOError('No configuration file found.'\
-                 'Model directory must contain '+setup_file)
+                 'Model directory must contain '+file)
         else:
-            parser = ConfigObj(setup_file)
+            parser = ConfigObj(file)
         for key in parser['metadata'].keys(): self.metadata[key] = parser['metadata'][key]
 
         # loop over all files as rem3d.models.reference1d
         #   save as a list of classes
         epixarr,metadata,comments = readepixfile(self.metadata['index'])
         profiles = {}
-        for loc in np.unique(epixarr['val']):
+        location_indices = np.unique(epixarr['val'])
+        for loc in location_indices:
             file_name = self.metadata['folder'] + '/' + self.metadata['prefix'] + str(loc)
-            profile = Reference1D(file_name)
-            profiles[loc] = profile
+            if os.path.isfile(file_name): profiles[loc] = Reference1D(file_name)
+        if len(profiles) != len(location_indices): warnings.warn('Only '+str(len(profiles))+' profiles out of '+str(len(location_indices))+' distinct profiles have been found and read')
         self.data['profiles'] = profiles
         self.data['index'] = epixarr
         self._name = self.metadata['name']
