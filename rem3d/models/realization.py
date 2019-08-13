@@ -13,7 +13,7 @@ import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
 from six import string_types # to check if variable is string using isinstance
-
+import warnings
 import struct
 import xarray as xr
 import traceback
@@ -131,11 +131,14 @@ class Realization(object):
         # check the pixel size
         pixlat = np.unique(np.ediff1d(np.array(ds.latitude)))
         pixlon = np.unique(np.ediff1d(np.array(ds.longitude)))
-        if not len(pixlat)==len(pixlon)==1: raise AssertionError('only one pixel size allowed in xarray')
-        if not pixlat.item()==pixlon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
+        if len(pixlat)==len(pixlon)==1:
+            if not pixlat.item()==pixlon.item(): warnings.warn('same pixel size in both lat and lon in xarray')
+        else:
+            warnings.warn('multiple pixel sizes have been found for xarray'+str(pixlat)+str(pixlon))
+
         metadata['hsplfile']=np.array([str(pixlat[0])+' X '+str(pixlat[0])], dtype='<U40')
         lenarr = len(ds.latitude)*len(ds.longitude)
-        metadata['xsipix']=np.array([[pixlat[0] for ii in range(lenarr)]])
+        metadata['xsipix']= np.zeros([1,lenarr])
         metadata['xlapix'] = np.zeros([1,lenarr])
         metadata['xlopix'] = np.zeros([1,lenarr])
         # get data keys
@@ -146,6 +149,7 @@ class Realization(object):
         nlat = ds.dims['latitude']
         nlon = ds.dims['longitude']
         for ilat in range(nlat):
+            metadata['xsipix'][0][indx:indx+nlon]=ds['pixel_width'].values[ilat]
             metadata['xlapix'][0][indx:indx+nlon]=ds['latitude'].values[ilat]
             metadata['xlopix'][0][indx:indx+nlon]=ds['longitude'].values
             indx += nlon
