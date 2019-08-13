@@ -9,6 +9,8 @@ import sys,os
 if (sys.version_info[:2] < (3, 0)):
     from builtins import float,int,list,tuple
 
+import traceback
+from configobj import ConfigObj
 import numpy as np #for numerical analysis
 import pdb
 
@@ -23,12 +25,13 @@ class Profiles(object):
     A class for the profiles from a laterally heteroegeneous model
     '''
     #########################       magic       ##########################
-    def __init__(self,folder=None):
-        self.metadata = None
-        self.data = None
+    def __init__(self,file=None,**kwargs):
+        self.metadata ={}
+        self.data = {}
         self._name = None
-        self._infile = None
-        if file is not None:  success = self._read(file)
+        self._interpolant = None
+        self._infile = file
+        self.read(self._infile,**kwargs)
 
     def __str__(self):
         if self._name is not None:
@@ -40,6 +43,8 @@ class Profiles(object):
     def __repr__(self):
         return '{self.__class__.__name__}({self._infile})'.format(self=self)
 
+    def __add__(self, other):
+        raise NotImplementedError('method to add profiles on top of each other. Should use the add method in reference1D')
     #########################       decorators       ##########################
 
     @property
@@ -48,7 +53,19 @@ class Profiles(object):
 
     #########################       methods       #############################
 
-    def read(self,setup_file='setup.cfg',model_dir='.'):
+    def read(self,file,**kwargs):
+        try:# try setup.cfg on this folder
+            success1 = True
+            self.read_setup() if file is None else self.read_setup(file)
+        except:
+            success1 = False
+            var1 = traceback.format_exc()
+        if not success1:
+            print(var1)
+            raise IOError('unable to read '+file+' as cfg file')
+
+
+    def read_setup(self,setup_file='setup.cfg'):
         '''
         Try reading a folder containing ascii files for every location on the surface
 
@@ -62,27 +79,62 @@ class Profiles(object):
         # go through all files in the folder
         # temp1d = Reference1D(file)
 
-        cfg_file = model_dir+'/'+setup_file
-
-        if not os.path.isfile(cfg_file):
+        if not os.path.isfile(setup_file):
             raise IOError('No configuration file found.'\
                  'Model directory must contain '+setup_file)
         else:
-            parser = ConfigObj(cfg_file)
-        self._folder = parser['metadata']['folder']
-        self._index = parser['metadata']['index']
+            parser = ConfigObj(setup_file)
+        for key in parser['metadata'].keys(): self.metadata[key] = parser['metadata'][key]
+
         # loop over all files as rem3d.models.reference1d
         #   save as a list of classes
-        epixarr,metadata,comments = readepixfile(self._index)
+        epixarr,metadata,comments = readepixfile(self.metadata['index'])
         profiles = {}
         for loc in np.unique(epixarr['val']):
-            file_name = self._folder + '/' + parser['metadata']['prefix'] + str(loc)
+            file_name = self.metadata['folder'] + '/' + self.metadata['prefix'] + str(loc)
             profile = Reference1D(file_name)
-            profiles[(lat,lon)] = profile
+            profiles[loc] = profile
+        self.data['profiles'] = profiles
+        self.data['index'] = epixarr
+        self._name = self.metadata['name']
+        self._interpolant = self.metadata['interpolant']
+        self._infile = file
 
 
-    def write_to_hdf(self):
+    def write_to_hdf(self,outfile = None, overwrite = False):
         """writes profile class to an hdf5 container"""
+        if outfile == None: outfile = self._name+'.profiles.h5'
+        raise NotImplementedError('method to add profiles')
+        if overwrite:
+            hf = h5py.File(outfile, 'w')
+        else:
+            hf = h5py.File(outfile, 'a')
+        g1 = hf.require_group(self._interpolant)
 
-    def evaluate_at_location(self,latitude, longitude,depth):
+
+    def find_index(self,latitude,longitude):
+        """finds the nearest point in self.data['index']"""
+        indx = None
+        if self._interpolant == 'pixel':
+            #find pixel index from xarray of the lat lon
+            raise NotImplementedError('method to find nearest point')
+        elif self._interpolant == 'nearest':
+            # use voronoi nearest point
+            raise NotImplementedError('method to find nearest point')
+        else:
+            raise ValueError('only pixel or nearest options allowed for interpolant')
+        return indx
+
+    def evaluate_at_location(self,parameter,latitude,longitude,depth_in_km,**kwargs):
         """evaluate the profiles at a particular point within the domain"""
+        index = self._find_index(latitude,longitude)
+        ref1d = self.data['profiles'][index]
+        # evaluate ref1d at this depth and variable from
+        if kwargs:
+            values = ref1d.evaluate_at_depth(depth_in_km,parameter,**kwargs)
+        else:
+            values = ref1d.evaluate_at_depth(depth_in_km,parameter,boundary='+',interpolation='linear')
+        return values
+
+    def get_profiles(self,parameter,latitude,longitude):
+        "Use evaluate_at_location at depths defined in reference1D"

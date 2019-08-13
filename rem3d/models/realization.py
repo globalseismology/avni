@@ -66,12 +66,12 @@ class Realization(object):
         if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
         success = True
         try:# try ascii
-            self._readascii(file)
+            self.readascii(file)
         except:
             var1 = traceback.format_exc()
             try: # try nc4
                 ds = xr.open_dataset(file)
-                self._readnc4(ds)
+                self.readnc4(ds)
                 ds.close()
             except:
                 try: #first close the dataset if opened with xarray above
@@ -84,7 +84,7 @@ class Realization(object):
                 success = False
         if success: self._infile = file
 
-    def _readascii(self,modelfile):
+    def readascii(self,modelfile):
         """
         Reads a standard 3D model file. maxkern is the maximum number of radial kernels
         and maxcoeff is the maximum number of corresponding lateral basis functions.
@@ -102,7 +102,7 @@ class Realization(object):
         self._type = 'ascii'
         self._refmodel = model['metadata']['refmodel']
 
-    def _readnc4(self,ds):
+    def readnc4(self,ds):
         """
         Read netCDF4 file into a resolution and realization of model3D class.
 
@@ -117,7 +117,7 @@ class Realization(object):
         metadata = {}
 
         # change None to string since it cannot be stored in netcdf
-        for key in ds.attrs.keys(): metadata[key] = None if ds.attrs[key].lower() == 'none' else ds.attrs[key]
+        for key in ds.attrs.keys(): metadata[key] = None if ds.attrs[key] == 'None' else ds.attrs[key]
         for var in ds.data_vars:
             for key in ds[var].attrs.keys():
                 val = ds[var].attrs[key]

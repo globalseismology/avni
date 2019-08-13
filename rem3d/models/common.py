@@ -727,7 +727,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         parser['metadata']['crust'] = None
     try:
         value = parser['metadata']['scaling'].strip()
-        parser['metadata']['scaling'] = None if value.lower() == 'none' else value
+        parser['metadata']['scaling'] = None if value.lower() == 'none' else value.split(',')
     except KeyError:
         parser['metadata']['scaling'] = None
     try:
@@ -742,7 +742,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         parser['metadata']['kerstr'] = 'NATIVE'
     try:
         value = parser['metadata']['forward_modeling'].strip()
-        parser['metadata']['forward_modeling'] = parser['parameters'].keys() if value.lower() == 'none' else value
+        parser['metadata']['forward_modeling'] = parser['parameters'].keys() if value.lower() == 'none' else value.split(',')
     except KeyError:
         parser['metadata']['forward_modeling'] = parser['parameters'].keys()
 

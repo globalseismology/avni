@@ -45,8 +45,7 @@ class Model3D(object):
         self._infile = None
         self._refmodel = None
         self._description = None
-        #self._add_resolution(realization=True)
-        if file is not None: self._read(file,**kwargs)
+        if file is not None: self.read(file,**kwargs)
 
     def __str__(self):
         if self._name is not None:
@@ -99,6 +98,10 @@ class Model3D(object):
     #########################       decorators       ##########################
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def num_resolutions(self):
         return len(self.metadata)
 
@@ -110,15 +113,15 @@ class Model3D(object):
 
     #########################       methods       #############################
 
-    def _read(self,file,**kwargs):
+    def read(self,file,**kwargs):
         if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
         try:# try hdf5 for the whole ensemble
             success1 = True
             hf = h5py.File(file, 'r')
             if kwargs:
-                self._readhdf5(hf,**kwargs)
+                self.readhdf5(hf,**kwargs)
             else:
-                self._readhdf5(hf)
+                self.readhdf5(hf)
             self._description = "Read from "+file
             self._infile = file
             hf.close()
@@ -133,8 +136,8 @@ class Model3D(object):
             try:
                 realization = Realization(file)
                 # store in the last resolution
-                self._add_resolution(metadata=realization.metadata)
-                self._add_realization(coef=realization.data,name=realization._name)
+                self.add_resolution(metadata=realization.metadata)
+                self.add_realization(coef=realization.data,name=realization._name)
                 self._name = realization._name
                 self._type = 'rem3d'
                 self._refmodel = realization._refmodel
@@ -153,20 +156,20 @@ class Model3D(object):
             except:
                 print('Warning: kernel_set could not initialized for '+str(resolution))
 
-    def _add_realization(self,coef=None,name=None,resolution=None):
+    def add_realization(self,coef=None,name=None,resolution=None):
         """
         Added a set of realizations to the object. resolution is the tesselation level at
         which the instance is update with name and coeff (default: None, last resolution).
         """
         if resolution==None:
-            if self.num_resolutions == 0: raise ValueError('_add_resolution first') # add a resolution if none
+            if self.num_resolutions == 0: raise ValueError('add_resolution first') # add a resolution if none
             resolution = self.num_resolutions - 1 # last available resolution
             realization = self.num_realizations[resolution]
         else:
             if isinstance(resolution, int) :
                 realization = self.num_realizations['resolution_'+str(resolution)]
             else:
-                raise ValueError('Invalid resolution in _add_realization')
+                raise ValueError('Invalid resolution in add_realization')
         #initialize
         self.data['resolution_'+str(resolution)]['realization_'+str(resolution)] = {}
         # fill it up
@@ -175,7 +178,7 @@ class Model3D(object):
         self[resolution,realization]=data
         return
 
-    def _add_resolution(self,metadata=None):
+    def add_resolution(self,metadata=None):
         """
         Added a resolution level to the object. num_realizations is the number
         of realizations of model coefficients within that object.
@@ -186,7 +189,7 @@ class Model3D(object):
         self.data['resolution_'+str(current)] = {} # empty resolutions
         return
 
-    def _readhdf5(self,hf,query=None):
+    def readhdf5(self,hf,query=None):
         """
         Reads a standard 3D model file from a hdf5 file
 
@@ -215,7 +218,7 @@ class Model3D(object):
         # loop over resolution
         if len(self.data) < len(hf[query].keys()):
             # add more resolutions
-            for _ in range(len(hf[query].keys()) - len(self.data)): self._add_resolution()
+            for _ in range(len(hf[query].keys()) - len(self.data)): self.add_resolution()
         for resolution in hf[query].keys():
             g1 = hf[query][resolution]
             if not g1.attrs['type']=='resolution': raise AssertionError()
@@ -235,7 +238,7 @@ class Model3D(object):
         return
 
 
-    def _writehdf5(self, outfile = None, overwrite = False):
+    def writehdf5(self, outfile = None, overwrite = False):
         """
         Writes the model object to hdf5 file
         """
@@ -288,7 +291,7 @@ class Model3D(object):
         hf.close()
         print('... written to '+outfile)
 
-    def _evaluate_at_point(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1,dbs_path=tools.get_filedir()):
+    def evaluate(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1,dbs_path=tools.get_filedir()):
         """
         Evaluate the mode at a location (latitude, longitude,depth)
 

@@ -10,6 +10,7 @@ from .common import *
 from .model3d import Model3D
 from .reference1d import Reference1D
 from .realization import Realization
+from .profiles import Profiles
 
 # classes for describing model parameterizations:
 from .kernel_set import Kernel_set
