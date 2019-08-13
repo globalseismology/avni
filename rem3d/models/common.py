@@ -66,10 +66,10 @@ def readepixfile(filename):
         for line in f:
             if line.startswith('#'):
                 if ':' in line:
-                    field = line.split(':')[0].split('#')[1].lstrip().rstrip()
-                    metadata[field] = line.split(':')[1].split('\n')[0].lstrip().rstrip()
+                    field = line.split(':')[0].split('#')[1].strip()
+                    metadata[field] = line.split(':')[1].split('\n')[0].strip()
                 else:
-                    comments.append(line.split('\n')[0].lstrip().rstrip())
+                    comments.append(line.split('\n')[0].strip())
     return epixarr,metadata,comments
 
 def writeepixfile(filename,epixarr,metadata=None,comments=None):
@@ -342,8 +342,12 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
 	                 'Model directory must contain '+setup_file)
     else:
         parser = ConfigObj(cfg_file)
+
     model_name = parser['metadata']['name']
-    kernel_set = '{}'.format(parser['metadata']['kerstr'])
+    try:
+        kernel_set = '{}'.format(parser['metadata']['kerstr']).strip()
+    except KeyError:
+        kernel_set = 'NATIVE'
 
     if buffer:
         print('... writing ASCII buffer')
@@ -394,14 +398,45 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
         parser = ConfigObj(cfg_file)
 
     model_name = parser['metadata']['name']
-    ref_model = parser['metadata']['refmodel']
     epix_folder = parser['metadata']['folder']
-    interpolant = parser['metadata']['interpolant']
     cite = parser['metadata']['cite']
-    crust = parser['metadata']['crust']
-    forward_modeling = parser['metadata']['forward_modeling']
-    scaling = parser['metadata']['scaling']
-    kernel_set = '{}'.format(parser['metadata']['kerstr'])
+
+    # Optional arguments
+    try:
+        value = parser['metadata']['interpolant'].strip()
+        interpolant = None if value.lower() == 'none' else value
+    except KeyError:
+        interpolant = 'nearest'
+    try:
+        value = parser['metadata']['refmodel'].strip()
+        ref_model = None if value.lower() == 'none' else value
+    except KeyError:
+        ref_model = None
+    try:
+        value = parser['metadata']['crust'].strip()
+        crust = None if value.lower() == 'none' else value
+    except KeyError:
+        crust = None
+    try:
+        value = parser['metadata']['scaling'].strip()
+        scaling = None if value.lower() == 'none' else value
+    except KeyError:
+        scaling = None
+    try:
+        value = parser['metadata']['null_model'].strip()
+        null_model = None if value.lower() == 'none' else value
+    except KeyError:
+        null_model = None
+    try:
+        value = '{}'.format(parser['metadata']['kerstr']).strip()
+        kernel_set = 'NATIVE' if value.lower() == 'none' else value
+    except KeyError:
+        kernel_set = 'NATIVE'
+    try:
+        value = parser['metadata']['forward_modeling'].strip()
+        forward_modeling = parser['parameters'].keys() if value.lower() == 'none' else value
+    except KeyError:
+        forward_modeling = parser['parameters'].keys()
 
     #write header
     outfile = output_dir+'/{}.{}.rem3d.ascii'.format(model_name,kernel_set)
@@ -416,8 +451,9 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     f_out.write(u'INTERPOLANT: {}\n'.format(interpolant))
     f_out.write(u'CITE: {}\n'.format(cite))
     if crust is not 'None': f_out.write(u'CRUST: {}\n'.format(crust))
-    f_out.write(u'FORWARD MODELING: {}\n'.format(forward_modeling))
-    f_out.write(u'SCALING: {}\n'.format(scaling))
+    if forward_modeling is not None: f_out.write(u'FORWARD MODELING: {}\n'.format(forward_modeling))
+    if forward_modeling is not None: f_out.write(u'SCALING: {}\n'.format(scaling))
+    if null_model is not None: f_out.write(u'NULL_MODEL: {}\n'.format(null_model))
 
     #find the number radial kernels
     epix_lengths = []; string = []
@@ -425,9 +461,12 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     for parameter in parser['parameters']:
         mod_type = parser['parameters'][parameter]['type']
         par_folder = parser['parameters'][parameter]['folder']
-        description = parser['parameters'][parameter]['description']
         icount += 1
-        string.append(str(icount)+'. '+description+' ('+parameter+')')
+        try:
+            description = parser['parameters'][parameter]['description']
+            string.append(str(icount)+'. '+description+' ('+parameter+')')
+        except KeyError:
+            string.append(str(icount)+'. '+parameter)
 
         if mod_type == 'heterogeneity':
             epix_files = glob.glob(model_dir+'/'+epix_folder+'/'+par_folder+'/*.epix')
@@ -481,16 +520,18 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
                     if line.startswith('#'):
                         head.append(line)
                     for field in ['DEPTH_IN_KM','AVERAGE','IFREMAV','REFVALUE','REFMODEL','UNIT','WHAT','FORMAT','BASIS']:
-                        if field in line: metadata[field] = line.split(':')[1].split('\n')[0].lstrip().rstrip()
+                        if field in line: metadata[field] = line.split(':')[1].split('\n')[0].strip()
 
             # conduct checks
             if checks:
                 if not  parser['parameters'][parameter]['unit'].lower()==metadata['UNIT'].lower(): raise AssertionError("UNIT incompatible in file "+epix_file)
 
 
-                if parameter.lower()!=metadata['WHAT'].lower()  or parser['parameters'][parameter]['description'].lower() == metadata['WHAT'].lower():
-                    warnings.warn("parameter or its description !=metadata['WHAT'] in file "+epix_file)
-                if parser['metadata']['refmodel'].lower()!=metadata['REFMODEL'].lower():
+                if parameter.lower()!=metadata['WHAT'].lower() :
+                    warnings.warn("parameter !=metadata['WHAT'] in file "+epix_file)
+                value = metadata['REFMODEL'].strip()
+                refmodel_epix = None if value.lower() == 'none' else value
+                if not ref_model == refmodel_epix:
                     warnings.warn("parser['parameters']['refmodel']!=metadata['REFMODEL'] in file "+epix_file)
                 if not metadata['FORMAT']=='50': raise AssertionError("FORMAT incompatible in file "+epix_file)
                 if not metadata['BASIS'].lower()=='PIX'.lower(): raise AssertionError("BASIS incompatible in file "+epix_file)
@@ -668,6 +709,44 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
     else:
         parser = ConfigObj(cfg_file)
 
+    # Optional arguments
+    try:
+        value = parser['metadata']['interpolant'].strip()
+        parser['metadata']['interpolant'] = None if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['interpolant'] = 'nearest'
+    try:
+        value = parser['metadata']['refmodel'].strip()
+        parser['metadata']['refmodel'] = None if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['refmodel'] = None
+    try:
+        value = parser['metadata']['crust'].strip()
+        parser['metadata']['crust'] = None if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['crust'] = None
+    try:
+        value = parser['metadata']['scaling'].strip()
+        parser['metadata']['scaling'] = None if value.lower() == 'none' else value.split(',')
+    except KeyError:
+        parser['metadata']['scaling'] = None
+    try:
+        value = parser['metadata']['null_model'].strip()
+        parser['metadata']['null_model'] = None if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['null_model'] = None
+    try:
+        value = '{}'.format(parser['metadata']['kerstr']).strip()
+        parser['metadata']['kerstr'] = 'NATIVE' if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['kerstr'] = 'NATIVE'
+    try:
+        value = parser['metadata']['forward_modeling'].strip()
+        parser['metadata']['forward_modeling'] = parser['parameters'].keys() if value.lower() == 'none' else value.split(',')
+    except KeyError:
+        parser['metadata']['forward_modeling'] = parser['parameters'].keys()
+
+
     try: #attempt buffer
         asciioutput.seek(0)
     except:
@@ -684,9 +763,11 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         #if 'NAME' in line:
         #    model_name = line.split('NAME:')[1].strip()
         if 'REFERENCE MODEL' in line:
-            ref_model = line.split('REFERENCE MODEL:')[1].strip()
+            value = line.split('REFERENCE MODEL:')[1].strip()
+            ref_model = None if value.lower() == 'none' else value
         if 'KERNEL SET' in line:
-            krnl_set = line.split('KERNEL SET:')[1].strip()
+            value = line.split('KERNEL SET:')[1].strip()
+            krnl_set = None if value.lower() == 'none' else value
         if 'RADIAL STRUCTURE KERNELS' in line:
             nrad_krnl = line.split('RADIAL STRUCTURE KERNELS:')[1].strip()
             nrad_krnl = int(nrad_krnl)
@@ -694,7 +775,8 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         line = asciioutput.readline()
 
     # check that reference model is the same as parser
-    if not ref_model == parser['metadata']['refmodel']: raise AssertionError(ref_model+' the reference model in '+asciioutput+' is not the same as refmodel in '+setup_file)
+    if not ref_model == parser['metadata']['refmodel']:
+        raise AssertionError(ref_model+' the reference model in '+asciioutput+' is not the same as refmodel in '+setup_file)
     if not krnl_set == parser['metadata']['kerstr']: raise AssertionError(krnl_set+' the kernel string in '+asciioutput+' is not the same as kerstr in '+setup_file)
 
     #read variables and parameterizations
@@ -832,16 +914,18 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
                     raise AssertionError('number of coefficients for variable '+variable+' and layer '+str(i)+' is not equal to that of another one '+str(num_coefficients)+'. All variables should use the same grid.')
 
     # check if we can  read 1D model
-    ifread1D = True
-    if not os.path.isfile(parser['metadata']['refmodel']):
-        ifread1D = False
-        print ('WARNING: Could not fill some reference values as the 1D reference model file could not be found : '+parser['metadata']['refmodel'])
+    ifread1D = False if parser['metadata']['refmodel'] is None else True
     if ifread1D:
-        try: # try reading the 1D file in card format
-            ref1d = Reference1D(parser['metadata']['refmodel'])
-        except:
+        if os.path.isfile(parser['metadata']['refmodel']):
+            try: # try reading the 1D file in card format
+                ref1d = Reference1D(parser['metadata']['refmodel'])
+                ifread1D = True
+            except:
+                ifread1D = False
+                print ('WARNING: Could not fill some reference values as the 1D reference model file could not be read as Reference1D instance : '+parser['metadata']['refmodel'])
+        else:
             ifread1D = False
-            print ('WARNING: Could not fill some reference values as the 1D reference model file could not be read as Reference1D instance : '+parser['metadata']['refmodel'])
+            print ('WARNING: Could not fill some reference values as the 1D reference model file could not be found : '+parser['metadata']['refmodel'])
 
     # check that indices have been read properly
     for var in variables:
@@ -977,12 +1061,21 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             attrs[key] = parser['metadata'][key]
         else:
             attrs[key] = parser['metadata'][key].decode('utf-8')
+    # add data variables as an attributes since pixel_width or other data may also be added
+    attrs['parameters'] = variables
     ds.attrs = attrs
 
     # write to netcdf
     comp = {'zlib': True, 'complevel': complevel}
     encoding = {var: comp for var in ds.data_vars}
-    if writenc4 and outfile != None: ds.to_netcdf(outfile,engine=engine,encoding=encoding)
+    if writenc4 and outfile != None:
+        # change None to string since it cannot be stored in
+        for key in ds.attrs.keys():
+            if ds.attrs[key] is None: ds.attrs[key] = 'None'
+        for var in ds.data_vars:
+            for key in ds[var].attrs.keys():
+                if ds[var].attrs[key] is None: ds[var].attrs[key] = 'None'
+        ds.to_netcdf(outfile,engine=engine,encoding=encoding)
 
     return ds
 

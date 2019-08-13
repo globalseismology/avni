@@ -12,7 +12,8 @@ if (sys.version_info[:2] < (3, 0)):
 import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
-
+from six import string_types # to check if variable is string using isinstance
+import warnings
 import struct
 import xarray as xr
 import traceback
@@ -65,12 +66,12 @@ class Realization(object):
         if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
         success = True
         try:# try ascii
-            self._readascii(file)
+            self.readascii(file)
         except:
             var1 = traceback.format_exc()
             try: # try nc4
                 ds = xr.open_dataset(file)
-                self._readnc4(ds)
+                self.readnc4(ds)
                 ds.close()
             except:
                 try: #first close the dataset if opened with xarray above
@@ -83,7 +84,7 @@ class Realization(object):
                 success = False
         if success: self._infile = file
 
-    def _readascii(self,modelfile):
+    def readascii(self,modelfile):
         """
         Reads a standard 3D model file. maxkern is the maximum number of radial kernels
         and maxcoeff is the maximum number of corresponding lateral basis functions.
@@ -101,7 +102,7 @@ class Realization(object):
         self._type = 'ascii'
         self._refmodel = model['metadata']['refmodel']
 
-    def _readnc4(self,ds):
+    def readnc4(self,ds):
         """
         Read netCDF4 file into a resolution and realization of model3D class.
 
@@ -114,20 +115,30 @@ class Realization(object):
 
         # Store in a dictionary
         metadata = {}
-        for key in ds.attrs.keys(): metadata[key] = ds.attrs[key]
+
+        # change None to string since it cannot be stored in netcdf
+        for key in ds.attrs.keys(): metadata[key] = None if ds.attrs[key] == 'None' else ds.attrs[key]
+        for var in ds.data_vars:
+            for key in ds[var].attrs.keys():
+                val = ds[var].attrs[key]
+                if isinstance(val,string_types):
+                    if ds[var].attrs[key].lower() == 'none': ds[var].attrs[key] = None
+
         metadata['nhorpar']=1
-        metadata['null_model']=None
         metadata['shortcite']=ds.attrs['name']
         metadata['ityphpar']=np.array([3])
         metadata['typehpar']=np.array(['PIXELS'], dtype='<U40')
         # check the pixel size
         pixlat = np.unique(np.ediff1d(np.array(ds.latitude)))
         pixlon = np.unique(np.ediff1d(np.array(ds.longitude)))
-        if not len(pixlat)==len(pixlon)==1: raise AssertionError('only one pixel size allowed in xarray')
-        if not pixlat.item()==pixlon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
+        if len(pixlat)==len(pixlon)==1:
+            if not pixlat.item()==pixlon.item(): warnings.warn('same pixel size in both lat and lon in xarray')
+        else:
+            warnings.warn('multiple pixel sizes have been found for xarray'+str(pixlat)+str(pixlon))
+
         metadata['hsplfile']=np.array([str(pixlat[0])+' X '+str(pixlat[0])], dtype='<U40')
         lenarr = len(ds.latitude)*len(ds.longitude)
-        metadata['xsipix']=np.array([[pixlat[0] for ii in range(lenarr)]])
+        metadata['xsipix']= np.zeros([1,lenarr])
         metadata['xlapix'] = np.zeros([1,lenarr])
         metadata['xlopix'] = np.zeros([1,lenarr])
         # get data keys
@@ -138,6 +149,7 @@ class Realization(object):
         nlat = ds.dims['latitude']
         nlon = ds.dims['longitude']
         for ilat in range(nlat):
+            metadata['xsipix'][0][indx:indx+nlon]=ds['pixel_width'].values[ilat]
             metadata['xlapix'][0][indx:indx+nlon]=ds['latitude'].values[ilat]
             metadata['xlopix'][0][indx:indx+nlon]=ds['longitude'].values
             indx += nlon

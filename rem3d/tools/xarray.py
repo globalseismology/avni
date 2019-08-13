@@ -22,17 +22,18 @@ from .common import precision_and_scale,convert2nparray
 from ..tools import decimals
 #######################################################################################
 
-def tree3D(treefile,latitude,longitude,radius_in_km):
-    latitude = convert2nparray(latitude)
-    longitude = convert2nparray(longitude)
-    radius_in_km = convert2nparray(radius_in_km)
-
+def tree3D(treefile,latitude=None,longitude=None,radius_in_km=None):
     #Build the tree if none is provided
     if os.path.isfile(treefile):
         print('... Reading KDtree file '+treefile)
         tree = pickle.load(open(treefile,'rb'))
     else:
         print('... KDtree file '+treefile+' not found for interpolations. Building it')
+        if np.any(latitude == None) or np.any(longitude == None) or np.any(radius_in_km == None):
+            raise IOError('latitude, longitude and radius_in_km are required')
+        latitude = convert2nparray(latitude)
+        longitude = convert2nparray(longitude)
+        radius_in_km = convert2nparray(radius_in_km)
         rlatlon = np.column_stack((radius_in_km.flatten(),latitude.flatten(), longitude.flatten()))
         xyz = spher2cart(rlatlon)
         tree = cKDTree(xyz)
