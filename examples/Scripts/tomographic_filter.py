@@ -40,7 +40,6 @@ def main():
 
     # reparameterize the simulation to seismic
     reparam = simulation.reparameterize(seismic)
-    pdb.set_trace()
 
     # get the resolution matrix of the seismic from the same folder
     outsparse,modelarr = seismic.get_resolution()
