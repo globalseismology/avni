@@ -509,7 +509,6 @@ class Model3D(object):
             # all resolution should have same units so using 0
             unit = self[0]['attrs'][parameter]['unit']
             absolute_unit = self[0]['attrs'][parameter]['absolute_unit']
-            pdb.set_trace()
             values_unit = values.toarray()*constants.ureg(unit)
             if units == 'default':
                 values = values_unit

@@ -233,7 +233,6 @@ def read3dmodelfile(modelfile):
     ivarkern=np.zeros(nmodkern,dtype=np.int)
     for ii in np.arange(nmodkern):
         string=desckern[ii]
-        #pdb.set_trace()
         if numvar == 0:
             varstr[0] = string[:string.index(',')]
             ivarkern[ii]=1
