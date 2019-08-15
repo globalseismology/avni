@@ -13,6 +13,8 @@ from scipy.spatial import cKDTree
 import pickle
 import warnings
 import pdb
+import math
+from scipy import sparse
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .trigd import sind
@@ -40,19 +42,40 @@ def tree3D(treefile,latitude=None,longitude=None,radius_in_km=None):
         pickle.dump(tree,open(treefile,'wb'))
     return tree
 
-def querytree3D(tree,latitude,longitude,radius_in_km,values,nearest=1):
+def querytree3D(tree,latitude,longitude,radius_in_km,values=None,nearest=1):
     latitude = convert2nparray(latitude)
     longitude = convert2nparray(longitude)
     radius_in_km = convert2nparray(radius_in_km)
+    if not(len(latitude)==len(latitude)==len(radius_in_km)): raise AssertionError('latitude, longitude and radius need to be of same size')
     evalpoints = np.column_stack((radius_in_km.flatten(),latitude.flatten(), longitude.flatten()))
     coordstack = spher2cart(evalpoints)
-    d,inds = tree.query(coordstack,k=nearest)
-    if nearest == 1:
-        interp = values[inds]
+    dist,inds = tree.query(coordstack,k=nearest)
+    if np.any(values==None):
+        return inds
     else:
-        w = 1.0 / d**2
-        interp = np.sum(w * values[inds], axis = 1)/ np.sum(w, axis=1)
-    return interp
+        # convert to csc_matrix
+        if not isinstance(values,sparse.csc_matrix):
+            if isinstance(values,sparse.csr_matrix):
+                values = values.tocsc()
+            else:
+                # do not allow strings as values
+                values = convert2nparray(values,int2float = True,allowstrings=False)
+                if values.ndim != 1: raise ValueError('only 1 dimenional values allowed')
+                values = sparse.csc_matrix(values).transpose().tocsc()
+
+        # find values
+        if nearest == 1:
+            interp = values[inds]
+        else:
+            weights = 1.0 / dist**2
+            rows = ((np.arange(inds.shape[0])*np.ones_like(inds).T).T).ravel()
+            cols = inds.ravel()
+            weighted = values[cols].reshape(inds.shape,order='C').multiply(weights)
+            weighted_sum = np.asarray(weighted.sum(axis=1))
+            weights_sum = weights.sum(axis=1).reshape(weighted_sum.shape)
+            val_temp = np.divide(weighted_sum,weights_sum,out=np.zeros_like(weights_sum), where=weights_sum!=0)
+            interp = sparse.csc_matrix(val_temp)
+        return interp,inds
 
 def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km = None):
     """
@@ -131,11 +154,10 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
         if not pix_lat.item()==pix_lon.item(): warnings.warn('same pixel size in both lat and lon in xarray')
         # check number of poxels
         pix_width = pix_lat.item()
-        nlat = 180./pix_width; nlon = 360./pix_width
-        if np.mod(nlat,1.) is not 0. or np.mod(nlon,1.) is not 0.:
+        if not math.isclose(180 % pix_width,0):
             ierror.append(1)
             warnings.warn ('pixel width should be ideally be a factor of 180')
-        nlat = int(nlat); nlon = int(nlon)
+        nlat = int(180./pix_width); nlon = int(360./pix_width)
         if nlat*nlon != data.size:
             ierror.append(2)
             warnings.warn('number of pixels expected for '+str(pix_width)+'X'+str(pix_width)+' is '+str(nlat*nlon)+',  not '+str(data.size)+' as specified in the data array.')

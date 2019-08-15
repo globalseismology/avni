@@ -18,6 +18,8 @@ import struct
 import xarray as xr
 import traceback
 import pandas as pd
+from progressbar import progressbar
+
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .common import read3dmodelfile
 #######################################################################################
@@ -115,14 +117,20 @@ class Realization(object):
 
         # Store in a dictionary
         metadata = {}
+        metadata['attrs']={}
 
-        # change None to string since it cannot be stored in netcdf
-        for key in ds.attrs.keys(): metadata[key] = None if ds.attrs[key] == 'None' else ds.attrs[key]
+        # change None to string since it cannot be stored in netcdf, also stor attrbutes
+        for key in ds.attrs.keys():
+            if isinstance(ds.attrs[key],string_types):
+                metadata[key] = None if ds.attrs[key].lower() == 'none' else ds.attrs[key]
+            else:
+                metadata[key] = ds.attrs[key]
         for var in ds.data_vars:
             for key in ds[var].attrs.keys():
                 val = ds[var].attrs[key]
                 if isinstance(val,string_types):
                     if ds[var].attrs[key].lower() == 'none': ds[var].attrs[key] = None
+            metadata['attrs'][var] = ds[var].attrs
 
         metadata['nhorpar']=1
         metadata['shortcite']=ds.attrs['name']
@@ -148,6 +156,7 @@ class Realization(object):
         indx = 0
         nlat = ds.dims['latitude']
         nlon = ds.dims['longitude']
+        metadata['shape'] = nlat,nlon
         for ilat in range(nlat):
             metadata['xsipix'][0][indx:indx+nlon]=ds['pixel_width'].values[ilat]
             metadata['xlapix'][0][indx:indx+nlon]=ds['latitude'].values[ilat]
@@ -189,7 +198,12 @@ class Realization(object):
                     descstring = u'{}, boxcar, {} - {} km'.format(key,deptop,ds[key].attrs['end_depths'][ii])
                     desckern.append(descstring)
                     ivarkern.append(icount)
-                coef[idepth:idepth+ndepth,:]=np.reshape(ds[key].values,[ndepth,nlat*nlon])
+                # the order needs to be in C so that it corresponds to ravel of a
+                # (depth, lat,lon) array of coeffiecients to get modelarr
+                # This also makes it consistent with how queries are made to KDtree in
+                # buildtree3D
+
+                coef[idepth:idepth+ndepth,:]=np.reshape(ds[key].values,[ndepth,nlat*nlon],order='C')
                 idepth=idepth+ndepth
 
         metadata['desckern']=np.array(desckern, dtype='<U150')
@@ -208,3 +222,122 @@ class Realization(object):
         #rename the name field only if it is None
         self._type = 'netcdf4'
         self._refmodel = ds.attrs['refmodel']
+
+    def to_xarray(self,outfile=None,complevel=9, engine='netcdf4', writenc4 = False):
+        '''
+        write an xarrary dataset from a rem3d formatted ascii file
+
+        Input parameters:
+        ----------------
+
+        ascii_file: path to rem3d format output file
+
+        outfile: output netcdf file
+
+        setup_file: setup file containing metadata for the model
+
+        complevel, engine: options for compression in netcdf file
+
+        writenc4: write a netcdf4 file, if True
+
+        '''
+
+        check = self.metadata['typehpar']=='PIXELS'
+        if len(check) != 1 or not check[0]: raise IOError('cannot output netcdf4 file for horizontal parameterizations : ',self.metadata['typehpar'])
+        if outfile == None and writenc4:
+            if self._name.endswith('.nc4'):
+                outfile = self._name
+            else:
+                outfile = self._name+'.'+self.metadata['kernel_set'].name+'.rem3d.nc4'
+
+        # get sizes
+        shape = self.metadata['shape']
+        lat_temp = self.metadata['xlapix'][0]
+        lon_temp = self.metadata['xlopix'][0]
+        siz_temp = self.metadata['xsipix'][0]
+        sortbylon = np.all(lon_temp == sorted(lon_temp))
+
+        # unique values for reshaping
+        if sortbylon:
+            lon = np.unique(lon_temp)
+            lat = np.unique(lat_temp)
+            pxw = np.unique(siz_temp)
+        else:
+            arr=pd.DataFrame(np.vstack([lon_temp,lat_temp,siz_temp]).T,columns =['lon', 'lat', 'pxw'])
+            arr = arr.sort_values(by=['lon','lat'])
+            lon = pd.unique(arr['lon'])
+            lat = pd.unique(arr['lat'])
+            pxw = pd.unique(arr['pxw'])
+
+        if not len(pxw)==1: raise warnings.warn('more than 1 pixel size in variable '+variable, pxw)
+
+        # Get all depths
+        kernel = self.metadata['kernel_set']
+        depths = np.array([])
+        for variable in self.metadata['varstr']:
+            deptemp = kernel.pixeldepths(variable)
+            if np.any(deptemp != None): depths = np.concatenate([depths,deptemp])
+        alldepths= np.sort(np.unique(depths))
+
+        # loop over variables
+        data_vars={}
+
+        # get the grid sizes stored
+        pixel_array= np.reshape(arr['pxw'].values,
+                            (len(lat),len(lon)),order='F')
+        data_vars['pixel_width']=(('latitude', 'longitude'), pixel_array)
+
+        # store every variable
+        for variable in self.metadata['varstr']:
+            deptemp = kernel.pixeldepths(variable)
+            if np.any(deptemp == None): # 2D variable
+                raise NotImplementedEddor('this feature is not available for 2D parameters '+variable)
+            else:
+                data_array = np.zeros((len(alldepths),len(lat),len(lon)))
+                # update the kernel descriptions
+                varind = np.where(self.metadata['varstr']==variable)[0][0]+1
+                kerind = np.where(self.metadata['ivarkern']==varind)[0]
+                if len(kerind) != len(deptemp): raise AssertionError('number of depths selected does not corrspong to the number of layers')
+                # find depth indices
+                dep_indx = np.searchsorted(alldepths,deptemp)
+
+                values = self.data.iloc[kerind]
+                for idep in progressbar(range(values.shape[0])):
+                    if not sortbylon:
+                        arr=pd.DataFrame(np.vstack([lon_temp,lat_temp,siz_temp,values.iloc[idep]]).T,columns =['lon', 'lat', 'pxw','values'])
+                        arr = arr.sort_values(by=['lon','lat'])
+                        valuerow = arr['values'].values
+                    else:
+                        valuerow = values.iloc[idep]
+                    data_array[dep_indx[idep],:,:] = np.reshape(valuerow,
+                                    (len(lat),len(lon)),order='F')
+                data_vars[variable]=(('depth','latitude', 'longitude'), data_array)
+
+        # get the grid sizes stored
+        ds = xr.Dataset(data_vars = data_vars,
+                        coords = {'depth':alldepths,'latitude':lat,'longitude':lon})
+
+        # exclude some fields from dataframe attributes
+        exclude = ['ityphpar','typehpar', 'hsplfile', 'xsipix', 'xlapix', 'xlopix','numvar', 'varstr', 'desckern', 'nmodkern', 'ivarkern','ihorpar', 'ncoefhor','ncoefcum', 'kernel_set','attrs']
+        for field in self.metadata.keys():
+            if field not in exclude:
+                ds.attrs[field] = self.metadata[field]
+        for variable in self.metadata['varstr']:
+            for field in self.metadata['attrs'][variable].keys():
+                ds[variable].attrs[field] = self.metadata['attrs'][variable][field]
+
+        # write to file
+        if outfile != None:
+            print('... writing netcdf4 file .... ')
+            # write to netcdf
+            comp = {'zlib': True, 'complevel': complevel}
+            encoding = {var: comp for var in ds.data_vars}
+            # change None to string since it cannot be stored in
+            for key in ds.attrs.keys():
+                if ds.attrs[key] is None: ds.attrs[key] = 'None'
+            for var in ds.data_vars:
+                for key in ds[var].attrs.keys():
+                    if ds[var].attrs[key] is None: ds[var].attrs[key] = 'None'
+            ds.to_netcdf(outfile,engine=engine,encoding=encoding)
+            print('... written netcdf4 file '+outfile)
+        return ds

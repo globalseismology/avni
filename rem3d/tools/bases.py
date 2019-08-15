@@ -372,11 +372,12 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
         print('Warning: multiple pixel sizes in the PIXEL basis fir evaluation in bases.eval_pixel. Sizes are ')
 
     labo = xlapix-xsipix/2.; lato = xlapix+xsipix/2.
+    labo = np.clip(labo,-90.,90.); lato = np.clip(lato,-90.,90.)
+    # go from (-180,180) to (0,360)
+    xlopix[np.where(xlopix<0.)]=xlopix[np.where(xlopix<0.)]+360.
     lole = xlopix-xsipix/2.; lori = xlopix+xsipix/2.
-    lori[np.where(lori<0.)]=lori[np.where(lori<0.)]+360.
-    lole[np.where(lole<0.)]=lole[np.where(lole<0.)]+360.
-    lori[np.where(lori>360.)]=lori[np.where(lori>360.)]-360.
-    lole[np.where(lole>360.)]=lole[np.where(lole>360.)]-360.
+    lori = np.clip(lori,0.,360.); lole = np.clip(lole,0.,360.)
+
     horcof = sparse.csr_matrix((len(latitude),len(xsipix))) # empty matrix
     for iloc,lat in enumerate(latitude):
         lon = longitude[iloc]
@@ -392,6 +393,7 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
         else:
             lonfind = np.intersect1d(np.where(lon<=lori), np.where(lon>=lole))
         findindex = np.intersect1d(latfind,lonfind)
+        if len(findindex) != 1: raise ValueError('found '+len(findindex)+' pixels for the location ('+str(lat)+','+str(lon)+')')
 
         rowind = iloc*np.ones_like(findindex)
         values = np.ones_like(findindex,dtype=np.float)

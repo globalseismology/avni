@@ -600,18 +600,18 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     evalpoints=np.column_stack((constants.R.to('km').magnitude*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
 
     # get the interpolation
-    valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
+    valselect,_ = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
 
     #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
     return valselect,model,tree
 
 def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     """Plot a section on the axis ax. """
-    elevplot1=np.array(elev)
-    elevplot2=np.array(elev)
+    elevplot1=elev.toarray().ravel()
+    elevplot2=elev.toarray().ravel()
     # Blue for areas below sea level
-    if np.min(elev)<0.:
-        lowerlimit=constants.R.to('km').magnitude-np.min(elev)/1000.*vexaggerate
+    if elev.min()<0.:
+        lowerlimit=constants.R.to('km').magnitude-elev.min()/1000.*vexaggerate
         elevplot2[elevplot2>0.]=0.
         ax.fill_between(theta_range, lowerlimit*np.ones(len(theta_range)),lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,facecolor='aqua', alpha=0.5)
         ax.plot(theta_range,lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,'k',linewidth=0.5)
@@ -671,7 +671,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
 
     # get the interpolation
     npts_surf = len(coords)
-    tomovals = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
+    tomovals,_ = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
     xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')
 
     return xsec.T,model,tree
@@ -715,10 +715,10 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     extend_radius=0.
     if vexaggerate != 0:
         elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,stride=10,nearest=1)
-        if min(elev)< 0.:
-            extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
+        if elev.min()< 0.:
+            extend_radius=(elev.max()-elev.min())*vexaggerate/1000.
         else:
-            extend_radius=max(elev)*vexaggerate/1000.
+            extend_radius=elev.max()*vexaggerate/1000.
 
     # Start plotting
     if gcdelta < 360.0:
@@ -783,7 +783,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
-    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
+    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values.toarray(),cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
     # add a colorbar
     #levels = MaxNLocator(nbins=colorcontour).tick_values(interp_values.min(), interp_values.max())
     #dx = (theta[1]-theta[0])/(numevalx-1); dy = (radii[1]-radii[0])/(numevalz-1)

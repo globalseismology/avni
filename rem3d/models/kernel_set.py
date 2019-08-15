@@ -16,7 +16,6 @@ import pdb
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .lateral_basis import Lateral_basis
 from .radial_basis import Radial_basis
-from .common import radial_attributes
 from .. import tools
 #######################################################################################
 
@@ -161,3 +160,14 @@ class Kernel_set(object):
         else:
             vercof, _ = radial_select[0].eval_radial(depth_in_km)
         return horcof, vercof
+
+    def pixeldepths(self,parameter):
+        typehpar = self.data['lateral_basis']
+        if not len(typehpar) == 1: raise AssertionError('only one type of horizontal parameterization allowed',)
+        if not typehpar[0].type == 'PIXELS': raise AssertionError('Only PIXELS allowed, not '+typehpar[0].type)
+        kernel_param = self.data['radial_basis'][parameter]
+        depths = []
+        for index,radker in enumerate(kernel_param):
+            if  'depthtop' in radker.metadata.keys() and 'depthbottom' in radker.metadata.keys():
+                depths.append((radker.metadata['depthtop'][index]+radker.metadata['depthbottom'][index])/2.)
+        return np.asarray(depths) if len(depths) > 0 else None
