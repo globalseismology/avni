@@ -101,12 +101,6 @@ def writeepixfile(filename,epixarr,metadata=None,comments=None):
 
     return
 
-def radial_attributes(desckern):
-    """
-    Takes a list of kernel descriptions and returns the attributes to be used in
-    radial_basis.py
-    """
-
 def read3dmodelfile(modelfile):
     """
     Reads a standard 3D model file. maxkern is the maximum number of radial kernels
@@ -290,31 +284,6 @@ def read3dmodelfile(modelfile):
     model3d['metadata']=metadata
     return model3d
 
-def readensemble(filename):
-    """Read .npz file containing a collection of models.
-
-    Parameters
-    ----------
-
-    filename : An ensemble file
-
-    """
-
-
-    return
-
-def readprojections(types='radial'):
-    """Read .npz file containing a collection of models.
-
-    Parameters
-    ----------
-
-    filename : An file containing all projection matrices
-
-    """
-
-
-    return
 
 def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True,buffer=True):
     """
@@ -366,6 +335,93 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
 
     return ds
 
+def checksetup(parser):
+    """
+    Check the arguments in the model setup file and populate the default options
+    """
+    # Required arguments
+    for key in ['name','cite']:
+        if key not in parser['metadata'].keys():
+            raise KeyError(key+' needs to be specified in '+cfg_file)
+    for field in ['min','units','max','resolution']:
+        for type in ['lat','lon']:
+            key = 'geospatial_'+type+'_'+field
+            if key in parser['metadata'].keys():
+                parser['metadata'][key] = parser['metadata'][key] if field=='units' else float(parser['metadata'][key])
+                if field == 'unit':
+                    try:
+                        constants.ureg(key)
+                    except:
+                        raise ValueError('need to define '+key+' in acceptable units (% not allowed, use percent')
+            else:
+                raise KeyError(key+' needs to be specified in setup file')
+    for field in ['min','units','max']:
+        key = 'geospatial_vertical_'+field
+        if key in parser['metadata'].keys():
+            parser['metadata'][key] = parser['metadata'][key] if field=='units' else float(parser['metadata'][key])
+        else:
+            raise KeyError(key+' needs to be specified in '+cfg_file)
+
+    # Optional arguments
+    try:
+        value = parser['metadata']['geospatial_vertical_positive'].strip()
+    except KeyError:
+        parser['metadata']['geospatial_vertical_positive'] = 'down'
+    if parser['metadata']['geospatial_vertical_positive'].lower() not in ['up','down']:
+        raise KeyError('geospatial_vertical_positive type can only be up or down')
+    try:
+        value = parser['metadata']['interpolant'].strip()
+        parser['metadata']['interpolant'] = None if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['interpolant'] = 'nearest'
+    if parser['metadata']['interpolant'] != None:
+        if parser['metadata']['interpolant'].lower() not in ['nearest','smooth']:
+            raise KeyError('interpolant type can only be nearest or smooth for compatibility with KDtree queries')
+    try:
+        value = parser['metadata']['refmodel'].strip()
+        parser['metadata']['refmodel'] = None if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['refmodel'] = None
+    try:
+        value = parser['metadata']['crust'].strip()
+        parser['metadata']['crust'] = None if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['crust'] = None
+    try:
+        value = parser['metadata']['scaling'].strip()
+        parser['metadata']['scaling'] = None if value.lower() == 'none' else value.split(',')
+    except KeyError:
+        parser['metadata']['scaling'] = None
+    try:
+        value = parser['metadata']['null_model'].strip()
+        parser['metadata']['null_model'] = None if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['null_model'] = None
+    try:
+        value = '{}'.format(parser['metadata']['kerstr']).strip()
+        parser['metadata']['kerstr'] = 'NATIVE' if value.lower() == 'none' else value
+    except KeyError:
+        parser['metadata']['kerstr'] = 'NATIVE'
+    try:
+        value = parser['metadata']['forward_modeling'].strip()
+        parser['metadata']['forward_modeling'] = parser['parameters'].keys() if value.lower() == 'none' else value.split(',')
+    except KeyError:
+        parser['metadata']['forward_modeling'] = parser['parameters'].keys()
+
+    # check units
+    for var in parser['parameters'].keys():
+        for key in ['unit','absolute_unit']:
+            if key in parser['parameters'][var].keys():
+                value =parser['parameters'][var][key]
+                try:
+                    constants.ureg(value)
+                except:
+                    raise ValueError('need to define '+key+' for variable '+var+' in acceptable units, not '+value+' (% NOT allowed, use percent).')
+            else:
+                if key == 'unit': raise ValueError('need to define '+key+' for variable '+var+' in acceptable units (% NOT allowed, use percent).')
+
+
+
 def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True,buffer=False, onlyheaders=False):
     '''
     write a rem3d formatted ascii file from a directory containing epix files
@@ -397,46 +453,20 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     else:
         parser = ConfigObj(cfg_file)
 
+    # Required arguments
+    checksetup(parser)
     model_name = parser['metadata']['name']
-    epix_folder = parser['metadata']['folder']
     cite = parser['metadata']['cite']
+    epix_folder = parser['metadata']['folder']
+    kernel_set = parser['metadata']['kerstr']
 
-    # Optional arguments
-    try:
-        value = parser['metadata']['interpolant'].strip()
-        interpolant = None if value.lower() == 'none' else value
-    except KeyError:
-        interpolant = 'nearest'
-    try:
-        value = parser['metadata']['refmodel'].strip()
-        ref_model = None if value.lower() == 'none' else value
-    except KeyError:
-        ref_model = None
-    try:
-        value = parser['metadata']['crust'].strip()
-        crust = None if value.lower() == 'none' else value
-    except KeyError:
-        crust = None
-    try:
-        value = parser['metadata']['scaling'].strip()
-        scaling = None if value.lower() == 'none' else value
-    except KeyError:
-        scaling = None
-    try:
-        value = parser['metadata']['null_model'].strip()
-        null_model = None if value.lower() == 'none' else value
-    except KeyError:
-        null_model = None
-    try:
-        value = '{}'.format(parser['metadata']['kerstr']).strip()
-        kernel_set = 'NATIVE' if value.lower() == 'none' else value
-    except KeyError:
-        kernel_set = 'NATIVE'
-    try:
-        value = parser['metadata']['forward_modeling'].strip()
-        forward_modeling = parser['parameters'].keys() if value.lower() == 'none' else value
-    except KeyError:
-        forward_modeling = parser['parameters'].keys()
+    # get the optional arguments
+    interpolant = parser['metadata']['interpolant']
+    ref_model = parser['metadata']['refmodel']
+    crust = parser['metadata']['crust']
+    scaling = parser['metadata']['scaling']
+    null_model = parser['metadata']['null_model']
+    forward_modeling = parser['metadata']['forward_modeling']
 
     #write header
     outfile = output_dir+'/{}.{}.rem3d.ascii'.format(model_name,kernel_set)
@@ -680,7 +710,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     else:
         return outfile
 
-def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',complevel=9, engine='netcdf4', writenc4 = True):
+def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',complevel=9, engine='netcdf4', writenc4 = False):
     '''
     write an xarrary dataset from a rem3d formatted ascii file
 
@@ -709,48 +739,14 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
     else:
         parser = ConfigObj(cfg_file)
 
-    # Optional arguments
-    try:
-        value = parser['metadata']['interpolant'].strip()
-        parser['metadata']['interpolant'] = None if value.lower() == 'none' else value
-    except KeyError:
-        parser['metadata']['interpolant'] = 'nearest'
-    try:
-        value = parser['metadata']['refmodel'].strip()
-        parser['metadata']['refmodel'] = None if value.lower() == 'none' else value
-    except KeyError:
-        parser['metadata']['refmodel'] = None
-    try:
-        value = parser['metadata']['crust'].strip()
-        parser['metadata']['crust'] = None if value.lower() == 'none' else value
-    except KeyError:
-        parser['metadata']['crust'] = None
-    try:
-        value = parser['metadata']['scaling'].strip()
-        parser['metadata']['scaling'] = None if value.lower() == 'none' else value.split(',')
-    except KeyError:
-        parser['metadata']['scaling'] = None
-    try:
-        value = parser['metadata']['null_model'].strip()
-        parser['metadata']['null_model'] = None if value.lower() == 'none' else value
-    except KeyError:
-        parser['metadata']['null_model'] = None
-    try:
-        value = '{}'.format(parser['metadata']['kerstr']).strip()
-        parser['metadata']['kerstr'] = 'NATIVE' if value.lower() == 'none' else value
-    except KeyError:
-        parser['metadata']['kerstr'] = 'NATIVE'
-    try:
-        value = parser['metadata']['forward_modeling'].strip()
-        parser['metadata']['forward_modeling'] = parser['parameters'].keys() if value.lower() == 'none' else value.split(',')
-    except KeyError:
-        parser['metadata']['forward_modeling'] = parser['parameters'].keys()
-
+    # Required arguments
+    epix_folder = parser['metadata']['folder']
+    checksetup(parser)
 
     try: #attempt buffer
         asciioutput.seek(0)
     except:
-        if outfile == None:
+        if outfile == None and writenc4:
             try:
                 outfile = asciioutput.split('.ascii')[0]+'.nc4'
             except:
@@ -950,15 +946,15 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         hpar_idx = model_dict[variable]['hpar_idx']
 
         # sort them by increaing lon if needed since reshape requires that
-        sortbylon = hpar_list[hpar_idx][0] == sorted(hpar_list[hpar_idx][0])
+        sortbylon = np.all(hpar_list[hpar_idx][0] == sorted(hpar_list[hpar_idx][0]))
 
         # unique values for reshaping
+        arr=pd.DataFrame(np.asarray(hpar_list[hpar_idx]).T,columns =['lon', 'lat', 'pxw'])
         if sortbylon:
             lon = np.unique(hpar_list[hpar_idx][0])
             lat = np.unique(hpar_list[hpar_idx][1])
             pxw = np.unique(hpar_list[hpar_idx][2])
         else:
-            arr=pd.DataFrame(np.asarray(hpar_list[hpar_idx]).T,columns =['lon', 'lat', 'pxw'])
             arr = arr.sort_values(by=['lon','lat'])
             lon = pd.unique(arr['lon'])
             lat = pd.unique(arr['lat'])
@@ -974,7 +970,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         pixel_array = xr.DataArray(np.zeros((len(lat),len(lon))),
                         dims = ['latitude','longitude'],
                         coords = [lat,lon])
-        pixel_array[:,:] = np.reshape(hpar_list[hpar_idx][2],
+        pixel_array[:,:] = np.reshape(arr['pxw'].values,
                             (len(lat),len(lon)),order='F')
         ds['pixel_width'] = pixel_array
 
@@ -1068,7 +1064,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
     # write to netcdf
     comp = {'zlib': True, 'complevel': complevel}
     encoding = {var: comp for var in ds.data_vars}
-    if writenc4 and outfile != None:
+    if outfile != None:
         # change None to string since it cannot be stored in
         for key in ds.attrs.keys():
             if ds.attrs[key] is None: ds.attrs[key] = 'None'

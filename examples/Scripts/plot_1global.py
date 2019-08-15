@@ -61,7 +61,9 @@ def main():
         # find the index, choosing the first if multiple ones available
         start_depths = ds[arg.parameter].attrs['start_depths']
         end_depths = ds[arg.parameter].attrs['end_depths']
-        depindex = np.where(np.logical_and(start_depths <= arg.depth,end_depths >= arg.depth))[0][0]
+        find = np.logical_and(start_depths <= arg.depth,end_depths >= arg.depth)
+        if not np.any(find): raise ValueError('depth queried '+str(arg.depth)+' not found among the limits : ',np.vstack((start_depths,end_depths)).T)
+        depindex = np.where(find)[0][0]
         start_depth = start_depths[depindex]
         end_depth = end_depths[depindex]
         title = 'Depth : '+str(arg.depth)+' km ['+str(start_depth)+' - '+str(end_depth)+' km]'

@@ -22,10 +22,14 @@ import h5py
 import traceback
 import pandas as pd
 from progressbar import progressbar
+import copy
+import warnings
+import pint
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
 from .. import constants
+from ..mapping import spher2cart
 from .kernel_set import Kernel_set
 from .realization import Realization
 from .common import getLU2symmetric,readResCov
@@ -56,7 +60,7 @@ class Model3D(object):
         return output
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self._infile})'.format(self=self)
+        return '{self.__class__.__name__}({self._name})'.format(self=self)
 
     def __len__(self):
         return len(self.metadata)
@@ -238,6 +242,18 @@ class Model3D(object):
                 self.data[resolution][case]['name'] = g2.attrs['name']
         return
 
+    def writerealization(self, resolution=0,realization=0,outfile=None):
+        realize = Realization()
+        # transfer data and metadata
+        realize.metadata = self[resolution]
+        realize._name = self._name
+        realize.data = self[resolution,realization]['coef']
+        realize._type = self._type
+        realize._refmodel = self._refmodel
+        realize._infile = self._infile
+
+        #write the file
+        realize.to_xarray(outfile=outfile,writenc4=True)
 
     def writehdf5(self, outfile = None, overwrite = False):
         """
@@ -292,7 +308,74 @@ class Model3D(object):
         hf.close()
         print('... written to '+outfile)
 
-    def evaluate_at_location(self,latitude,longitude,depth_in_km,parameter='vs',resolution=0,realization=0,interpolated=False,tree=None,nearest=1,dbs_path=tools.get_filedir()):
+    def buildtree3D(self,resolution=0,dbs_path=tools.get_filedir()):
+        """
+        Build a KDtree interpolant based on the metadata
+
+        """
+        typehpar = self[resolution]['typehpar']
+        if not len(typehpar) == 1: raise AssertionError('only one type of horizontal parameterization allowed')
+        for types in typehpar:
+            if not types == 'PIXELS': raise AssertionError('for interpolation with tree3D')
+
+        # not make list of depths
+        kerstr = self[resolution]['kernel_set'].name
+        check = True; depth_shared=None
+        for indx,variable in enumerate(self[resolution]['varstr']):
+            depths = self.getpixeldepths(resolution,variable)
+            if not np.any(depths == None): # ignore 2D variables in this comparisons
+                if np.any(depth_shared == None):
+                    depth_shared = depths
+                else:
+                    check = check and (np.all(depth_shared==depths))
+        if not check: raise ValueError('All 3D variables need to share the same radial parameterization for a common KDtree to work')
+        #get full path
+        dbs_path=tools.get_fullpath(dbs_path)
+        treefile = dbs_path+'/'+constants.planetpreferred+'.'+kerstr+'.KDTree.3D.pkl'
+        if os.path.isfile(treefile):
+            tree = tools.tree3D(treefile)
+        else:
+            #check that the horizontal param is pixel based
+            xlapix = self[resolution]['xlapix'][0]
+            xlopix = self[resolution]['xlopix'][0]
+            nlat = len(xlapix)
+            ndep = len(depth_shared)
+            depth_in_km = np.zeros(nlat*ndep)
+            for indx,depth in enumerate(depth_shared):
+                depth_in_km[indx*nlat:(indx+1)*nlat] = depth * np.ones(nlat)
+            xlapix = np.tile(xlapix,ndep)
+            xlopix = np.tile(xlopix,ndep)
+            tree = tools.tree3D(treefile,xlapix,xlopix,constants.R.to('km').magnitude - depth_in_km)
+        return tree
+
+
+    def ifwithinregion(self,latitude,longitude,depth_in_km=None,resolution=0):
+        # check if the queries is within the bounds of the model
+        lat_max = self[resolution]['geospatial_lat_max']
+        lat_min = self[resolution]['geospatial_lat_min']
+        lon_min = self[resolution]['geospatial_lon_min']
+        lon_max = self[resolution]['geospatial_lon_max']
+        lon_min = lon_min + 360. if lon_min < 0. else lon_min
+        lon_max = lon_max + 360. if lon_max < 0. else lon_max
+        dep_min = self[resolution]['geospatial_vertical_min']
+        dep_max = self[resolution]['geospatial_vertical_max']
+        # convert to numpy arrays
+        latitude = tools.convert2nparray(latitude)
+        longitude = tools.convert2nparray(longitude)
+        if np.any(depth_in_km == None):
+            if not(len(latitude)==len(latitude)): raise AssertionError('latitude and longitude need to be of same size')
+            checks = (latitude <= lat_max) & (latitude >= lat_min) & \
+                 (longitude <= lon_max) & (longitude >= lon_min) & \
+                 (depth <= dep_max) & (depth_in_km >= dep_min)
+        else:
+            depth_in_km = tools.convert2nparray(depth_in_km)
+            if not(len(latitude)==len(latitude)==len(depth_in_km)): raise AssertionError('latitude, longitude and depth need to be of same size')
+            checks = (latitude <= lat_max) & (latitude >= lat_min) & \
+                 (longitude <= lon_max) & (longitude >= lon_min)
+        return checks
+
+
+    def evaluate_at_location(self,latitude,longitude,depth_in_km,parameter,resolution=0,realization=0,grid=False,interpolated=False,tree=None,nearest=None,units=None,dbs_path=tools.get_filedir()):
         """
         Evaluate the mode at a location (latitude, longitude,depth)
 
@@ -303,8 +386,17 @@ class Model3D(object):
 
         interpolated: If True, use KDTree from a predefined grid. If False, evaluated
                       exactly using kernel_set instance.
+
+        nearest: number of points to interpolate. If None, defaults to values based on
+                    self[resolution]['interpolant']
+
+        grid: make a grid by repeating (latitude,longitude) by number of depth_in_km
+
+        units: if 'absolute' try converting to absolute units of the parameter.
+               If 'default', give the default units from model instance.
+               If None, simply return the sparse array
+
         """
-        if self._type != 'rem3d': raise NotImplementedError('model format ',self._type,' is not currently implemented in reference1D.coeff2modelarr')
         if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
         # convert to numpy arrays
@@ -312,61 +404,129 @@ class Model3D(object):
         longitude = tools.convert2nparray(longitude)
         depth_in_km = tools.convert2nparray(depth_in_km)
         resolution = tools.convert2nparray(resolution,int2float=False)
+        tree_provided = False if tree == None else True
+        nlat = len(latitude)
+        nlon = len(longitude)
+        ndep = len(depth_in_km)
+
+        if units != None:
+            if units not in ['absolute','default']: raise ValueError("Units can only be None, absolute or default in model instance")
+            for index,res in enumerate(resolution):
+                if index == 0:
+                    unit = self[res]['attrs'][parameter]['unit']
+                else:
+                    if unit != self[res]['attrs'][parameter]['unit']:
+                        raise AssertionError('units of parameter '+parameter+' need to be same for all resolutions, not '+unit+' and '+self[res]['attrs'][parameter]['unit'])
+                if units == 'absolute':
+                    for field in ['absolute_unit','refvalue','start_depths','end_depths']:
+                        if field not in self[res]['attrs'][parameter].keys():
+                            raise AssertionError(field+' of parameter '+parameter+' need to be provided for resolution '+str(res)+' if units argument is '+units)
+                    if index == 0:
+                        refvalue = self[res]['attrs'][parameter]['refvalue']
+                        start_depths = self[res]['attrs'][parameter]['start_depths']
+                        end_depths = self[res]['attrs'][parameter]['end_depths']
+                    else:
+                        if np.any(refvalue != self[res]['attrs'][parameter]['refvalue']): raise AssertionError('refvalue of parameter ',refvalue,' need to be same for all resolutions, not ',refvalue,' and ',self[res]['attrs'][parameter]['refvalue'])
+                        if np.any(start_depths != self[res]['attrs'][parameter]['start_depths']): raise AssertionError('start_depths of parameter '+parameter+' need to be same for all resolutions, not ',start_depths,' and ',self[res]['attrs'][parameter]['start_depths'])
+                        if np.any(end_depths != self[res]['attrs'][parameter]['end_depths']): raise AssertionError('end_depths of parameter '+parameter+' need to be same for all resolutions, not ',end_depths,' and ',self[res]['attrs'][parameter]['end_depths'])
+
+        #checks
+        if grid:
+            nrows = nlat*ndep
+        else:
+            if not (len(latitude) == len(longitude) == len(depth_in_km)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
+            if not (latitude.ndim == longitude.ndim == depth_in_km.ndim == 1): raise ValueError("latitude, longitude or depth_in_km should be one-dimensional arrays")
+            nrows = nlat
 
         #compute values for each resolution
         for index,res in enumerate(resolution):
             # get the model array
-            modelarr = self.coeff2modelarr(resolution=res,realization=realization)
+            modelarr = self.coeff2modelarr(resolution=res,realization=realization, parameter=parameter)
             if not interpolated:
                 # get the projection matrix
-                project = self.calculateproj(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res)
-                predsparse = project['projarr']*modelarr
+                project = self.calculateproj(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res,grid=grid)
+                predsparse = project['matrix']*modelarr
+                # append values for all resolutoins
                 if index == 0:
-                    values = predsparse.data
+                    values = predsparse.reshape((ndep,nlat),order='C') if grid else predsparse
                 else:
-                    values = values + predsparse.data
+                    add = predsparse.reshape((ndep,nlat),order='C')  if grid else predsparse
+                    values = values + add
             else:
-                if tree==None:
-                    tree = buildtree3D(self,resolution=resolution,dbs_path=dbs_path)
-                # get the interpolation, summing over all resolutions
-                temp = tools.querytree3D(tree=tree,latitude=latitude,longitude=longitude,radius_in_km= constants.R.to('km').magnitude - depth_in_km,values=modelarr,nearest=nearest)
-                if index == 0:
-                    values = temp.data
+                # decide on the interpolant type based on metadata
+                if nearest == None:
+                    interpolant = self[resolution]['interpolant']
+                    if interpolant.lower() == 'nearest':
+                        nearest=1
+                    elif interpolant.lower() == 'smooth':
+                        nearest=6
+                    else:
+                        raise KeyError('interpolant type '+interpolant+' cannot be deciphered for kdtree query')
+
+                # update locations based on grid
+                if grid:
+                    depth_tmp = np.zeros(nlat*ndep)
+                    for indx,depth in enumerate(depth_in_km):
+                        depth_tmp[indx*nlat:(indx+1)*nlat] = depth * np.ones(nlat)
+                    latitude = np.tile(latitude,len(depth_in_km))
+                    longitude = np.tile(longitude,len(depth_in_km))
+                    depth_in_km = depth_tmp
+
+                # check if the queries is within the bounds of the model
+                checks = self.ifwithinregion(latitude,longitude,depth_in_km,resolution)
+                if np.count_nonzero(checks) == 0:
+                    predsparse = sparse.csr_matrix((nrows, 1))
                 else:
-                    values = values + temp.data
-        if interpolated:
+                    if not tree_provided:
+                        tree = self.buildtree3D(resolution=resolution,dbs_path=dbs_path)
+                    self.checktree3D(tree,parameter=parameter,resolution=resolution)
+
+                    # Get modelarr
+                    modelarr = self.coeff2modelarr(resolution=resolution,realization=realization,parameter=parameter)
+
+                    xlapix = latitude[checks];xlopix = longitude[checks]
+                    depths = depth_in_km[checks]
+                    #KDtree evaluate
+                    print ('... evaluating KDtree ...')
+                    temp,_ = tools.querytree3D(tree=tree,latitude=xlapix,longitude=xlopix,radius_in_km= constants.R.to('km').magnitude - depths,values=modelarr,nearest=nearest)
+                    print ('... done evaluating KDtree.')
+                    if np.all(checks): # if all points within region
+                        predsparse = temp
+                    else:
+                        data = temp.toarray().ravel()
+                        row = np.where(checks)[0]
+                        col = np.zeros_like(row,dtype=int)
+                        predsparse = sparse.csr_matrix((data, (row, col)), shape=(nrows, 1))
+                # append values for all resolutoins
+                if index == 0:
+                    values = predsparse.reshape((ndep,nlat),order='C') if grid else predsparse
+                else:
+                    add = predsparse.reshape((ndep,nlat),order='C')  if grid else predsparse
+                    values = values + add
+
+        # change units based on options
+        if units != None:
+            # all resolution should have same units so using 0
+            unit = self[0]['attrs'][parameter]['unit']
+            absolute_unit = self[0]['attrs'][parameter]['absolute_unit']
+            pdb.set_trace()
+            values_unit = values.toarray()*constants.ureg(unit)
+            if units == 'default':
+                values = values_unit
+            elif units == 'absolute':
+                # select reference values
+                index = tools.ifwithindepth(start_depths,end_depths,depth_in_km)
+                reference = refvalue[index].reshape((ndep,nlat),order='C')
+                # 1 as reference value is added
+                values_fraction = 1+values_unit.to('fraction')
+                values = np.multiply(values_fraction.magnitude,reference)*constants.ureg(absolute_unit)
+            else:
+                raise ValueError("Units can only be None, absolute or default in model instance")
+
+        if interpolated and not tree_provided:
             return values, tree
         else:
             return values
-
-    def buildtree3D(self,resolution=0,dbs_path=tools.get_filedir()):
-        """
-        Build a KDtree interpolant based on the metadata
-
-        """
-        kerstr = self[resolution]['kernel_set'].name
-        check = True
-        for indx,variable in enumerate(self[resolution]['varstr']):
-            if indx==0:
-                depth_shared = self.getpixeldepths(resolution,variable)
-            else:
-                check = check and (depth_shared==self.getpixeldepths(resolution,variable))
-        if not check: raise ValueError('All variables need to share the same radial parameterization for a common KDtree to work')
-        #get full path
-        dbs_path=tools.get_fullpath(dbs_path)
-        treefile = dbs_path+'/'+constants.planetpreferred+'.'+kerstr+'.KDTree.3D.pkl'
-        if os.path.isfile(treefile):
-            tree = tools.tree3D(treefile)
-        else:
-            #check that the horizontal param is pixel based
-            xlapix = self[resolution]['xlapix'][0]
-            xlopix = self[resolution]['xlopix'][0]
-            depth_in_km_pix = np.array([])
-            for depth in depth_shared: depth_in_km_pix = np.append(depth_in_km_pix,np.ones_like(xlopix)*depth)
-            xlapix = np.repeat(xlapix,len(depth_shared))
-            xlopix = np.repeat(xlopix,len(depth_shared))
-            tree = tools.tree3D(treefile,xlapix,xlopix,constants.R.to('km').magnitude - depth_in_km_pix)
-        return tree
 
     def getpixeldepths(self,resolution,parameter):
         typehpar = self[resolution]['typehpar']
@@ -374,11 +534,8 @@ class Model3D(object):
         for types in typehpar:
             if not types == 'PIXELS': raise AssertionError('for interpolation with tree3D')
         kernel_set = self[resolution]['kernel_set']
-        kernel_param = kernel_set.data['radial_basis'][parameter]
-        depths = []
-        for index,radker in enumerate(kernel_param):
-            depths.append((radker.metadata['depthtop'][index]+radker.metadata['depthbottom'][index])/2.)
-        return np.asarray(depths)
+        depths = kernel_set.pixeldepths(parameter)
+        return depths
 
     def coeff2modelarr(self,resolution=0,realization=0,parameter=None):
         """
@@ -391,12 +548,13 @@ class Model3D(object):
         resolution : list of resolutions to include the the modelarray
 
         parameter: parameters to select. Default is to include all available.
+
         """
         if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
 
+
         # convert to numpy arrays
         resolution = tools.convert2nparray(resolution,int2float=False)
-
 
         # Loop over resolution levels, adding coefficients
         for ir,_ in enumerate(resolution):
@@ -428,7 +586,6 @@ class Model3D(object):
                             # only include if selected
                             icount=0
                             if irow in radselect:
-                                icount += 1
                                 ncoef = self[resolution]['ncoefhor'][ihorpar-1]
                                 if icount == 1:
                                     modelarr = coefficients.iloc[irow][:ncoef].to_numpy().ravel()
@@ -607,13 +764,15 @@ class Model3D(object):
         projection['model']=model; projection['param']=lateral_basis
         return projection
 
-    def calculateproj(self,parameter,latitude,longitude,depth_in_km = None, resolution = 0):
+    def calculateproj(self,parameter,latitude,longitude,depth_in_km = None, resolution = 0,grid=False):
         """
         Get the projection matrix from a lateral basis to another and for particular depths
 
         depth_in_km : depth in km where the projection matrix is needed.
                       If None, returns the projection matrix for the lat/lon
                       and radial basis as a dirac delta.
+
+        grid: make a grid by repeating (latitude,longitude) by number of depth_in_km
 
         """
         if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
@@ -626,13 +785,12 @@ class Model3D(object):
             nrows = len(lat)
         else:
             dep = tools.convert2nparray(depth_in_km)
-            nrows = len(lat)*len(dep)
-        parameter = tools.convert2nparray(parameter)
-
-        # make the combinations of repeating the same lat/lon at all depths
-        #latitude=np.tile(lat,len(depth_in_km))
-        #longitude=np.tile(lon,len(depth_in_km))
-        #depth_in_km=np.repeat(dep,len(lat))
+            if grid:
+                nrows = len(lat)*len(dep)
+            else:
+                if not (len(lat) == len(lon) == len(dep)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
+                if not (lat.ndim == lon.ndim == dep.ndim == 1): raise ValueError("latitude, longitude or depth_in_km should be one-dimensional arrays")
+                nrows = len(lat)
 
         if not len(latitude)==len(longitude): raise AssertionError('latitude and longitude should be of same length')
 
@@ -640,7 +798,7 @@ class Model3D(object):
         kernel = self[resolution]['kernel_set']
 
         # Write to a dictionary
-        # write to a projection file if it does not exist or existing one has different attributes than projection[param]
+        # write to a projection file if it does not exist or existing one has different attributes than projection[parameter]
         projection = {}
         projection['kernel'] = kernel.name
         projection['deptharr']=dep if not np.all(depth_in_km==None) else depth_in_km
@@ -649,56 +807,59 @@ class Model3D(object):
         projection['refstrarr']=parameter
 
         # loop through parameter and append the projection for each location
-        proj = sparse.csr_matrix((nrows, kernel.metadata['ncoefcum'][-1]), dtype=np.float64)
-        for param in parameter:
-            horcof, vercof = kernel.evaluate_bases(param,lat,lon,dep)
-            # convert vercof to sparse for easy multiplication
-            vercof = sparse.csr_matrix(vercof)
+        horcof, vercof = kernel.evaluate_bases(parameter,lat,lon,dep)
+        # convert vercof to sparse for easy multiplication
+        vercof = sparse.csr_matrix(vercof)
 
-            # find radial indices of a given physical parameter
-            findrad = kernel.find_radial(parameter)
+        # find radial indices of a given physical parameter
+        findrad = kernel.find_radial(parameter)
 
+        # initialize the projection matrix
+        indend_all = kernel.metadata['ncoefcum'][findrad['index'][-1]]-1
+        indstart_all = 0 if findrad['index'][0] == 0 else kernel.metadata['ncoefcum'][findrad['index'][0]-1]
+        ncol = indend_all - indstart_all + 1
+        proj = sparse.lil_matrix((nrows,ncol), dtype=np.float64)
+
+        # difference projection matrix based on whether grid is asked or not
+        if grid:
             # loop over all depths
-            for idep in progressbar(range(len(depth_in_km))):
+            for idep in progressbar(range(len(dep))):
                 # loop over all radial kernels that belong to this parameter and add up
                 for ii in np.arange(len(findrad)):
-                    # start and end of indices to write to
-                    indend = kernel.metadata['ncoefcum'][findrad['index'][ii]]-1
-                    indstart = 0 if findrad['index'][ii] == 0 else kernel.metadata['ncoefcum'][findrad['index'][ii]-1]
+                    if vercof[idep,ii] != 0.:
+                        row_start = idep*len(lat)
+                        row_end = (idep+1)*len(lat)
+                        column_start = ii*horcof.shape[1]
+                        column_end = (ii+1)*horcof.shape[1]
+                        proj[row_start:row_end,column_start:column_end] = horcof*vercof[idep,ii]
+        else:
+            for idep,dep_tmp in progressbar(enumerate(dep)):
+                for ii in np.arange(len(findrad)):
+                    if vercof[idep,ii] != 0.:
+                        column_start = ii*horcof.shape[1]
+                        column_end = (ii+1)*horcof.shape[1]
+                        proj[idep,column_start:column_end] = (horcof*vercof[idep,ii])[idep]
 
-                    # append indstart columns to beginning of horcof and some at the end
-                    prefix = sparse.csr_matrix((horcof.shape[0],indstart))
-                    suffix = sparse.csr_matrix((horcof.shape[0],kernel.metadata['ncoefcum'][-1]-indend-1))
-                    temp = sparse.hstack([prefix,horcof,suffix])
+        # store the projection matrix
+        projection['matrix'] = proj.tocsr()
 
-                    # append idep*len(lat) rows at the begining and some at the end
-                    prefix = sparse.csr_matrix((idep*len(lat),temp.shape[1]))
-                    suffix = sparse.csr_matrix(((len(depth_in_km)-idep-1)*len(lat),temp.shape[1]))
-                    temp = sparse.vstack([prefix,temp,suffix]).tocsr()
-
-                    # convert to numpy arrays
-                    if vercof[idep,ii] != 0.: proj = proj + temp*vercof[idep,ii]
-
-            # store the projection matrix
-            projection['matrix'] = proj
-
-        # store the lateral and radial param of this variable
+        # store the lateral and radial parameter of this variable
         radial_type = []
-        for rker in kernel.data['radial_basis'][param]: radial_type.append(rker.type)
-        if len(np.unique(radial_type)) != 1: raise AssertionError('more than one radial parameterization for  '+param)
+        for rker in kernel.data['radial_basis'][parameter]: radial_type.append(rker.type)
+        if len(np.unique(radial_type)) != 1: raise AssertionError('more than one radial parameterization for  '+parameter)
         projection['radial_basis']=radial_type[0]
-        projection['radial_metadata']=kernel.data['radial_basis'][param][0].metadata
+        projection['radial_metadata']=kernel.data['radial_basis'][parameter][0].metadata
 
         # same check for lateral parameterization
         selfmeta = self[resolution]
         selfkernel = selfmeta['kernel_set']
-        ivarfind =np.where(selfmeta['varstr']==param)[0]
+        ivarfind =np.where(selfmeta['varstr']==parameter)[0]
         if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in eval_kernel_set')
         findvar = selfmeta['varstr'][ivarfind[0]]
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
         findrad = np.array([(ii, selfmeta['desckern'][ii]) for ii in np.arange(len(selfmeta['ivarkern'])) if ivarfind[0]+1 == selfmeta['ivarkern'][ii]],dtype=dt)
 
-        if len(np.unique(selfmeta['ihorpar'][findrad['index']])) != 1: raise AssertionError('more than one lateral parameterization for  '+param)
+        if len(np.unique(selfmeta['ihorpar'][findrad['index']])) != 1: raise AssertionError('more than one lateral parameterization for  '+parameter)
         ihorpar = selfmeta['ihorpar'][findrad['index']][0]
         projection['lateral_metadata']= selfkernel.data['lateral_basis'][ihorpar-1].metadata
         projection['lateral_basis']= selfkernel.data['lateral_basis'][ihorpar-1].type
@@ -725,12 +886,54 @@ class Model3D(object):
         modelselect=projarr[depindex,varindex[0]]*modelarr
         return modelselect,deptharr[depindex]
 
-    def reparameterize(self, model3d,resolution=0,realization=0,tree=None,nearest=1, dbs_path=tools.get_filedir()):
+    def checktree3D(self,tree,parameter,resolution=0):
+
+        # check if it is pixel based
+        typehpar = self[resolution]['typehpar']
+        if not len(typehpar) == 1: raise AssertionError('only one type of horizontal parameterization allowed')
+        for types in typehpar:
+            if not types == 'PIXELS': raise AssertionError('for interpolation with tree3D')
+
+        # find the radial kernels
+        varindex  = np.where(self[resolution]['varstr']==parameter)[0]+1
+        if len(varindex) != 1: raise AssertionError(str(len(varindex))+' parameters found for '+parameter+'. Only one is allowed')
+        radselect = np.where(self[resolution]['ivarkern']==varindex[0])[0]
+        # if only a single parameterization, simply unravel
+        if len(np.unique(self[resolution]['ihorpar'][radselect])) != 1:
+            raise ValueError('cannot deal with more than one horizontal parameterization')
+
+        # get the pixel configuration
+        depths = self.getpixeldepths(resolution,parameter)
+        if np.any(depths == None): raise ValueError('depths not found for interpolation for variable '+parameter+' in target file.')
+        #get full path
+        xlapix = self[resolution]['xlapix'][0]
+        xlopix = self[resolution]['xlopix'][0]
+        nlat = len(xlapix)
+        ndep = len(depths)
+        depth_in_km = np.zeros(nlat*ndep)
+        for indx,depth in enumerate(depths):
+            depth_in_km[indx*nlat:(indx+1)*nlat] = depth * np.ones(nlat)
+        xlapix = np.tile(xlapix,len(depths))
+        xlopix = np.tile(xlopix,len(depths))
+        radius_in_km = constants.R.to('km').magnitude - depth_in_km
+
+        if tree.n != len(xlopix): raise AssertionError('tree (knots = '+str(tree.n)+') not compatible with the self instance for variable '+parameter+' (knots = '+str(len(xlopix))+')')
+
+        # tree stucture is store in spherical coordinates
+        rlatlon = np.column_stack((radius_in_km.flatten(),xlapix.flatten(), xlopix.flatten()))
+        xyz = spher2cart(rlatlon)
+        if not np.allclose(tree.data,xyz): raise ValueError('tree is not compatible with the matrix of the variable '+parameter)
+
+        return xlapix,xlopix,depth_in_km
+
+
+    def reparameterize(self, model3d,resolution=0,realization=0,interpolated=False,tree=None,nearest=1, dbs_path=tools.get_filedir()):
         """
         Inverts for new coefficients in self.data from the coefficients in model3d class
 
         write : output the reparamterized model as a text file
 
+        interpolated: assume that it won't be a simple interpolation
         """
         if type(model3d).__name__ != 'Model3D': raise ValueError('input model class should be a Model3D instance')
 
@@ -739,45 +942,107 @@ class Model3D(object):
         newmeta = model3d[resolution]
         selfkernel = selfmeta['kernel_set']
         newkernel = newmeta['kernel_set']
-        interpolated = False # assume that it won't be a simple interpolation
+        tree_provided = False if tree == None else True
 
         ####################### If both models are pixel based then interpolate###########
         check1 = selfkernel.metadata['typehpar'] == newkernel.metadata['typehpar'] == 'PIXELS'
         # they should also have the parameter in common
         check2 = sorted(np.intersect1d(selfkernel.metadata['varstr'],newkernel.metadata['varstr'])) == sorted(selfkernel.metadata['varstr'])
 
-        if len(check1) == 1 and check1[0] and check2:
-            interpolated = True
+        if len(check1) == 1 and check1[0] and check2 and interpolated:
+            # storage of kernel descriptions
+            desckern =  np.array([],dtype=newmeta['desckern'].dtype)
+            ivarkern=np.array([],dtype=int); ihorpar=np.array([],dtype=int);
+            ncoeff_layer=np.array([],dtype=int)
             for indx, variable in enumerate(selfmeta['varstr']):
-                if tree==None:
+                if not tree_provided:
                     tree = self.buildtree3D(resolution=resolution,dbs_path=dbs_path)
+                # check if tree is compatible with modelarr
+                self.checktree3D(tree,parameter=variable,resolution=resolution)
+
                 # Get modelarr
                 modelarr = self.coeff2modelarr(resolution=resolution,realization=realization,parameter=variable)
 
                 # queried locations
                 depth_shared = model3d.getpixeldepths(resolution,variable)
+                if np.any(depth_shared == None): raise ValueError('depths not found for interpolation for variable '+variable+' in target file.')
                 xlapix = newmeta['xlapix'][0]
                 xlopix = newmeta['xlopix'][0]
-                depth_in_km = np.array([])
-                for depth in depth_shared: depth_in_km = np.append(depth_in_km,np.ones_like(xlopix)*depth)
-                xlapix = np.repeat(xlapix,len(depth_shared))
-                xlopix = np.repeat(xlopix,len(depth_shared))
+                nlat = len(xlapix)
+                nlon = len(xlapix)
+                ndep = len(depth_shared)
+                depth_in_km = np.zeros(nlat*ndep)
+                for indx1,depth in enumerate(depth_shared):
+                    depth_in_km[indx1*nlat:(indx1+1)*nlat] = depth * np.ones(nlat)
+                xlapix = np.tile(xlapix,len(depth_shared))
+                xlopix = np.tile(xlopix,len(depth_shared))
 
-                #KDtree evaluate
-                print ('... evaluating KDtree ...')
-                temp = tools.querytree3D(tree=tree,latitude=xlapix,longitude=xlopix,radius_in_km= constants.R.to('km').magnitude - depth_in_km,values=modelarr,nearest=nearest)
-                print ('... done evaluating KDtree.')
+                # check if the queries is within the bounds of the model
+                checks = self.ifwithinregion(xlapix,xlopix,depth_in_km,resolution)
+                if np.count_nonzero(checks) == 0:
+                    final = sparse.csr_matrix((ndep*nlat, 1))
+                else:
+                    xlapix = xlapix[checks];xlopix = xlopix[checks]
+                    depth_in_km = depth_in_km[checks]
+
+                    #KDtree evaluate
+                    print ('... evaluating KDtree ...')
+                    temp,_ = tools.querytree3D(tree=tree,latitude=xlapix,longitude=xlopix,radius_in_km= constants.R.to('km').magnitude - depth_in_km,values=modelarr,nearest=nearest)
+                    print ('... done evaluating KDtree.')
+                    if np.all(checks): # if all points within region
+                        final = temp
+                    else:
+                        data = temp.toarray().ravel()
+                        row = np.where(checks)[0]
+                        col = np.zeros_like(row,dtype=int)
+                        final = sparse.csr_matrix((data, (row, col)), shape=(ndep*nlat, 1))
 
                 # now unwrap to coef
+                shape = [ndep,nlat]
                 if indx == 0:
-                    values = temp.reshape([len(depth_shared),len(newmeta['xlapix'][0])])
+                    values = final.reshape(shape,order='C')
                 else:
-                    values = sparse.vstack([vstack,temp.reshape([len(depth_shared),len(newmeta['xlapix'][0])])])
+                    values = sparse.vstack([values,final.reshape(shape,order='C')])
+
+                # update the kernel descriptions
+                varind = np.where(newmeta['varstr']==variable)[0][0]+1
+                kerind = np.where(newmeta['ivarkern']==varind)
+
+                ivarkern = np.concatenate((ivarkern, np.ones(len(newmeta['ivarkern'][kerind]),dtype=int)*(indx+1)))
+                ihorpar = np.concatenate((ihorpar,newmeta['ihorpar'][kerind]))
+                desckern = np.concatenate((desckern,newmeta['desckern'][kerind]))
+                ncoeff_layer = np.concatenate((ncoeff_layer, newmeta['ncoefhor'][newmeta['ihorpar'][kerind]-1]))
+
+                #update the variable attributes, delete some values as they will be recalculated
+                for field in newmeta['attrs'][variable].keys():
+                    if not field in ['refvalue','average']:
+                        selfmeta['attrs'][variable][field] = newmeta['attrs'][variable][field]
+                    else:
+                        if field in selfmeta['attrs'][variable]:
+                            del selfmeta['attrs'][variable][field]
+
+            # copy over the correct metadata
+            selfmeta['nmodkern'] = len(selfmeta['desckern'])
+            selfmeta['ncoefcum'] = np.cumsum(ncoeff_layer)
+            selfmeta['ivarkern'] = ivarkern
+            selfmeta['ihorpar'] = ihorpar
+            selfmeta['desckern'] = desckern
+            for field in ['hsplfile','xsipix', 'xlapix','ncoefhor', 'xlopix','kerstr','geospatial_lat_resolution','geospatial_lon_resolution']:
+                selfmeta[field] = newmeta[field]
+            try:
+                selfmeta['kernel_set'] = Kernel_set(selfmeta)
+            except:
+                warnings.warn('Warning: kernel_set could not initialized for '+str(resolution))
 
             # make a model3D instance and store coef panda dataframe
+            reparam = copy.deepcopy(self)
+            reparam[resolution] = selfmeta
+            reparam[resolution,realization]['coef'] = pd.DataFrame(values.toarray())
+            reparam._infile = selfmeta['name']+'.'+selfmeta['kerstr']+'.rem3d.nc4'
 
         ####################### Invert the coefficients    ##############################
         else:
+            if interpolated: warnings.warn('Could not interpolate. Inverting the coefficients...')
             # get the projection matrix for each variable in self
             dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
             for variable in selfmeta['varstr']:
@@ -838,10 +1103,10 @@ class Model3D(object):
                     #d = GTG_inv * values
                     pdb.set_trace()
 
-        if interpolated:
-            return values, tree
+        if interpolated and not tree_provided:
+            return reparam, tree
         else:
-            return values
+            return reparam
 
 
 

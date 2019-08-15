@@ -17,6 +17,7 @@ import ntpath
 import ast
 import pint # For SI units
 import decimal
+from numba import jit
 import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -56,11 +57,28 @@ def parse_line(line,rx_dict):
     # if there are no matches
     return None, None
 
-def convert2nparray(value,int2float = True):
+@jit(nopython=True)
+def ifwithindepth(start_depths,end_depths,depth_in_km):
+    if depth_in_km.ndim != 1: raise ValueError('only 1-D array depth_in_km allowed')
+    output = np.ones_like(depth_in_km,dtype=np.int64)
+    output[:] = -1
+    for ii,depth in enumerate(depth_in_km):
+        for jj,start in enumerate(start_depths):
+            end = end_depths[jj]
+            if depth >= start and depth <= end:
+                output[ii]=jj
+                break
+    return output
+
+
+
+def convert2nparray(value,int2float = True,allowstrings=True):
     """
     Converts input value to a float numpy array. Boolean are returned as Boolean arrays.
 
     int2float: convert integer to floats, if true
+
+    stringallowed: check if value has strings
     """
     if isinstance(value, (list,tuple,np.ndarray)):
         outvalue = np.asarray(value)
@@ -74,6 +92,7 @@ def convert2nparray(value,int2float = True):
         else:
             outvalue = np.asarray([value])
     elif isinstance(value,string_types):
+        if not allowstrings: raise TypeError('input cannot be a string')
         outvalue = np.asarray([value])
     else:
         raise TypeError('input must be list or tuple, not %s' % type(value))
