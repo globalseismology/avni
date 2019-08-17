@@ -1016,11 +1016,18 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
 
         if len(data_array.shape) == 3: # if 3-D variable
             # get the variable values
-            if ifread1D: ref1d.get_custom_parameter(variable)
             av_depth = deepcopy(data_array.depth.values)
-            refvalue = []; avgvalue = []; ifaverage =  True
+            avgvalue = []; ifaverage =  True
+
+            # calculate reference value if 1D model is read and absolute_unit is specified
+            if ifread1D and 'absolute_unit' in av_attrs.keys():
+                ref1d.get_custom_parameter(variable)
+                target_unit=av_attrs['absolute_unit']
+                refvalue = ref1d.evaluate_at_depth(av_depth,parameter=variable).to(target_unit).magnitude
+                av_attrs['refvalue'] = refvalue
+
+            # loop over depths and get average values
             for _,depth in enumerate(av_depth):
-                if ifread1D: refvalue.append(ref1d.evaluate_at_depth(depth,parameter=variable))
                 # select the appropriate map
                 mapval = data_array.sel(depth=depth)
                 # get the average, use an earlier evaluation of area if possible
@@ -1032,7 +1039,6 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
                         print(traceback.format_exc())
                         warnings.warn('Could not read mean values for parameter '+variable)
                         ifaverage = False
-            if ifread1D: av_attrs['refvalue'] = np.array(refvalue)
             if ifaverage: av_attrs['average'] = np.array(avgvalue)
             av_attrs['start_depths'] = allstartdepths
             av_attrs['end_depths'] = allenddepths
