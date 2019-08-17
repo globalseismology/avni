@@ -123,7 +123,7 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km =
     tree = tree3D(treefile,gridlat,gridlon,gridrad)
     return tree
 
-def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
+def checkxarray(data,latname = 'latitude', lonname = 'longitude', Dataset = True):
     """
     checks whether the data input is a DataArray and the coordinates are compatible
 
@@ -132,21 +132,21 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
     data : Dataset or DataArray
         the xray object to average over
 
+    Dataset : allow Dataset or not
+
     Returns
     -------
 
     pix: size of the uniform pixel
 
     """
-    if not isinstance(data, xr.DataArray): raise ValueError("date must be an xray DataArray")
+    if not isinstance(data, (xr.DataArray,xr.Dataset)): raise ValueError("date must be an xarray DataArray or Dataset")
+    if not Dataset and isinstance(data, xr.Dataset): raise ValueError("date must be an xarray Dataset if True")
 
     pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
     pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
-    # restrict comparison to the minimum number of decimal points
-    # dec_lat = decimals(pix_lat)
-    # dec_lon = decimals(pix_lon)
-    # pix_lat = np.unique(np.round(pix_lat, min(dec_lat)))
-    # pix_lon = np.unique(np.round(pix_lon, min(dec_lon)))
+    if isinstance(data, xr.DataArray) : shape = data.shape
+    if isinstance(data, xr.Dataset) : shape = tuple(data.dims[d] for d in [latname, lonname])
 
     # checks
     ierror = []
@@ -158,17 +158,17 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
             ierror.append(1)
             warnings.warn ('pixel width should be ideally be a factor of 180')
         nlat = int(180./pix_width); nlon = int(360./pix_width)
-        if nlat*nlon != data.size:
+        if nlat*nlon != shape[0]*shape[1]:
             ierror.append(2)
             warnings.warn('number of pixels expected for '+str(pix_width)+'X'+str(pix_width)+' is '+str(nlat*nlon)+',  not '+str(data.size)+' as specified in the data array.')
     else:
         warnings.warn('multiple pixel sizes have been found for xarray'+str(pix_lat)+str(pix_lon)+'. Choosing the first value '+str(pix_lat[0]))
         ierror.append(3)
         pix_width = pix_lat[0]
-    return ierror,pix_width
+    return ierror,pix_width,shape
 
 
-def AreaDataArray(data,latname = 'latitude', lonname = 'longitude',pix_width=None):
+def areaxarray(data,latname = 'latitude', lonname = 'longitude',pix_width=None):
     """
     weighted average for xray data geographically averaged
 
@@ -187,10 +187,10 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude',pix_width=Non
     """
 
     # check if it is a compatible dataarray
-    ierror,pix = checkDataArray(data,latname, lonname)
+    ierror,pix,shape = checkxarray(data,latname, lonname)
 
     if pix_width is not None:
-        if pix_width.shape != data.shape: raise AssertionError('pix_width.shape != data.shape')
+        if pix_width.shape != shape: raise AssertionError('pix_width.shape != shape')
         uniq_pix = np.unique(pix_width)
         # if the pix_width array has only one value and that
         # is consistent with the one derived from data
@@ -198,10 +198,10 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude',pix_width=Non
 
     # now fill the areas
     area = {}
-    areaarray = np.zeros(data.shape)
+    areaarray = np.zeros(shape)
 
     # find the index of the latitude
-    lat_index = data.dims.index(latname)
+    lat_index = np.argwhere(np.array(data.dims)==latname)[0].item()
     if lat_index is not 0: # transpose to (lat,lon) for caculations
         data = data.T
         if pix_width is not None: pix_width = pix_width.T
@@ -231,8 +231,7 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude',pix_width=Non
     if lat_index is not 0: area = area.T
     return area
 
-
-def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude', pix_width=None):
+def meanxarray(data,area=None,latname = 'latitude', lonname = 'longitude', pix_width=None):
     """
     weighted average for xray data geographically averaged
 
@@ -241,7 +240,7 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude', pi
     data : DataArray
         the xray object to average over
 
-    area: DataArray containing area weights. Obtained from AreaDataArray.
+    area: DataArray containing area weights. Obtained from areaxarray.
           If None, calculate again.
 
     pix_width: width of pixels if not the default derived from data
@@ -256,13 +255,16 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude', pi
     percentglobal: percentage of global area covered by this basis set
 
     """
+    # check if it is a compatible dataarray
+    ierror,pix,shape = checkxarray(data,latname, lonname)
+
     if pix_width is not None:
-        if pix_width.shape != data.shape: raise AssertionError('pix_width.shape != data.shape')
+        if pix_width.shape != shape: raise AssertionError('pix_width.shape != shape')
 
     # take weights
     # drop the variables for weights
     drops = [var for var in data.coords.keys() if var not in [latname,lonname]]
-    if area is None: area = AreaDataArray(data.drop(drops),latname,lonname,pix_width)
+    if area is None: area = areaxarray(data.drop(drops),latname,lonname,pix_width)
     totarea = np.sum(area.values)
     percentglobal = np.round(totarea/(4.*np.pi)*100.,3)
     weighted = area*data
