@@ -70,8 +70,6 @@ def ifwithindepth(start_depths,end_depths,depth_in_km):
                 break
     return output
 
-
-
 def convert2nparray(value,int2float = True,allowstrings=True):
     """
     Converts input value to a float numpy array. Boolean are returned as Boolean arrays.

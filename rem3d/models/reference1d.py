@@ -14,7 +14,7 @@ import fortranformat as ff #reading/writing fortran formatted text
 from six import string_types # to check if variable is string using isinstance
 from numpy.lib.recfunctions import append_fields # for appending named columns to named numpy arrays
 from scipy.interpolate import griddata
-from copy import deepcopy
+import copy
 from collections import Counter
 import traceback
 import pandas as pd
@@ -76,7 +76,7 @@ class Reference1D(object):
         result = cls.__new__(cls)
         memo[id(self)] = result
         for k, v in self.__dict__.items():
-            setattr(result, k, deepcopy(v, memo))
+            setattr(result, k, copy.deepcopy(v, memo))
         return result
 
     def __add__(self, other):
@@ -129,7 +129,7 @@ class Reference1D(object):
         }
 
         # Check if it is the first file read for the model
-        if self.metadata['model'] == None:
+        if self._name == None:
             # make parameterization 2D lists of dicts,first dimension associated with file
             # number, here we assume the parameterization within each file are the same
             self.metadata['parameterization'] = [[]]
@@ -143,8 +143,7 @@ class Reference1D(object):
                 # at each line check for a match with a regex
                     key, match = tools.parse_line(line,rx_dict_common)
                     if key == 'model':
-                        self.metadata['model'] = match.group('model')
-                        self._name = self.metadata['model']
+                        self._name = match.group('model')
                     if key == 'ref_period':
                         ref_temp = match.group('ref_period')
                         self.metadata['ref_period'] = float(ref_temp)
@@ -176,9 +175,8 @@ class Reference1D(object):
                     key, match = tools.parse_line(line,rx_dict_common)
                     # Check if model name is the same
                     if key == 'model':
-                        if self.metadata['model'] != match.group('model'):
+                        if self._name != match.group('model'):
                             raise ValueError('model names should match between input files')
-                        self._name = self.metadata['model']
                     if key == 'ref_period':
                         ref_temp2 = match.group('ref_period')
                         if self.metadata['ref_period'] != float(ref_temp2):
@@ -394,8 +392,7 @@ class Reference1D(object):
         # Get the other metadata from the first 3 line header
         with open(file,'r') as f:
             head = [next(f).strip('\n') for x in range(header)]
-        self.metadata['model'] = head[0]
-        self._name = self.metadata['model']
+        self._name = head[0].strip()
         self.metadata['ref_period'] = float(head[1].split()[1])
         self.metadata['norm_radius'] = constants.R.to('km').magnitude
 
@@ -467,6 +464,10 @@ class Reference1D(object):
         pressure: pressure at each depth
         '''
         if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
+        # Operations between PintArrays of different unit registry will not work.
+        # We can change the unit registry that will be used in creating new
+        # PintArrays to prevent this issue.
+        pint.PintType.ureg = constants.ureg
 
         if constants.planetpreferred == 'Earth':
             file = tools.get_filedir()+'/'+self._name+'.'+str(uuid.uuid4())
@@ -608,6 +609,9 @@ class Reference1D(object):
         # need to update so it can deal with vectors
         depth_in_km = tools.convert2nparray(depth_in_km)
         values = np.zeros_like(depth_in_km,dtype=np.float)
+        parameters = tools.convert2nparray(self.metadata['parameters'])
+        findparam = np.where(parameters == parameter)[0].item()
+        unit = self.metadata['units'][findparam]
         uniqueregions = {}
         target_region = np.empty_like(depth_in_km,dtype="U40"); target_region[:] = ''
         # detailed information about the native parameterization which went into the
@@ -711,12 +715,11 @@ class Reference1D(object):
                     # Sort to make interpolation possible
                     indx = depth_array.argsort()
                     values = griddata(depth_array[indx], values[indx], depth_in_km, method=interpolation)
-                    if len(depth_in_km)==1: values = values.item()
                 else:
                     raise ValueError('parameter '+parameter+' not defined in array')
             else:
                 raise ValueError('data in reference1D object is not allocated')
-        return values
+        return values*constants.ureg(unit)
 
     def to_mineoscards(self,directory='.',fmt='cards'):
         '''

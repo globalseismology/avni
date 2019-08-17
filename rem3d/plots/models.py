@@ -823,7 +823,6 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
 #         plt.setp(cbarytks, visible=False)
     return fig,topo,topotree,model,modeltree
 
-
 def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,figuresize=None,outfile=None,**kwargs):
     """Plot one section through the Earth through a pair of points."""
     #defaults

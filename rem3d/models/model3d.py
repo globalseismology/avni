@@ -16,7 +16,6 @@ import ntpath #Using os.path.split or os.path.basename as others suggest won't w
 from scipy import sparse,linalg
 from configobj import ConfigObj
 import re
-from copy import deepcopy
 import struct
 import h5py
 import traceback
@@ -24,7 +23,9 @@ import pandas as pd
 from progressbar import progressbar
 import copy
 import warnings
+from six import string_types # to check if variable is string using isinstance
 import pint
+import xarray as xr
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
@@ -32,6 +33,7 @@ from .. import constants
 from ..mapping import spher2cart
 from .kernel_set import Kernel_set
 from .realization import Realization
+from .reference1d import Reference1D
 from .common import getLU2symmetric,readResCov
 from .profiles import Profiles
 #######################################################################################
@@ -97,7 +99,7 @@ class Model3D(object):
         result = cls.__new__(cls)
         memo[id(self)] = result
         for k, v in self.__dict__.items():
-            setattr(result, k, deepcopy(v, memo))
+            setattr(result, k, copy.deepcopy(v, memo))
         return result
 
     #########################       decorators       ##########################
@@ -375,7 +377,7 @@ class Model3D(object):
         return checks
 
 
-    def evaluate_at_location(self,latitude,longitude,depth_in_km,parameter,resolution=0,realization=0,grid=False,interpolated=False,tree=None,nearest=None,units=None,dbs_path=tools.get_filedir()):
+    def evaluate_at_location(self,latitude,longitude,depth_in_km,parameter,resolution=0,realization=0,grid=False,interpolated=False,tree=None,nearest=None,units=None,add_reference=True,dbs_path=tools.get_filedir()):
         """
         Evaluate the mode at a location (latitude, longitude,depth)
 
@@ -390,11 +392,14 @@ class Model3D(object):
         nearest: number of points to interpolate. If None, defaults to values based on
                     self[resolution]['interpolant']
 
-        grid: make a grid by repeating (latitude,longitude) by number of depth_in_km
+        grid: make a grid by unraveling (depth_in_km,latitude,longitude)
 
         units: if 'absolute' try converting to absolute units of the parameter.
                If 'default', give the default units from model instance.
                If None, simply return the sparse array
+
+        add_reference: add the reference paramter value to perturbation, only valid
+                        if units queried is 'absolute'
 
         """
         if self._name == None: raise ValueError("No three-dimensional model has been read into this model3d instance yet")
@@ -432,7 +437,10 @@ class Model3D(object):
 
         #checks
         if grid:
-            nrows = nlat*ndep
+            nrows = ndep*nlat*nlon
+            longitude,latitude = np.meshgrid(longitude,latitude)
+            longitude = longitude.ravel()
+            latitude = latitude.ravel()
         else:
             if not (len(latitude) == len(longitude) == len(depth_in_km)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
             if not (latitude.ndim == longitude.ndim == depth_in_km.ndim == 1): raise ValueError("latitude, longitude or depth_in_km should be one-dimensional arrays")
@@ -448,10 +456,9 @@ class Model3D(object):
                 predsparse = project['matrix']*modelarr
                 # append values for all resolutoins
                 if index == 0:
-                    values = predsparse.reshape((ndep,nlat),order='C') if grid else predsparse
+                    values = predsparse
                 else:
-                    add = predsparse.reshape((ndep,nlat),order='C')  if grid else predsparse
-                    values = values + add
+                    values = values + predsparse
             else:
                 # decide on the interpolant type based on metadata
                 if nearest == None:
@@ -465,9 +472,9 @@ class Model3D(object):
 
                 # update locations based on grid
                 if grid:
-                    depth_tmp = np.zeros(nlat*ndep)
+                    depth_tmp = np.zeros(nrows)
                     for indx,depth in enumerate(depth_in_km):
-                        depth_tmp[indx*nlat:(indx+1)*nlat] = depth * np.ones(nlat)
+                        depth_tmp[indx*nlat*nlon:(indx+1)*nlat*nlon] = depth * np.ones(nlat*nlon)
                     latitude = np.tile(latitude,len(depth_in_km))
                     longitude = np.tile(longitude,len(depth_in_km))
                     depth_in_km = depth_tmp
@@ -499,25 +506,40 @@ class Model3D(object):
                         predsparse = sparse.csr_matrix((data, (row, col)), shape=(nrows, 1))
                 # append values for all resolutoins
                 if index == 0:
-                    values = predsparse.reshape((ndep,nlat),order='C') if grid else predsparse
+                    values = predsparse
                 else:
-                    add = predsparse.reshape((ndep,nlat),order='C')  if grid else predsparse
-                    values = values + add
+                    values = values + predsparse
+
+        # update locations based on grid
+        if grid and not interpolated:
+            depth_tmp = np.zeros(nrows)
+            for indx,depth in enumerate(depth_in_km):
+                depth_tmp[indx*nlat*nlon:(indx+1)*nlat*nlon] = depth * np.ones(nlat*nlon)
+            latitude = np.tile(latitude,len(depth_in_km))
+            longitude = np.tile(longitude,len(depth_in_km))
+            depth_in_km = depth_tmp
+
+        # unravel to get it in the right order
+        values = values.toarray().reshape((ndep,nlat,nlon),order='C') if grid else values.toarray().ravel()
 
         # change units based on options
         if units != None:
             # all resolution should have same units so using 0
             unit = self[0]['attrs'][parameter]['unit']
-            absolute_unit = self[0]['attrs'][parameter]['absolute_unit']
-            values_unit = values.toarray()*constants.ureg(unit)
+            values_unit = values*constants.ureg(unit)
             if units == 'default':
                 values = values_unit
             elif units == 'absolute':
+                absolute_unit = self[0]['attrs'][parameter]['absolute_unit']
                 # select reference values
+                reference = np.zeros(nrows)
                 index = tools.ifwithindepth(start_depths,end_depths,depth_in_km)
-                reference = refvalue[index].reshape((ndep,nlat),order='C')
+                nonzeros = np.where(index>=0)[0]
+                reference[nonzeros]=refvalue[index[nonzeros]]
+                reference = reference.reshape((ndep,nlat,nlon),order='C') if grid else reference
+                #reference = refvalue[index].reshape((ndep,nlat),order='C')
                 # 1 as reference value is added
-                values_fraction = 1+values_unit.to('fraction')
+                values_fraction = 1+values_unit.to('fraction') if add_reference else values_unit.to('fraction')
                 values = np.multiply(values_fraction.magnitude,reference)*constants.ureg(absolute_unit)
             else:
                 raise ValueError("Units can only be None, absolute or default in model instance")
@@ -1107,22 +1129,129 @@ class Model3D(object):
         else:
             return reparam
 
-
-
-    def to_profiles(self):
+    def to_profiles(self,grid=10.,type='pixel',resolution=0,realization=0,model_dir='.',interpolated=True):
         """
         converts a model3d class to profiles class
+
+        grid: either a grid size of a grid file
+
+        interpolant: interpolant type either in pixel or nearest
+
+        model_dir: directory to find reference 1D model
+
         """
-        raise NotImplementedError('needs to be implemented soon')
+        if type not in ['pixel','nearest']:
+            raise ValueError('only pixel or nearest options allowed for type')
+
+        # check if we can read 1D model
+        ref1Dfile = self[resolution]['refmodel']
+        if os.path.isfile(ref1Dfile):
+            try: # try reading the 1D file in card format
+                ref1d = Reference1D(ref1Dfile)
+                depth_in_km = (ref1d.data['depth'].pint.to('km')).data
+                ndep = len(depth_in_km)
+            except:
+                raise IOError('Could not fill some reference values as the 1D reference model file could not be read as Reference1D instance : '+ref1Dfile)
+        else:
+            raise IOError('Could not fill some reference values as the 1D reference model file could not be found : '+ref1Dfile)
+
+        tree = None
+        # Operations between PintArrays of different unit registry will not work.
+        # We can change the unit registry that will be used in creating new
+        # PintArrays to prevent this issue.
+        pint.PintType.ureg = constants.ureg
+        PA_ = pint.PintArray
+
+        # loop over reference1d fields and update the corresponding fields
+        common_fields = np.intersect1d(self[resolution]['parameters'],ref1d.metadata['parameters'])
+        missing_fields = sorted(set(ref1d.metadata['parameters'])-set(common_fields))
+
+        # copy the 1D model and drop missing fields not specified by 3d model
+        local=copy.deepcopy(ref1d)
+        local.data=local.data.drop(missing_fields,axis=1)
+        local.metadata['parameters'] = common_fields
+        index = []
+        for field in common_fields:index.append(ref1d.metadata['parameters'].index(field))
+        local.metadata['units'] = (np.array(ref1d.metadata['units'])[index]).tolist()
+        for field in ['delta','average','contrast']:
+            local.metadata['discontinuities'][field] = local.metadata['discontinuities'][field].drop(missing_fields,axis=1)
+
+        # loop over variables for xarray Dataset
+        data_vars={};local_profiles = {}
         profiles = Profiles()
+        profiles._name = self._name
+        profiles._interpolant = type
 
-        #profiles._name = self._name
-        #profiles._interpolant = None
-        #profiles._infile = None
-        # fill the following structures
-        #profiles.metadata ={}
-        #profiles.data = {}
+        if isinstance(grid,(int,np.int64,float)):
+            profiles._infile = str(grid)+'X'+str(grid)
+            latitude = np.arange(-90+grid/2., 90,grid)
+            longitude = np.arange(0+grid/2., 360,grid)
+            meshgrid =  True
+            nlat = len(latitude)
+            nlon = len(longitude)
+            nprofiles = nlat*nlon
+            # index column by longitude
+            profindx = np.arange(nprofiles).reshape((nlat,nlon),order='C')
+            data_vars['index']=(('latitude', 'longitude'), profindx)
+            # deep copy will not modify values of original profile
+            # get the grid sizes stored
+            pixel_array= grid*np.ones((len(latitude),len(longitude)))
+            data_vars['pix_width']=(('latitude', 'longitude'), pixel_array)
+        elif isinstance(grid,string_types):
+            profiles._infile = grid
+            meshgrid =  False
+            raise NotImplementedError('needs to be implemented soon')
 
+        for ii in np.arange(nprofiles): local_profiles[ii]=copy.deepcopy(local)
+        # get the grid sizes stored
+        profiles.data['grid'] = xr.Dataset(data_vars = data_vars,
+                coords = {'latitude':latitude,'longitude':longitude})
+
+        tree = None # create the tree the first time arounf
+        for indx,parameter in enumerate(common_fields):
+            print('... evaluating 3D perturbations for parameter # '+str(indx+1)+' / '+str(len(common_fields))+' '+parameter)
+            # Get 3D perturbations, do not add approximate reference stored ins file
+            if interpolated:
+                if tree == None:
+                    values3D, tree = self.evaluate_at_location(longitude=longitude,latitude=latitude,depth_in_km=depth_in_km,parameter=parameter,resolution=resolution,realization=realization,grid=meshgrid,interpolated=True,units='absolute',add_reference=False)
+                else:
+                    values3D = self.evaluate_at_location(longitude=longitude,latitude=latitude,depth_in_km=depth_in_km,parameter=parameter,resolution=resolution,realization=realization,grid=meshgrid,interpolated=True,tree=tree,units='absolute',add_reference=False)
+
+            # calculate explicitly
+            else:
+                values3D = self.evaluate_at_location(longitude=longitude,latitude=latitude,depth_in_km=depth_in_km,parameter=parameter,resolution=resolution,realization=realization,grid=meshgrid,interpolated=False,units='absolute',add_reference=False)
+
+            # Get 1D values
+            values1D = ref1d.evaluate_at_depth(depth_in_km,parameter)
+
+            # Add the 1D values
+            for idep in np.arange(ndep): values3D[idep,:,:] = values3D[idep,:] + values1D[idep]
+
+            # loop over profiles and update values
+            if meshgrid:
+                done = []
+                for ilat in np.arange(nlat):
+                    for ilon in np.arange(nlon):
+                        index = profiles.data['grid']['index'][ilat,ilon].item()
+                        #if not evaluated before
+                        if index not in done:
+                            target_unit = local_profiles[index].data[parameter].pint.units
+                            local_profiles[index].data[parameter][:] = values3D[:,ilat,ilon].to(target_unit)
+                            done.append(index)
+                            # update name
+                            if indx == 0: local_profiles[index]._name = self._name+'_'+ \
+                                            local_profiles[index]._name + \
+                                            '_profile#' + str(index)
+            else:
+                raise NotImplementedError('needs to be implemented soon')
+
+        ## Update these values
+        for key in self[resolution].keys():
+            value = self[resolution][key]
+            if isinstance(value, (list,tuple,np.ndarray,bool,float,int,np.int64,string_types)):
+                profiles.metadata[key] = value
+        profiles.data['profiles'] = local_profiles
+        return profiles
 
     def get_resolution(self,rescovfile=None,LU2symmetric=True,resolution=0, realization=0):
         """

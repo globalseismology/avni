@@ -18,6 +18,7 @@ import pdb
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .reference1d import Reference1D
 from .common import readepixfile
+from .. import tools
 #######################################################################################
 
 # Profiles of 1D Earth models
@@ -42,15 +43,24 @@ class Profiles(object):
         return output
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self._infile})'.format(self=self)
+        return '{self.__class__.__name__}({self._name})'.format(self=self)
 
     def __add__(self, other):
         raise NotImplementedError('method to add profiles on top of each other. Should use the add method in reference1D')
+
+    def __getitem__(self,key):
+        """returns data from a profile with key"""
+        return self.data['profiles'][key]
+
     #########################       decorators       ##########################
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def interpolant(self):
+        return self.metadata['interpolant']
 
     #########################       methods       #############################
 
@@ -68,10 +78,6 @@ class Profiles(object):
         setup_file: setup file containing metadata for the model
 
         '''
-        # use reference1d class and read_bases_coefficients function here
-        # go through all files in the folder
-        # temp1d = Reference1D(file)
-
         if not os.path.isfile(file):
             raise IOError('No configuration file found.'\
                  'Model directory must contain '+file)
@@ -89,13 +95,12 @@ class Profiles(object):
             if os.path.isfile(file_name): profiles[loc] = Reference1D(file_name)
         if len(profiles) != len(location_indices): warnings.warn('Only '+str(len(profiles))+' profiles out of '+str(len(location_indices))+' distinct profiles have been found and read')
         self.data['profiles'] = profiles
-        self.data['index'] = epixarr
+        self.data['grid'] = epixarr
         self._name = self.metadata['name']
         self._interpolant = self.metadata['interpolant']
         self._infile = file
 
-
-    def write_to_hdf(self,outfile = None, overwrite = False):
+    def writehdf5(self,outfile = None, overwrite = False):
         """writes profile class to an hdf5 container"""
         if outfile == None: outfile = self._name+'.profiles.h5'
         raise NotImplementedError('method to add profiles')
@@ -104,25 +109,50 @@ class Profiles(object):
         else:
             hf = h5py.File(outfile, 'a')
         g1 = hf.require_group(self._interpolant)
+        if self._name != None: g1.attrs['name']=self._name
+        if self._infile != None: g1.attrs['infile']=self._infile
+        pdb.set_trace()
+
+#             for key in self.metadata['resolution_'+str(ires)].keys():
+#                 keyval = self.metadata['resolution_'+str(ires)][key]
+#                 try:
+#                     if keyval.dtype.kind in {'U', 'S'}:
+#                         keyval = [n.encode('utf8') for n in keyval]
+#                         g2.attrs[key]=keyval
+#                 except:
+#                     if keyval != None and key != 'kernel_set':
+#                         g2.attrs[key]=keyval
+
+    def readhdf5(self,hf,interpolant=None,only_metadata = False):
+        """
+        Reads a standard 3D model file from a hdf5 file
+
+        Input Parameters:
+        ----------------
+
+        interpolant: group to load
+
+        only_metadata: do not return the pandas dataframe if True
+        """
 
 
     def find_index(self,latitude,longitude):
         """finds the nearest point in self.data['index']"""
-        indx = None
         if self._interpolant == 'pixel':
             #find pixel index from xarray of the lat lon
-            raise NotImplementedError('method to find nearest point')
+            indices = self.data['grid']['index'].sel(latitude=latitude, longitude = longitude ,method='nearest')
         elif self._interpolant == 'nearest':
             # use voronoi nearest point
             raise NotImplementedError('method to find nearest point')
         else:
             raise ValueError('only pixel or nearest options allowed for interpolant')
-        return indx
+        return indices
 
-    def evaluate_at_location(self,parameter,latitude,longitude,depth_in_km,**kwargs):
+    def evaluate_at_location(self,latitude,longitude,depth_in_km,parameter,**kwargs):
         """evaluate the profiles at a particular point within the domain"""
-        index = self._find_index(latitude,longitude)
-        ref1d = self.data['profiles'][index]
+        indices = self.find_index(latitude,longitude)
+        if indices.count().item() != 1: raise ValueError('only single location can be queried')
+        ref1d = self[indices.item()]
         # evaluate ref1d at this depth and variable from
         if kwargs:
             values = ref1d.evaluate_at_depth(depth_in_km,parameter,**kwargs)
@@ -130,5 +160,12 @@ class Profiles(object):
             values = ref1d.evaluate_at_depth(depth_in_km,parameter,boundary='+',interpolation='linear')
         return values
 
-    def get_profiles(self,parameter,latitude,longitude):
+    def get_profile(self,index,parameters):
         "Use evaluate_at_location at depths defined in reference1D"
+        if not isinstance(index, (int,np.int64)): raise KeyError('only integer indices allowed to be queried')
+        parameters = tools.convert2nparray(parameters,allowstrings=True)
+        select = ['radius','depth']
+        for parameter in parameters:
+            if parameter not in self[index].metadata['parameters']: raise KeyError(parameter+' not found in the profiles')
+            select.append(parameter)
+        return self[index].data[select]

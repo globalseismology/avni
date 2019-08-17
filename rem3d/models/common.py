@@ -1026,7 +1026,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
                 # get the average, use an earlier evaluation of area if possible
                 if ifaverage:
                     try:
-                        globalav,area, _  = tools.MeanDataArray(mapval,area=area,pix_width = ds['pixel_width'])
+                        globalav,area, _  = tools.meanxarray(mapval,area=area,pix_width = ds['pixel_width'])
                         avgvalue.append(globalav)
                     except:
                         print(traceback.format_exc())
@@ -1039,7 +1039,7 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
         else:
             # get the average, use an earlier evaluation of area if possible
             try:
-                globalav,area,_ = tools.MeanDataArray(data_array,area=area,pix_width = ds['pixel_width'])
+                globalav,area,_ = tools.meanxarray(data_array,area=area,pix_width = ds['pixel_width'])
                 av_attrs['average'] = globalav
             except:
                 warnings.warn('Could not read mean values for parameter '+variable)
