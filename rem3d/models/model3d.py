@@ -938,7 +938,8 @@ class Model3D(object):
         xlopix = np.tile(xlopix,len(depths))
         radius_in_km = constants.R.to('km').magnitude - depth_in_km
 
-        if tree.n != len(xlopix): raise AssertionError('tree (knots = '+str(tree.n)+') not compatible with the self instance for variable '+parameter+' (knots = '+str(len(xlopix))+')')
+        if tree.n != len(xlopix):
+            raise AssertionError('tree (knots = '+str(tree.n)+') not compatible with the self instance for variable '+parameter+' (knots = '+str(len(xlopix))+'). Perhaps fewer than necessary depths have been provided; '+str(ndep)+' depths are available now.')
 
         # tree stucture is store in spherical coordinates
         rlatlon = np.column_stack((radius_in_km.flatten(),xlapix.flatten(), xlopix.flatten()))
