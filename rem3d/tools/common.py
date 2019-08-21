@@ -70,6 +70,42 @@ def ifwithindepth(start_depths,end_depths,depth_in_km):
                 break
     return output
 
+def makegrid(latitude,longitude,depth_in_km=None):
+    """
+    Make a 2D or 3D grid out of input locations and depths.
+
+    grid: make a grid by unraveling (depth_in_km,latitude,longitude)
+    """
+
+    # convert to numpy arrays
+    latitude = convert2nparray(latitude)
+    longitude = convert2nparray(longitude)
+    nlat = len(latitude)
+    nlon = len(longitude)
+
+    #checks
+    if depth_in_km==None:
+        if not (latitude.ndim == longitude.ndim == 1): raise ValueError("latitude, longitude or depth_in_km should be one-dimensional arrays")
+        nrows = nlat*nlon
+        longitude,latitude = np.meshgrid(longitude,latitude)
+        longitude = longitude.ravel()
+        latitude = latitude.ravel()
+        if not (len(latitude) == len(longitude)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
+        return nrows,latitude,longitude
+    else:
+        if not (latitude.ndim == longitude.ndim == depth_in_km.ndim == 1): raise ValueError("latitude, longitude or depth_in_km should be one-dimensional arrays")
+        depth_in_km = convert2nparray(depth_in_km)
+        ndep = len(depth_in_km)
+        nrows = ndep*nlat*nlon
+        depth_tmp = np.zeros(nrows)
+        for indx,depth in enumerate(depth_in_km):
+            depth_tmp[indx*nlat*nlon:(indx+1)*nlat*nlon] = depth * np.ones(nlat*nlon)
+            latitude = np.tile(latitude,len(depth_in_km))
+            longitude = np.tile(longitude,len(depth_in_km))
+            depth_in_km = depth_tmp
+        if not (len(latitude) == len(longitude) == len(depth_in_km)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
+        return nrows,latitude,longitude,depth_in_km
+
 def convert2nparray(value,int2float = True,allowstrings=True):
     """
     Converts input value to a float numpy array. Boolean are returned as Boolean arrays.

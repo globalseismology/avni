@@ -15,9 +15,9 @@ from numba import jit,int64
 from progressbar import progressbar
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from rem3d.f2py import vbspl,dbsplrem,ylm
+from rem3d.f2py import vbspl,dbsplrem,ylm,shold
 from .trigd import sind,cosd,acosd
-from .common import convert2nparray
+from .common import convert2nparray,makegrid
 #######################################################################################
 
 def eval_vbspl(depths,knots):
@@ -306,7 +306,7 @@ def splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl):
                     ncon=ncon+1
     return ncon,icon[:ncon],con[:ncon]
 
-def eval_ylm(latitude,longitude,lmaxhor):
+def eval_ylm(latitude,longitude,lmaxhor,grid=False,norm='ylm'):
     """
     Evaluate spherical harmonics.
 
@@ -324,23 +324,36 @@ def eval_ylm(latitude,longitude,lmaxhor):
              Size of numpy array is [len(latitude) X ((lmaxhor+1)^2)]
     """
 
+    # convert to numpy arrays
     latitude = convert2nparray(latitude)
     longitude = convert2nparray(longitude)
+    nlat = len(latitude)
+    nlon = len(longitude)
 
-    if not len(latitude) == len(longitude): raise AssertionError('latitude and longitude should be of same length')
+    #checks
+    if grid:
+        nrows,latitude,longitude = makegrid(latitude,longitude)
+    else:
+        if not (latitude.ndim == longitude.ndim == 1): raise ValueError("latitude, longitude or depth_in_km should be one-dimensional arrays")
+        nrows = nlat
+
+    if not (len(latitude) == len(longitude)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
     ncoefhor = np.power(lmaxhor+1,2) # numpye of coefficients upto Lmax
-    horcof = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
+    horcof = sparse.csr_matrix((nrows,ncoefhor)) # empty matrix
     for iloc,lat in enumerate(latitude):
         lon = longitude[iloc]
         #--- make lon go from 0-360
         if lon<0.: lon=lon+360.
         # wk1,wk2,wk3 are legendre polynomials of size Lmax+1
         # ylmcof is the value of Ylm
-        ylmcof, _ , _ , _ = ylm(lat,lon,lmaxhor,ncoefhor,lmaxhor+1)
+        if norm == 'ylm':
+            ylmcof, _ , _ , _ = ylm(lat,lon,lmaxhor,ncoefhor,lmaxhor+1)
+        elif norm == 'shold':
+            ylmcof = shold(lat,lon,lmaxhor,ncoefhor)
         rowind = iloc*np.ones(ncoefhor)
         colind = np.arange(ncoefhor)
         # update values
-        horcof = horcof + sparse.csr_matrix((ylmcof, (rowind, colind)), shape=(len(latitude),ncoefhor))
+        horcof = horcof + sparse.csr_matrix((ylmcof, (rowind, colind)), shape=(nrows,ncoefhor))
     return horcof
 
 def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
