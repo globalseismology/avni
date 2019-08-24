@@ -324,11 +324,24 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
         im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds,zorder=1)
         # Illuminate the scene from the northwest
         ls = LightSource(azdeg=315, altdeg=45)
-        f = tools.readtopography(model=model,resolution=resolution,field=field,latitude_limits=[m.latmin,m.latmax],longitude_limits=[m.lonmin,m.lonmax])
-        plot  = f.sortby('lon') # required for transform_scalar
-        data = ls.hillshade(plot.data, vert_exag=0.1)
+        plot = tools.readtopography(model=model,resolution=resolution,field=field,latitude_limits=[m.latmin,m.latmax],longitude_limits=[m.lonmin,m.lonmax])
+
+        #-- Optional dx and dy for accurate vertical exaggeration ----------------
+        # If you need topographically accurate vertical exaggeration, or you don't
+        # want to guess at what *vert_exag* should be, you'll need to specify the
+        # cellsize of the grid (i.e. the *dx* and *dy* parameters).  Otherwise, any
+        # *vert_exag* value you specify will be relative to the grid spacing of
+        # your input data (in other words, *dx* and *dy* default to 1.0, and
+        # *vert_exag* is calculated relative to those parameters).  Similarly, *dx*
+        # and *dy* are assumed to be in the same units as your input z-values.
+        # Therefore, we'll need to convert the given dx and dy from decimal degrees
+        # to meters.
+        dy = constants.deg2m.magnitude * np.mean(np.ediff1d(plot.lat.data))
+        dx = constants.deg2m.magnitude * np.mean(np.ediff1d(plot.lon.data))
+
+        data = ls.hillshade(plot.data, vert_exag=1000, dx=dx, dy=dy)
         data_interp= m.transform_scalar(data, plot.lon.data, plot.lat.data, plot.shape[1], plot.shape[0])
-        m.imshow(data_interp, cmap='gray',interpolation='bilinear', alpha=.5,zorder=2)
+        m.imshow(data_interp, cmap='gray',interpolation='bilinear', alpha=.4,zorder=2)
     else:
         im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
 

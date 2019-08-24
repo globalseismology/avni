@@ -163,10 +163,11 @@ def readtopography(model=constants.topography,resolution='h',field = 'z',latitud
     model = f[field][::stride,::stride]
     # subselect region within -not implemented yet
     #shift it by the grid
-    valout, lonout = shiftgrid(longitude_limits[0],model.data,model['lon'].data,start=True)
-    lonout[np.where(lonout>180)] =lonout[lonout>180]-360.
-    model[longitude].data = lonout
-    model.data  = valout
+#     valout, lonout = shiftgrid(longitude_limits[0],model.data,model['lon'].data,start=True)
+#     lonout[np.where(lonout>180)] =lonout[lonout>180]-360.
+#     model[longitude].data = lonout
+#     model.data  = valout
+    model  = model.sortby('lon') # required for transform_scalar
     f.close() #close netcdf file
     return model
 
