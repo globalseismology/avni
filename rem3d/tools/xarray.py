@@ -15,13 +15,14 @@ import warnings
 import pdb
 import math
 from scipy import sparse
+from mpl_toolkits.basemap import shiftgrid
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .trigd import sind
-from ..mapping import spher2cart
+from ..mapping import spher2cart,intersection,midpoint
 from .. import constants
 from .common import precision_and_scale,convert2nparray
-from ..tools import decimals
+from ..tools import decimals,get_filedir
 #######################################################################################
 
 def tree3D(treefile,latitude=None,longitude=None,radius_in_km=None):
@@ -77,7 +78,26 @@ def querytree3D(tree,latitude,longitude,radius_in_km,values=None,nearest=1):
             interp = sparse.csc_matrix(val_temp)
         return interp,inds
 
-def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km = None):
+def get_stride(resolution):
+    """
+    resolution: of boundary database to use like in Basemap.
+                Can be c (crude), l (low), i (intermediate), h (high), f (full)
+    """
+    if resolution.lower() == 'c' or resolution.lower() == 'crude':
+        stride = 20
+    elif resolution.lower() == 'l' or resolution.lower() == 'low':
+        stride = 10
+    elif resolution.lower() == 'i' or resolution.lower() == 'intermediate':
+        stride = 5
+    elif resolution.lower() == 'h' or resolution.lower() == 'high':
+        stride = 2
+    elif resolution.lower() == 'f' or resolution.lower() == 'full':
+        stride = 1
+    else:
+        raise KeyError('resolution can only be low, medium, high')
+    return stride
+
+def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,resolution='h', radius_in_km = None):
     """
     Read or write a pickle interpolant with KDTree
 
@@ -98,6 +118,7 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km =
     if lonlatdepth is None: lonlatdepth = ['longitude','latitude','depth']
 
     #read topography file
+    stride = get_stride(resolution)
     if os.path.isfile(ncfile):
         f = xr.open_dataset(ncfile)
     else:
@@ -122,6 +143,32 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km =
     gridlat, gridrad, gridlon = np.meshgrid(lat.data,rad.data,lon.data)
     tree = tree3D(treefile,gridlat,gridlon,gridrad)
     return tree
+
+def readtopography(model=constants.topography,resolution='h',field = 'z',latitude='lat',longitude='lon',latitude_limits=[-90,90],longitude_limits=[-180,180], dbs_path=get_filedir()):
+    """
+    resolution: stride is 1 for high, 10 for low
+    """
+    stride = get_stride(resolution)
+    if dbs_path == None:
+        ncfile = model
+    else:
+        ncfile = dbs_path+'/'+model
+    if not os.path.isfile(ncfile): data.update_file(model)
+    #read values
+    if os.path.isfile(ncfile):
+        f = xr.open_dataset(ncfile)
+    else:
+        raise ValueError("Error: Could not find file "+ncfile)
+
+    model = f[field][::stride,::stride]
+    # subselect region within -not implemented yet
+    #shift it by the grid
+    valout, lonout = shiftgrid(longitude_limits[0],model.data,model['lon'].data,start=True)
+    lonout[np.where(lonout>180)] =lonout[lonout>180]-360.
+    model[longitude].data = lonout
+    model.data  = valout
+    f.close() #close netcdf file
+    return model
 
 def checkxarray(data,latname = 'latitude', lonname = 'longitude', Dataset = True):
     """

@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
+from matplotlib.colors import LightSource
 #from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
 #                               AutoMinorLocator)
 #import multiprocessing
@@ -167,7 +168,7 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = 
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=None,gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=None,gridwidth=0, shading= False,model=constants.topography,resolution='l',field='z', **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
 
@@ -200,6 +201,9 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
 
     outformat : format of the output file
 
+    resolution: of boundary database to use like in Basemap.
+                Can be c (crude), l (low), i (intermediate), h (high), f (full)
+
     kwargs : optional arguments for Basemap
     """
     # defaults
@@ -212,7 +216,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
         m = Basemap(ax=ax, **kwargs)
     else:
         projection='robin'
-        m = Basemap(ax=ax,projection='robin', lon_0=150, resolution='c')
+        m = Basemap(ax=ax,projection='robin', lon_0=150, resolution=resolution)
     #clip_path = m.drawmapboundary()
     m.drawcoastlines(linewidth=1.5)
     # draw parallels and meridians.
@@ -281,8 +285,8 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
             val = spint.griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)
             #s = m.transform_scalar(val,lon,lat, 1000, 500)
             #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
-            im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
-
+            #im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+            X = lons; Y = lats
         else:
             grid_spacing = spacing_lat
             # Create a grid
@@ -305,15 +309,28 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
                 val[ilat,ilon] = valarray['val'][i]
             #s = m.transform_scalar(val,lon,lat, 1000, 500)
             #im=m.pcolormesh(grid_x,grid_y,s,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
-            im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+            #im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
             #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
     elif type(valarray).__name__ == 'DataArray':
         if valarray.dims[0] == 'longitude': valarray = valarray.T
         val = valarray.data
         X,Y = np.meshgrid(valarray['longitude'].data,valarray['latitude'].data)
-        im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+
     else:
         raise ValueError(type(valarray).__name__+' input type cannot be plotted by globalmap')
+
+    # plot based on shading option
+    if shading:
+        im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds,zorder=1)
+        # Illuminate the scene from the northwest
+        ls = LightSource(azdeg=315, altdeg=45)
+        f = tools.readtopography(model=model,resolution=resolution,field=field,latitude_limits=[m.latmin,m.latmax],longitude_limits=[m.lonmin,m.lonmax])
+        plot  = f.sortby('lon') # required for transform_scalar
+        data = ls.hillshade(plot.data, vert_exag=0.1)
+        data_interp= m.transform_scalar(data, plot.lon.data, plot.lat.data, plot.shape[1], plot.shape[0])
+        m.imshow(data_interp, cmap='gray',interpolation='bilinear', alpha=.5,zorder=2)
+    else:
+        im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
 
     # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
@@ -552,7 +569,7 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = None,r_labels = 
     return ax1, aux_ax
 
 
-def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tree=None,dbs_path=tools.get_filedir(),numeval=50,stride=10,nearest=1):
+def gettopotransect(lat1,lng1,azimuth,gcdelta,model=constants.topography, tree=None,dbs_path=tools.get_filedir(),numeval=50,resolution='l',nearest=1):
     """
     Get the topography transect.
 
@@ -573,16 +590,12 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
 
     # Get KD tree
     if tree == None and isinstance(model,string_types):
-        treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.stride'+str(stride)+'.pkl'
+        treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.'+resolution+'.pkl'
         ncfile = dbs_path+'/'+model
         if not os.path.isfile(ncfile): data.update_file(model)
-        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=constants.R.to('km').magnitude)
+        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],resolution=resolution,radius_in_km=constants.R.to('km').magnitude)
         #read values
-        if os.path.isfile(ncfile):
-            f = xr.open_dataset(ncfile)
-        else:
-            raise ValueError("Error: Could not find file "+ncfile)
-        model = f.variables['z'][::stride,::stride]
+        model = tools.readtopography(model=model,resolution=resolution,field = 'z', dbs_path=dbs_path)
         vals = model.data.flatten(order='C')
     else:
         #read topography file
@@ -676,7 +689,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
 
     return xsec.T,model,tree
 
-def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,width_ratios=None,numevalx=200,numevalz=300,nearest=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,hotspots=False,plates=False):
+def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,width_ratios=None,numevalx=200,numevalz=300,nearest=10,topo=constants.topography,resolution='l',topotree=None,hotspots=False,plates=False):
     """Plot one section through the Earth through a pair of points."""
     #defaults
     if radii is None: radii=[3480.,6346.6]
@@ -714,7 +727,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
     if vexaggerate != 0:
-        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,stride=10,nearest=1)
+        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,resolution=resolution,nearest=1)
         if elev.min()< 0.:
             extend_radius=(elev.max()-elev.min())*vexaggerate/1000.
         else:
@@ -840,14 +853,14 @@ def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,figuresize=N
     plt.close('all')
     return topo,topotree,model,modeltree
 
-def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
+def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',shading=False,ifshow=False):
     """Plot one global map"""
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
     if projection=='ortho':
-        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
+        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette,shading=shading)
     else:
-        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
+        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette,shading=shading)
     if ifshow: plt.show()
     fig.savefig(modelname+outformat,dpi=300)
     return
