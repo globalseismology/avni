@@ -11,8 +11,12 @@ import os
 import glob
 import fortranformat as ff #reading/writing fortran formatted text
 import numpy as np
+import xarray as xr
+import pdb
+
 ############             input REM          modules ######
 from .common import get_fullpath
+from .bases import eval_ylm
 ###########################  ANALYSIS SUBROUTINES ####################
 
 def getdepthsfolder(folder='.',extension='.epix',delimiter='.'):
@@ -60,7 +64,7 @@ def rdswpsh(filename):
     return shmatrix, metadata, comments
 
 
-def wrswpsh(filename,shmatrix,metadata=None,comments=None, maxl=None):
+def wrswpsh(filename,shmatrix,metadata=None,comments=None, lmax=None):
     """Code to write spherical harmonic coefficients from the ylm normalization. shmatrix is the linear array
     with the ylm normalization like in PM's codes.
 
@@ -85,12 +89,11 @@ def wrswpsh(filename,shmatrix,metadata=None,comments=None, maxl=None):
         for comment in comments: printstr.append(comment+'\n')
     header_linem0 = ff.FortranRecordWriter('(i4,i4,e13.5)')
     header_line = ff.FortranRecordWriter('(i4,i4,2e13.5)')
-    printstr = list(comments)
     for ii,degree in enumerate(shmatrix['l']):
         order = shmatrix['m'][ii]
-        if maxl == None: maxl = degree + 1000 # include all degrees if None
-        if degree <= maxl:
-            if degree == 0:
+        if lmax == None: lmax = degree + 1000 # include all degrees if None
+        if degree <= lmax:
+            if order == 0:
                 arow=header_linem0.write([degree,order,shmatrix['cos'][ii]])
             else:
                 # convert to ylm normalization on the fly
@@ -103,6 +106,44 @@ def wrswpsh(filename,shmatrix,metadata=None,comments=None, maxl=None):
     f.close()
     print("..... written "+filename)
     return
+
+def get_coefficients(shmatrix,lmin=None,lmax=None):
+    if lmin == None: lmin = min(shmatrix['l'])
+    if lmax == None: lmax = max(shmatrix['l'])
+    if lmin == 0:
+        coeff = np.zeros((lmax+1)**2)
+    else:
+        coeff = np.zeros((lmax+1)**2-lmin**2)
+    iloop = 0
+    for degree in np.arange(lmin,lmax+1):
+        select = (shmatrix['l']==degree) & (shmatrix['m']==0)
+        coeff[iloop] = shmatrix['cos'][select]
+        iloop += 1
+        for order in np.arange(1,degree+1):
+            select = (shmatrix['l']==degree) & (shmatrix['m']==order)
+            coeff[iloop] = shmatrix['cos'][select]
+            iloop += 1
+            coeff[iloop] = shmatrix['sin'][select]
+            iloop += 1
+    return coeff
+
+def swp_to_xarray(shmatrix,grid=10,lmax=None):
+    latitude = np.arange(-90+grid/2., 90,grid)
+    longitude = np.arange(0+grid/2., 360,grid)
+    if lmax == None: lmax = max(shmatrix['l'])
+    coeff = get_coefficients(shmatrix,lmax=lmax)
+    values = eval_ylm(latitude,longitude,lmaxhor=lmax,grid=True,norm='ylm',weights=coeff)
+    nlat = len(latitude)
+    nlon = len(longitude)
+
+    # index column by longitude
+    values = values.reshape((nlat,nlon),order='C')
+
+    # get the grid sizes stored
+    outarr = xr.DataArray(values, dims = ['latitude','longitude'],
+                        coords = [latitude,longitude])
+    return outarr
+
 
 def calcshpar2(shmatrix):
     """This calculates the roughness and rms of a model file from shmatrix read using rdswpsh"""
