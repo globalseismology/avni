@@ -452,7 +452,7 @@ class Model3D(object):
             modelarr = self.coeff2modelarr(resolution=res,realization=realization, parameter=parameter)
             if not interpolated:
                 # get the projection matrix
-                project = self.calculateproj(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res,grid=grid)
+                project = self.get_projection(latitude=latitude,longitude=longitude,depth_in_km=depth_in_km,parameter=parameter,resolution=res,grid=grid)
                 predsparse = project['matrix']*modelarr
                 # append values for all resolutoins
                 if index == 0:
@@ -785,7 +785,7 @@ class Model3D(object):
         projection['model']=model; projection['param']=lateral_basis
         return projection
 
-    def calculateproj(self,parameter,latitude,longitude,depth_in_km = None, resolution = 0,grid=False):
+    def get_projection(self,parameter,latitude,longitude,depth_in_km = None, resolution = 0,grid=False):
         """
         Get the projection matrix from a lateral basis to another and for particular depths
 
@@ -1108,7 +1108,7 @@ class Model3D(object):
                     radialinfo = selfkernel.data['radial_basis'][variable][0].metadata
                     depth_in_km = np.average(np.array([radialinfo['depthtop'],radialinfo['depthbottom']]),axis=0)
                     # loop over depths and append the projection matrices
-                    proj = model3d.calculateproj(findvar2,latitude,longitude,depth_in_km,resolution=resolution)
+                    proj = model3d.get_projection(findvar2,latitude,longitude,depth_in_km,resolution=resolution)
 
                     # get areas for the grid and multiply the proj
 

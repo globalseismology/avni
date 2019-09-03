@@ -30,12 +30,16 @@ def main():
         help='Lower bound for color scale saturation level (percent)')
     parser.add_argument('-c', '--color', type=str, default='rem3d',
         help='Color palette e.g. rem3d or bk')
+    parser.add_argument('-r', '--resolution', type=str, default='l',
+        help='Resolution')
     parser.add_argument('-t', '--colorcontour', type=int, default=20,
         help='color contour levels')
     parser.add_argument('-f', '--format', type=str,default='png',
         help='Output file format')
     parser.add_argument('-o', '--output', action='store_true',
         help='Save the figures in files')
+    parser.add_argument('-s', '--shading', action='store_true',
+        help='Shade topography')
     arg = parser.parse_args()
 
     try:
@@ -74,11 +78,11 @@ def main():
     ax=fig.add_subplot(1,1,1)
     projection=arg.projection; vmin = arg.lower_bound; vmax = arg.upper_bound
     if projection=='ortho':
-        globalmap(ax,latlonval,vmin,vmax,grid=[30.,30.],gridwidth=1,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
+        globalmap(ax,latlonval,vmin,vmax,grid=[30.,30.],gridwidth=1,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color,shading=arg.shading,resolution=arg.resolution)
     elif projection=='robin':
-        globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
+        globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color,shading=arg.shading,resolution=arg.resolution)
     else:
-        globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color)
+        globalmap(ax,latlonval,vmin,vmax,grid=[30.,90.],gridwidth=0,projection=projection,colorlabel=metadata['WHAT']+' ('+metadata['UNIT']+ ')',lat_0=0,lon_0=150,colorcontour=arg.colorcontour,colorpalette=arg.color,shading=arg.shading,resolution=arg.resolution)
     ax.set_title(title)
     if arg.output:
         fig.savefig(outfile,dpi=300)

@@ -16,7 +16,9 @@ import numpy as np #for numerical analysis
 import matplotlib.cm as cmx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import colorsys
 import traceback
+import pdb
 
 ####################       IMPORT OWN MODULES     ######################################
 from .. import tools
@@ -153,24 +155,110 @@ def make_colormap(seq,name='CustomMap'):
             cdict['blue'].append([item, b1, b2])
     return mcolors.LinearSegmentedColormap(name, cdict)
 
-def getcolorlist(cptfile):
+def getcolorlist(cptfile,type='rem'):
     """Get a tuple for colorlist from a cptfile"""
-    currentdir=os.getcwd()
-    try:
-        cptarr=np.genfromtxt(cptfile, dtype=None,comments="#")
-    except IOError:
-        raise ValueError("File ("+cptfile+") does not exist in the current directory - "+currentdir)
+
+    if not os.path.isfile(cptfile): raise IOError("File ("+cptfile+") does not exist.")
     colorlist=[]
-    for irow in np.arange(len(cptarr)):
-        tups=cptarr[irow][1]/255.,cptarr[irow][2]/255.,cptarr[irow][3]/255.
-        val=(cptarr[irow][4]-cptarr[0][4])/(cptarr[len(cptarr)-1][0]-cptarr[0][4])
-        if irow==1:
-            colorlist.append(tups)
-        elif irow > 1 and irow < len(cptarr)-1:
-            colorlist.append(tups)
-            colorlist.append(val)
-            colorlist.append(tups)
+
+    # if it is the format in the REM project
+    if type=='rem':
+        cptarr=np.genfromtxt(cptfile, dtype=None,comments="#")
+        for irow in np.arange(len(cptarr)):
+            tups=cptarr[irow][1]/255.,cptarr[irow][2]/255.,cptarr[irow][3]/255.
+            val=(cptarr[irow][4]-cptarr[0][4])/(cptarr[len(cptarr)-1][0]-cptarr[0][4])
+            if irow==1:
+                colorlist.append(tups)
+            elif irow > 1 and irow < len(cptarr)-1:
+                colorlist.append(tups)
+                colorlist.append(val)
+                colorlist.append(tups)
+
+    # if it is the standard format in the GMT project
+    elif type=='standard':
+        colorlist = readstandardcpt(cptfile)
+
     return colorlist
+
+def readstandardcpt(cptfile):
+    """Read a GMT color map from an OPEN cpt file
+    Parameters
+    ----------
+    cptf : open file or url handle
+        path to .cpt file
+    name : str, optional
+        name for color map
+        if not provided, the file name will be used
+    """
+    if not os.path.isfile(cptfile): raise IOError("File ("+cptfile+") does not exist.")
+
+    # process file
+    x = []; r = []; g = []; b = []
+    lastls = None
+
+    fo = open(cptfile, "r")
+    cptlines = fo.readlines()
+    colorlist = []
+
+    for l in cptlines:
+        ls = l.split()
+
+        # skip empty lines
+        if not ls: continue
+
+        # parse header info
+        if ls[0] in ["#", b"#"]:
+            if ls[-1] in ["HSV", b"HSV"]:
+                colorModel = "HSV"
+            else:
+                colorModel = "RGB"
+            continue
+
+        # skip BFN info
+        if ls[0] in ["B", b"B", "F", b"F", "N", b"N"]: continue
+
+        # parse color vectors
+        x.append(float(ls[0]))
+        r.append(float(ls[1]))
+        g.append(float(ls[2]))
+        b.append(float(ls[3]))
+
+        # save last row
+        lastls = ls
+
+    x.append(float(lastls[4]))
+    r.append(float(lastls[5]))
+    g.append(float(lastls[6]))
+    b.append(float(lastls[7]))
+
+    if colorModel == "HSV":
+        for i in range(len(r)):
+            # convert HSV to RGB
+            rr,gg,bb = colorsys.hsv_to_rgb(r[i]/360., g[i], b[i])
+            r[i] = rr ; g[i] = gg ; b[i] = bb
+    elif colorModel == "RGB":
+        r = [val/255. for val in r]
+        g = [val/255. for val in g]
+        b = [val/255. for val in b]
+
+    x = np.array(x)
+    xNorm = (x - x[0])/(x[-1] - x[0])
+    for i in range(len(x)):
+        tups=r[i],g[i],b[i]
+        colorlist.append(tups)
+        colorlist.append(xNorm[i])
+        colorlist.append(tups)
+
+    # Close opend file
+    fo.close()
+
+    # return colormap
+    return colorlist
+
+def downloadcpt(url):
+    file = url.split('/')[-1]
+    baseurl = url.replace('/'+file,'')
+    data.update_file(file,folder=tools.get_cptdir(),baseurl = baseurl)
 
 def customcolorpalette(name='bk',cptfolder=tools.get_cptdir(),colorlist=None,colormax=2.,middlelimit=0.5,ifgraytest=0):
     """Used to return preset color palettes from cptfolder. ifgraytest test how the figure looks in gray scale. (-colormax,colormax) are the limits of the colorbar. zerolimit is the limit to which the middle color (e.g. grey) will extend on either side of colorttmax mid. """
@@ -180,14 +268,20 @@ def customcolorpalette(name='bk',cptfolder=tools.get_cptdir(),colorlist=None,col
     else:
         if name=='bk':
             file = 'bk1_0.cpt_'
+            type = 'rem'
         elif name=='hit1':
             file = 'hit1.cpt_'
+            type = 'rem'
         elif name=='yuguinv':
             file = 'yu1_2inv.new.cpt_'
-        data.update_file(file,folder=cptfolder)
+            type = 'rem'
+        else:
+            file = name+'.cpt'
+            type = 'standard'
+        if type =='rem': data.update_file(file,folder=cptfolder)
         cptfolder=tools.get_fullpath(cptfolder)
         if os.path.isfile(cptfolder+'/'+file):
-            colorlist=getcolorlist(cptfolder+'/'+file)
+            colorlist=getcolorlist(cptfolder+'/'+file,type=type)
         else:
             raise ValueError("Could not find file "+cptfolder+'/'+file)
 

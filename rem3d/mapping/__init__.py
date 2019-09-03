@@ -11,3 +11,6 @@ from .ellipsoidal import *
 
 # spherical Earth
 from .spherical import *
+
+# geodesy routines
+from .geodesy import *
