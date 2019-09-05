@@ -36,7 +36,7 @@ def rdswpsh(filename):
 
     if (not os.path.isfile(filename)): raise IOError("Filename ("+filename+") does not exist")
 
-    lineformat = ff.FortranRecordReader("(i4,i4,2e13.5)")
+    lineformat = ff.FortranRecordReader("(i6,i6,2e13.5)")
     comments=[]
     shmatrix=[]
     metadata={}
@@ -48,17 +48,20 @@ def rdswpsh(filename):
             else:
                 comments.append(line.split('\n')[0].strip())
         else:
-            tempshrow = lineformat.read(line)
+            tempshrow = line.split()
             # Change based on ylm normalization
-            l=tempshrow[0];m=tempshrow[1]
-            if m != 0:
-                tempshrow[2] =  2. * tempshrow[2]
-                tempshrow[3] = -2. * tempshrow[3]
+            tempshrow[0]=int(tempshrow[0]);tempshrow[1]=int(tempshrow[1])
+            if tempshrow[1] == 0:
+                tempshrow[2] =  2. * float(tempshrow[2])
+                tempshrow.append(0.)
+            else:
+                tempshrow[2] =  2. * float(tempshrow[2])
+                tempshrow[3] = -2. * float(tempshrow[3])
             shmatrix.append(tempshrow)
 
     # Convert to numpy array
     namelist = ['l','m','cos','sin']
-    formatlist = ['i4','i4','f8','f8']
+    formatlist = ['i','i','f8','f8']
     dtype = dict(names = namelist, formats=formatlist)
     shmatrix = np.array([tuple(x) for x in shmatrix],dtype=dtype)
     return shmatrix, metadata, comments
@@ -87,8 +90,8 @@ def wrswpsh(filename,shmatrix,metadata=None,comments=None, lmax=None):
     for key in sorted(metadata.keys()): printstr.append('#'+key+':'+metadata[key]+'\n')
     if comments is not None:
         for comment in comments: printstr.append(comment+'\n')
-    header_linem0 = ff.FortranRecordWriter('(i4,i4,e13.5)')
-    header_line = ff.FortranRecordWriter('(i4,i4,2e13.5)')
+    header_linem0 = ff.FortranRecordWriter('(i6,i6,e13.5)')
+    header_line = ff.FortranRecordWriter('(i6,i6,2e13.5)')
     for ii,degree in enumerate(shmatrix['l']):
         order = shmatrix['m'][ii]
         if lmax == None: lmax = degree + 1000 # include all degrees if None
