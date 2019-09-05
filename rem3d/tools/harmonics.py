@@ -17,6 +17,8 @@ import pdb
 ############             input REM          modules ######
 from .common import get_fullpath
 from .bases import eval_ylm
+from .xarray import xarray_to_epix
+from ..models import writeepixfile
 ###########################  ANALYSIS SUBROUTINES ####################
 
 def getdepthsfolder(folder='.',extension='.epix',delimiter='.'):
@@ -43,10 +45,10 @@ def rdswpsh(filename):
     for line in open(filename):
         if line.startswith("#"):
             if ':' in line:
-                field = line.split(':')[0].split('#')[1].strip()
-                metadata[field] = line.split(':')[1].split('\n')[0].strip()
+                field = line.lstrip('#').split(':')[0].strip()
+                metadata[field] = line.lstrip('#').split(':')[1].strip()
             else:
-                comments.append(line.split('\n')[0].strip())
+                comments.append(line.strip())
         else:
             tempshrow = line.split()
             # Change based on ylm normalization
@@ -66,6 +68,13 @@ def rdswpsh(filename):
     shmatrix = np.array([tuple(x) for x in shmatrix],dtype=dtype)
     return shmatrix, metadata, comments
 
+def swp_to_epix(infile, grid=1, lmax=None, outfile=None):
+    shmatrix, metadata, comments = rdswpsh(infile)
+    outarr = swp_to_xarray(shmatrix=shmatrix,grid=grid,lmax=lmax)
+    epixarr = xarray_to_epix(outarr)
+    if outfile==None: outfile = infile+'.epix'
+    metadata['BASIS'] = 'PIX'; metadata['FORMAT']='50'
+    writeepixfile(outfile,epixarr,metadata=metadata,comments=comments)
 
 def wrswpsh(filename,shmatrix,metadata=None,comments=None, lmax=None):
     """Code to write spherical harmonic coefficients from the ylm normalization. shmatrix is the linear array

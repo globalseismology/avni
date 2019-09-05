@@ -25,6 +25,29 @@ from .common import precision_and_scale,convert2nparray
 from ..tools import decimals,get_filedir
 #######################################################################################
 
+def xarray_to_epix(data,latname = 'latitude', lonname = 'longitude'):
+    # check if it is a compatible dataarray
+    ierror,pix,shape = checkxarray(data,latname, lonname)
+
+    if data.dims[0] == latname:
+        values = data.T.data.ravel()
+        nlat = data.shape[0]; nlon = data.shape[1]
+    else:
+        values = data.data.ravel()
+        nlat = data.shape[1]; nlon = data.shape[0]
+    lons = np.repeat(data[lonname].data,nlat)
+    lats = np.tile(data[latname].data,nlon)
+    pixsize = pix*np.ones_like(lons)
+    epixarr = np.vstack((lats,lons,pixsize,values)).T
+    dt = {'names':[latname, lonname,'pixel_size','value'], 'formats':[np.float, np.float,np.float,np.float]}
+    epixarr = np.zeros(len(lats),dtype=dt)
+    epixarr[latname] = lats
+    epixarr[lonname] = lons
+    epixarr['pixel_size'] = pixsize
+    epixarr['value'] = values
+    return epixarr
+
+
 def tree3D(treefile,latitude=None,longitude=None,radius_in_km=None):
     #Build the tree if none is provided
     if os.path.isfile(treefile):
