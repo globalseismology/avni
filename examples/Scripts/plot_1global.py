@@ -53,8 +53,14 @@ def main():
     # Read the file
     try:
         latlonval,metadata,_ = readepixfile(get_filedir()+'/'+model)
-        title = 'Depth : '+metadata['DEPTH_RANGE']+' km'
-        outfile = model+'.'+arg.parameter+'.'+metadata['DEPTH_IN_KM']+'km.'+arg.format
+        try:
+            title = 'Depth : '+metadata['DEPTH_RANGE']+' km'
+            outfile = model+'.'+arg.parameter+'.'+metadata['DEPTH_IN_KM']+'km.'+arg.format
+        except:
+            title = arg.parameter
+            outfile = model+'.'+arg.parameter+'.'+arg.format
+        metadata['WHAT'] = arg.parameter
+        metadata['UNIT'] = ''
     except:
         metadata = {}
         ds = xr.open_dataset(get_filedir()+'/'+model)

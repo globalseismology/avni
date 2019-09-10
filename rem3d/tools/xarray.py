@@ -47,6 +47,22 @@ def xarray_to_epix(data,latname = 'latitude', lonname = 'longitude'):
     epixarr['value'] = values
     return epixarr
 
+def epix_to_xarray(epixarr,latname = 'latitude', lonname = 'longitude'):
+    lonspace = np.setdiff1d(np.unique(np.ediff1d(np.sort(epixarr[lonname]))),[0.])
+    latspace = np.setdiff1d(np.unique(np.ediff1d(np.sort(epixarr[latname]))),[0.])
+    if not(len(lonspace) == len(lonspace) == 1): raise AssertionError('not(len(lonspace) == len(lonspace) == 1)')
+    spacing = lonspace[0]
+    latitude = np.arange(-90.+spacing/2.,90.,1.)
+    longitude = np.arange(0.+spacing/2.,360.,1.)
+    outarr = xr.DataArray(np.zeros((len(latitude),len(longitude))),
+                    dims=[latname, lonname],
+                    coords={latname:latitude,lonname:longitude})
+    for ii, lat in enumerate(epixarr[latname]):
+        lon = epixarr[lonname][ii]
+        val = epixarr['value'][ii]
+        if spacing != epixarr['pixel_size'][ii]: raise ValueError('spacing != epixarr[pixel_size]')
+        outarr.loc[dict(latitude=lat,longitude=lon)] = val
+    return outarr
 
 def tree3D(treefile,latitude=None,longitude=None,radius_in_km=None):
     #Build the tree if none is provided
@@ -285,12 +301,12 @@ def areaxarray(data,latname = 'latitude', lonname = 'longitude',pix_width=None):
             dlat = dlon = pix
             ifind = int((90.0-0.5*dlat-xlat)/dlat)
             if ifind not in area.keys():
-                nlon = int(180./pix)
+                nlon = int(360./pix)
                 area[ifind] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
             areaarray[ifind,:]=area[ifind]
         else:
             for icol in range(len(pix_width[lonname])):
-                nlon = int(180./pix_width[irow,icol])
+                nlon = int(360./pix_width[irow,icol])
                 dlat = dlon = pix_width[irow,icol].item()
                 areaarray[irow,icol] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
 

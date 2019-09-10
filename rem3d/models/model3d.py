@@ -159,7 +159,7 @@ class Model3D(object):
         # try to get the kernel set
         for resolution in self.metadata.keys():
             try:
-                self.metadata[resolution]['kernel_set'] = Kernel_set(self.metadata[resolution])
+                self[resolution]['kernel_set'] = Kernel_set(self[resolution])
             except:
                 print('Warning: kernel_set could not initialized for '+str(resolution))
 
