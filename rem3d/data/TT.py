@@ -17,6 +17,7 @@ def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose
     verbose <bool>: print extra output, helpful for debugging
     '''
 
+    bad_paths = open('bad_paths.txt','w')
     source_depth = str(source_depth)
 
     #open hdf5 file
@@ -28,8 +29,12 @@ def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose
         #create h5py groups for travel times and paths
         ds.create_group('travel_times')
         ds['travel_times'].create_group('1D')
-        ds['travel_times']['1D'].create_group(component)
         ds.create_group('paths')
+
+    try:
+        ds['travel_times']['1D'].create_group(component)
+    except:
+        print('group already exists... appending new data to it')
 
     
     #get list of directories containing travel time and path into
@@ -91,6 +96,8 @@ def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose
             gcarc = path_info.strip().split()[1]
 
             #read data
+            print("#########################################################")
+            print(path_)
             path = np.loadtxt(path_) 
 
             #get branch info
@@ -99,6 +106,11 @@ def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose
                 for line_ in file_:
                     if line_.startswith("#BRANCH"):
                         branches.append(line_.strip().split()[1])
+
+            #skip if there are two of the same branch at a single distance
+            if len(branches) != len(set(branches)):
+                bad_paths.write('source depth {}, phase {}, distance {}\n'.format(source_depth,phase,gcarc))
+                continue
 
             if verbose:
                 print('THE BRANCHES ARE', branches, 'for ', phase, 'at', gcarc)
@@ -139,51 +151,52 @@ def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose
                     ds['paths'][phase][source_depth][gcarc].create_group(branch)
                     ds['paths'][phase][source_depth][gcarc][branch].create_dataset('radius', data=path[:,3][bb_0:bb_1])
                     ds['paths'][phase][source_depth][gcarc][branch].create_dataset('distance', data=path[:,4][bb_0:bb_1])
-                    ds['paths'][phase][source_depth][gcarc][branch].create_dataset('time', data=path[:,5][bb_0:bb_1])
+                    ds['paths'][phase][source_depth][gcarc][branch].create_dataset('time', data=path[:,7][bb_0:bb_1])
 
             elif nbranches == 1:
 
                 ds['paths'][phase][source_depth][gcarc].create_group(branches[0])
                 ds['paths'][phase][source_depth][gcarc][branches[0]].create_dataset('radius', data=path[:,3])
                 ds['paths'][phase][source_depth][gcarc][branches[0]].create_dataset('distance', data=path[:,4])
-                ds['paths'][phase][source_depth][gcarc][branches[0]].create_dataset('time', data=path[:,5])
+                ds['paths'][phase][source_depth][gcarc][branches[0]].create_dataset('time', data=path[:,7])
 
             else:
                 raise ValueError('something went wrong finding branches')
 
-def get_travel_times1D(distance_in_degree,source_depth_in_km,phase,
-                       component='PSV',model='NREM1D',branch='1'):
+def get_travel_times1D(table,distance_in_degree,source_depth_in_km,phase,
+                       component='PSV',branch=None):
 
     '''
     Get 1D travel travel times from a lookup table
 
     params:
+    table <str>: path to hdf5 travel time table
     distance_in_degree <float>: source/receiver distance in degrees
     source_depth_in_km <float>: source depth in km
     phase <str>: seismic phase
     component <str>: 'PSV' or 'SH'. defaults to 'PSV'(for now)
-    model <str>: name of model. defaults to NREM1D (only option atm)
     branch <str>: branch (doesn't do anything yet)
 
     returns
     time_in_s <float>: travel time in seconds. 
     '''
 
-    #NOTE the models below are incomplete. Once they are complete I will move
-    #     them to a shared location
-    if model=='NREM1D':
-        ttt = h5py.File('/home/rmaguire/MODELS/NREM1D_draft_tt_table.h5','r')
-    elif model=='PREM':
-        ttt = h5py.File('/home/rmaguire/MODELS/PREM_tt_table.h5','r')
+    if branch == None and phase != 'PKP':
+        branch = '1'  #defaults to branch 1 if not given
+    elif branch == None and phase == 'PKP':
+        branch = 'ab' #defaults to ab branch if not given
+
+    branch = branch.encode('utf-8')
+    ttt = h5py.File(table)
 
     #perform checks---------------------------------------------------------
     if phase not in ttt['travel_times']['1D'][component].keys():
-        raise ValueError('phase {} not present in the {} table'.format(phase,model))
+        raise ValueError('phase {} not present in the {} table'.format(phase,table))
 
     #TODO add attributes to the table such as min/max depth and distance
-    evdp_max = 100.0 #this is just a stand-in value 
+    evdp_max = 670.0 #this is just a stand-in value 
     if source_depth_in_km > evdp_max:
-        raise ValueError('depth {} is outside of available range'.format(evdp_max))
+        raise ValueError('source depth {}-km exceeds limit of {}-km'.format(source_depth_in_km,evdp_max))
 
     #get closest depths
     dz_table = 1
@@ -193,21 +206,29 @@ def get_travel_times1D(distance_in_degree,source_depth_in_km,phase,
     #get datasets at each source depth
     dset1 = ttt['travel_times']['1D'][component][phase][str(z1)]
     dset2 = ttt['travel_times']['1D'][component][phase][str(z2)]
+    b_inds1 = np.where(dset1['branch'].value==branch)[0]
+    b_inds2 = np.where(dset2['branch'].value==branch)[0]
+    b_inds1 = list(b_inds1)
+    b_inds2 = list(b_inds2)
+
+    if len(b_inds1) == 0 or len(b_inds2) == 0:
+        raise ValueError('distance {} for phase {} and branch {} not found'.format(distance_in_degree,phase,branch))
 
     #get interpolated values for each depth
     ttz1 = np.interp(distance_in_degree,
-                     dset1['distance_in_degree'][:],
-                     dset1['time'][:])
+                     #dset1['distance_in_degree'][:],
+                     dset1['distance_in_degree'][b_inds1],
+                     #dset1['time'][:],
+                     dset1['time'][b_inds1])
     ttz2 = np.interp(distance_in_degree,
-                     dset2['distance_in_degree'][:],
-                     dset2['time'][:])
-
-    print(ttz1,ttz1.shape)
-    print(ttz2,ttz2.shape)
+                     #dset2['distance_in_degree'][:],
+                     dset2['distance_in_degree'][b_inds2],
+                     #dset2['time'][:],
+                     dset2['time'][b_inds2])
 
     #interp between travel times for different source depths
-    w1 = (source_depth_in_km - z1) / dz_table
-    w2 = (z2 - source_depth_in_km) / dz_table
+    w1 = (z2 - source_depth_in_km) / dz_table
+    w2 = (source_depth_in_km - z1) / dz_table
     time_in_s = ttz1 * w1 + ttz2 * w2 
 
     return time_in_s
