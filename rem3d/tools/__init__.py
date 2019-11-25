@@ -9,6 +9,9 @@ from .common import *
 # I/O routines
 from .io import *
 
+# spherical harmonic codes
+from .harmonics import *
+
 # trigonometric files
 from .trigd import *
 
@@ -17,6 +20,3 @@ from .xarray import *
 
 # bases or parameterization routines
 from .bases import *
-
-# spherical harmonic codes
-from .harmonics import *

@@ -11,47 +11,132 @@ import numpy as np
 import xarray as xr
 from scipy.spatial import cKDTree
 import pickle
+import warnings
 import pdb
+import math
+from scipy import sparse
+from mpl_toolkits.basemap import shiftgrid
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .trigd import sind
-from ..mapping import spher2cart
+from ..mapping import spher2cart,intersection,midpoint
 from .. import constants
 from .common import precision_and_scale,convert2nparray
+from ..tools import decimals,get_filedir
 #######################################################################################
 
-def tree3D(treefile,latitude,longitude,radius_in_km):
-    latitude = convert2nparray(latitude)
-    longitude = convert2nparray(longitude)
-    radius_in_km = convert2nparray(radius_in_km)
+def xarray_to_epix(data,latname = 'latitude', lonname = 'longitude'):
+    # check if it is a compatible dataarray
+    ierror,pix,shape = checkxarray(data,latname, lonname)
 
+    if data.dims[0] == latname:
+        values = data.T.data.ravel()
+        nlat = data.shape[0]; nlon = data.shape[1]
+    else:
+        values = data.data.ravel()
+        nlat = data.shape[1]; nlon = data.shape[0]
+    lons = np.repeat(data[lonname].data,nlat)
+    lats = np.tile(data[latname].data,nlon)
+    pixsize = pix*np.ones_like(lons)
+    epixarr = np.vstack((lats,lons,pixsize,values)).T
+    dt = {'names':[latname, lonname,'pixel_size','value'], 'formats':[np.float, np.float,np.float,np.float]}
+    epixarr = np.zeros(len(lats),dtype=dt)
+    epixarr[latname] = lats
+    epixarr[lonname] = lons
+    epixarr['pixel_size'] = pixsize
+    epixarr['value'] = values
+    return epixarr
+
+def epix_to_xarray(epixarr,latname = 'latitude', lonname = 'longitude'):
+    lonspace = np.setdiff1d(np.unique(np.ediff1d(np.sort(epixarr[lonname]))),[0.])
+    latspace = np.setdiff1d(np.unique(np.ediff1d(np.sort(epixarr[latname]))),[0.])
+    if not(len(lonspace) == len(lonspace) == 1): raise AssertionError('not(len(lonspace) == len(lonspace) == 1)')
+    spacing = lonspace[0]
+    latitude = np.arange(-90.+spacing/2.,90.,1.)
+    longitude = np.arange(0.+spacing/2.,360.,1.)
+    outarr = xr.DataArray(np.zeros((len(latitude),len(longitude))),
+                    dims=[latname, lonname],
+                    coords={latname:latitude,lonname:longitude})
+    for ii, lat in enumerate(epixarr[latname]):
+        lon = epixarr[lonname][ii]
+        val = epixarr['value'][ii]
+        if spacing != epixarr['pixel_size'][ii]: raise ValueError('spacing != epixarr[pixel_size]')
+        outarr.loc[dict(latitude=lat,longitude=lon)] = val
+    return outarr
+
+def tree3D(treefile,latitude=None,longitude=None,radius_in_km=None):
     #Build the tree if none is provided
     if os.path.isfile(treefile):
         print('... Reading KDtree file '+treefile)
         tree = pickle.load(open(treefile,'rb'))
     else:
         print('... KDtree file '+treefile+' not found for interpolations. Building it')
+        if np.any(latitude == None) or np.any(longitude == None) or np.any(radius_in_km == None):
+            raise IOError('latitude, longitude and radius_in_km are required')
+        latitude = convert2nparray(latitude)
+        longitude = convert2nparray(longitude)
+        radius_in_km = convert2nparray(radius_in_km)
         rlatlon = np.column_stack((radius_in_km.flatten(),latitude.flatten(), longitude.flatten()))
         xyz = spher2cart(rlatlon)
         tree = cKDTree(xyz)
         pickle.dump(tree,open(treefile,'wb'))
     return tree
 
-def querytree3D(tree,latitude,longitude,radius_in_km,values,nearest=1):
+def querytree3D(tree,latitude,longitude,radius_in_km,values=None,nearest=1):
     latitude = convert2nparray(latitude)
     longitude = convert2nparray(longitude)
     radius_in_km = convert2nparray(radius_in_km)
+    if not(len(latitude)==len(latitude)==len(radius_in_km)): raise AssertionError('latitude, longitude and radius need to be of same size')
     evalpoints = np.column_stack((radius_in_km.flatten(),latitude.flatten(), longitude.flatten()))
     coordstack = spher2cart(evalpoints)
-    d,inds = tree.query(coordstack,k=nearest)
-    if nearest == 1:
-        interp = values[inds]
+    dist,inds = tree.query(coordstack,k=nearest)
+    if np.any(values==None):
+        return inds
     else:
-        w = 1.0 / d**2
-        interp = np.sum(w * values[inds], axis = 1)/ np.sum(w, axis=1)
-    return interp
+        # convert to csc_matrix
+        if not isinstance(values,sparse.csc_matrix):
+            if isinstance(values,sparse.csr_matrix):
+                values = values.tocsc()
+            else:
+                # do not allow strings as values
+                values = convert2nparray(values,int2float = True,allowstrings=False)
+                if values.ndim != 1: raise ValueError('only 1 dimenional values allowed')
+                values = sparse.csc_matrix(values).transpose().tocsc()
 
-def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km = None):
+        # find values
+        if nearest == 1:
+            interp = values[inds]
+        else:
+            weights = 1.0 / dist**2
+            rows = ((np.arange(inds.shape[0])*np.ones_like(inds).T).T).ravel()
+            cols = inds.ravel()
+            weighted = values[cols].reshape(inds.shape,order='C').multiply(weights)
+            weighted_sum = np.asarray(weighted.sum(axis=1))
+            weights_sum = weights.sum(axis=1).reshape(weighted_sum.shape)
+            val_temp = np.divide(weighted_sum,weights_sum,out=np.zeros_like(weights_sum), where=weights_sum!=0)
+            interp = sparse.csc_matrix(val_temp)
+        return interp,inds
+
+def get_stride(resolution):
+    """
+    resolution: of boundary database to use like in Basemap.
+                Can be c (crude), l (low), i (intermediate), h (high), f (full)
+    """
+    if resolution.lower() == 'c' or resolution.lower() == 'crude':
+        stride = 20
+    elif resolution.lower() == 'l' or resolution.lower() == 'low':
+        stride = 10
+    elif resolution.lower() == 'i' or resolution.lower() == 'intermediate':
+        stride = 5
+    elif resolution.lower() == 'h' or resolution.lower() == 'high':
+        stride = 2
+    elif resolution.lower() == 'f' or resolution.lower() == 'full':
+        stride = 1
+    else:
+        raise KeyError('resolution can only be low, medium, high')
+    return stride
+
+def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,resolution='h', radius_in_km = None):
     """
     Read or write a pickle interpolant with KDTree
 
@@ -72,6 +157,7 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km =
     if lonlatdepth is None: lonlatdepth = ['longitude','latitude','depth']
 
     #read topography file
+    stride = get_stride(resolution)
     if os.path.isfile(ncfile):
         f = xr.open_dataset(ncfile)
     else:
@@ -97,7 +183,34 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,stride=None, radius_in_km =
     tree = tree3D(treefile,gridlat,gridlon,gridrad)
     return tree
 
-def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
+def readtopography(model=constants.topography,resolution='h',field = 'z',latitude='lat',longitude='lon',latitude_limits=[-90,90],longitude_limits=[-180,180], dbs_path=get_filedir()):
+    """
+    resolution: stride is 1 for high, 10 for low
+    """
+    stride = get_stride(resolution)
+    if dbs_path == None:
+        ncfile = model
+    else:
+        ncfile = dbs_path+'/'+model
+    if not os.path.isfile(ncfile): data.update_file(model)
+    #read values
+    if os.path.isfile(ncfile):
+        f = xr.open_dataset(ncfile)
+    else:
+        raise ValueError("Error: Could not find file "+ncfile)
+
+    model = f[field][::stride,::stride]
+    # subselect region within -not implemented yet
+    #shift it by the grid
+#     valout, lonout = shiftgrid(longitude_limits[0],model.data,model['lon'].data,start=True)
+#     lonout[np.where(lonout>180)] =lonout[lonout>180]-360.
+#     model[longitude].data = lonout
+#     model.data  = valout
+    model  = model.sortby('lon') # required for transform_scalar
+    f.close() #close netcdf file
+    return model
+
+def checkxarray(data,latname = 'latitude', lonname = 'longitude', Dataset = True):
     """
     checks whether the data input is a DataArray and the coordinates are compatible
 
@@ -106,21 +219,43 @@ def checkDataArray(data,latname = 'latitude', lonname = 'longitude'):
     data : Dataset or DataArray
         the xray object to average over
 
+    Dataset : allow Dataset or not
+
     Returns
     -------
 
-    pass: if true, is a compatible dataarray
+    pix: size of the uniform pixel
 
     """
-    if not isinstance(data, xr.DataArray): raise ValueError("date must be an xray DataArray")
+    if not isinstance(data, (xr.DataArray,xr.Dataset)): raise ValueError("date must be an xarray DataArray or Dataset")
+    if not Dataset and isinstance(data, xr.Dataset): raise ValueError("date must be an xarray Dataset if True")
 
     pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
     pix_lon = np.unique(np.ediff1d(np.sort(data.coords[lonname].values)))
-    if not len(pix_lat)==len(pix_lon)==1: raise AssertionError('only one pixel size allowed in xarray')
-    if not pix_lat.item()==pix_lon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
+    if isinstance(data, xr.DataArray) : shape = data.shape
+    if isinstance(data, xr.Dataset) : shape = tuple(data.dims[d] for d in [latname, lonname])
+
+    # checks
+    ierror = []
+    if len(pix_lat)==len(pix_lon)==1:
+        if not pix_lat.item()==pix_lon.item(): warnings.warn('same pixel size in both lat and lon in xarray')
+        # check number of poxels
+        pix_width = pix_lat.item()
+        if not math.isclose(180 % pix_width,0):
+            ierror.append(1)
+            warnings.warn ('pixel width should be ideally be a factor of 180')
+        nlat = int(180./pix_width); nlon = int(360./pix_width)
+        if nlat*nlon != shape[0]*shape[1]:
+            ierror.append(2)
+            warnings.warn('number of pixels expected for '+str(pix_width)+'X'+str(pix_width)+' is '+str(nlat*nlon)+',  not '+str(data.size)+' as specified in the data array.')
+    else:
+        warnings.warn('multiple pixel sizes have been found for xarray'+str(pix_lat)+str(pix_lon)+'. Choosing the first value '+str(pix_lat[0]))
+        ierror.append(3)
+        pix_width = pix_lat[0]
+    return ierror,pix_width,shape
 
 
-def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
+def areaxarray(data,latname = 'latitude', lonname = 'longitude',pix_width=None):
     """
     weighted average for xray data geographically averaged
 
@@ -129,66 +264,61 @@ def AreaDataArray(data,latname = 'latitude', lonname = 'longitude'):
     data : Dataset or DataArray
         the xray object to average over
 
+    pix_width: width of pixels if not the default derived from data
+
     Returns
     -------
 
     area: a DataArray object with area of each pixel
 
     """
-    # check if it is a compatible dataarray
-    checkDataArray(data,latname, lonname)
-    pix_lat = np.unique(np.ediff1d(np.sort(data.coords[latname].values)))
 
-    #---- calculate the grid of test points and their weights
-    dlat=dlon=pix_lat.item()
-    xlat = []; xlon = []; area = []
-    nlat = 180./dlat; nlon = 360./dlon
-    if not np.mod(nlat,1.)==0.: raise AssertionError('nlat should be an integer')
-    if not np.mod(nlon,1.)==0.: raise AssertionError('nlon should be an integer')
-    nlat = int(nlat); nlon = int(nlon)
-    for ilat in range(nlat):
-        xlat.append(90.0-0.5*dlat-(ilat*dlat))
-    for ilon in range(nlon):
-        val = 0.5*dlon+(ilon*dlon)
-        if min(data.coords[lonname].values) < 0.: # if xarray goes from (-180,180)
-            if val>360.:
-                xlon.append(val-360.)
-            else:
-                xlon.append(val)
-        else:
-            xlon.append(val)
-    for ilat in range(nlat):
-        area.append(2.*np.pi*(sind(xlat[ilat]+0.5*dlat)-             sind(xlat[ilat]-0.5*dlat))/float(nlon))
+    # check if it is a compatible dataarray
+    ierror,pix,shape = checkxarray(data,latname, lonname)
+
+    if pix_width is not None:
+        if pix_width.shape != shape: raise AssertionError('pix_width.shape != shape')
+        uniq_pix = np.unique(pix_width)
+        # if the pix_width array has only one value and that
+        # is consistent with the one derived from data
+        if len(uniq_pix) is 1 and uniq_pix[0] is pix: pix_width = None
 
     # now fill the areas
-    areaarray = []
-    if data.shape[0] == 0.5*data.shape[1]:
-        rowvar = latname
-        colvar = lonname
-        latdim = 'row'
-    elif data.shape[1] == 0.5*data.shape[0]:
-        rowvar = lonname
-        colvar = latname
-        latdim = 'col'
-    else:
-        raise ValueError('dimensions should be data.shape[0] == 0.5*data.shape[1]')
-    areaarray = np.zeros(data.shape)
-    if latdim == 'row':
-        for irow in range(len(data.coords[rowvar])):
-            ifind = int((90.0-0.5*dlat-data.coords[rowvar][irow].item())/dlat)
+    area = {}
+    areaarray = np.zeros(shape)
+
+    # find the index of the latitude
+    lat_index = np.argwhere(np.array(data.dims)==latname)[0].item()
+    if lat_index is not 0: # transpose to (lat,lon) for caculations
+        data = data.T
+        if pix_width is not None: pix_width = pix_width.T
+
+    # now calculate area
+    for irow in range(len(data.coords[latname])):
+        xlat = data.coords[latname][irow].item()
+        # if no px width array is provided
+        if pix_width is None:
+            dlat = dlon = pix
+            ifind = int((90.0-0.5*dlat-xlat)/dlat)
+            if ifind not in area.keys():
+                nlon = int(360./pix)
+                area[ifind] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
             areaarray[ifind,:]=area[ifind]
-    elif latdim == 'col':
-        for icol in range(len(data.coords[colvar])):
-            ifind = int((90.0-0.5*dlat-data.coords[colvar][icol].item())/dlat)
-            areaarray[:,ifind]=area[ifind]
+        else:
+            for icol in range(len(pix_width[lonname])):
+                nlon = int(360./pix_width[irow,icol])
+                dlat = dlon = pix_width[irow,icol].item()
+                areaarray[irow,icol] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
 
     # drop the variables for weights
     drops = [var for var in data.coords.keys() if var not in [latname,lonname]]
     area  = xr.DataArray(areaarray,name='area',coords=data.drop(drops).coords)
+
+    # transpose the area array if needed
+    if lat_index is not 0: area = area.T
     return area
 
-
-def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
+def meanxarray(data,area=None,latname = 'latitude', lonname = 'longitude', pix_width=None):
     """
     weighted average for xray data geographically averaged
 
@@ -197,8 +327,10 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
     data : DataArray
         the xray object to average over
 
-    area: DataArray containing area weights. Obtained from AreaDataArray.
+    area: DataArray containing area weights. Obtained from areaxarray.
           If None, calculate again.
+
+    pix_width: width of pixels if not the default derived from data
 
     Returns
     -------
@@ -210,18 +342,17 @@ def MeanDataArray(data,area=None,latname = 'latitude', lonname = 'longitude'):
     percentglobal: percentage of global area covered by this basis set
 
     """
-
     # check if it is a compatible dataarray
-    checkDataArray(data,latname, lonname)
+    ierror,pix,shape = checkxarray(data,latname, lonname)
+
+    if pix_width is not None:
+        if pix_width.shape != shape: raise AssertionError('pix_width.shape != shape')
 
     # take weights
     # drop the variables for weights
     drops = [var for var in data.coords.keys() if var not in [latname,lonname]]
-    try:
-        totarea = np.sum(area.values)
-    except:# if area does not exist, evaluate it
-        area = AreaDataArray(data.drop(drops),latname,lonname)
-        totarea = np.sum(area.values)
+    if area is None: area = areaxarray(data.drop(drops),latname,lonname,pix_width)
+    totarea = np.sum(area.values)
     percentglobal = np.round(totarea/(4.*np.pi)*100.,3)
     weighted = area*data
     # find the precision of data to round the average to

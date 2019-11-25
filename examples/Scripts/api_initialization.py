@@ -10,14 +10,13 @@ stores the api key default api.ini config file, after which subsequent calls to
 initialize Client object do not need api_key argument.
 
 '''
-
 from rem3d.api.client import Client as r3d
 import argparse
 
 def main():
     # parse
     parser = argparse.ArgumentParser(description='f2py calls via API')
-    parser.add_argument('-k', '--key', type=str,default='',help='api key')
+    parser.add_argument('key', type=str,help='api key')
     arg = parser.parse_args()
 
     conn=r3d(api_key=arg.key) # api connection object

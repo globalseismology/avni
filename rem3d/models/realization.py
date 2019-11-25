@@ -12,13 +12,18 @@ if (sys.version_info[:2] < (3, 0)):
 import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
-
+from six import string_types # to check if variable is string using isinstance
+import warnings
 import struct
 import xarray as xr
 import traceback
 import pandas as pd
+from progressbar import progressbar
+
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .common import read3dmodelfile
+from ..tools import convert_to_swp,convert2nparray
+from .kernel_set import Kernel_set
 #######################################################################################
 class Realization(object):
     '''
@@ -42,7 +47,7 @@ class Realization(object):
         return output
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self._infile})'.format(self=self)
+        return '{self.__class__.__name__}({self._name})'.format(self=self)
 
     #########################       decorators       ##########################
     @property
@@ -82,6 +87,11 @@ class Realization(object):
                 print(var2)
                 success = False
         if success: self._infile = file
+        # try to get the kernel set
+        try:
+            self.metadata['kernel_set'] = Kernel_set(self.metadata)
+        except:
+            print('Warning: kernel_set could not initialized for '+str(resolution))
 
     def readascii(self,modelfile):
         """
@@ -114,49 +124,51 @@ class Realization(object):
 
         # Store in a dictionary
         metadata = {}
-        for key in ds.attrs.keys(): metadata[key] = ds.attrs[key]
+        metadata['attrs']={}
+
+        # change None to string since it cannot be stored in netcdf, also stor attrbutes
+        for key in ds.attrs.keys():
+            if isinstance(ds.attrs[key],string_types):
+                metadata[key] = None if ds.attrs[key].lower() == 'none' else ds.attrs[key]
+            else:
+                metadata[key] = ds.attrs[key]
+        for var in ds.data_vars:
+            for key in ds[var].attrs.keys():
+                val = ds[var].attrs[key]
+                if isinstance(val,string_types):
+                    if ds[var].attrs[key].lower() == 'none': ds[var].attrs[key] = None
+            metadata['attrs'][var] = ds[var].attrs
+
         metadata['nhorpar']=1
-        metadata['null_model']=None
         metadata['shortcite']=ds.attrs['name']
         metadata['ityphpar']=np.array([3])
         metadata['typehpar']=np.array(['PIXELS'], dtype='<U40')
         # check the pixel size
         pixlat = np.unique(np.ediff1d(np.array(ds.latitude)))
         pixlon = np.unique(np.ediff1d(np.array(ds.longitude)))
-        if not len(pixlat)==len(pixlon)==1: raise AssertionError('only one pixel size allowed in xarray')
-        if not pixlat.item()==pixlon.item(): raise AssertionError('same pixel size in both lat and lon in xarray')
+        if len(pixlat)==len(pixlon)==1:
+            if not pixlat.item()==pixlon.item(): warnings.warn('same pixel size in both lat and lon in xarray')
+        else:
+            warnings.warn('multiple pixel sizes have been found for xarray'+str(pixlat)+str(pixlon))
+
         metadata['hsplfile']=np.array([str(pixlat[0])+' X '+str(pixlat[0])], dtype='<U40')
         lenarr = len(ds.latitude)*len(ds.longitude)
-        metadata['xsipix']=np.array([[pixlat[0] for ii in range(lenarr)]])
+        metadata['xsipix']= np.zeros([1,lenarr])
         metadata['xlapix'] = np.zeros([1,lenarr])
         metadata['xlopix'] = np.zeros([1,lenarr])
         # get data keys
         data_keys = []
-        for key,_ in ds.data_vars.items(): data_keys.append(key)
+        for key in ds.data_vars:
+            if key != 'pixel_width': data_keys.append(key)
         indx = 0
-        idep = 0
-        if len(ds.dims) == 3:
-            _ , nlat, nlon = ds[data_keys[0]].shape
-            for ilat in range(nlat):
-                metadata['xlapix'][0][indx:indx+nlon]=ds[data_keys[0]][idep,ilat,:].latitude.values
-                metadata['xlopix'][0][indx:indx+nlon]=ds[data_keys[0]][idep,ilat,:].longitude.values
-                indx += nlon
-        else:
-            raise ValueError('dimensions != 3')
-
-
-
-        #depth differences and get depth extents
-        depdiff = np.ediff1d(ds.depth)
-        deptop = np.copy(ds.depth)
-        depbottom = np.copy(ds.depth)
-
-        for ii in range(len(depdiff)-2):
-            deptop[ii] = deptop[ii] - (2.*depdiff[ii]-depdiff[ii+1])/2.
-            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii]-depdiff[ii+1])/2.
-        for ii in range(len(depdiff),len(depdiff)-3,-1):
-            deptop[ii] = deptop[ii] - (2.*depdiff[ii-1]-depdiff[ii-2])/2.
-            depbottom[ii] = depbottom[ii] + (2.*depdiff[ii-1]-depdiff[ii-2])/2.
+        nlat = ds.dims['latitude']
+        nlon = ds.dims['longitude']
+        metadata['shape'] = nlat,nlon
+        for ilat in range(nlat):
+            metadata['xsipix'][0][indx:indx+nlon]=ds['pixel_width'].values[ilat]
+            metadata['xlapix'][0][indx:indx+nlon]=ds['latitude'].values[ilat]
+            metadata['xlopix'][0][indx:indx+nlon]=ds['longitude'].values
+            indx += nlon
 
         ## create keys
         metadata['numvar']=len(data_keys)
@@ -167,18 +179,20 @@ class Realization(object):
         coef_ndepth=0
         coef_nlatnon=nlat*nlon
         for key in data_keys:
-            if 'topo' in key:
+            if len(ds[key].dims) == 2:
                 coef_ndepth=coef_ndepth+1
-            else:
-                ndepth , nlat, nlon = ds[key].shape
+            elif len(ds[key].dims) == 3:
+                ndepth , _, _ = ds[key].shape
                 coef_ndepth=coef_ndepth+ndepth
+            else:
+                raise ValueError('dimension of key '+key+' cannot be anything except 2/3')
         coef=np.zeros([coef_ndepth,nlat*nlon])
 
         desckern = []; ivarkern = []; icount=0; idepth=0
         for key in data_keys:
             icount = icount+1
-            if 'topo' in key:
-                depth_range = key.split('topo')[1]
+            if len(ds[key].dims) == 2:
+                depth_range = ds[key].attrs['depth']
                 nlat, nlon = ds[key].shape
                 descstring = u'{}, delta, {} km'.format(key,depth_range)
                 coef[idepth,:]=ds[key].values.flatten()
@@ -187,11 +201,16 @@ class Realization(object):
                 ivarkern.append(icount)
             else:
                 ndepth , nlat, nlon = ds[key].shape
-                for ii,_ in enumerate(deptop):
-                    descstring = u'{}, boxcar, {} - {} km'.format(key,deptop[ii],depbottom[ii])
+                for ii,deptop in enumerate(ds[key].attrs['start_depths']):
+                    descstring = u'{}, boxcar, {} - {} km'.format(key,deptop,ds[key].attrs['end_depths'][ii])
                     desckern.append(descstring)
                     ivarkern.append(icount)
-                coef[idepth:idepth+ndepth,:]=np.reshape(ds[key].values,[ndepth,nlat*nlon])
+                # the order needs to be in C so that it corresponds to ravel of a
+                # (depth, lat,lon) array of coeffiecients to get modelarr
+                # This also makes it consistent with how queries are made to KDtree in
+                # buildtree3D
+
+                coef[idepth:idepth+ndepth,:]=np.reshape(ds[key].values,[ndepth,nlat*nlon],order='C')
                 idepth=idepth+ndepth
 
         metadata['desckern']=np.array(desckern, dtype='<U150')
@@ -209,4 +228,166 @@ class Realization(object):
 
         #rename the name field only if it is None
         self._type = 'netcdf4'
-        self._refmodel = model['metadata']['refmodel']
+        self._refmodel = ds.attrs['refmodel']
+
+    def to_xarray(self,outfile=None,complevel=9, engine='netcdf4', writenc4 = False):
+        '''
+        write an xarrary dataset from a rem3d formatted ascii file
+
+        Input parameters:
+        ----------------
+
+        ascii_file: path to rem3d format output file
+
+        outfile: output netcdf file
+
+        setup_file: setup file containing metadata for the model
+
+        complevel, engine: options for compression in netcdf file
+
+        writenc4: write a netcdf4 file, if True
+
+        '''
+
+        check = self.metadata['typehpar']=='PIXELS'
+        if len(check) != 1 or not check[0]: raise IOError('cannot output netcdf4 file for horizontal parameterizations : ',self.metadata['typehpar'])
+        if outfile == None and writenc4:
+            if self._name.endswith('.nc4'):
+                outfile = self._name
+            else:
+                outfile = self._name+'.'+self.metadata['kernel_set'].name+'.rem3d.nc4'
+
+        # get sizes
+        shape = self.metadata['shape']
+        lat_temp = self.metadata['xlapix'][0]
+        lon_temp = self.metadata['xlopix'][0]
+        siz_temp = self.metadata['xsipix'][0]
+        sortbylon = np.all(lon_temp == sorted(lon_temp))
+
+        # unique values for reshaping
+        if sortbylon:
+            lon = np.unique(lon_temp)
+            lat = np.unique(lat_temp)
+            pxw = np.unique(siz_temp)
+        else:
+            arr=pd.DataFrame(np.vstack([lon_temp,lat_temp,siz_temp]).T,columns =['lon', 'lat', 'pxw'])
+            arr = arr.sort_values(by=['lon','lat'])
+            lon = pd.unique(arr['lon'])
+            lat = pd.unique(arr['lat'])
+            pxw = pd.unique(arr['pxw'])
+
+        if not len(pxw)==1: raise warnings.warn('more than 1 pixel size in variable '+variable, pxw)
+
+        # Get all depths
+        kernel = self.metadata['kernel_set']
+        depths = np.array([])
+        for variable in self.metadata['varstr']:
+            deptemp = kernel.pixeldepths(variable)
+            if np.any(deptemp != None): depths = np.concatenate([depths,deptemp])
+        alldepths= np.sort(np.unique(depths))
+
+        # loop over variables
+        data_vars={}
+
+        # get the grid sizes stored
+        pixel_array= np.reshape(arr['pxw'].values,
+                            (len(lat),len(lon)),order='F')
+        data_vars['pixel_width']=(('latitude', 'longitude'), pixel_array)
+
+        # store every variable
+        for variable in self.metadata['varstr']:
+            deptemp = kernel.pixeldepths(variable)
+            if np.any(deptemp == None): # 2D variable
+                # update the kernel descriptions
+                varind = np.where(self.metadata['varstr']==variable)[0][0]+1
+                kerind = np.where(self.metadata['ivarkern']==varind)[0]
+                values = self.data.iloc[kerind]
+                if not sortbylon:
+                    arr=pd.DataFrame(np.vstack([lon_temp,lat_temp,siz_temp,values]).T,columns =['lon', 'lat', 'pxw','values'])
+                    arr = arr.sort_values(by=['lon','lat'])
+                    valuerow = arr['values'].values
+                else:
+                    valuerow = values.values
+                data_array = np.reshape(valuerow,(len(lat),len(lon)),order='F')
+                data_vars[variable]=(('latitude', 'longitude'), data_array)
+            else:
+                data_array = np.zeros((len(alldepths),len(lat),len(lon)))
+                # update the kernel descriptions
+                varind = np.where(self.metadata['varstr']==variable)[0][0]+1
+                kerind = np.where(self.metadata['ivarkern']==varind)[0]
+                if len(kerind) != len(deptemp): raise AssertionError('number of depths selected does not corrspong to the number of layers')
+                # find depth indices
+                dep_indx = np.searchsorted(alldepths,deptemp)
+
+                values = self.data.iloc[kerind]
+                for idep in progressbar(range(values.shape[0])):
+                    if not sortbylon:
+                        arr=pd.DataFrame(np.vstack([lon_temp,lat_temp,siz_temp,values.iloc[idep]]).T,columns =['lon', 'lat', 'pxw','values'])
+                        arr = arr.sort_values(by=['lon','lat'])
+                        valuerow = arr['values'].values
+                    else:
+                        valuerow = values.iloc[idep]
+                    data_array[dep_indx[idep],:,:] = np.reshape(valuerow,
+                                    (len(lat),len(lon)),order='F')
+                data_vars[variable]=(('depth','latitude', 'longitude'), data_array)
+
+        # get the grid sizes stored
+        ds = xr.Dataset(data_vars = data_vars,
+                        coords = {'depth':alldepths,'latitude':lat,'longitude':lon})
+
+        # exclude some fields from dataframe attributes
+        exclude = ['ityphpar','typehpar', 'hsplfile', 'xsipix', 'xlapix', 'xlopix','numvar', 'varstr', 'desckern', 'nmodkern', 'ivarkern','ihorpar', 'ncoefhor','ncoefcum', 'kernel_set','attrs']
+        for field in self.metadata.keys():
+            if field not in exclude:
+                ds.attrs[field] = self.metadata[field]
+        exclude = ['sh'] #exclude spherical harmonic coefficients
+        for variable in self.metadata['varstr']:
+            for field in self.metadata['attrs'][variable].keys():
+                if field not in exclude:
+                    ds[variable].attrs[field] = self.metadata['attrs'][variable][field]
+
+        # write to file
+        if outfile != None:
+            print('... writing netcdf4 file .... ')
+            # write to netcdf
+            comp = {'zlib': True, 'complevel': complevel}
+            encoding = {var: comp for var in ds.data_vars}
+            # change None to string since it cannot be stored in
+            for key in ds.attrs.keys():
+                if ds.attrs[key] is None: ds.attrs[key] = 'None'
+            for var in ds.data_vars:
+                for key in ds[var].attrs.keys():
+                    if ds[var].attrs[key] is None: ds[var].attrs[key] = 'None'
+            ds.to_netcdf(outfile,engine=engine,encoding=encoding)
+            print('... written netcdf4 file '+outfile)
+        return ds
+
+    def to_harmonics(self,lmax=40,variables=None):
+        if variables == None: variables = self.metadata['varstr']
+        variables = convert2nparray(variables)
+        check = self.metadata['typehpar']=='PIXELS'
+        if len(check) != 1 or not check[0]: raise IOError('cannot output harmonics for horizontal parameterizations : ',self.metadata['typehpar'])
+        # Convert to numpy array
+        namelist = ['latitude','longitude','value']
+        formatlist = ['f8','f8','f8']
+        dtype = dict(names = namelist, formats=formatlist)
+        epixarr = np.zeros((self.data.shape[1]),dtype=dtype)
+        epixarr['latitude'] = self.metadata['xlapix'][0]
+        epixarr['longitude'] = self.metadata['xlopix'][0]
+
+        coef=np.zeros((self.metadata['nmodkern'],(lmax+1)**2))
+        for ivar,field in enumerate(variables):
+            layers = np.where(self.metadata['ivarkern']==ivar+1)[0]
+            for ii,layer in enumerate(layers[:10]):
+                epixarr['value'] = self.data.iloc[layer].to_numpy()
+                shmatrix = convert_to_swp(epixarr,lmax=lmax)
+                row=[]
+                for ii in np.arange(len(shmatrix)):
+                    l = shmatrix['l'][ii]; m = shmatrix['m'][ii]
+                    if m==0:
+                        row.append(shmatrix['cos'][ii])
+                    else:
+                        row.append(shmatrix['cos'][ii])
+                        row.append(shmatrix['sin'][ii])
+                coef[layer]=row
+        self.harmonics = pd.DataFrame(coef)

@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from mpl_toolkits.basemap import Basemap
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
+from matplotlib.colors import LightSource
 #from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
 #                               AutoMinorLocator)
 #import multiprocessing
@@ -43,7 +44,7 @@ from .. import mapping
 from .. import tools
 from .. import data
 from .. import constants
-from .common import standardcolorpalette,updatefont
+from .common import initializecolor,updatefont
 
 ############################### PLOTTING ROUTINES ################################
 def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
@@ -167,7 +168,7 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = 
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=None,gridwidth=0, **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=None,gridwidth=0, shading= False,model=constants.topography,resolution='l',field='z', **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
 
@@ -200,32 +201,35 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
 
     outformat : format of the output file
 
+    resolution: of boundary database to use like in Basemap.
+                Can be c (crude), l (low), i (intermediate), h (high), f (full)
+
     kwargs : optional arguments for Basemap
     """
     # defaults
     if grid is None: grid=[30.,90.]
+    parallels = np.arange(-90.,90.,grid[0])
+    meridians = np.arange(-180.,180.,grid[1])
 
     # set up map
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
     else:
-        m = Basemap(ax=ax,projection='robin', lon_0=150, resolution='c')
+        projection='robin'
+        m = Basemap(ax=ax,projection='robin', lon_0=150, resolution=resolution)
     #clip_path = m.drawmapboundary()
     m.drawcoastlines(linewidth=1.5)
     # draw parallels and meridians.
     # label parallels on right and top
     # meridians on bottom and left
-    parallels = np.arange(-90.,90.,grid[0])
     # labels = [left,right,top,bottom]
-    m.drawparallels(parallels,labels=[True,False,False,False],linewidth=gridwidth)
-    meridians = np.arange(-180.,180.,grid[1])
-    m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth)
+    if not(m.projection  == 'hammer' and gridwidth == 0):
+        m.drawparallels(parallels,labels=[True,False,False,False],linewidth=gridwidth)
+        m.drawmeridians(meridians,labels=[False,False,False,True],linewidth=gridwidth)
 
     # Get the color map
-    try:
-        cpalette = plt.get_cmap(colorpalette)
-    except ValueError:
-        cpalette=standardcolorpalette(colorpalette)
+    cpalette = initializecolor(colorpalette)
+
     # define the 10 bins and normalize
     if isinstance(colorcontour,np.ndarray) or isinstance(colorcontour,list): # A list of boundaries for color bar
         if isinstance(colorcontour,list):
@@ -245,65 +249,102 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
         raise ValueError("Undefined colorcontour in globalmap; should be a numpy array, list or integer")
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
 
-    # plot the model
-    for ii in np.arange(len(valarray['lon'])):
-        if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
-    #numlon=len(np.unique(valarray['lon']))
-    #numlat=len(np.unique(valarray['lat']))
-    # grid spacing assuming a even grid
-    # Get the unique lat and lon spacing, avoiding repeated lat/lon
-    spacing_lat = np.ediff1d(np.sort(valarray['lat']))
-    spacing_lat = np.unique(spacing_lat[spacing_lat != 0])
-    spacing_lon = np.ediff1d(np.sort(valarray['lon']))
-    spacing_lon = np.unique(spacing_lon[spacing_lon != 0])
-    # Check if an unique grid spacing exists for both lat and lon
-    if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon):
-        print("Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation")
-        # compute native map projection coordinates of lat/lon grid.
-        #x, y = m(valarray['lon'], valarray['lat'])
-        rlatlon = np.vstack([np.ones(len(valarray['lon'])),valarray['lat'],valarray['lon']]).transpose()
-        xyz = mapping.spher2cart(rlatlon)
+    #################################################################
+    # perform the analysis based on expanded nparray or xarray
+    if type(valarray).__name__ == 'ndarray':
+        # plot the model
+        for ii in np.arange(len(valarray['longitude'])):
+            if valarray['longitude'][ii] > 180.: valarray['longitude'][ii]=valarray['longitude'][ii]-360.
+        #numlon=len(np.unique(valarray['lon']))
+        #numlat=len(np.unique(valarray['lat']))
+        # grid spacing assuming a even grid
+        # Get the unique lat and lon spacing, avoiding repeated lat/lon
+        spacing_lat = np.ediff1d(np.sort(valarray['latitude']))
+        spacing_lat = np.unique(spacing_lat[spacing_lat != 0])
+        spacing_lon = np.ediff1d(np.sort(valarray['longitude']))
+        spacing_lon = np.unique(spacing_lon[spacing_lon != 0])
+        # Check if an unique grid spacing exists for both lat and lon
+        if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon):
+            print("Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation")
+            # compute native map projection coordinates of lat/lon grid.
+            #x, y = m(valarray['lon'], valarray['lat'])
+            rlatlon = np.vstack([np.ones(len(valarray['longitude'])),valarray['latitude'],valarray['longitude']]).transpose()
+            xyz = mapping.spher2cart(rlatlon)
 
-        # Create a grid
-        grid_spacing = 1.
-        lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
-        lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
-        lons,lats=np.meshgrid(lon,lat)
+            # Create a grid
+            grid_spacing = 1.
+            lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
+            lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
+            lons,lats=np.meshgrid(lon,lat)
 
-        # evaluate in cartesian
-        rlatlon = np.vstack([np.ones_like(lons.flatten()),lats.flatten(),lons.flatten()]).transpose()
-        xyz_new = mapping.spher2cart(rlatlon)
+            # evaluate in cartesian
+            rlatlon = np.vstack([np.ones_like(lons.flatten()),lats.flatten(),lons.flatten()]).transpose()
+            xyz_new = mapping.spher2cart(rlatlon)
 
-        # grid the data.
-        val = spint.griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)
-        #s = m.transform_scalar(val,lon,lat, 1000, 500)
-        #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
-        im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+            # grid the data.
+            val = spint.griddata(xyz, valarray['value'], xyz_new, method='nearest').reshape(lons.shape)
+            #s = m.transform_scalar(val,lon,lat, 1000, 500)
+            #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+            #im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+            X = lons; Y = lats
+        else:
+            grid_spacing = spacing_lat
+            # Create a grid
+            lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
+            lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
+            X,Y=np.meshgrid(lon,lat)
+            val = np.empty_like(X)
+            val[:] = np.nan;
+            for i in range(0, valarray['latitude'].size):
+                # Get the indices
+                try: # if unique values exist
+                    ilon = np.where(X[0,:]==valarray['longitude'][i])[0][0]
+                    ilat = np.where(Y[:,0]==valarray['latitude'][i])[0][0]
+                except IndexError: # take nearest points if unique lat/lon not available
+                # This is a case when converting pix to epix.
+                    array = np.asarray(X[0,:])
+                    ilon = (np.abs(array - valarray['longitude'][i])).argmin()
+                    array = np.asarray(Y[:,0])
+                    ilat = (np.abs(array - valarray['latitude'][i])).argmin()
+                val[ilat,ilon] = valarray['value'][i]
+            #s = m.transform_scalar(val,lon,lat, 1000, 500)
+            #im=m.pcolormesh(grid_x,grid_y,s,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
+            #im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
+            #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+    elif type(valarray).__name__ == 'DataArray':
+        if valarray.dims[0] == 'longitude': valarray = valarray.T
+        val = valarray.data
+        X,Y = np.meshgrid(valarray['longitude'].data,valarray['latitude'].data)
 
     else:
-        grid_spacing = spacing_lat
-        # Create a grid
-        lat = np.arange(-90.+grid_spacing/2.,90.+grid_spacing/2.,grid_spacing)
-        lon = np.arange(-180.+grid_spacing/2.,180.+grid_spacing/2.,grid_spacing)
-        X,Y=np.meshgrid(lon,lat)
-        val = np.empty_like(X)
-        val[:] = np.nan;
-        for i in range(0, valarray['lat'].size):
-            # Get the indices
-            try: # if unique values exist
-                ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
-                ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
-            except IndexError: # take nearest points if unique lat/lon not available
-            # This is a case when converting pix to epix.
-                array = np.asarray(X[0,:])
-                ilon = (np.abs(array - valarray['lon'][i])).argmin()
-                array = np.asarray(Y[:,0])
-                ilat = (np.abs(array - valarray['lat'][i])).argmin()
-            val[ilat,ilon] = valarray['val'][i]
-        #s = m.transform_scalar(val,lon,lat, 1000, 500)
-        #im=m.pcolormesh(grid_x,grid_y,s,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
+        raise ValueError(type(valarray).__name__+' input type cannot be plotted by globalmap')
+
+    # plot based on shading option
+    if shading:
+        im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds,zorder=1)
+        # Illuminate the scene from the northwest
+        ls = LightSource(azdeg=315, altdeg=45)
+        plot = tools.readtopography(model=model,resolution=resolution,field=field,latitude_limits=[m.latmin,m.latmax],longitude_limits=[m.lonmin,m.lonmax])
+
+        #-- Optional dx and dy for accurate vertical exaggeration ----------------
+        # If you need topographically accurate vertical exaggeration, or you don't
+        # want to guess at what *vert_exag* should be, you'll need to specify the
+        # cellsize of the grid (i.e. the *dx* and *dy* parameters).  Otherwise, any
+        # *vert_exag* value you specify will be relative to the grid spacing of
+        # your input data (in other words, *dx* and *dy* default to 1.0, and
+        # *vert_exag* is calculated relative to those parameters).  Similarly, *dx*
+        # and *dy* are assumed to be in the same units as your input z-values.
+        # Therefore, we'll need to convert the given dx and dy from decimal degrees
+        # to meters.
+        dy = constants.deg2m.magnitude * np.mean(np.ediff1d(plot.lat.data))
+        dx = constants.deg2m.magnitude * np.mean(np.ediff1d(plot.lon.data))
+
+        data = ls.hillshade(plot.data, vert_exag=1000, dx=dx, dy=dy)
+        data_interp= m.transform_scalar(data, plot.lon.data, plot.lat.data, plot.shape[1], plot.shape[0])
+        m.imshow(data_interp, cmap='gray',interpolation='bilinear', alpha=.4,zorder=2)
+    else:
         im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
-        #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+
     # add plates and hotspots
     dbs_path=tools.get_fullpath(dbs_path)
     plot_plates(m, dbs_path=dbs_path, color='w', linewidth=1.5)
@@ -541,7 +582,7 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = None,r_labels = 
     return ax1, aux_ax
 
 
-def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tree=None,dbs_path=tools.get_filedir(),numeval=50,stride=10,nearest=1):
+def gettopotransect(lat1,lng1,azimuth,gcdelta,model=constants.topography, tree=None,dbs_path=tools.get_filedir(),numeval=50,resolution='l',nearest=1):
     """
     Get the topography transect.
 
@@ -562,16 +603,12 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
 
     # Get KD tree
     if tree == None and isinstance(model,string_types):
-        treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.stride'+str(stride)+'.pkl'
+        treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.'+resolution+'.pkl'
         ncfile = dbs_path+'/'+model
         if not os.path.isfile(ncfile): data.update_file(model)
-        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],stride=stride,radius_in_km=constants.R.to('km').magnitude)
+        tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],resolution=resolution,radius_in_km=constants.R.to('km').magnitude)
         #read values
-        if os.path.isfile(ncfile):
-            f = xr.open_dataset(ncfile)
-        else:
-            raise ValueError("Error: Could not find file "+ncfile)
-        model = f.variables['z'][::stride,::stride]
+        model = tools.readtopography(model=model,resolution=resolution,field = 'z', dbs_path=dbs_path)
         vals = model.data.flatten(order='C')
     else:
         #read topography file
@@ -589,18 +626,18 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model='ETOPO1_Bed_g_gmt4.grd', tre
     evalpoints=np.column_stack((constants.R.to('km').magnitude*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
 
     # get the interpolation
-    valselect = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
+    valselect,_ = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
 
     #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
     return valselect,model,tree
 
 def plottopotransect(ax,theta_range,elev,vexaggerate=150):
     """Plot a section on the axis ax. """
-    elevplot1=np.array(elev)
-    elevplot2=np.array(elev)
+    elevplot1=elev.toarray().ravel()
+    elevplot2=elev.toarray().ravel()
     # Blue for areas below sea level
-    if np.min(elev)<0.:
-        lowerlimit=constants.R.to('km').magnitude-np.min(elev)/1000.*vexaggerate
+    if elev.min()<0.:
+        lowerlimit=constants.R.to('km').magnitude-elev.min()/1000.*vexaggerate
         elevplot2[elevplot2>0.]=0.
         ax.fill_between(theta_range, lowerlimit*np.ones(len(theta_range)),lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,facecolor='aqua', alpha=0.5)
         ax.plot(theta_range,lowerlimit*np.ones(len(theta_range))+elevplot2/1000.*vexaggerate,'k',linewidth=0.5)
@@ -660,12 +697,12 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
 
     # get the interpolation
     npts_surf = len(coords)
-    tomovals = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
+    tomovals,_ = tools.querytree3D(tree,evalpoints[:,1],evalpoints[:,2],evalpoints[:,0],vals,nearest=nearest)
     xsec = tomovals.reshape(npts_surf,len(radevalarr),order='F')
 
     return xsec.T,model,tree
 
-def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,width_ratios=None,numevalx=200,numevalz=300,nearest=10,topo='ETOPO1_Bed_g_gmt4.grd',topotree=None,hotspots=False,plates=False):
+def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,width_ratios=None,numevalx=200,numevalz=300,nearest=10,topo=constants.topography,resolution='l',topotree=None,hotspots=False,plates=False):
     """Plot one section through the Earth through a pair of points."""
     #defaults
     if radii is None: radii=[3480.,6346.6]
@@ -703,11 +740,11 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
     if vexaggerate != 0:
-        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,stride=10,nearest=1)
-        if min(elev)< 0.:
-            extend_radius=(max(elev)-min(elev))*vexaggerate/1000.
+        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,resolution=resolution,nearest=1)
+        if elev.min()< 0.:
+            extend_radius=(elev.max()-elev.min())*vexaggerate/1000.
         else:
-            extend_radius=max(elev)*vexaggerate/1000.
+            extend_radius=elev.max()*vexaggerate/1000.
 
     # Start plotting
     if gcdelta < 360.0:
@@ -765,17 +802,14 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     #grid_x_zoom, grid_y_zoom = np.meshgrid(np.linspace(theta[0],theta[1],numevalx*zoom),np.linspace(radii[0],radii[1],numevalz*zoom))
 
     # Get the color map
-    try:
-        cpalette = plt.get_cmap(colorpalette)
-    except ValueError:
-        cpalette=standardcolorpalette(colorpalette)
+    cpalette = initializecolor(colorpalette)
 
     interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
 
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
-    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
+    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values.toarray(),cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
     # add a colorbar
     #levels = MaxNLocator(nbins=colorcontour).tick_values(interp_values.min(), interp_values.max())
     #dx = (theta[1]-theta[0])/(numevalx-1); dy = (radii[1]-radii[0])/(numevalz-1)
@@ -815,7 +849,6 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
 #         plt.setp(cbarytks, visible=False)
     return fig,topo,topotree,model,modeltree
 
-
 def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,figuresize=None,outfile=None,**kwargs):
     """Plot one section through the Earth through a pair of points."""
     #defaults
@@ -833,14 +866,14 @@ def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,figuresize=N
     plt.close('all')
     return topo,topotree,model,modeltree
 
-def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',ifshow=False):
+def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',shading=False,ifshow=False):
     """Plot one global map"""
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
     if projection=='ortho':
-        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
+        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette,shading=shading)
     else:
-        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
+        globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette,shading=shading)
     if ifshow: plt.show()
     fig.savefig(modelname+outformat,dpi=300)
     return
@@ -880,20 +913,31 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
     if height_ratios is None: height_ratios=[2, 2, 1]
     if zoomdepth is None: zoomdepth=[0.,1000.]
 
-    depthkmarr = (constants.R - ref1d.data['radius'])/1000. # in km
+    # extract values
+    depthkmarr = (constants.R-ref1d.data['radius']).pint.to('km').values.quantity.magnitude
+    rho = ref1d.data['rho'].pint.to('g/cm^3').values.quantity.magnitude
+    vs = ref1d.data['vs'].pint.to('km/s').values.quantity.magnitude
+    vp = ref1d.data['vp'].pint.to('km/s').values.quantity.magnitude
+    vsv = ref1d.data['vsv'].pint.to('km/s').values.quantity.magnitude
+    vsh = ref1d.data['vsh'].pint.to('km/s').values.quantity.magnitude
+    vpv = ref1d.data['vpv'].pint.to('km/s').values.quantity.magnitude
+    vph = ref1d.data['vph'].pint.to('km/s').values.quantity.magnitude
+    eta = ref1d.data['eta'].values.quantity.magnitude
+    qmu = ref1d.data['qmu'].values.quantity.magnitude
+
     #Set default fontsize for plots
     updatefont(10)
     fig = plt.figure(1, figsize=(figuresize[0],figuresize[1]))
     gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios)
     fig.patch.set_facecolor('white')
     ax01=plt.subplot(gs[0])
-    ax01.plot(depthkmarr,ref1d.data['rho']/1000.,'k')
-    ax01.plot(depthkmarr,ref1d.data['vsv']/1000.,'b')
-    ax01.plot(depthkmarr,ref1d.data['vsh']/1000.,'b:')
-    ax01.plot(depthkmarr,ref1d.data['vpv']/1000.,'r')
-    ax01.plot(depthkmarr,ref1d.data['vph']/1000.,'r:')
+    ax01.plot(depthkmarr,rho,'k')
+    ax01.plot(depthkmarr,vsv,'b')
+    ax01.plot(depthkmarr,vsh,'b:')
+    ax01.plot(depthkmarr,vpv,'r')
+    ax01.plot(depthkmarr,vph,'r:')
     mantle=np.where( depthkmarr < 2891.)
-    ax01.plot(depthkmarr[mantle],ref1d.data['eta'][mantle],'g')
+    ax01.plot(depthkmarr[mantle],eta[mantle],'g')
     ax01.set_xlim([0., constants.R.to('km').magnitude])
     ax01.set_ylim([0, 14])
 
@@ -923,20 +967,20 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
 
     ax11=plt.subplot(gs[1])
     depthselect=np.intersect1d(np.where( depthkmarr >= zoomdepth[0]),np.where( depthkmarr <= zoomdepth[1]))
-    ax11.plot(depthkmarr[depthselect],ref1d.data['rho'][depthselect]/1000.,'k')
+    ax11.plot(depthkmarr[depthselect],rho[depthselect],'k')
     if isotropic:
-        ax11.plot(depthkmarr[depthselect],ref1d.data['vs'][depthselect]/1000.,'b')
+        ax11.plot(depthkmarr[depthselect],vs[depthselect],'b')
     else:
-        ax11.plot(depthkmarr[depthselect],ref1d.data['vsv'][depthselect]/1000.,'b')
-        ax11.plot(depthkmarr[depthselect],ref1d.data['vsh'][depthselect]/1000.,'b:')
+        ax11.plot(depthkmarr[depthselect],vsv[depthselect],'b')
+        ax11.plot(depthkmarr[depthselect],vsh[depthselect],'b:')
     ax12 = ax11.twinx()
     if isotropic:
-        ax12.plot(depthkmarr[depthselect],ref1d.data['vp'][depthselect]/1000.,'r')
+        ax12.plot(depthkmarr[depthselect],vp[depthselect],'r')
     else:
-        ax12.plot(depthkmarr[depthselect],ref1d.data['vpv'][depthselect]/1000.,'r')
-        ax12.plot(depthkmarr[depthselect],ref1d.data['vph'][depthselect]/1000.,'r:')
+        ax12.plot(depthkmarr[depthselect],vpv[depthselect],'r')
+        ax12.plot(depthkmarr[depthselect],vph[depthselect],'r:')
 
-    ax11.plot(depthkmarr[depthselect],ref1d.data['eta'][depthselect],'g')
+    ax11.plot(depthkmarr[depthselect],eta[depthselect],'g')
     ax11.set_xlim(zoomdepth)
     ax11.set_ylim([0, 7])
     ax12.set_xlim(zoomdepth)
@@ -960,8 +1004,8 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
 
     ax21=plt.subplot(gs[2], sharex=ax11)
     with np.errstate(divide='ignore', invalid='ignore'): # Ignore warning about dividing by zero
-        anisoVs=(ref1d.data['vsh']-ref1d.data['vsv'])*200./(ref1d.data['vsh']+ref1d.data['vsv'])
-    anisoVp=(ref1d.data['vph']-ref1d.data['vpv'])*200./(ref1d.data['vph']+ref1d.data['vpv'])
+        anisoVs=(vsh-vsv)*200./(vsh+vsv)
+    anisoVp=(vph-vpv)*200./(vph+vpv)
     ax21.plot(depthkmarr[depthselect],anisoVs[depthselect],'b')
     ax21.plot(depthkmarr[depthselect],anisoVp[depthselect],'r')
     ax21.set_ylim([0, 5])
@@ -981,7 +1025,7 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
 
 
     ax22 = ax21.twinx()
-    ax22.plot(depthkmarr[depthselect],ref1d.data['Qmu'][depthselect],'k')
+    ax22.plot(depthkmarr[depthselect],qmu[depthselect],'k')
     ax21.set_xlabel('Depth (km)')
     ax21.set_ylabel("$V_P$"+' or '+"$V_S$"+' anisotropy (%)')
     ax22.set_ylabel('Shear attenuation Q'+'$_{\mu}$')

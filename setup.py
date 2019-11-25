@@ -44,7 +44,7 @@ if F90 == "ifort":
     omp_lib = ["-liomp5"]
 
 elif F90 == "gfortran":
-    f90_flags = ["-fopenmp", "-fPIC", "-O3", "-fbounds-check",
+    f90_flags = ["-libmil","-fopenmp", "-fPIC", "-O3", "-fbounds-check",
                  "-ffixed-line-length-none"]
     omp_lib = ["-lgomp"]
 
@@ -153,12 +153,11 @@ metadata = dict(name = 'rem3d',
                 license='GPL',
                 packages = packagelist,
                 ext_modules = extf,
-                install_requires=['fortranformat==0.2.5',
+                install_requires=['fortranformat==0.2.5','numba>=0.45.0',
                 'progressbar2==3.38.0','requests==2.20.1','future==0.16.0',
-                'msgpack==0.5.6','pint==0.8.1','h5py==2.8.0',
-                'pygeodesy','argparse',
-                'matplotlib','xarray','configobj',
-                'joblib','pandas','scipy','numpy'],
+                'msgpack==0.5.6','h5py>=2.9.0','matplotlib==2.2.2',
+                'pygeodesy','argparse','xarray','configobj',
+                'joblib','pandas','scipy','numpy','pint'],
                 data_files=[('rem3d', ['README.md']),
                 ('rem3d/config',['rem3d/config/attributes.ini','rem3d/config/planets.ini','rem3d/config/units.ini'])],
                 keywords = ['earth-science','earth-observation','earthquake',

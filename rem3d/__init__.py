@@ -26,4 +26,4 @@ for importer, modname, ispkg in pkgutil.walk_packages(path=__path__, prefix=__na
 tools.appendunits(constants.ureg)
 
 # initialize the constants for planet Earth by default
-tools.getplanetconstants('Earth')
+mapping.getplanetconstants('Earth')

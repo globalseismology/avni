@@ -17,6 +17,7 @@ cptfolder = 'CPT'
 #Mapping constants
 planetconstants = 'planets.ini'
 planetpreferred = 'Earth'
+topography = 'ETOPO1_Bed_g_gmt4.grd'
 
 #Attribute information for the parameterizations
 attributes = 'attributes.ini'

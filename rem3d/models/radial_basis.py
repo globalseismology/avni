@@ -11,7 +11,7 @@ from .. import tools
 from .. import constants
 #######################################################################################
 
-# Vertical basis parameter class that defines an unique combination of functions, their radial parameterization and any scaling
+# Vertical basis parameter class that defines an unique combination of functions, their radial parameterization
 
 class Radial_basis(object):
     '''
@@ -32,6 +32,8 @@ class Radial_basis(object):
         attributes: a dictionary containing variables used to define this particular type
                     e.g. knots for vbspl. Checked that these are defined using self.check.
     '''
+    #########################       magic       ##########################
+
     def __init__(self,name,types,metadata=None):
         self.data = {}
         self.data['depths_in_km'] = None
@@ -45,6 +47,32 @@ class Radial_basis(object):
             self.metadata = metadata
         # Check if all required atributes are available
         self.check()
+
+    def __eq__(self, other):
+
+        # convert to array to allow multiple lateral bases to be compared
+        other = tools.common.convert2nparray(other)
+        result = np.ones_like(other, dtype=bool)
+
+        # check if the instances have all required metadata
+        self.check()
+        for indx,oth in enumerate(other):
+            try:
+                oth.check()
+            except AttributeError: # if either is not this class instance
+                result[indx] = False
+
+            # check type
+            if self.type != oth.type: result[indx] = False
+
+            # check all keys
+            for key in self.metadata.keys():
+                if not np.array_equal(self.metadata[key],oth.metadata[key]): result[indx] = False
+        # assume equal otherwise
+        return result[0] if len(result)==1 else result
+
+
+    #########################       methods       #############################
 
     def add_attribute(self,key,value):
         """
@@ -136,11 +164,3 @@ class Radial_basis(object):
             self.data['depths_in_km'] = depths
         else:
             return vercof,dvercof
-
-    def project_boxdepth(self,depth_range):
-        """
-        Project from current vertical basis to a vertical boxcar basis
-        depth_range is named numpy array of top and bottom depths
-        """
-
-

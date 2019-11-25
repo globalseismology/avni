@@ -11,11 +11,11 @@ if (sys.version_info[:2] < (3, 0)):
 
 import numpy as np #for numerical analysis
 from scipy import sparse
+import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .lateral_basis import Lateral_basis
 from .radial_basis import Radial_basis
-from .common import radial_attributes
 from .. import tools
 #######################################################################################
 
@@ -103,8 +103,10 @@ class Kernel_set(object):
                 if not found: raise ValueError('information not found for '+radker)
         self.data['radial_basis']=radial
 
-    def getprojection(self,latitude,longitude,depth_in_km,parameter='(SH+SV)*0.5'):
-
+    def find_radial(self,parameter):
+        """
+        find radial indices of a given physical parameter
+        """
         # all the parameter options
         stringsum = self.metadata['varstr'][0]
         for stri in self.metadata['varstr'][1:]: stringsum= stringsum+', '+stri
@@ -112,35 +114,60 @@ class Kernel_set(object):
         # select the radial kernels for this parameter
         dt = np.dtype([('index', np.int), ('kernel', np.unicode_,50)])
         ivarfind =np.where(self.metadata['varstr']==parameter)[0]
-        if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in eval_kernel_set among: '+stringsum+'. Only '+str(len(ivarfind))+' found for parameter '+parameter)
+        if not len(ivarfind) == 1: raise AssertionError('only one parameter can be selected in evaluate_bases among: '+stringsum+'. Only '+str(len(ivarfind))+' found for parameter '+parameter)
         findrad = np.array([(ii, self.metadata['desckern'][ii]) for ii in np.arange(len(self.metadata['ivarkern'])) if ivarfind[0]+1 == self.metadata['ivarkern'][ii]],dtype=dt)
+        return findrad
+
+    def evaluate_bases(self,parameter,latitude = None,longitude= None,depth_in_km = None):
+        """
+        depth_in_km : depth in km where the projection matrix is needed.
+                      If None, returns the projection matrix for the lat/lon
+                      and radial basis as a dirac delta.
+        """
+
+        # find radial indices of a given physical parameter
+        findrad = self.find_radial(parameter)
 
         # select corresponding lateral bases
         lateral_basis = self.data['lateral_basis']
         try:
-            lateral_select = Lateral_basis[self.metadata['ihorpar']-1][findrad['index']]
+            lateral_select = lateral_basis[self.metadata['ihorpar']-1][findrad['index']]
         except:
             raise ValueError('ihorpar needs to be defined for a kernel set. The HPAR for each radial kernel')
 
+        # check if lateral paramterization is same across all radial kernels
+        if not np.all(lateral_select == lateral_select[0]): return NotImplementedError('All lateral parameterizations for a given physical parameter need to be the same. The alternative has not been implemented yet')
+
+        # evaluate the horizontal param at these locations
+        if latitude is None or longitude is None:
+            horcof = None
+        else:
+            latitude = tools.common.convert2nparray(latitude)
+            longitude = tools.common.convert2nparray(longitude)
+            horcof = lateral_select[0].eval_lateral(latitude,longitude)
+
         #make sure only one variable is selected based on parameter input
         variables = np.unique(self.metadata['varstr'][self.metadata['ivarkern']-1][findrad['index']])
-        if not len(variables) == 1: raise AssertionError('only one parameter, not '+str(len(variables))+', can be selected in eval_kernel_set from: '+stringsum)        # select radial bases for this variable
+        if not len(variables) == 1: raise AssertionError('only one parameter, not '+str(len(variables))+', can be selected in evaluate_bases')        # select radial bases for this variable
         radial_select = self.data['radial_basis'][variables[0]]
 
-        #initialize a projection matrix
-        proj = sparse.csr_matrix((1,self.metadata['ncoefcum'][-1]))
-        # loop over all radial kernels that belong to this parameter and add up
-        for ii in np.arange(len(radial_select)):
-            # start and end of indices to write to
-            indend = self.metadata['ncoefcum'][findrad['index'][ii]]-1
-            if findrad['index'][ii] == 0:
-                indstart = 0
-            else:
-                indstart = self.metadata['ncoefcum'][findrad['index'][ii]-1]
-            vercof, _ = radial_select[ii].eval_radial(depth_in_km)
-            # convert to numpy arrays
-            vercof = tools.convert2nparray(vercof)
-            if vercof[ii] != 0.:
-                horcof = lateral_select[ii].eval_lateral(latitude,longitude)
-                proj=proj+sparse.csr_matrix( (horcof.data*vercof[ii],horcof.indices+indstart,horcof.indptr), shape=(1,self.metadata['ncoefcum'][-1]))
-        return proj
+        # check if lateral paramterization is same across all radial kernels
+        if not np.all(radial_select == radial_select[0]): return NotImplementedError('All radial parameterizations for a given physical parameter need to be the same. The alternative has not been implemented yet')
+
+        # evaluate the radial param at these depths
+        if depth_in_km is None:
+            vercof = None
+        else:
+            vercof, _ = radial_select[0].eval_radial(depth_in_km)
+        return horcof, vercof
+
+    def pixeldepths(self,parameter):
+        typehpar = self.data['lateral_basis']
+        if not len(typehpar) == 1: raise AssertionError('only one type of horizontal parameterization allowed',)
+        if not typehpar[0].type == 'PIXELS': raise AssertionError('Only PIXELS allowed, not '+typehpar[0].type)
+        kernel_param = self.data['radial_basis'][parameter]
+        depths = []
+        for index,radker in enumerate(kernel_param):
+            if  'depthtop' in radker.metadata.keys() and 'depthbottom' in radker.metadata.keys():
+                depths.append((radker.metadata['depthtop'][index]+radker.metadata['depthbottom'][index])/2.)
+        return np.asarray(depths) if len(depths) > 0 else None

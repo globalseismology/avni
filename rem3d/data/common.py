@@ -45,7 +45,7 @@ def creation_date(path_to_file):
         # so we'll settle for when its content was last modified.
     return datetime.utcfromtimestamp(stat.st_mtime)
 
-def update_file(file,folder=tools.get_filedir()):
+def update_file(file,folder=tools.get_filedir(),baseurl = constants.downloadpage):
     """
     If the REM3D server contain a downloadable resource that is newer,
     download it locally.
@@ -56,7 +56,7 @@ def update_file(file,folder=tools.get_filedir()):
     file: full path and name of the file to sync with REM3D servers
     """
     localfile = folder+'/'+file
-    url = constants.downloadpage + '/'+file
+    url = baseurl + '/'+file
     h = requests.head(url, allow_redirects=True)
     download=False
     if h.status_code == 404:

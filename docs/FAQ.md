@@ -1,5 +1,5 @@
 Frequently Asked Questions
---------------------------
+==========================
 
   1. [General](#general)  
     * [Is it free?](#is-it-free)  
