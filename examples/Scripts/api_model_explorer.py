@@ -71,6 +71,15 @@ def main():
     args['model']='S40RTS'
     xs=ModelInstance.crossSection(args)
 
+    # get some depth profiles
+    print("\ndepth profile with defaults")
+    args={'lat':42.2,'lon':232.0}
+    depth_profile=ModelInstance.depthProfile(args)
+
+    print("\ndepth profile specified depth range")
+    args={'lat':-21.2,'lon':150.0,'depthMin':50,'depthMax':250,'N_depth':10}
+    depth_profile_2=ModelInstance.depthProfile(args)
+
 
 if __name__== "__main__":
     main()

@@ -112,12 +112,55 @@ class Model(object):
                 return_numpy=True
                 args[arg]=args[arg].tolist()
             args[arg]=json.dumps({'vals':args[arg]})
-        print(args)
+
         result=json.loads(self.r3dc.call(self.endpoint,args,5*60))
         if result['call_complete']:
             if return_numpy:
                 param=result['parameter']
                 result[param]=np.asarray(result[param])
+
+        return result
+
+    def depthProfile(self,args_in={},return_numpy=True):
+        '''
+        Evaluates a depth profile centered on provided lat/lon for a given
+        parameter ('vs')
+
+        Input parameters:
+        ----------------
+        args_in: dictionary of arguments:
+
+            required args:
+                'lat': latitude in degrees
+                'lon': longitude in degrees
+
+                lat, lon and depth are scalars
+
+            optional args (default):
+                'N_depth': depth in km, integer (100)
+                'depthMin': min depth, float (0.)
+                'depthMax': max depth, float (2890)
+                'model': model to use, string ('S362ANI+M')
+                'kernel': model to use, string ('BOX25km_PIX1X1')
+                'parameter': parameter to fetch, string ('vs')
+                'interpolated': 1/0 for interpolation with KdTree (1)
+
+                model+kernel must match a model file.  (see listModels() method)
+
+        Output:
+        ------
+
+        result: dictionary with numpy array of parameter, depth
+        '''
+        args_in['task']='depthProfile'
+        args_in['key']=self.r3dc.key
+        result=json.loads(self.r3dc.call(self.endpoint,args_in,5*60))
+
+        if result['call_complete']:
+            if return_numpy:
+                param=result['parameter']
+                result[param]=np.asarray(result[param])
+                result['depth']=np.asarray(result['depth'])
 
         return result
 
