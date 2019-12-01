@@ -17,7 +17,7 @@ import argparse
 
 def main():
     # parse
-    parser = argparse.ArgumentParser(description='f2py calls via API')
+    parser = argparse.ArgumentParser(description='predict travel times via API')
     parser.add_argument('-k', '--key', type=str,default='',help='api key')
     arg = parser.parse_args()
 
@@ -39,7 +39,7 @@ def main():
     print("\nPhase List")
     print(phases)
 
-    args={'dist_deg':5,'source_depth_km':80,'phase':'PP'}
+    args={'dist_deg':5,'source_depth_km':80,'phase':'PP','model':'NREM1D_voigt_tt_table.h5'}
     print("\npredicting travel time for ")
     print(args)
     res=TT_Instance.predictPaths(args)

@@ -17,7 +17,7 @@ import argparse
 
 def main():
     # parse
-    parser = argparse.ArgumentParser(description='f2py calls via API')
+    parser = argparse.ArgumentParser(description='some model api calls')
     parser.add_argument('-k', '--key', type=str,default='',help='api key')
     arg = parser.parse_args()
 
