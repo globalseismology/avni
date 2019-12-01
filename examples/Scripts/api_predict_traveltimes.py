@@ -34,6 +34,17 @@ def main():
     print("\nModel List")
     print(model_list)
 
+    # list available phases
+    phases=TT_Instance.listPhases()
+    print("\nPhase List")
+    print(phases)
+
+    args={'dist_deg':5,'source_depth_km':80,'phase':'PP'}
+    print("\npredicting travel time for ")
+    print(args)
+    res=TT_Instance.predictPaths(args)
+    print("predicted travel time: "+str(res['ttime']))
+
 
 if __name__== "__main__":
     main()
