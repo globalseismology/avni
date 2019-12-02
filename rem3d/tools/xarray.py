@@ -25,6 +25,45 @@ from .common import precision_and_scale,convert2nparray
 from ..tools import decimals,get_filedir
 #######################################################################################
 
+def xarray_to_epix(data,latname = 'latitude', lonname = 'longitude'):
+    # check if it is a compatible dataarray
+    ierror,pix,shape = checkxarray(data,latname, lonname)
+
+    if data.dims[0] == latname:
+        values = data.T.data.ravel()
+        nlat = data.shape[0]; nlon = data.shape[1]
+    else:
+        values = data.data.ravel()
+        nlat = data.shape[1]; nlon = data.shape[0]
+    lons = np.repeat(data[lonname].data,nlat)
+    lats = np.tile(data[latname].data,nlon)
+    pixsize = pix*np.ones_like(lons)
+    epixarr = np.vstack((lats,lons,pixsize,values)).T
+    dt = {'names':[latname, lonname,'pixel_size','value'], 'formats':[np.float, np.float,np.float,np.float]}
+    epixarr = np.zeros(len(lats),dtype=dt)
+    epixarr[latname] = lats
+    epixarr[lonname] = lons
+    epixarr['pixel_size'] = pixsize
+    epixarr['value'] = values
+    return epixarr
+
+def epix_to_xarray(epixarr,latname = 'latitude', lonname = 'longitude'):
+    lonspace = np.setdiff1d(np.unique(np.ediff1d(np.sort(epixarr[lonname]))),[0.])
+    latspace = np.setdiff1d(np.unique(np.ediff1d(np.sort(epixarr[latname]))),[0.])
+    if not(len(lonspace) == len(lonspace) == 1): raise AssertionError('not(len(lonspace) == len(lonspace) == 1)')
+    spacing = lonspace[0]
+    latitude = np.arange(-90.+spacing/2.,90.,1.)
+    longitude = np.arange(0.+spacing/2.,360.,1.)
+    outarr = xr.DataArray(np.zeros((len(latitude),len(longitude))),
+                    dims=[latname, lonname],
+                    coords={latname:latitude,lonname:longitude})
+    for ii, lat in enumerate(epixarr[latname]):
+        lon = epixarr[lonname][ii]
+        val = epixarr['value'][ii]
+        if spacing != epixarr['pixel_size'][ii]: raise ValueError('spacing != epixarr[pixel_size]')
+        outarr.loc[dict(latitude=lat,longitude=lon)] = val
+    return outarr
+
 def tree3D(treefile,latitude=None,longitude=None,radius_in_km=None):
     #Build the tree if none is provided
     if os.path.isfile(treefile):
@@ -262,12 +301,12 @@ def areaxarray(data,latname = 'latitude', lonname = 'longitude',pix_width=None):
             dlat = dlon = pix
             ifind = int((90.0-0.5*dlat-xlat)/dlat)
             if ifind not in area.keys():
-                nlon = int(180./pix)
+                nlon = int(360./pix)
                 area[ifind] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
             areaarray[ifind,:]=area[ifind]
         else:
             for icol in range(len(pix_width[lonname])):
-                nlon = int(180./pix_width[irow,icol])
+                nlon = int(360./pix_width[irow,icol])
                 dlat = dlon = pix_width[irow,icol].item()
                 areaarray[irow,icol] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
 

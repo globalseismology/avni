@@ -22,6 +22,8 @@ from progressbar import progressbar
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .common import read3dmodelfile
+from ..tools import convert_to_swp,convert2nparray
+from .kernel_set import Kernel_set
 #######################################################################################
 class Realization(object):
     '''
@@ -85,6 +87,11 @@ class Realization(object):
                 print(var2)
                 success = False
         if success: self._infile = file
+        # try to get the kernel set
+        try:
+            self.metadata['kernel_set'] = Kernel_set(self.metadata)
+        except:
+            print('Warning: kernel_set could not initialized for '+str(resolution))
 
     def readascii(self,modelfile):
         """
@@ -291,7 +298,18 @@ class Realization(object):
         for variable in self.metadata['varstr']:
             deptemp = kernel.pixeldepths(variable)
             if np.any(deptemp == None): # 2D variable
-                raise NotImplementedEddor('this feature is not available for 2D parameters '+variable)
+                # update the kernel descriptions
+                varind = np.where(self.metadata['varstr']==variable)[0][0]+1
+                kerind = np.where(self.metadata['ivarkern']==varind)[0]
+                values = self.data.iloc[kerind]
+                if not sortbylon:
+                    arr=pd.DataFrame(np.vstack([lon_temp,lat_temp,siz_temp,values]).T,columns =['lon', 'lat', 'pxw','values'])
+                    arr = arr.sort_values(by=['lon','lat'])
+                    valuerow = arr['values'].values
+                else:
+                    valuerow = values.values
+                data_array = np.reshape(valuerow,(len(lat),len(lon)),order='F')
+                data_vars[variable]=(('latitude', 'longitude'), data_array)
             else:
                 data_array = np.zeros((len(alldepths),len(lat),len(lon)))
                 # update the kernel descriptions
@@ -322,9 +340,11 @@ class Realization(object):
         for field in self.metadata.keys():
             if field not in exclude:
                 ds.attrs[field] = self.metadata[field]
+        exclude = ['sh'] #exclude spherical harmonic coefficients
         for variable in self.metadata['varstr']:
             for field in self.metadata['attrs'][variable].keys():
-                ds[variable].attrs[field] = self.metadata['attrs'][variable][field]
+                if field not in exclude:
+                    ds[variable].attrs[field] = self.metadata['attrs'][variable][field]
 
         # write to file
         if outfile != None:
@@ -341,3 +361,33 @@ class Realization(object):
             ds.to_netcdf(outfile,engine=engine,encoding=encoding)
             print('... written netcdf4 file '+outfile)
         return ds
+
+    def to_harmonics(self,lmax=40,variables=None):
+        if variables == None: variables = self.metadata['varstr']
+        variables = convert2nparray(variables)
+        check = self.metadata['typehpar']=='PIXELS'
+        if len(check) != 1 or not check[0]: raise IOError('cannot output harmonics for horizontal parameterizations : ',self.metadata['typehpar'])
+        # Convert to numpy array
+        namelist = ['latitude','longitude','value']
+        formatlist = ['f8','f8','f8']
+        dtype = dict(names = namelist, formats=formatlist)
+        epixarr = np.zeros((self.data.shape[1]),dtype=dtype)
+        epixarr['latitude'] = self.metadata['xlapix'][0]
+        epixarr['longitude'] = self.metadata['xlopix'][0]
+
+        coef=np.zeros((self.metadata['nmodkern'],(lmax+1)**2))
+        for ivar,field in enumerate(variables):
+            layers = np.where(self.metadata['ivarkern']==ivar+1)[0]
+            for ii,layer in enumerate(layers[:10]):
+                epixarr['value'] = self.data.iloc[layer].to_numpy()
+                shmatrix = convert_to_swp(epixarr,lmax=lmax)
+                row=[]
+                for ii in np.arange(len(shmatrix)):
+                    l = shmatrix['l'][ii]; m = shmatrix['m'][ii]
+                    if m==0:
+                        row.append(shmatrix['cos'][ii])
+                    else:
+                        row.append(shmatrix['cos'][ii])
+                        row.append(shmatrix['sin'][ii])
+                coef[layer]=row
+        self.harmonics = pd.DataFrame(coef)

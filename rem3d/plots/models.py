@@ -253,22 +253,22 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
     # perform the analysis based on expanded nparray or xarray
     if type(valarray).__name__ == 'ndarray':
         # plot the model
-        for ii in np.arange(len(valarray['lon'])):
-            if valarray['lon'][ii] > 180.: valarray['lon'][ii]=valarray['lon'][ii]-360.
+        for ii in np.arange(len(valarray['longitude'])):
+            if valarray['longitude'][ii] > 180.: valarray['longitude'][ii]=valarray['longitude'][ii]-360.
         #numlon=len(np.unique(valarray['lon']))
         #numlat=len(np.unique(valarray['lat']))
         # grid spacing assuming a even grid
         # Get the unique lat and lon spacing, avoiding repeated lat/lon
-        spacing_lat = np.ediff1d(np.sort(valarray['lat']))
+        spacing_lat = np.ediff1d(np.sort(valarray['latitude']))
         spacing_lat = np.unique(spacing_lat[spacing_lat != 0])
-        spacing_lon = np.ediff1d(np.sort(valarray['lon']))
+        spacing_lon = np.ediff1d(np.sort(valarray['longitude']))
         spacing_lon = np.unique(spacing_lon[spacing_lon != 0])
         # Check if an unique grid spacing exists for both lat and lon
         if len(spacing_lon)!=1 or len(spacing_lat)!=1 or np.any(spacing_lat!=spacing_lon):
             print("Warning: spacing for latitude and longitude should be the same. Using nearest neighbor interpolation")
             # compute native map projection coordinates of lat/lon grid.
             #x, y = m(valarray['lon'], valarray['lat'])
-            rlatlon = np.vstack([np.ones(len(valarray['lon'])),valarray['lat'],valarray['lon']]).transpose()
+            rlatlon = np.vstack([np.ones(len(valarray['longitude'])),valarray['latitude'],valarray['longitude']]).transpose()
             xyz = mapping.spher2cart(rlatlon)
 
             # Create a grid
@@ -282,7 +282,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
             xyz_new = mapping.spher2cart(rlatlon)
 
             # grid the data.
-            val = spint.griddata(xyz, valarray['val'], xyz_new, method='nearest').reshape(lons.shape)
+            val = spint.griddata(xyz, valarray['value'], xyz_new, method='nearest').reshape(lons.shape)
             #s = m.transform_scalar(val,lon,lat, 1000, 500)
             #im = m.imshow(s, cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
             #im = m.contourf(lons, lats,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)
@@ -295,18 +295,18 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
             X,Y=np.meshgrid(lon,lat)
             val = np.empty_like(X)
             val[:] = np.nan;
-            for i in range(0, valarray['lat'].size):
+            for i in range(0, valarray['latitude'].size):
                 # Get the indices
                 try: # if unique values exist
-                    ilon = np.where(X[0,:]==valarray['lon'][i])[0][0]
-                    ilat = np.where(Y[:,0]==valarray['lat'][i])[0][0]
+                    ilon = np.where(X[0,:]==valarray['longitude'][i])[0][0]
+                    ilat = np.where(Y[:,0]==valarray['latitude'][i])[0][0]
                 except IndexError: # take nearest points if unique lat/lon not available
                 # This is a case when converting pix to epix.
                     array = np.asarray(X[0,:])
-                    ilon = (np.abs(array - valarray['lon'][i])).argmin()
+                    ilon = (np.abs(array - valarray['longitude'][i])).argmin()
                     array = np.asarray(Y[:,0])
-                    ilat = (np.abs(array - valarray['lat'][i])).argmin()
-                val[ilat,ilon] = valarray['val'][i]
+                    ilat = (np.abs(array - valarray['latitude'][i])).argmin()
+                val[ilat,ilon] = valarray['value'][i]
             #s = m.transform_scalar(val,lon,lat, 1000, 500)
             #im=m.pcolormesh(grid_x,grid_y,s,cmap=cpalette.name,vmin=vmin, vmax=vmax, norm=norm)
             #im = m.contourf(X, Y,val, norm=norm, cmap=cpalette.name, vmin=vmin, vmax=vmax,latlon=True,extend='both',levels=bounds)

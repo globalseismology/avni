@@ -55,7 +55,7 @@ def readepixfile(filename):
 
     try:
         f = open(filename, 'r')
-        epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['lat','lon','pixsize','val'])
+        epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['latitude','longitude','pixel_size','value'])
     except IOError:
         raise IOError("File (",filename,") cannot be read.")
 
@@ -66,10 +66,10 @@ def readepixfile(filename):
         for line in f:
             if line.startswith('#'):
                 if ':' in line:
-                    field = line.split(':')[0].split('#')[1].strip()
-                    metadata[field] = line.split(':')[1].split('\n')[0].strip()
+                    field = line.lstrip('#').split(':')[0].strip()
+                    metadata[field] = line.lstrip('#').split(':')[1].strip()
                 else:
-                    comments.append(line.split('\n')[0].strip())
+                    comments.append(line.strip())
     return epixarr,metadata,comments
 
 def writeepixfile(filename,epixarr,metadata=None,comments=None):

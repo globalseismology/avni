@@ -1,7 +1,7 @@
       SUBROUTINE LEGNDR(THETA,L,M,WKLEN,X,XP,XCOSEC)
 C
 Cf2py intent(inout) THETA,L,M,WKLEN
-Cf2py intent(out) X,XP,XCOSEC,
+Cf2py intent(out) X,XP,XCOSEC
 Cf2py depend(WKLEN) X,XP,XCOSEC
       REAL*8 THETA
       INTEGER L,M,WKLEN
@@ -14,7 +14,7 @@ c      DIMENSION X(2),XP(2),XCOSEC(2)
       DOUBLE PRECISION SMALL,SUM,COMPAR,CT,ST,FCT,COT,FPI,X1,X2,X3,
      1F1,F2,XM,TH,DFLOAT
       DATA FPI/12.56637062D0/
-      DFLOAT(I)=FLOAT(I)
+c      DFLOAT(I)=FLOAT(I)
       SUM=0.D0
       LP1=L+1
       TH=THETA
@@ -77,4 +77,4 @@ c      DIMENSION X(2),XP(2),XCOSEC(2)
     5 X2=X3
       RETURN
       end
- 
+
