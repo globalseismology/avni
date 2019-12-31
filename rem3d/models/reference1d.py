@@ -47,7 +47,7 @@ class Reference1D(object):
         self.metadata = {}
         # assume that information about the native parameterization is not available
         # this is typical for a card deck file
-        for field in ['model','ref_period','parameters']: self.metadata[field] = None
+        for field in ['ref_period','parameters']: self.metadata[field] = None
         self._name = None
         self._radius_max = None
         self._nlayers = None
