@@ -479,7 +479,7 @@ class Reference1D(object):
 
             # Add data fields
             PA_ = pint.PintArray
-            self.data['gravity'] = PA_(grav, dtype="pint[m/s^3]")
+            self.data['gravity'] = PA_(grav, dtype="pint[m/s^2]")
             self.data['Brunt-Vaisala'] = PA_(vaisala, dtype="pint[Hz]")
             self.data['Bullen'] = PA_(bullen, dtype="pint[dimensionless]")
             self.data['pressure'] = PA_(pressure, dtype="pint[Pa]")
