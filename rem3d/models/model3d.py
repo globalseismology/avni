@@ -156,12 +156,6 @@ class Model3D(object):
                 print('############    Tried reading as ascii   ############')
                 print(traceback.format_exc())
         if not success1 and not success2: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
-        # try to get the kernel set
-        for resolution in self.metadata.keys():
-            try:
-                self[resolution]['kernel_set'] = Kernel_set(self[resolution])
-            except:
-                print('Warning: kernel_set could not initialized for '+str(resolution))
 
     def add_realization(self,coef=None,name=None,resolution=None):
         """
@@ -376,6 +370,63 @@ class Model3D(object):
                  (longitude <= lon_max) & (longitude >= lon_min)
         return checks
 
+    def average_in_polygon(self,depth_in_km,parameter,polygon_latitude, polygon_longitude,num_cores=1, orientation = 'anti-clockwise', threshold = 0.01,**kwargs):
+        """
+        Get the average values within a polygon
+
+        Input Parameters:
+        ----------------
+
+        parameter: variable whose value will be returned
+
+        depth_in_km: depth where values are being queried at (km)
+
+        polygon_latitude,polygon_longitude: closed points that define the polygon.
+                                First and last points need to be the same.
+
+        num_cores: Number of cores to use for the calculations
+
+        orientation: clockwise or anti-clockwise orientation of points specified above
+
+        threshold: limit to which the sum of azimuth check to (-)360 degrees is permitted
+               to be defined as within the polygon.
+
+        Output:
+        ------
+
+        average: average value within the polygon of interest
+
+        tree: if kwarg argument to evaluate_at_location has interpolated=True and
+                tree==None, returns the tree data structure.
+        """
+
+        # convert to numpy arrays. Various checks
+        polylat = convert2nparray(polygon_latitude)
+        polylon = convert2nparray(polygon_longitude)
+        if len(polylat) != len(polylon): raise ValueError('polygon latitude and longitude need to be of same length')
+        if (polygon_latitude[-1] != polygon_latitude[0]) or (polygon_longitude[-1] != polygon_longitude[0]): raise ValueError('polygon should be closed and therefore have same start and end points')
+        nvertices = len(polylon)
+        if orientation not in ['clockwise','anti-clockwise']: raise ValueError('orientation needs to be clockwise or anti-clockwise')
+
+        # define the output array; assume everything is outside
+        within = np.zeros_like(longitude,dtype=bool)
+
+        # define the lat/lon options based on grid
+        if isinstance(grid,(int,np.int64,float)):
+            latitude = np.arange(-90+grid/2., 90,grid)
+            longitude = np.arange(0+grid/2., 360,grid)
+            meshgrid =  True
+            nlat = len(latitude)
+            nlon = len(longitude)
+            nprofiles = nlat*nlon
+        elif isinstance(grid,string_types):
+            meshgrid =  False
+            raise NotImplementedError('needs to be implemented soon')
+
+        outarr = xr.DataArray(np.zeros((nlat,nlon)),
+                    dims=['latitude', 'longitude'],
+                    coords={'latitude':latitude,'longitude':longitude})
+        pdb.set_trace()
 
     def evaluate_at_location(self,latitude,longitude,depth_in_km,parameter,resolution=0,realization=0,grid=False,interpolated=False,tree=None,nearest=None,units=None,add_reference=True,dbs_path=tools.get_filedir()):
         """
@@ -385,6 +436,8 @@ class Model3D(object):
         ----------------
 
         parameter: variable whose value will be returned
+
+        depth_in_km: depth where values are being queried at (km)
 
         interpolated: If True, use KDTree from a predefined grid. If False, evaluated
                       exactly using kernel_set instance.
