@@ -77,7 +77,7 @@ def geocentric_to_geographic(latin):
 
     return latout
 
-def inpolygon(latitude,longitude,polygon_latitude,polygon_longitude,num_cores=1, orientation = 'anti-clockwise', threshold = 0.01):
+def inpolygon(latitude,longitude,polygon_latitude,polygon_longitude,num_cores=1, orientation = 'anti-clockwise', threshold = 1E-6):
     """
     Finds whether a (set of) point(s) is within a closed polygon
 
@@ -123,6 +123,7 @@ def inpolygon(latitude,longitude,polygon_latitude,polygon_longitude,num_cores=1,
 
     #   Since the polygons are anti-clockwise, check for -360 instead of 360
     #   360 gives the plate for the anitpodal location in this case
+    #   Also 0 means the same as 360/-360 so that is also checked
         angle=0.
         for jj, azimuth in enumerate(azep):
             if jj > 0:
@@ -132,7 +133,7 @@ def inpolygon(latitude,longitude,polygon_latitude,polygon_longitude,num_cores=1,
                 angle=angle+add
             azold = azimuth
         if orientation == 'anti-clockwise':
-            if abs(angle+360) < threshold: within[ii] = True
+            if abs(angle+360) <= threshold or abs(angle) <= threshold: within[ii] = True
         elif orientation == 'clockwise':
-            if abs(angle-360) < threshold: within[ii] = True
+            if abs(angle-360) <= threshold or abs(angle) <= threshold: within[ii] = True
     return within[0] if len(within)==1 else within

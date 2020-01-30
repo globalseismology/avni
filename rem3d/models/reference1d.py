@@ -495,6 +495,17 @@ class Reference1D(object):
         else:
             print('Warning: mineralogical parameters not evaluated for '+constants.planetpreferred)
 
+    def if_discontinuity(self,depth_in_km):
+        """
+        Returns whether a depth is a discontinuity.
+        """
+        depth_in_km = tools.convert2nparray(depth_in_km)
+        disc_array = self.metadata['discontinuities']['delta']['depth'].pint.to('km').values.quantity.magnitude
+        output = np.zeros_like(depth_in_km,dtype=bool)
+        for idep,depth in enumerate(depth_in_km):
+            output[idep] = np.any(np.isclose(disc_array,depth))
+        return output if len(output)>1 else output[0]
+
     def get_discontinuity(self):
         '''
         Get values, average values and contrasts at discontinuities
@@ -607,6 +618,7 @@ class Reference1D(object):
         boundary: + for value at larger radius at a discontinuity
         '''
         # need to update so it can deal with vectors
+        if boundary not in ['+','-']: raise ValueError('boundary needs to be - or +')
         depth_in_km = tools.convert2nparray(depth_in_km)
         values = np.zeros_like(depth_in_km,dtype=np.float)
         parameters = tools.convert2nparray(self.metadata['parameters'])
@@ -710,11 +722,34 @@ class Reference1D(object):
         else:
             if self.data is not None:
                 if parameter in self.metadata['parameters']:
-                    values = self.data[parameter].values.quantity.magnitude
+                    modelval = self.data[parameter].values.quantity.magnitude
                     depth_array = constants.R.to('km').magnitude - self.data['radius'].pint.to('km').values.quantity.magnitude # in km
-                    # Sort to make interpolation possible
-                    indx = depth_array.argsort()
-                    values = griddata(depth_array[indx], values[indx], depth_in_km, method=interpolation)
+                    values = np.zeros_like(depth_in_km)
+                    # Only select the region to interpolate
+                    disc_depth = self.metadata['discontinuities']['delta']['depth'].pint.to('km').values.quantity.magnitude
+                    disc_depth.sort()
+                    # append a depth to get the index of discontinuity below
+                    disc_depth = np.append(disc_depth,constants.R.to('km').magnitude)
+                    disc_depth = np.append(0.,disc_depth)
+
+                    for idep,depth in enumerate(depth_in_km):
+                        # is it a discontinity
+                        if self.if_discontinuity(depth):
+                            findindices = np.nonzero(np.isclose(depth_array,depth))[0]
+                            if boundary == '+': # larger radius, smaller depth
+                                values[idep] = modelval[findindices[1]]
+                            elif boundary == '-':
+                                values[idep] = modelval[findindices[0]]
+                        else: # not a boundary
+                            # this is the bottom of the region under consideration
+                            indxdisc = np.where(disc_depth-depth>=0.)[0][0]
+                            if indxdisc == 0: indxdisc += 1 # surface is queried, so use the region below for interpolation
+                            if indxdisc != 1:
+                                indxdeps = np.where((depth_array>=disc_depth[indxdisc-1]) & (depth_array<=disc_depth[indxdisc]))[0][1:-1] # leave the first and last since these are other regions
+                            else:
+                                indxdeps = np.where((depth_array>=disc_depth[indxdisc-1]) & (depth_array<=disc_depth[indxdisc]))[0][1:] # leave the first and last since these are other regions
+                            values[idep] = griddata(depth_array[indxdeps],modelval[indxdeps],depth,method=interpolation)
+
                 else:
                     raise ValueError('parameter '+parameter+' not defined in array')
             else:

@@ -30,7 +30,7 @@ import xarray as xr
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
 from .. import constants
-from ..mapping import spher2cart
+from ..mapping import spher2cart,inpolygon
 from .kernel_set import Kernel_set
 from .realization import Realization
 from .reference1d import Reference1D
@@ -370,7 +370,7 @@ class Model3D(object):
                  (longitude <= lon_max) & (longitude >= lon_min)
         return checks
 
-    def average_in_polygon(self,depth_in_km,parameter,polygon_latitude, polygon_longitude,num_cores=1, orientation = 'anti-clockwise', threshold = 0.01,**kwargs):
+    def average_in_polygon(self,depth_in_km,parameter,polygon_latitude, polygon_longitude,num_cores=1, orientation = 'anti-clockwise', threshold = 1E-6,grid=1.,outside=False,mask=None,**kwargs):
         """
         Get the average values within a polygon
 
@@ -384,12 +384,16 @@ class Model3D(object):
         polygon_latitude,polygon_longitude: closed points that define the polygon.
                                 First and last points need to be the same.
 
+        grid: fineness of the grid to use for averaging (in degrees)
+
         num_cores: Number of cores to use for the calculations
 
         orientation: clockwise or anti-clockwise orientation of points specified above
 
         threshold: limit to which the sum of azimuth check to (-)360 degrees is permitted
                to be defined as within the polygon.
+
+        outside: give average values outside polygon
 
         Output:
         ------
@@ -400,18 +404,15 @@ class Model3D(object):
                 tree==None, returns the tree data structure.
         """
 
-        # convert to numpy arrays. Various checks
-        polylat = convert2nparray(polygon_latitude)
-        polylon = convert2nparray(polygon_longitude)
+        ## convert to numpy arrays. Various checks
+        polylat = tools.convert2nparray(polygon_latitude)
+        polylon = tools.convert2nparray(polygon_longitude)
         if len(polylat) != len(polylon): raise ValueError('polygon latitude and longitude need to be of same length')
         if (polygon_latitude[-1] != polygon_latitude[0]) or (polygon_longitude[-1] != polygon_longitude[0]): raise ValueError('polygon should be closed and therefore have same start and end points')
         nvertices = len(polylon)
         if orientation not in ['clockwise','anti-clockwise']: raise ValueError('orientation needs to be clockwise or anti-clockwise')
 
-        # define the output array; assume everything is outside
-        within = np.zeros_like(longitude,dtype=bool)
-
-        # define the lat/lon options based on grid
+        ## define the lat/lon options based on grid
         if isinstance(grid,(int,np.int64,float)):
             latitude = np.arange(-90+grid/2., 90,grid)
             longitude = np.arange(0+grid/2., 360,grid)
@@ -423,10 +424,65 @@ class Model3D(object):
             meshgrid =  False
             raise NotImplementedError('needs to be implemented soon')
 
-        outarr = xr.DataArray(np.zeros((nlat,nlon)),
-                    dims=['latitude', 'longitude'],
-                    coords={'latitude':latitude,'longitude':longitude})
-        pdb.set_trace()
+        ## Define the output array and area
+        data_vars={}
+        data_vars['inside']=(('latitude', 'longitude'), np.zeros((nlat,nlon)))
+        data_vars['mask']=(('latitude', 'longitude'), np.zeros((nlat,nlon), dtype=bool))
+        if outside:data_vars['outside']=(('latitude', 'longitude'), np.zeros((nlat,nlon)))
+        outarr = xr.Dataset(data_vars = data_vars,
+                coords = {'latitude':latitude,'longitude':longitude})
+        area = tools.areaxarray(outarr)
+
+        ## Loop over all items, checking if it is inside the column
+        if mask is not None:
+            outarr['mask'] = mask
+        else:
+            for ii,lat in enumerate(outarr.coords['latitude'].values):
+                for jj,lon in enumerate(outarr.coords['longitude'].values):
+                    within = inpolygon(lat,lon,polylat,polylon,num_cores,orientation,threshold)
+                    if within: outarr['mask'][ii,jj] = True
+
+        ## evaluate the model
+        rownonzero, colnonzero = np.nonzero(outarr['mask'].data)
+        lat = outarr.coords['latitude'].values[rownonzero]
+        lon = outarr.coords['longitude'].values[colnonzero]
+        depths = depth_in_km*np.ones_like(lon)
+        if kwargs:
+            values = self.evaluate_at_location(lat,lon,depths,parameter, **kwargs)
+        else:
+            values = self.evaluate_at_location(lat,lon,depths,parameter)
+        totarea=0.
+        average=0.
+        for ii,row in enumerate(rownonzero):
+            col = colnonzero[ii]
+            outarr['inside'][row,col] = values[ii]
+            totarea = totarea + area[row,col].item()
+            average = average + values[ii] * area[row,col].item()
+        percentarea = totarea/np.sum(area).item()*100.
+        average = average/totarea
+
+        ## evaluate values outside polygon
+        if outside:
+            rowzero, colzero = np.nonzero(np.logical_not(outarr['mask']).data)
+            lat = outarr.coords['latitude'].values[rowzero]
+            lon = outarr.coords['longitude'].values[colzero]
+            depths = depth_in_km*np.ones_like(lon)
+            if kwargs:
+                values = self.evaluate_at_location(lat,lon,depths,parameter, **kwargs)
+            else:
+                values = self.evaluate_at_location(lat,lon,depths,parameter)
+            totarea_outside=0.
+            average_outside=0.
+            for ii,row in enumerate(rowzero):
+                col = colzero[ii]
+                outarr['outside'][row,col] = values[ii]
+                totarea_outside = totarea_outside + area[row,col].item()
+                average_outside = average_outside + values[ii] * area[row,col].item()
+            average_outside = average_outside/totarea_outside
+        if outside:
+            return percentarea,outarr,average,average_outside
+        else:
+            return percentarea,outarr,average
 
     def evaluate_at_location(self,latitude,longitude,depth_in_km,parameter,resolution=0,realization=0,grid=False,interpolated=False,tree=None,nearest=None,units=None,add_reference=True,dbs_path=tools.get_filedir()):
         """
