@@ -19,7 +19,7 @@ if sys.version_info[0] >= 3: unicode = str
 
 ####################       I/O ROUTINES     ######################################
 
-def readSWascii(file, delim = '-',required = None):
+def readSWascii(file, delim = '-',required = None,warning=False):
     """Reads the REM3D format for analysis and plotting.
 
     Input parameters:
@@ -64,9 +64,12 @@ def readSWascii(file, delim = '-',required = None):
         try:
             namelist = metadata[key].split()
         except KeyError:
-            raise KeyError(key+" should be defined as a comment in "+file)
+            if warning:
+                print(key+" should be defined as a comment in "+file)
+            else:
+                raise KeyError(key+" should be defined as a comment in "+file)
 
-    data = pd.read_table(file,header=None,comment='#',sep='\s+',names=namelist)
+    data = pd.read_table(file,header=None,comment='#',sep='\s+',names=metadata['FIELDS'].split())
 
     # replace the fields by divided fields if concatenated
     for column in data.columns.tolist():
