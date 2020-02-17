@@ -15,9 +15,9 @@ from numba import jit,int64
 from progressbar import progressbar
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
-from rem3d.f2py import vbspl,dbsplrem,ylm
+from rem3d.f2py import vbspl,dbsplrem,ylm,shold
 from .trigd import sind,cosd,acosd
-from .common import convert2nparray
+from .common import convert2nparray,makegrid
 #######################################################################################
 
 def eval_vbspl(depths,knots):
@@ -306,7 +306,7 @@ def splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl):
                     ncon=ncon+1
     return ncon,icon[:ncon],con[:ncon]
 
-def eval_ylm(latitude,longitude,lmaxhor):
+def eval_ylm(latitude,longitude,lmaxhor,weights=None,grid=False,norm='ylm'):
     """
     Evaluate spherical harmonics.
 
@@ -317,6 +317,8 @@ def eval_ylm(latitude,longitude,lmaxhor):
 
     lmaxhor: maximum spherical harmonic degree
 
+    weights: weights to multiply the bases with i.e. coefficients
+
     Output:
     ------
 
@@ -324,24 +326,47 @@ def eval_ylm(latitude,longitude,lmaxhor):
              Size of numpy array is [len(latitude) X ((lmaxhor+1)^2)]
     """
 
+    # convert to numpy arrays
     latitude = convert2nparray(latitude)
     longitude = convert2nparray(longitude)
+    nlat = len(latitude)
+    nlon = len(longitude)
 
-    if not len(latitude) == len(longitude): raise AssertionError('latitude and longitude should be of same length')
+    #checks
+    if grid:
+        nrows,latitude,longitude = makegrid(latitude,longitude)
+    else:
+        if not (latitude.ndim == longitude.ndim == 1): raise ValueError("latitude, longitude or depth_in_km should be one-dimensional arrays")
+        nrows = nlat
+
     ncoefhor = np.power(lmaxhor+1,2) # numpye of coefficients upto Lmax
-    horcof = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
-    for iloc,lat in enumerate(latitude):
+    if np.any(weights == None):
+        horcof = sparse.csr_matrix((nrows,ncoefhor)) # empty matrix
+    else:
+        weights = convert2nparray(weights)
+        assert(len(weights)==ncoefhor),' length of weights and lat/lon need to be same'
+        values = np.zeros_like(latitude)
+
+    if not (len(latitude) == len(longitude)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
+    for iloc in progressbar(range(len(latitude))):
+        lat = latitude[iloc]
         lon = longitude[iloc]
         #--- make lon go from 0-360
         if lon<0.: lon=lon+360.
         # wk1,wk2,wk3 are legendre polynomials of size Lmax+1
         # ylmcof is the value of Ylm
-        ylmcof, _ , _ , _ = ylm(lat,lon,lmaxhor,ncoefhor,lmaxhor+1)
-        rowind = iloc*np.ones(ncoefhor)
-        colind = np.arange(ncoefhor)
-        # update values
-        horcof = horcof + sparse.csr_matrix((ylmcof, (rowind, colind)), shape=(len(latitude),ncoefhor))
-    return horcof
+        if norm == 'ylm':
+            ylmcof, _ , _ , _ = ylm(lat,lon,lmaxhor,ncoefhor,lmaxhor+1)
+        elif norm == 'shold':
+            ylmcof = shold(lat,lon,lmaxhor,ncoefhor)
+        if np.any(weights == None):
+            rowind = iloc*np.ones(ncoefhor)
+            colind = np.arange(ncoefhor)
+            # update values
+            horcof = horcof + sparse.csr_matrix((ylmcof, (rowind, colind)), shape=(nrows,ncoefhor))
+        else:
+            values[iloc] = np.sum(ylmcof*weights)
+    return horcof if np.any(weights == None) else values
 
 def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
     """
@@ -372,11 +397,12 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
         print('Warning: multiple pixel sizes in the PIXEL basis fir evaluation in bases.eval_pixel. Sizes are ')
 
     labo = xlapix-xsipix/2.; lato = xlapix+xsipix/2.
+    labo = np.clip(labo,-90.,90.); lato = np.clip(lato,-90.,90.)
+    # go from (-180,180) to (0,360)
+    xlopix[np.where(xlopix<0.)]=xlopix[np.where(xlopix<0.)]+360.
     lole = xlopix-xsipix/2.; lori = xlopix+xsipix/2.
-    lori[np.where(lori<0.)]=lori[np.where(lori<0.)]+360.
-    lole[np.where(lole<0.)]=lole[np.where(lole<0.)]+360.
-    lori[np.where(lori>360.)]=lori[np.where(lori>360.)]-360.
-    lole[np.where(lole>360.)]=lole[np.where(lole>360.)]-360.
+    lori = np.clip(lori,0.,360.); lole = np.clip(lole,0.,360.)
+
     horcof = sparse.csr_matrix((len(latitude),len(xsipix))) # empty matrix
     for iloc,lat in enumerate(latitude):
         lon = longitude[iloc]
@@ -392,6 +418,7 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
         else:
             lonfind = np.intersect1d(np.where(lon<=lori), np.where(lon>=lole))
         findindex = np.intersect1d(latfind,lonfind)
+        if len(findindex) != 1: raise ValueError('found '+len(findindex)+' pixels for the location ('+str(lat)+','+str(lon)+')')
 
         rowind = iloc*np.ones_like(findindex)
         values = np.ones_like(findindex,dtype=np.float)

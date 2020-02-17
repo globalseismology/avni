@@ -14,7 +14,7 @@ import fortranformat as ff #reading/writing fortran formatted text
 from six import string_types # to check if variable is string using isinstance
 from numpy.lib.recfunctions import append_fields # for appending named columns to named numpy arrays
 from scipy.interpolate import griddata
-from copy import deepcopy
+import copy
 from collections import Counter
 import traceback
 import pandas as pd
@@ -40,14 +40,15 @@ class Reference1D(object):
     '''
     A class for 1D reference Earth models used in tomography
     '''
+    #########################       magic       ##########################
 
     def __init__(self,file=None):
         self.data = None
         self.metadata = {}
         # assume that information about the native parameterization is not available
         # this is typical for a card deck file
-        for field in ['model','ref_period','parameters']: self.metadata[field] = None
-        self.name = None
+        for field in ['ref_period','parameters']: self.metadata[field] = None
+        self._name = None
         self._radius_max = None
         self._nlayers = None
         if file is not None:
@@ -56,13 +57,13 @@ class Reference1D(object):
 
     def __str__(self):
         if self.data is not None and self._nlayers > 0:
-            output = "%s is a one-dimensional model with %s layers and radius up to %s km" % (self.name, self._nlayers,self._radius_max/1000.)
+            output = "%s is a one-dimensional model with %s layers and radius up to %s km" % (self._name, self._nlayers,self._radius_max/1000.)
         else:
             output = "No model has been read into this reference1D instance yet"
         return output
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self.name})'.format(self=self)
+        return '{self.__class__.__name__}({self._name})'.format(self=self)
 
     def __copy__(self):
         cls = self.__class__
@@ -75,8 +76,19 @@ class Reference1D(object):
         result = cls.__new__(cls)
         memo[id(self)] = result
         for k, v in self.__dict__.items():
-            setattr(result, k, deepcopy(v, memo))
+            setattr(result, k, copy.deepcopy(v, memo))
         return result
+
+    def __add__(self, other):
+        raise NotImplementedError('method to add 1D instances on top of each other')
+
+    #########################       decorators       ##########################
+
+    @property
+    def name(self):
+        return self._name
+
+    #########################       methods       #############################
 
     def derive(self):
         if self.data is not None and self._nlayers > 0:
@@ -117,7 +129,7 @@ class Reference1D(object):
         }
 
         # Check if it is the first file read for the model
-        if self.metadata['model'] == None:
+        if self._name == None:
             # make parameterization 2D lists of dicts,first dimension associated with file
             # number, here we assume the parameterization within each file are the same
             self.metadata['parameterization'] = [[]]
@@ -131,8 +143,7 @@ class Reference1D(object):
                 # at each line check for a match with a regex
                     key, match = tools.parse_line(line,rx_dict_common)
                     if key == 'model':
-                        self.metadata['model'] = match.group('model')
-                        self.name = self.metadata['model']
+                        self._name = match.group('model')
                     if key == 'ref_period':
                         ref_temp = match.group('ref_period')
                         self.metadata['ref_period'] = float(ref_temp)
@@ -164,9 +175,8 @@ class Reference1D(object):
                     key, match = tools.parse_line(line,rx_dict_common)
                     # Check if model name is the same
                     if key == 'model':
-                        if self.metadata['model'] != match.group('model'):
+                        if self._name != match.group('model'):
                             raise ValueError('model names should match between input files')
-                        self.name = self.metadata['model']
                     if key == 'ref_period':
                         ref_temp2 = match.group('ref_period')
                         if self.metadata['ref_period'] != float(ref_temp2):
@@ -335,7 +345,7 @@ class Reference1D(object):
 
         disc = self.metadata['discontinuities']
         # first write the header
-        printstr  =  [unicode(self.name+"\n")]
+        printstr  =  [unicode(self._name+"\n")]
         printstr.append(unicode("1 %.1f 1 1\n" % (self.metadata['ref_period'])))
         printstr.append(unicode("  %d  %d  %d  %d  %d\n" % (self._nlayers,disc['itopic'],disc['itopoc'],disc['itopmantle'],disc['itopcrust'])))
 
@@ -382,8 +392,7 @@ class Reference1D(object):
         # Get the other metadata from the first 3 line header
         with open(file,'r') as f:
             head = [next(f).strip('\n') for x in range(header)]
-        self.metadata['model'] = head[0]
-        self.name = self.metadata['model']
+        self._name = head[0].strip()
         self.metadata['ref_period'] = float(head[1].split()[1])
         self.metadata['norm_radius'] = constants.R.to('km').magnitude
 
@@ -455,9 +464,13 @@ class Reference1D(object):
         pressure: pressure at each depth
         '''
         if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
+        # Operations between PintArrays of different unit registry will not work.
+        # We can change the unit registry that will be used in creating new
+        # PintArrays to prevent this issue.
+        pint.PintType.ureg = constants.ureg
 
         if constants.planetpreferred == 'Earth':
-            file = tools.get_filedir()+'/'+self.name+'.'+str(uuid.uuid4())
+            file = tools.get_filedir()+'/'+self._name+'.'+str(uuid.uuid4())
             # write a temporary cards file
             self.write_mineos_cards(file)
 
@@ -466,7 +479,7 @@ class Reference1D(object):
 
             # Add data fields
             PA_ = pint.PintArray
-            self.data['gravity'] = PA_(grav, dtype="pint[m/s^3]")
+            self.data['gravity'] = PA_(grav, dtype="pint[m/s^2]")
             self.data['Brunt-Vaisala'] = PA_(vaisala, dtype="pint[Hz]")
             self.data['Bullen'] = PA_(bullen, dtype="pint[dimensionless]")
             self.data['pressure'] = PA_(pressure, dtype="pint[Pa]")
@@ -481,6 +494,17 @@ class Reference1D(object):
 
         else:
             print('Warning: mineralogical parameters not evaluated for '+constants.planetpreferred)
+
+    def if_discontinuity(self,depth_in_km):
+        """
+        Returns whether a depth is a discontinuity.
+        """
+        depth_in_km = tools.convert2nparray(depth_in_km)
+        disc_array = self.metadata['discontinuities']['delta']['depth'].pint.to('km').values.quantity.magnitude
+        output = np.zeros_like(depth_in_km,dtype=bool)
+        for idep,depth in enumerate(depth_in_km):
+            output[idep] = np.any(np.isclose(disc_array,depth))
+        return output if len(output)>1 else output[0]
 
     def get_discontinuity(self):
         '''
@@ -594,8 +618,12 @@ class Reference1D(object):
         boundary: + for value at larger radius at a discontinuity
         '''
         # need to update so it can deal with vectors
+        if boundary not in ['+','-']: raise ValueError('boundary needs to be - or +')
         depth_in_km = tools.convert2nparray(depth_in_km)
         values = np.zeros_like(depth_in_km,dtype=np.float)
+        parameters = tools.convert2nparray(self.metadata['parameters'])
+        findparam = np.where(parameters == parameter)[0].item()
+        unit = self.metadata['units'][findparam]
         uniqueregions = {}
         target_region = np.empty_like(depth_in_km,dtype="U40"); target_region[:] = ''
         # detailed information about the native parameterization which went into the
@@ -694,17 +722,39 @@ class Reference1D(object):
         else:
             if self.data is not None:
                 if parameter in self.metadata['parameters']:
-                    values = self.data[parameter].values.quantity.magnitude
+                    modelval = self.data[parameter].values.quantity.magnitude
                     depth_array = constants.R.to('km').magnitude - self.data['radius'].pint.to('km').values.quantity.magnitude # in km
-                    # Sort to make interpolation possible
-                    indx = depth_array.argsort()
-                    values = griddata(depth_array[indx], values[indx], depth_in_km, method=interpolation)
-                    if len(depth_in_km)==1: values = values.item()
+                    values = np.zeros_like(depth_in_km)
+                    # Only select the region to interpolate
+                    disc_depth = self.metadata['discontinuities']['delta']['depth'].pint.to('km').values.quantity.magnitude
+                    disc_depth.sort()
+                    # append a depth to get the index of discontinuity below
+                    disc_depth = np.append(disc_depth,constants.R.to('km').magnitude)
+                    disc_depth = np.append(0.,disc_depth)
+
+                    for idep,depth in enumerate(depth_in_km):
+                        # is it a discontinity
+                        if self.if_discontinuity(depth):
+                            findindices = np.nonzero(np.isclose(depth_array,depth))[0]
+                            if boundary == '+': # larger radius, smaller depth
+                                values[idep] = modelval[findindices[1]]
+                            elif boundary == '-':
+                                values[idep] = modelval[findindices[0]]
+                        else: # not a boundary
+                            # this is the bottom of the region under consideration
+                            indxdisc = np.where(disc_depth-depth>=0.)[0][0]
+                            if indxdisc == 0: indxdisc += 1 # surface is queried, so use the region below for interpolation
+                            if indxdisc != 1:
+                                indxdeps = np.where((depth_array>=disc_depth[indxdisc-1]) & (depth_array<=disc_depth[indxdisc]))[0][1:-1] # leave the first and last since these are other regions
+                            else:
+                                indxdeps = np.where((depth_array>=disc_depth[indxdisc-1]) & (depth_array<=disc_depth[indxdisc]))[0][1:] # leave the first and last since these are other regions
+                            values[idep] = griddata(depth_array[indxdeps],modelval[indxdeps],depth,method=interpolation)
+
                 else:
                     raise ValueError('parameter '+parameter+' not defined in array')
             else:
                 raise ValueError('data in reference1D object is not allocated')
-        return values
+        return values*constants.ureg(unit)
 
     def to_mineoscards(self,directory='.',fmt='cards'):
         '''
@@ -713,7 +763,7 @@ class Reference1D(object):
         parameters = ['radius','rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
         units =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
         if self.data is not None and self._nlayers > 0:
-            model_name = self.name
+            model_name = self._name
             ntotlev = self._nlayers
             itopic = self.metadata['discontinuities']['itopic']
             itopoc = self.metadata['discontinuities']['itopoc']
@@ -750,7 +800,7 @@ class Reference1D(object):
           as 1e-4.
         '''
         if self.data is not None and self._nlayers > 0:
-            model_name = self.name
+            model_name = self._name
             outfile = directory+'/'+model_name+'.'+fmt
             f = open(outfile,'w')
             f.write('{} - P\n'.format(model_name))
@@ -777,7 +827,7 @@ class Reference1D(object):
          Write 1D model to be used as an external model in axisem
         '''
         if self.data is not None and self._nlayers > 0:
-            model_name = self.name
+            model_name = self._name
             outfile = directory+'/'+model_name+'.'+fmt
             f = open(outfile,'w')
             n_discon = 0

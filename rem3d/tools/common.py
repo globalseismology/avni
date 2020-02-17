@@ -14,8 +14,9 @@ import re
 from configobj import ConfigObj
 from six import string_types # to check if variable is string using isinstance
 import ntpath
-import ast
 import pint # For SI units
+import decimal
+from numba import jit
 import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
@@ -55,11 +56,62 @@ def parse_line(line,rx_dict):
     # if there are no matches
     return None, None
 
-def convert2nparray(value,int2float = True):
+@jit(nopython=True)
+def ifwithindepth(start_depths,end_depths,depth_in_km):
+    if depth_in_km.ndim != 1: raise ValueError('only 1-D array depth_in_km allowed')
+    output = np.ones_like(depth_in_km,dtype=np.int64)
+    output[:] = -1
+    for ii,depth in enumerate(depth_in_km):
+        for jj,start in enumerate(start_depths):
+            end = end_depths[jj]
+            if depth >= start and depth <= end:
+                output[ii]=jj
+                break
+    return output
+
+def makegrid(latitude,longitude,depth_in_km=None):
+    """
+    Make a 2D or 3D grid out of input locations and depths.
+
+    grid: make a grid by unraveling (depth_in_km,latitude,longitude)
+    """
+
+    # convert to numpy arrays
+    latitude = convert2nparray(latitude)
+    longitude = convert2nparray(longitude)
+    nlat = len(latitude)
+    nlon = len(longitude)
+
+    #checks
+    if depth_in_km==None:
+        if not (latitude.ndim == longitude.ndim == 1): raise ValueError("latitude, longitude or depth_in_km should be one-dimensional arrays")
+        nrows = nlat*nlon
+        longitude,latitude = np.meshgrid(longitude,latitude)
+        longitude = longitude.ravel()
+        latitude = latitude.ravel()
+        if not (len(latitude) == len(longitude)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
+        return nrows,latitude,longitude
+    else:
+        if not (latitude.ndim == longitude.ndim == depth_in_km.ndim == 1): raise ValueError("latitude, longitude or depth_in_km should be one-dimensional arrays")
+        depth_in_km = convert2nparray(depth_in_km)
+        ndep = len(depth_in_km)
+        nrows = ndep*nlat*nlon
+        depth_tmp = np.zeros(nrows)
+        for indx,depth in enumerate(depth_in_km):
+            depth_tmp[indx*nlat*nlon:(indx+1)*nlat*nlon] = depth * np.ones(nlat*nlon)
+            latitude = np.tile(latitude,len(depth_in_km))
+            longitude = np.tile(longitude,len(depth_in_km))
+            depth_in_km = depth_tmp
+        if not (len(latitude) == len(longitude) == len(depth_in_km)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
+        return nrows,latitude,longitude,depth_in_km
+
+def convert2nparray(value,int2float = True,allowstrings=True):
     """
     Converts input value to a float numpy array. Boolean are returned as Boolean arrays.
 
     int2float: convert integer to floats, if true
+
+    stringallowed: check if value has strings
     """
     if isinstance(value, (list,tuple,np.ndarray)):
         outvalue = np.asarray(value)
@@ -73,6 +125,7 @@ def convert2nparray(value,int2float = True):
         else:
             outvalue = np.asarray([value])
     elif isinstance(value,string_types):
+        if not allowstrings: raise TypeError('input cannot be a string')
         outvalue = np.asarray([value])
     else:
         raise TypeError('input must be list or tuple, not %s' % type(value))
@@ -190,12 +243,15 @@ def get_fullpath(path):
     """
     Provides the full path by replacing . and ~ in path.
     """
-    # if only file name provided append current directory
-    if ntpath.basename(path) == path: path = os.path.abspath('./'+path)
     # Get the current directory
-    if path[0]=='.' or path[0]=='..': path = os.path.abspath(path)
+    if path[0]=='.': path = os.path.abspath(path)
+    if len(path) > 2 :
+        if path[:2]=='..': path = os.path.abspath(path)
     # If the path starts with tilde, replace with home directory
     if path[0]=='~': path = os.path.expanduser(path)
+    # if the expanded path does not have / as first character it is from current directory
+    # if only file name provided append current directory
+    if ntpath.basename(path) == path or path[0] != '/': path = os.path.abspath('./'+path)
     return path
 
 def listfolders(path):
@@ -362,54 +418,19 @@ def convert2units(valstring):
     """
     vals = valstring.split()
     if len(vals) == 1: #if no unit is provided
-        return ast.literal_eval(vals[0])*constants.ureg('dimensionless')
+        return eval(vals[0])*constants.ureg('dimensionless')
     elif len(vals) == 2: # first is value, second unit
-        return ast.literal_eval(vals[0])*constants.ureg(vals[1])
+        return eval(vals[0])*constants.ureg(vals[1])
     else:
         raise ValueError('only space allowed is that between value and unit')
 
-def getplanetconstants(planet = constants.planetpreferred, configfile = get_configdir()+'/'+constants.planetconstants):
+def decimals(value):
     """
-    Read the constants from configfile relevant to a planet to constants.py
-
-    Input parameters:
-    ----------------
-    planet: planet option from configfile
-
-    configfile: all the planet configurations are in this file.
-                Default option means read from tools.get_configdir()
-
+    Returns the number of decimals in a float
     """
-
-    if not os.path.isfile(configfile):
-        raise IOError('No configuration file found: '+configfile)
-    else:
-        parser = ConfigObj(configfile)
-
-    try:
-        parser_select = parser[planet]
-    except:
-        raise IOError('No planet '+planet+' found in file '+configfile)
-    constants.a_e = convert2units(parser_select['a_e']) # Equatorial radius
-    constants.GM = convert2units(parser_select['GM']) # Geocentric gravitational constant m^3s^-2
-    constants.G = convert2units(parser_select['G']) # Gravitational constant m^3kg^-1s^-2
-    try:
-        constants.f = convert2units(parser_select['f']) #flattening
-    except KeyError:
-        try:
-            constants.f = 1./convert2units(parser_select['1/f']) #flattening
-        except:
-            raise KeyError('need either flattening (f) or inverse flattening (1/f) for '+planet+' in '+configfile)
-    constants.omega = convert2units(parser_select['omega']) #Angular velocity in rad/s
-    constants.M_true = convert2units(parser_select['M_true']) # Solid Earth mass in kg
-    constants.I_true = convert2units(parser_select['I_true'])# Moment of inertia in m^2 kg
-    constants.R = convert2units(parser_select['R']) # Radius of the Earth in m
-    constants.rhobar = convert2units(parser_select['rhobar']) # Average density in kg/m^3
-    constants.deg2km = convert2units(parser_select['deg2km']) #length of 1 degree in km
-    constants.deg2m = constants.deg2km * 1000. #length of 1 degree in m
-    # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
-    try:
-        print('... Re - Initialized rem3d module with constants for '+planet+' from '+parser_select['cite']+' from geocentric correction '+str(constants.geoco))
-        constants.geoco = (1.0 - constants.f)**2.
-    except AttributeError:
-        constants.geoco = (1.0 - constants.f)**2.
+    value = convert2nparray(value)
+    output = np.zeros(len(value), dtype=int)
+    for indx, val in enumerate(value):
+        d = decimal.Decimal(str(val))
+        output[indx] = abs(d.as_tuple().exponent)
+    return output if len(output) > 1 else output[0]
