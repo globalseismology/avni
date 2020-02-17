@@ -91,7 +91,8 @@ class Realization(object):
         try:
             self.metadata['kernel_set'] = Kernel_set(self.metadata)
         except:
-            print('Warning: kernel_set could not initialized for '+str(resolution))
+            print(traceback.format_exc())
+            print('Warning: kernel_set could not be initialized in realization instance for '+file)
 
     def readascii(self,modelfile):
         """

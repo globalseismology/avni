@@ -52,8 +52,8 @@ def epix_to_xarray(epixarr,latname = 'latitude', lonname = 'longitude'):
     latspace = np.setdiff1d(np.unique(np.ediff1d(np.sort(epixarr[latname]))),[0.])
     if not(len(lonspace) == len(lonspace) == 1): raise AssertionError('not(len(lonspace) == len(lonspace) == 1)')
     spacing = lonspace[0]
-    latitude = np.arange(-90.+spacing/2.,90.,1.)
-    longitude = np.arange(0.+spacing/2.,360.,1.)
+    latitude = np.arange(-90.+spacing/2.,90.,spacing)
+    longitude = np.arange(0.+spacing/2.,360.,spacing)
     outarr = xr.DataArray(np.zeros((len(latitude),len(longitude))),
                     dims=[latname, lonname],
                     coords={latname:latitude,lonname:longitude})
