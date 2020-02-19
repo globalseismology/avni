@@ -379,6 +379,7 @@ class Realization(object):
         coef=np.zeros((self.metadata['nmodkern'],(lmax+1)**2))
         for ivar,field in enumerate(variables):
             layers = np.where(self.metadata['ivarkern']==ivar+1)[0]
+            print('... calculating spherical harmonic expansion of # '+str(ivar+1)+' / '+str(len(variables))+' : '+field+' , '+str(len(layers))+' layers')
             for ii,layer in enumerate(layers[:10]):
                 epixarr['value'] = self.data.iloc[layer].to_numpy()
                 shmatrix = convert_to_swp(epixarr,lmax=lmax)
