@@ -866,7 +866,7 @@ def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,figuresize=N
     plt.close('all')
     return topo,topotree,model,modeltree
 
-def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outformat='.pdf',shading=False,ifshow=False):
+def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outfile=None,shading=False):
     """Plot one global map"""
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
@@ -874,8 +874,10 @@ def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='
         globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette,shading=shading)
     else:
         globalmap(ax,epixarr,vmin,vmax,dbs_path,colorlabel,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette,shading=shading)
-    if ifshow: plt.show()
-    fig.savefig(modelname+outformat,dpi=300)
+    if outfile==None:
+        plt.show()
+    else:
+        fig.savefig(outfile,dpi=300)
     return
 
 def plot1hitmap(hitfile,dbs_path=tools.get_filedir(),projection='robin',lat_0=0,lon_0=150,colorcontour = None,colorpalette='Blues',outformat='.pdf',ifshow=True):

@@ -278,11 +278,11 @@ def customcolorpalette(name='bk',cptfolder=tools.get_cptdir(),colorlist=None,col
         else:
             file = name+'.cpt'
             type = 'standard'
-        if type =='rem': data.update_file(file,folder=cptfolder)
         cptfolder=tools.get_fullpath(cptfolder)
         if os.path.isfile(cptfolder+'/'+file):
             colorlist=getcolorlist(cptfolder+'/'+file,type=type)
         else:
+            if type =='rem': data.update_file(file,folder=cptfolder)
             raise ValueError("Could not find file "+cptfolder+'/'+file)
 
     if colorlist is None: raise ValueError("No colorlist found")
