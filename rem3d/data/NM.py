@@ -1,3 +1,13 @@
+
+
+#!/usr/bin/env python
+
+#######################################################################################
+# python 3 compatibility
+from __future__ import absolute_import, division, print_function
+
+#####################  IMPORT STANDARD MODULES   ######################################
+
 import os
 import h5py
 import struct
@@ -8,6 +18,10 @@ from rem3d.models import Reference1D
 from rem3d import constants,tools
 import pint
 import pdb
+
+if sys.version_info[0] >= 3: unicode = str
+
+####################       I/O ROUTINES     ######################################
 
 def read_rts_catalog(infile, base_units = True):
     """reads a mode catalog in bimary rts format
@@ -196,40 +210,18 @@ def read_rts_catalog(infile, base_units = True):
 
     return rts_catalog,ref1d
 
-def splinenm(f1,fp1,f2,fp2,dr,hn,hn2,hn3,v,vp,vpp):
-
-#    f1 is f(x1)
-#    fp1 is df/dx(x1)
-#    f2 is f(x2)
-#    fp2 is df/dx(x2)
-#    dr is (xx-x1) --- where xx is the desired x value
-#    hn is x2-x1
-#    hn2 is 1/(x2-x1)**2
-#    hn3 is 1/(x2-x1)**3
-#
-#    v is f(xx)
-#    vp is df/dx(xx)
-#    vp2 is d2f/dx2(xx)
-#
-      a=hn3*(hn*(fp1+fp2)+2.*(f1-f2))
-      b=hn2*(3.*(f2-f1)-hn*(fp2+2.*fp1))
-      v=f1+dr*(fp1+dr*(b+dr*a))
-      vp=fp1+dr*(2.*b+3.*dr*a)
-      vpp=2.*b+6.*dr*a
-      return v,vp,vpp
-
-def writemodestablehdf5(infile,modes_table_name,absorption_band='None'):
+def write_modes_hdf(infile,table_name,absorption_band='None'):
     '''
     writes an hdf5 file based on the output of getgennomo(?)
 
     params:
     infile <str>: path to mode catalog produced by getgennomo
-    modes_table_name <str>: name of hdf5 modes table that will be written
+    table_name <str>: name of hdf5 modes table that will be written
     '''
     rts_catalog,ref1d = read_rts_catalog(infile)
-    
+
     #open hdf5 file
-    ds = h5py.File(modes_table_name)
+    ds = h5py.File(table_name)
     ds.attrs['model'] = ref1d.name
     ds.attrs['ref_period'] = ref1d.metadata['ref_period']
     ds.attrs['absorption_band'] = absorption_band
@@ -277,7 +269,7 @@ def writemodestablehdf5(infile,modes_table_name,absorption_band='None'):
             except:
                 pass
 
-            ds['radial'][str(nn)].create_group(mode_name) 
+            ds['radial'][str(nn)].create_group(mode_name)
             ds['radial'][str(nn)][mode_name].create_dataset('omega',data=rts_catalog[mode_name]['omega'])
             ds['radial'][str(nn)][mode_name].create_dataset('pvel',data=rts_catalog[mode_name]['pvel'])
             ds['radial'][str(nn)][mode_name].create_dataset('gvel',data=rts_catalog[mode_name]['gvel'])
@@ -301,7 +293,7 @@ def writemodestablehdf5(infile,modes_table_name,absorption_band='None'):
             except:
                 pass
 
-            ds['toroidal'][str(nn)].create_group(mode_name) 
+            ds['toroidal'][str(nn)].create_group(mode_name)
             ds['toroidal'][str(nn)][mode_name].create_dataset('omega',data=rts_catalog[mode_name]['omega'])
             ds['toroidal'][str(nn)][mode_name].create_dataset('pvel',data=rts_catalog[mode_name]['pvel'])
             ds['toroidal'][str(nn)][mode_name].create_dataset('gvel',data=rts_catalog[mode_name]['gvel'])
@@ -325,7 +317,7 @@ def writemodestablehdf5(infile,modes_table_name,absorption_band='None'):
             except:
                 pass
 
-            ds['spheroidal'][str(nn)].create_group(mode_name) 
+            ds['spheroidal'][str(nn)].create_group(mode_name)
             ds['spheroidal'][str(nn)][mode_name].create_dataset('omega',data=rts_catalog[mode_name]['omega'])
             ds['spheroidal'][str(nn)][mode_name].create_dataset('pvel',data=rts_catalog[mode_name]['pvel'])
             ds['spheroidal'][str(nn)][mode_name].create_dataset('gvel',data=rts_catalog[mode_name]['gvel'])
@@ -341,11 +333,7 @@ def writemodestablehdf5(infile,modes_table_name,absorption_band='None'):
         else:
             raise ValueError('itype = {} not recognized'.format(itype))
 
-    #add dispersion curves to attributes of a mode branch
-    for item in disp_curve_dict['radial'].keys():
-        ds['radial'][item].attrs['omega'] = np.array(disp_curve_dict['radial'][item]['omega'])
-        ds['radial'][item].attrs['pvel'] = np.array(disp_curve_dict['radial'][item]['pvel'])
-        ds['radial'][item].attrs['gvel'] = np.array(disp_curve_dict['radial'][item]['gvel'])
+    #add dispersion curves to attributes of a mode overtone
     for item in disp_curve_dict['toroidal'].keys():
         ds['toroidal'][item].attrs['omega'] = np.array(disp_curve_dict['toroidal'][item]['omega'])
         ds['toroidal'][item].attrs['pvel'] = np.array(disp_curve_dict['toroidal'][item]['pvel'])
@@ -357,40 +345,12 @@ def writemodestablehdf5(infile,modes_table_name,absorption_band='None'):
 
     #TODO write model attributes and max degree / overtone for S and T modes
 
-def get_dispersion_curve(modes_table,mode_type,disp_type,branch=0,freq_units='mhz'):
-    '''
-    return a dispersion curve
-
-    params:
-    modes_table <str>: path to hdf5 format modes table
-    mode_type <str>: either "spheroidal", "toroidal", or "radial"
-    disp_type <str>: either "gvel" or "pvel" for group or phase velocity
-    branch <int>: radial overtone number (defaults to 0, ie. fundamental mode)
-    freq_units <str>: units of frequency axis. either "rad/s","hz",or "mhz"
-
-    returns:
-    freq,vel: frequency (in freq_units) and (group or phase) velocity in km/s
-    '''
-
-    table = h5py.File(modes_table,'r')
-    omega = table[mode_type][str(branch)].attrs['omega']
-    vel = table[mode_type][str(branch)].attrs[disp_type]
-
-    if freq_units == 'hz':
-        freq = omega/(2.*np.pi)
-    elif freq_units == 'mhz':
-        freq = (omega/(2.*np.pi)) * 1000.
-    elif freq_units == 'rad/s':
-        freq = omega
-
-    return freq,vel
-
-def get_mode_freq(modes_table,mode_type,radial_order,angular_order,freq_units='mhz'):
+def get_mode_freq(table,mode_type,radial_order,angular_order,freq_units='mhz'):
     '''
     returns the eigenfrequency of a single mode
 
     params:
-    modes_table <str>: path to hdf5 format modes table
+    table <str>: path to hdf5 format modes table
     mode_type <str>: either "spheroidal", "toroidal", or "radial"
     radial_order <int>: radial order (ie. overtone number)
     angular_order <int>: angular order
@@ -399,7 +359,7 @@ def get_mode_freq(modes_table,mode_type,radial_order,angular_order,freq_units='m
     freq: eigen frequency of the mode in freq_units
     '''
 
-    table = h5py.File(modes_table,'r')
+    table = h5py.File(table,'r')
 
     if mode_type == 'radial':
         mode_name = '{}R{}'.format(radial_order,angular_order)
@@ -410,11 +370,11 @@ def get_mode_freq(modes_table,mode_type,radial_order,angular_order,freq_units='m
 
     omega = table[mode_type][str(radial_order)][mode_name]['omega'][()]
 
-    if freq_units == 'hz':
+    if freq_units.lower() == 'hz':
         freq = omega/(2.*np.pi)
-    elif freq_units == 'mhz':
+    elif freq_units.lower() == 'mhz':
         freq = (omega/(2.*np.pi)) * 1000.
-    elif freq_units == 'rad/s':
+    elif freq_units.lower() == 'rad/s':
         freq = omega
 
     return freq

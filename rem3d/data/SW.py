@@ -19,6 +19,67 @@ if sys.version_info[0] >= 3: unicode = str
 
 ####################       I/O ROUTINES     ######################################
 
+def get_travel_times1D(table,distance_in_degree,period,output='pvel',mode_type='spheroidal',overtone=0,phase=None,arc='minor'):
+    """
+    Return the arrival time in seconds of a surface-wave phase or mode type/overtone.
+    When phase is queries, mode_type/overtone/arc are ignored
+
+    Input Parameters:
+    ----------------
+
+    table <str>: path to hdf5 format modes table
+    distance_in_degree <float>: great circle distance, can be minor or major arc
+    period <float>: period in second
+    mode_type <str>: either "spheroidal", "toroidal", or "radial"
+    overtone <int>: overtone number (defaults to 0, ie. fundamental mode)
+
+    """
+
+    table = h5py.File(table,'r')
+    # Perform some checks
+    if phase == None:
+        omega = table[mode_type][str(overtone)].attrs['omega']
+        vel = table[mode_type][str(overtone)].attrs[output]
+    else:
+        if isinstance(phase, str):
+            # heuristics: 'R1' - call spheroidal, G1=toroidal
+            omega = table[mode_type][str(overtone)].attrs['omega']
+            vel = table[mode_type][str(overtone)].attrs[output]
+        else:
+            raise ValueError('Only phases like R1, G1 can be called')
+
+    # Perform interpolation at the period usind griddata
+    return time_in_s
+
+
+def get_dispersion_curve(table,mode_type,output='pvel',overtone=0,freq_units='mhz'):
+    '''
+    return a dispersion curve for
+
+    params:
+    table <str>: path to hdf5 format modes table
+    mode_type <str>: either "spheroidal", "toroidal", or "radial"
+    output <str>: either "gvel" or "pvel" for group or phase velocity
+    overtone <int>: overtone number (defaults to 0, ie. fundamental mode)
+    freq_units <str>: units of frequency axis. either "rad/s","hz",or "mhz"
+
+    returns:
+    freq,vel: frequency (in freq_units) and (group or phase) velocity in km/s
+    '''
+
+    table = h5py.File(table,'r')
+    omega = table[mode_type][str(overtone)].attrs['omega']
+    vel = table[mode_type][str(overtone)].attrs[output]
+
+    if freq_units.lower() == 'hz':
+        freq = omega/(2.*np.pi)
+    elif freq_units.lower() == 'mhz':
+        freq = (omega/(2.*np.pi)) * 1000.
+    elif freq_units.lower() == 'rad/s':
+        freq = omega
+
+    return freq,vel
+
 def readSWascii(file, delim = '-',required = None,warning=False):
     """Reads the REM3D format for analysis and plotting.
 

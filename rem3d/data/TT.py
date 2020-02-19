@@ -1,9 +1,21 @@
+#!/usr/bin/env python
+
+#######################################################################################
+# python 3 compatibility
+from __future__ import absolute_import, division, print_function
+
+#####################  IMPORT STANDARD MODULES   ######################################
+
 import os
 import h5py
 import glob
 import numpy as np
 import pandas as pd
 from itertools import islice
+
+if sys.version_info[0] >= 3: unicode = str
+
+####################       I/O ROUTINES     ######################################
 
 def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose=True):
     '''
@@ -23,7 +35,7 @@ def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose
     #open hdf5 file
     if os.path.exists(tt_table_name):
         ds = h5py.File(tt_table_name,'r+')
-    else: 
+    else:
         ds = h5py.File(tt_table_name,'w')
 
         #create h5py groups for travel times and paths
@@ -36,11 +48,11 @@ def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose
     except:
         print('group already exists... appending new data to it')
 
-    
+
     #get list of directories containing travel time and path into
     phase_list = glob.glob(cagc_rays_outdir+'/*')
     print(phase_list)
-     
+
 
     for phase_ in phase_list:
         phase = phase_.split('/')[-1]
@@ -55,13 +67,13 @@ def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose
                               names=['delta','p','T','dDdp','tstar','branch'])
             tts = tts.iloc[::-1]
             tts = tts.dropna() #get rid of NaN values
-        
+
         except(OSError):
             raise ValueError('The directory ',phase,'does not contain ttandtstar.txt')
 
         #create a new group for each phase
         try:
-            ds['travel_times']['1D'][component].create_group(phase) 
+            ds['travel_times']['1D'][component].create_group(phase)
         except:
             print('group already exists... appending new data to it')
 
@@ -98,7 +110,7 @@ def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose
             #read data
             print("#########################################################")
             print(path_)
-            path = np.loadtxt(path_) 
+            path = np.loadtxt(path_)
 
             #get branch info
             with open(path_) as file_:
@@ -178,7 +190,7 @@ def get_travel_times1D(table,distance_in_degree,source_depth_in_km,phase,
     branch <str>: branch (doesn't do anything yet)
 
     returns
-    time_in_s <float>: travel time in seconds. 
+    time_in_s <float>: travel time in seconds.
     '''
 
     if branch == None and phase != 'PKP':
@@ -194,7 +206,7 @@ def get_travel_times1D(table,distance_in_degree,source_depth_in_km,phase,
         raise ValueError('phase {} not present in the {} table'.format(phase,table))
 
     #TODO add attributes to the table such as min/max depth and distance
-    evdp_max = 670.0 #this is just a stand-in value 
+    evdp_max = 670.0 #this is just a stand-in value
     if source_depth_in_km > evdp_max:
         raise ValueError('source depth {}-km exceeds limit of {}-km'.format(source_depth_in_km,evdp_max))
 
@@ -229,6 +241,6 @@ def get_travel_times1D(table,distance_in_degree,source_depth_in_km,phase,
     #interp between travel times for different source depths
     w1 = (z2 - source_depth_in_km) / dz_table
     w2 = (source_depth_in_km - z1) / dz_table
-    time_in_s = ttz1 * w1 + ttz2 * w2 
+    time_in_s = ttz1 * w1 + ttz2 * w2
 
     return time_in_s
