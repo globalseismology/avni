@@ -14,6 +14,7 @@ import pandas as pd
 import h5py
 import progressbar
 import pdb
+from rem3d import constants
 
 if sys.version_info[0] >= 3: unicode = str
 
@@ -36,19 +37,32 @@ def get_travel_times1D(table,distance_in_degree,period,output='pvel',mode_type='
     """
 
     table = h5py.File(table,'r')
+    omega_query = (1./period) * (2.*np.pi) #the requested frequency in rad/s
+
     # Perform some checks
-    if phase == None:
+    if phase == None: #if no phase is given, assume minor arc
         omega = table[mode_type][str(overtone)].attrs['omega']
         vel = table[mode_type][str(overtone)].attrs[output]
     else:
+
         if isinstance(phase, str):
             # heuristics: 'R1' - call spheroidal, G1=toroidal
             omega = table[mode_type][str(overtone)].attrs['omega']
             vel = table[mode_type][str(overtone)].attrs[output]
+
         else:
             raise ValueError('Only phases like R1, G1 can be called')
 
-    # Perform interpolation at the period usind griddata
+    if omega_query < np.min(omega) or omega_query > np.max(omega):
+        raise ValueError('period {} doesnt exist in table for requested mode'.format(period))
+
+    # Perform interpolation to get velocity for requested period
+    vel_i = np.interp(omega_query,omega,vel)
+
+    # Find travel time
+    distance_in_km = constants.deg2km.magnitude * distance_in_degree
+    time_in_s =  distance_in_km * (1./vel_i)
+
     return time_in_s
 
 
