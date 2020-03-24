@@ -186,6 +186,7 @@ class Model(object):
                 'parameter': parameter to fetch, string ('vs')
                 'interpolated': 1/0 for interpolation with KdTree (1)
                 'quickInterp': 1/0 for quick interpolation (0)
+                'includeTopo': 1/0 for incuding topography along transect (0)
 
             model+kernel must match a model file.  (see listModels() method)
 
@@ -202,6 +203,7 @@ class Model(object):
                     'lat': 1d array, latitude of surface points,
                     'lon': 1d array, longitude of surface points,
                     'theta': 1d array, angular distance along transect [degrees]
+                    'topo': 1d array, topography along transect if includeTopo
                     }
         '''
         args['task']='crossSection'
@@ -210,7 +212,7 @@ class Model(object):
 
         if json_load['call_complete']:
             results={}
-            not_arrays=['parameter','call_complete']
+            not_arrays=['parameter','call_complete','topo']
             for keyn in json_load.keys():
                 if keyn not in not_arrays:
                     results[keyn]=np.asarray(json_load[keyn])
@@ -220,6 +222,20 @@ class Model(object):
             # calculate angular coord (distance along path)
             Nlatlon=results['lat'].size
             results['theta']=np.linspace(0,args['gcdelta'],Nlatlon)
+
+            # adjust topo
+            if 'topo' in results.keys() and type(results['topo'])==type(dict()):
+                goodTopo=True
+                for fld in ['z','lat','lon']:
+                    if fld in results['topo'].keys():
+                        results['topo'][fld]=np.array(results['topo'][fld])
+                    else:
+                        goodTopo=False
+
+                if goodTopo:
+                    Ntopo=len(results['topo']['z'])
+                    results['topo']['theta']=np.linspace(0,args['gcdelta'],Ntopo)
+
         else:
             results=json_load
 
