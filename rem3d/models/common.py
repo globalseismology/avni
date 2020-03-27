@@ -116,6 +116,7 @@ def read3dmodelfile(modelfile):
     interpolant = None; cite = None; shortcite = None; scaling = None
     with open(modelfile) as f: lines = f.readlines()
     ii=0;   model3d = {}
+    foundsplines = False; foundpixels = False; #foundharmonics = False
     while ii < len(lines):
         line=lines[ii]; ii=ii+1
         if line.startswith("REFERENCE MODEL:"): refmodel=line[16:].rstrip('\n').strip(' ')
@@ -132,7 +133,6 @@ def read3dmodelfile(modelfile):
         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
 
         # search for parmaterization
-        foundsplines = False; foundpixels = False; #foundharmonics = False
         if line.startswith("DESC"):
             idummy=int(line[4:line.index(':')])
             substr=line[line.index(':')+1:len(line.rstrip('\n'))]

@@ -744,10 +744,14 @@ class Reference1D(object):
                             # this is the bottom of the region under consideration
                             indxdisc = np.where(disc_depth-depth>=0.)[0][0]
                             if indxdisc == 0: indxdisc += 1 # surface is queried, so use the region below for interpolation
+                            end=np.where(np.isclose(depth_array-disc_depth[indxdisc-1],0))[0][0]
                             if indxdisc != 1:
-                                indxdeps = np.where((depth_array>=disc_depth[indxdisc-1]) & (depth_array<=disc_depth[indxdisc]))[0][1:-1] # leave the first and last since these are other regions
+                                # leave the first and last since these are other regions
+                                start=np.where(np.isclose(depth_array-disc_depth[indxdisc],0))[0][1]
+                                indxdeps = np.arange(start,end+1)
                             else:
-                                indxdeps = np.where((depth_array>=disc_depth[indxdisc-1]) & (depth_array<=disc_depth[indxdisc]))[0][1:] # leave the first and last since these are other regions
+                                start=0
+                                indxdeps = np.arange(start,end+1)
                             values[idep] = griddata(depth_array[indxdeps],modelval[indxdeps],depth,method=interpolation)
 
                 else:

@@ -23,6 +23,7 @@ from ..mapping import spher2cart,intersection,midpoint
 from .. import constants
 from .common import precision_and_scale,convert2nparray
 from ..tools import decimals,get_filedir
+from ..data import update_file
 #######################################################################################
 
 def xarray_to_epix(data,latname = 'latitude', lonname = 'longitude'):
@@ -192,7 +193,7 @@ def readtopography(model=constants.topography,resolution='h',field = 'z',latitud
         ncfile = model
     else:
         ncfile = dbs_path+'/'+model
-    if not os.path.isfile(ncfile): data.update_file(model)
+    if not os.path.isfile(ncfile): update_file(model)
     #read values
     if os.path.isfile(ncfile):
         f = xr.open_dataset(ncfile)

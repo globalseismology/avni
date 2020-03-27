@@ -27,10 +27,20 @@ class Kernel_set(object):
     def __init__(self,dictionary):
         self.metadata ={}
         self.data = {}
-        self.name = dictionary['kerstr']
+        self._name = dictionary['kerstr']
         self.initialize(dictionary)
         self.extract_lateral(dictionary)
         self.extract_radial(dictionary)
+
+    def __str__(self):
+        if self._name is not None:
+            output = "%s is a kernel set" % (self._name)
+        else:
+            output = "No kernel set has been initialized yet"
+        return output
+
+    def __repr__(self):
+        return '{self.__class__.__name__}({self._name})'.format(self=self)
 
     def initialize(self,dictionary,required=None,optional=None):
 
@@ -48,6 +58,14 @@ class Kernel_set(object):
                 self.metadata[var] = dictionary[var]
             except:
                 self.metadata[var] = None
+
+    #########################       decorators       ##########################
+
+    @property
+    def name(self):
+        return self._name
+
+    #########################       methods       #############################
 
     def extract_lateral(self,dictionary):
         lateral=[]
