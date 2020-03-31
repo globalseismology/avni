@@ -299,15 +299,10 @@ class Model(object):
         json_load = json.loads(self.r3dc.call(self.endpoint,dict(args),5*60))
         results={}
 
-        # reconstruct lat, lon and add to results
-        lon_range=json_load['lon_range']
-        lat_range=json_load['lat_range']
-        results['lat']=np.linspace(lat_range['lat1'],lat_range['lat2'],lat_range['Nlat'])
-        results['lon']=np.linspace(lon_range['lon1'],lon_range['lon2'],lon_range['Nlon'])
-
-        # convert the depth profile to np array
+        # convert the results to np arrays
         param=json_load['parameter']
-        results[param]=np.array(json_load[param])
+        for fld in [param,'lat','lon']:
+            results[fld]=np.array(json_load[fld])
 
         # copy over some of the other returns
         results['parameter']=param
