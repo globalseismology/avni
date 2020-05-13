@@ -45,6 +45,17 @@ def main():
 
     ##### Example of a regional transects
     print("PLOTTING SECTION 1")
+    # Eurasia
+    lat1 = 45.;lng1 = 15.;lat2 = 55.;lng2 = 140.
+    delta,azep, _  = ddelazgc(lat1,lng1,lat2,lng2)
+    if arg.output:
+        outfile = prefix+'Eurasia.'+arg.parameter+'.'+arg.format
+    else:
+        outfile = None
+    topo,topo_tree,tomo,tomo_tree = plot1section(lat1,lng1,azep,delta,model=model3d,parameter=arg.parameter,vmin=-6,vmax=6,colorlabel='$\delta$'+' '+arg.parameter+' / '+arg.parameter+'(%)',outfile=outfile,vexaggerate=arg.elev_exxagerate,nelevinter=arg.elev_interval,colorcontour=arg.colorcontour,colorpalette=arg.color,radii=[5571,6346.6])
+
+
+
     # Kermadec
     lat1 = -25.;lng1 = 191.;lat2 = -22.;lng2 = 160.
     delta,azep, _  = ddelazgc(lat1,lng1,lat2,lng2)
