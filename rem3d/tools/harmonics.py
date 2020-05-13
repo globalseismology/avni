@@ -110,7 +110,7 @@ def wrswpsh(filename,shmatrix,metadata=None,comments=None, lmax=None):
             if order == 0:
                 arow=header_linem0.write([degree,order,shmatrix['cos'][ii]])
             else:
-                # convert to ylm normalization on the fly
+                # convert from ylm to Complex normalization on the fly
                 arow=header_line.write([degree,order,0.5*shmatrix['cos'][ii],-0.5*shmatrix['sin'][ii]])
             printstr.append(arow+'\n')
 
