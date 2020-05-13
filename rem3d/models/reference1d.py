@@ -24,6 +24,7 @@ import re
 import ntpath
 import uuid
 import contextlib
+import warnings
 import os
 from progressbar import progressbar
 
@@ -493,7 +494,7 @@ class Reference1D(object):
             with contextlib.suppress(FileNotFoundError): os.remove(file)
 
         else:
-            print('Warning: mineralogical parameters not evaluated for '+constants.planetpreferred)
+            warnings.warn(' mineralogical parameters not evaluated for '+constants.planetpreferred)
 
     def if_discontinuity(self,depth_in_km):
         """
@@ -559,14 +560,14 @@ class Reference1D(object):
 
         discfind = disc['delta']['radius'][np.abs(1221.5-discradii)<25.].pint.to('km').values.quantity.magnitude
         if len(discfind) <= 0: # not found
-            print("Warning: itopic not found")
+            warnings.warn(" itopic not found")
         elif len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
         else:
             disc['itopic'] = np.where(radii==discfind[0])[0][1]
 
         discfind = disc['delta']['radius'][np.abs(3480.0-discradii)<25.].pint.to('km').values.quantity.magnitude
         if len(discfind) <= 0: # not found
-            print("Warning: itopoc not found")
+            warnings.warn(" itopoc not found")
         elif len(discfind) > 1:
             raise ValueError('get_discontinuity: multiple values within discontinuity limits')
         else:
@@ -577,7 +578,7 @@ class Reference1D(object):
         if len(discfind) > 0: disc['itopcrust'] = max(discfind) + 1
         #discfind = disc['delta']['radius'][np.abs(6368.0-disc['delta']['radius']/1000.)<0.1]
 #         if len(discfind) <= 0: # not found
-#             print("Warning: itopcrust not found")
+#             warnings.warn(" itopcrust not found")
 #         elif len(discfind) > 1:
 #             raise ValueError('get_discontinuity: multiple values within discontinuity limits')
 #         else:
@@ -622,7 +623,9 @@ class Reference1D(object):
         depth_in_km = tools.convert2nparray(depth_in_km)
         values = np.zeros_like(depth_in_km,dtype=np.float)
         parameters = tools.convert2nparray(self.metadata['parameters'])
-        findparam = np.where(parameters == parameter)[0].item()
+        findindx = np.where(parameters == parameter)[0]
+        if len(findindx) == 0 : raise KeyError('parameter '+parameter+' cannot be evaluated from reference1d instance')
+        findparam = findindx.item()
         unit = self.metadata['units'][findparam]
         uniqueregions = {}
         target_region = np.empty_like(depth_in_km,dtype="U40"); target_region[:] = ''

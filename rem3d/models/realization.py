@@ -49,6 +49,15 @@ class Realization(object):
     def __repr__(self):
         return '{self.__class__.__name__}({self._name})'.format(self=self)
 
+    def __getitem__(self,key):
+        """returns metadata from key"""
+        return self.metadata[key]
+
+    def __setitem__(self,key,data):
+        """sets data to key"""
+        self.metadata[key] = data
+
+
     #########################       decorators       ##########################
     @property
     def type(self):
@@ -61,7 +70,13 @@ class Realization(object):
     @property
     def refmodel(self):
         return self._refmodel
+
+    @property
+    def keys(self):
+        return self.metadata.keys()
+
     #########################       methods       #############################
+
 
     def read(self,file):
         """
@@ -89,10 +104,156 @@ class Realization(object):
         if success: self._infile = file
         # try to get the kernel set
         try:
-            self.metadata['kernel_set'] = Kernel_set(self.metadata)
+            self['kernel_set'] = Kernel_set(self.metadata.copy())
+            self.decode_mapping()
+            self.decode_units()
+            self.decode_scaling()
+            self.scale_coefficients()
         except:
             print(traceback.format_exc())
             print('Warning: kernel_set could not be initialized in realization instance for '+file)
+
+    def decode_units(self):
+        if 'attrs' not in self.keys: self['attrs']={}
+        kernel=self['kernel_set']
+
+        # check if already available
+        done=True
+        if 'varstr' not in kernel.keys: raise ValueError('decoding units not possible without varstr initialized from model file and attributes.ini')
+        for variable in kernel['varstr']: #loop over all variables, grabbing
+            for type in ['unit','absolute_unit']:
+                if variable in self['attrs'].keys():
+                    done &= (type in self['attrs'][variable].keys())
+                else:
+                    done = False
+        if done: return
+
+        for key in ['unit','absolute_unit']:
+            if key not in kernel.keys:
+                raise ValueError('decoding units not possible without '+key+' initialized from model file and attributes.ini')
+        for variable in kernel['varstr']: #loop over all variables, grabbing
+            if variable not in self['attrs'].keys(): self['attrs'][variable]={}
+            for type in ['unit','absolute_unit']:
+                found = False
+                units={}
+                other_units=None
+                for key in kernel[type].keys():
+                    if key.replace(" ", "").lower() in variable.replace(" ", "").lower():
+                        if found: raise ValueError('String '+key+' maps to multiple radial kernels. Please be more specific in attributes.ini')
+                        found=True
+                        self['attrs'][variable][type]=kernel[type][key]
+                    if key.lower()=='other': other_units=kernel[type][key]
+                if not found :
+                    if other_units != None:
+                        self['attrs'][variable][type]=other_units
+                    else:
+                        raise ValueError('no '+type+' decoded for variable '+variable+' based on attributes.ini')
+
+        # Get units for mapped variables
+        if 'mapping' in kernel.keys:
+            for mapped in kernel['mapping']:
+                searchstr = self['attrs'][mapped]['mapping']['variables'][0]
+                for variable in kernel['varstr']: #loop over all variables
+                    if searchstr in variable:
+                        for type in ['unit','absolute_unit']:
+                            self['attrs'][mapped][type]=self['attrs'][variable][type]
+
+    def decode_symbols(self,searchstr,unique=False):
+        searchstr = searchstr.split()
+        symbols_all = ['-','+','X','x','*','^','/']
+        variables = [x for x in searchstr if x not in set(symbols_all)]
+        symbols = [x for x in searchstr if x not in set(variables)]
+
+        scaling=[]
+        expect=True
+        for indx,val in enumerate(variables): # find scaling exclude last entry
+            if expect:
+                try:
+                    scaling.append(float(val))
+                    variables.pop(indx)
+                    expect=False
+                except ValueError:
+                    if expect: scaling.append(1.)
+                    expect=True
+
+        # find unique entries corresponding to radial kernels
+        if unique:
+            temp=[]
+            kernel=self['kernel_set']
+            for val in variables: temp.append(kernel.search_radial(val,unique=True))
+            variables = temp
+
+        if not(len(variables)==len(scaling)==len(symbols)+1):
+            raise ValueError("something wrong with decoding symbols, scaling and varianles from  "+searchstr)
+        return variables,scaling,symbols
+
+    def scale_coefficients(self):
+        """
+        scale model coefficients based on scaling
+        """
+        kernel = self['kernel_set']
+        scaling=kernel.scaling
+        radial_basis = kernel.data['radial_basis']
+        for output in scaling:
+            # find all kernels for this variable
+            outfind = kernel.find_radial(output)
+            basis_out = radial_basis[output]
+
+            # checks
+            input = scaling[output]['variables']
+            if len(input) > 1: raise NotImplementedError('cannot scale more than one variable for now')
+            infind = kernel.find_radial(input[0])
+            basis_in = radial_basis[input[0]]
+
+            scale_constant = scaling[output]['scaling']
+            # now loop and check if radial basis is compatible
+            for row,indxout in enumerate(outfind['index']):
+                indxin = infind['index'][row]
+                if basis_in[row] != basis_out[row]: raise ValueError('incompatible radial basis: '+basis_in[row]._name+' / '+basis_out[row]._name)
+
+                # check that the lateral basis type is same
+                ihorpar_in = self['ihorpar'][indxin]
+                ihorpar_out = self['ihorpar'][indxout]
+                if ihorpar_in != ihorpar_out:
+                    warnings.warn('switching lateral parameterization of radial kernel, '+basis_out[row].name+' from '+self['typehpar'][ihorpar_out-1]+' to '+self['typehpar'][ihorpar_in-1])
+                    self['ihorpar'][indxout]=ihorpar_in
+
+                #scale the coefficients
+                self.data.iloc[indxout] = self.data.iloc[indxin] * scale_constant
+
+                # update cumulative number of coefficients
+                self['kernel_set']['ncoefcum']=np.cumsum([self['ncoefhor'][ihor-1] for ihor in self['ihorpar']])
+
+    def decode_scaling(self):
+        kernel=self['kernel_set']
+        if 'scaling' not in kernel.keys: return
+        tempscaling={}
+        if kernel['scaling'] is not None:
+            for search in kernel['scaling']:
+                variables,scaling,symbols = self.decode_symbols(kernel['scaling'][search],unique=True)
+
+                # get the corresponding radial kernel
+                radker = kernel.search_radial(search,unique=True)
+
+                # store
+                tempscaling[radker] = {'variables': variables,'scaling':scaling,'symbols':symbols}
+        kernel['scaling']=tempscaling
+
+    def decode_mapping(self):
+        if 'attrs' not in self.keys: self['attrs']={}
+        kernel=self['kernel_set']
+        # decode units for mapped variables
+        if 'mapping' not in kernel.keys: return
+        for mapped in kernel['mapping']:
+            # decode string
+            variables,scaling,symbols = self.decode_symbols(kernel['mapping'][mapped])
+
+            # Only = or - allowed for mapping
+            for symb in np.unique(symbols):
+                if symb not in ['-','+']: raise ValueError('Only + or - allowed for mapping')
+            #store
+            if mapped not in self['attrs'].keys(): self['attrs'][mapped]={}
+            self['attrs'][mapped]['mapping']={'variables': variables,'constants':scaling,'symbols':symbols}
 
     def readascii(self,modelfile):
         """
@@ -250,19 +411,19 @@ class Realization(object):
 
         '''
 
-        check = self.metadata['typehpar']=='PIXELS'
-        if len(check) != 1 or not check[0]: raise IOError('cannot output netcdf4 file for horizontal parameterizations : ',self.metadata['typehpar'])
+        check = self['typehpar']=='PIXELS'
+        if len(check) != 1 or not check[0]: raise IOError('cannot output netcdf4 file for horizontal parameterizations : ',self['typehpar'])
         if outfile == None and writenc4:
             if self._name.endswith('.nc4'):
                 outfile = self._name
             else:
-                outfile = self._name+'.'+self.metadata['kernel_set'].name+'.rem3d.nc4'
+                outfile = self._name+'.'+self['kernel_set'].name+'.rem3d.nc4'
 
         # get sizes
-        shape = self.metadata['shape']
-        lat_temp = self.metadata['xlapix'][0]
-        lon_temp = self.metadata['xlopix'][0]
-        siz_temp = self.metadata['xsipix'][0]
+        shape = self['shape']
+        lat_temp = self['xlapix'][0]
+        lon_temp = self['xlopix'][0]
+        siz_temp = self['xsipix'][0]
         sortbylon = np.all(lon_temp == sorted(lon_temp))
 
         # unique values for reshaping
@@ -280,9 +441,9 @@ class Realization(object):
         if not len(pxw)==1: raise warnings.warn('more than 1 pixel size in variable '+variable, pxw)
 
         # Get all depths
-        kernel = self.metadata['kernel_set']
+        kernel = self['kernel_set']
         depths = np.array([])
-        for variable in self.metadata['varstr']:
+        for variable in self['varstr']:
             deptemp = kernel.pixeldepths(variable)
             if np.any(deptemp != None): depths = np.concatenate([depths,deptemp])
         alldepths= np.sort(np.unique(depths))
@@ -296,12 +457,12 @@ class Realization(object):
         data_vars['pixel_width']=(('latitude', 'longitude'), pixel_array)
 
         # store every variable
-        for variable in self.metadata['varstr']:
+        for variable in self['varstr']:
             deptemp = kernel.pixeldepths(variable)
             if np.any(deptemp == None): # 2D variable
                 # update the kernel descriptions
-                varind = np.where(self.metadata['varstr']==variable)[0][0]+1
-                kerind = np.where(self.metadata['ivarkern']==varind)[0]
+                varind = np.where(self['varstr']==variable)[0][0]+1
+                kerind = np.where(self['ivarkern']==varind)[0]
                 values = self.data.iloc[kerind]
                 if not sortbylon:
                     arr=pd.DataFrame(np.vstack([lon_temp,lat_temp,siz_temp,values]).T,columns =['lon', 'lat', 'pxw','values'])
@@ -314,8 +475,8 @@ class Realization(object):
             else:
                 data_array = np.zeros((len(alldepths),len(lat),len(lon)))
                 # update the kernel descriptions
-                varind = np.where(self.metadata['varstr']==variable)[0][0]+1
-                kerind = np.where(self.metadata['ivarkern']==varind)[0]
+                varind = np.where(self['varstr']==variable)[0][0]+1
+                kerind = np.where(self['ivarkern']==varind)[0]
                 if len(kerind) != len(deptemp): raise AssertionError('number of depths selected does not corrspong to the number of layers')
                 # find depth indices
                 dep_indx = np.searchsorted(alldepths,deptemp)
@@ -340,12 +501,12 @@ class Realization(object):
         exclude = ['ityphpar','typehpar', 'hsplfile', 'xsipix', 'xlapix', 'xlopix','numvar', 'varstr', 'desckern', 'nmodkern', 'ivarkern','ihorpar', 'ncoefhor','ncoefcum', 'kernel_set','attrs']
         for field in self.metadata.keys():
             if field not in exclude:
-                ds.attrs[field] = self.metadata[field]
+                ds.attrs[field] = self[field]
         exclude = ['sh'] #exclude spherical harmonic coefficients
-        for variable in self.metadata['varstr']:
-            for field in self.metadata['attrs'][variable].keys():
+        for variable in self['varstr']:
+            for field in self['attrs'][variable].keys():
                 if field not in exclude:
-                    ds[variable].attrs[field] = self.metadata['attrs'][variable][field]
+                    ds[variable].attrs[field] = self['attrs'][variable][field]
 
         # write to file
         if outfile != None:
@@ -364,21 +525,21 @@ class Realization(object):
         return ds
 
     def to_harmonics(self,lmax=40,variables=None):
-        if variables == None: variables = self.metadata['varstr']
+        if variables == None: variables = self['varstr']
         variables = convert2nparray(variables)
-        check = self.metadata['typehpar']=='PIXELS'
-        if len(check) != 1 or not check[0]: raise IOError('cannot output harmonics for horizontal parameterizations : ',self.metadata['typehpar'])
+        check = self['typehpar']=='PIXELS'
+        if len(check) != 1 or not check[0]: raise IOError('cannot output harmonics for horizontal parameterizations : ',self['typehpar'])
         # Convert to numpy array
         namelist = ['latitude','longitude','value']
         formatlist = ['f8','f8','f8']
         dtype = dict(names = namelist, formats=formatlist)
         epixarr = np.zeros((self.data.shape[1]),dtype=dtype)
-        epixarr['latitude'] = self.metadata['xlapix'][0]
-        epixarr['longitude'] = self.metadata['xlopix'][0]
+        epixarr['latitude'] = self['xlapix'][0]
+        epixarr['longitude'] = self['xlopix'][0]
 
-        coef=np.zeros((self.metadata['nmodkern'],(lmax+1)**2))
+        coef=np.zeros((self['nmodkern'],(lmax+1)**2))
         for ivar,field in enumerate(variables):
-            layers = np.where(self.metadata['ivarkern']==ivar+1)[0]
+            layers = np.where(self['ivarkern']==ivar+1)[0]
             print('... calculating spherical harmonic expansion of # '+str(ivar+1)+' / '+str(len(variables))+' : '+field+' , '+str(len(layers))+' layers')
             for ii,layer in enumerate(layers[:10]):
                 epixarr['value'] = self.data.iloc[layer].to_numpy()

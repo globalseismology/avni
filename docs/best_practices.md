@@ -4,7 +4,8 @@ Table of Contents
   1. [Use *issues* to discuss intended modifications](#use-issues-to-discuss-any-intended-modifications)
   2. [Document your code](#document-your-code)
   3. [Test your code](#test-your-code)
-  4. [Coding style](#coding-style)
+  4. [F2PY troubleshooting](#f2py-troubleshooting)
+  6. [Coding style](#coding-style)
   	* [Python](#python-formatting)
   	* [Fortran](#fortran-formatting)
 
@@ -27,7 +28,13 @@ REM3D's issue tracker interface lets us track bugs being fixed and enhancements 
 Document your code
 ------------------
 
-Any new code should be fully Doxygen commented in [Python](#python-formatting) or [fortran](#fortran-formatting). If you have some free time, feel free to comment any code you modify. 
+Any new code should be fully Doxygen commented in [Python](#python-formatting) or [fortran](#fortran-formatting). If you have some free time, feel free to comment any code you modify.
+
+F2PY troubleshooting
+------------------
+
+F2PY is used by setup.py to compile fortran routines during installation. As a developer, you might need to troubleshoot the fortran codes to make them compile correctly. The error handling and exceptions are not straightforward; a few suggestions are provided [here](./fortran_f2py.md)
+
 
 Test your code
 ------------------

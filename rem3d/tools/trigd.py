@@ -6,30 +6,30 @@ Typically used to interface with fortran codes.
 from math import cos, sin, tan, acos, asin, atan, atan2, degrees, radians
 from numba import jit
 
-@jit(nopython=True)
+@jit
 def cosd(x):
   return cos(radians(x))
 
-@jit(nopython=True)
+@jit
 def sind(x):
   return sin(radians(x))
 
-@jit(nopython=True)
+@jit
 def tand(x):
   return tan(radians(x))
 
-@jit(nopython=True)
+@jit
 def acosd(x):
   return degrees(acos(x))
 
-@jit(nopython=True)
+@jit
 def asind(x):
   return degrees(asin(x))
 
-@jit(nopython=True)
+@jit
 def atand(x):
   return degrees(atan(x))
 
-@jit(nopython=True)
+@jit
 def atan2d(y, x):
   return degrees(atan2(y, x))
