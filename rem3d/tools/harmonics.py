@@ -57,7 +57,7 @@ def rdswpsh(filename):
             # Change based on ylm normalization
             tempshrow[0]=int(tempshrow[0]);tempshrow[1]=int(tempshrow[1])
             if tempshrow[1] == 0:
-                tempshrow[2] =  2. * float(tempshrow[2])
+                tempshrow[2] =  float(tempshrow[2])
                 tempshrow.append(0.)
             else:
                 tempshrow[2] =  2. * float(tempshrow[2])

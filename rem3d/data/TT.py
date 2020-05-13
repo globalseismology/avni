@@ -11,12 +11,144 @@ import sys
 import h5py
 import glob
 import numpy as np
+import six
 import pandas as pd
 from itertools import islice
+import fortranformat as ff #reading/writing fortran formatted text
+import progressbar
+import pdb
 
 if sys.version_info[0] >= 3: unicode = str
 
 ####################       I/O ROUTINES     ######################################
+def readTTascii(file, delim = '-',required = None,warning=False):
+    """Reads the REM3D format for analysis and plotting.
+
+    Input parameters:
+    ----------------
+
+    file :  input file in default REM3D format
+
+    delim : delimiter that combines fields into a joint field e.g. network-station
+            seperate out during I/O.
+
+    required : fields needed as comments (e.g. #CITE: Author et al., YEAR) in the file
+                defaults: 'CITE', 'SHORTCITE', 'REFERENCE MODEL', 'PVEL', 'CRUST',
+                          'MODEL3D', 'SIGMATYPE', 'WEITYPE','EQTYPE', 'STATTYPE',
+                          'FORMAT', 'WRITE', 'FIELDS'
+
+    Output:
+    ------
+
+    TTdata :  dictionary with fields data, metadata and comments
+    """
+    # defaults
+    if required == None: required = ['CITE', 'SHORTCITE', 'REFERENCE MODEL', 'CRUST', 'MODEL3D', 'SIGMATYPE', 'WEITYPE','EQTYPE', 'STATTYPE', 'FORMAT', 'WRITE', 'FIELDS']
+    if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
+
+    # checks for CITE and SHORTCITE comments
+    comments = []
+    for line in open(file):
+        if line.startswith("#"): comments.append(line.rstrip())
+
+    metadata={}; notes=[]
+    for line in comments:
+        if line.startswith("#") and ':' in line and not line.startswith("#NOTES:"):
+            key = line[1:].split(':')[0]
+            value = line[1:].split(':')[1].rstrip().lstrip()
+            metadata[key] = value
+        elif line.startswith("#NOTES:"):
+            notes.append(line)
+    metadata['COMMENTS'] = notes
+
+    #check if required fields exist
+    for key in required:
+        try:
+            namelist = metadata[key].split()
+        except KeyError:
+            if warning:
+                print(key+" should be defined as a comment in "+file)
+            else:
+                raise KeyError(key+" should be defined as a comment in "+file)
+
+    data = pd.read_table(file,header=None,comment='#',sep='\s+',names=metadata['FIELDS'].split())
+
+    # replace the fields by divided fields if concatenated
+    for column in data.columns.tolist():
+        if delim in column:
+            newcolumns = column.split(delim)
+            data[newcolumns] = data[column].str.split(delim,expand=True).iloc[:,:len(newcolumns)]
+            data = data.drop(column, 1) # get rid of old composite column
+            data.replace('', np.nan, inplace=True) #replace blank with nan
+    data['path'] = data['cmtname'] + '_'+ data['stat'] + '-' + data['net']
+
+    TTdata = {}; TTdata['data'] = data; TTdata['metadata'] = metadata
+    return TTdata
+
+def writeTTascii(TTdata,filename,iflagthreshold=None,delim='-'):
+    """
+    Writes the REM3D format for analysis and plotting
+
+    Input parameters:
+    ----------------
+
+    TTdata : dictionary of SW data with metadata and data fields
+
+    filename : output file name
+
+    delim : delimiter that combines fields into a joint field e.g. network-station
+            seperate out during I/O.
+
+    iflagthreshold : threshold for iflag which corresponds to the processing level
+                     that was cleared
+
+    """
+
+    if iflagthreshold is None:
+        data = TTdata['data']
+    else:
+        data = TTdata['data'][TTdata['data']['iflag'] >= iflagthreshold]
+
+    metadata = TTdata['metadata'];
+    header_line  =  ff.FortranRecordWriter('('+metadata['WRITE']+')')
+
+    printstr  =  [unicode('#'+key+':'+metadata[key]+'\n') for key in metadata.keys() if key not in ['FIELDS','WRITE','COMMENTS']]
+    printstr.append(unicode('#'*len(metadata['FIELDS'])+'\n'))
+    for comment in metadata['COMMENTS']: printstr.append(unicode(comment+'\n'))
+    printstr.append(unicode('#'*len(metadata['FIELDS'])+'\n'))
+    for key in metadata.keys():
+        if key in ['FIELDS','WRITE']: printstr.append(unicode('#'+key+':'+metadata[key]+'\n'))
+
+    namelist = metadata['FIELDS'].split()
+    # replace the fields by divided fields if concatenated
+    for column in namelist:
+        if delim in column:
+            oldcolumns = column.split(delim)
+
+            data[column]=data[oldcolumns].fillna('').apply(lambda x: delim.join(x.astype(str).values), axis=1)
+            data = data.drop(oldcolumns, 1) # get rid of old separate columns
+    # reorder according to FIELDS
+    data = data.reindex(namelist,axis=1)
+
+    f = open(filename,'w')
+    f.writelines(printstr)
+    for ii in progressbar.progressbar(range(len(data))):
+        line=[]
+        for val in data.values[ii]:
+            if isinstance(val,six.string_types):
+                line.append(val.ljust(15))
+            else:
+                line.append(val)
+        try:
+            arow = header_line.write(line)
+        except:
+            pdb.set_trace()
+            raise IOError('No line to print')
+        f.write(unicode(arow+'\n'))
+    f.close()
+    print("....written "+str(len(data))+" observations to "+filename)
+    return
+
 
 def writetablehdf5(cagc_rays_outdir,tt_table_name,source_depth,component,verbose=True):
     '''

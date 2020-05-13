@@ -113,9 +113,10 @@ def read3dmodelfile(modelfile):
     #defaults
     desckern=[];ihorpar=[]
     refmodel = None; kerstr = None; crust = None; null_model= None
-    interpolant = None; cite = None; shortcite = None; scaling = None
+    interpolant = None; cite = None; shortcite = None
     with open(modelfile) as f: lines = f.readlines()
     ii=0;   model3d = {}
+    foundsplines = False; foundpixels = False; #foundharmonics = False
     while ii < len(lines):
         line=lines[ii]; ii=ii+1
         if line.startswith("REFERENCE MODEL:"): refmodel=line[16:].rstrip('\n').strip(' ')
@@ -128,11 +129,9 @@ def read3dmodelfile(modelfile):
         if line.startswith("SHORTCITE:"): shortcite=line[11:].rstrip('\n').strip(' ')
         if line.startswith("INTERPOLANT:"): interpolant=line[13:].rstrip('\n').strip(' ')
         if line.startswith("CRUST:"): crust=line[7:].rstrip('\n').strip(' ')
-        if line.startswith("SCALING:"): scaling=line[9:].rstrip('\n').strip(' ')
         if line.startswith("RADIAL STRUCTURE KERNELS:"): nmodkern = int(line[26:].rstrip('\n'))
 
         # search for parmaterization
-        foundsplines = False; foundpixels = False; #foundharmonics = False
         if line.startswith("DESC"):
             idummy=int(line[4:line.index(':')])
             substr=line[line.index(':')+1:len(line.rstrip('\n'))]
@@ -229,7 +228,7 @@ def read3dmodelfile(modelfile):
                 arr=lines[ii].rstrip('\n').split(); ii=ii+1
                 for val in arr: coef[idummy-1].append(float(val))
     # Store the variables
-    numvar=0; varstr=np.zeros(nmodkern, dtype='U40')
+    numvar=0; varstr=np.zeros(nmodkern, dtype='U200')
     ivarkern=np.zeros(nmodkern,dtype=np.int)
     for ii in np.arange(nmodkern):
         string=desckern[ii]
@@ -248,7 +247,7 @@ def read3dmodelfile(modelfile):
             ivarkern[ii]=numvar
 
     # Save the relevant portions
-    desckern = np.array(desckern)
+    desckern = np.array(desckern, dtype='U200')
     ihorpar = np.array(ihorpar)
     varstr = varstr[:numvar]
     ncoefcum = np.cumsum([ncoefhor[ihor-1] for ihor in ihorpar])
@@ -263,7 +262,7 @@ def read3dmodelfile(modelfile):
     metadata['varstr']=varstr; metadata['ncoefcum']=ncoefcum
     metadata['crust']=crust; metadata['null_model']=null_model
     metadata['interpolant']=interpolant; metadata['cite']=cite
-    metadata['shortcite']=shortcite; metadata['scaling']=scaling
+    metadata['shortcite']=shortcite
 
     if 'SPHERICAL HARMONICS' in typehpar:
         metadata['lmaxhor']=lmaxhor
@@ -387,11 +386,6 @@ def checksetup(parser):
     except KeyError:
         parser['metadata']['crust'] = None
     try:
-        value = parser['metadata']['scaling'].strip()
-        parser['metadata']['scaling'] = None if value.lower() == 'none' else value.split(',')
-    except KeyError:
-        parser['metadata']['scaling'] = None
-    try:
         value = parser['metadata']['null_model'].strip()
         parser['metadata']['null_model'] = None if value.lower() == 'none' else value
     except KeyError:
@@ -463,7 +457,6 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     interpolant = parser['metadata']['interpolant']
     ref_model = parser['metadata']['refmodel']
     crust = parser['metadata']['crust']
-    scaling = parser['metadata']['scaling']
     null_model = parser['metadata']['null_model']
     forward_modeling = parser['metadata']['forward_modeling']
 
@@ -481,7 +474,6 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     f_out.write(u'CITE: {}\n'.format(cite))
     if crust is not 'None': f_out.write(u'CRUST: {}\n'.format(crust))
     if forward_modeling is not None: f_out.write(u'FORWARD MODELING: {}\n'.format(forward_modeling))
-    if forward_modeling is not None: f_out.write(u'SCALING: {}\n'.format(scaling))
     if null_model is not None: f_out.write(u'NULL_MODEL: {}\n'.format(null_model))
 
     #find the number radial kernels

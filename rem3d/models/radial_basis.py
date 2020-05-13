@@ -5,6 +5,7 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np #for numerical analysis
+import pdb
 
 ####################### IMPORT REM3D LIBRARIES  #######################################
 from .. import tools
@@ -39,8 +40,8 @@ class Radial_basis(object):
         self.data['depths_in_km'] = None
         self.data['vercof'] = None
         self.data['dvercof'] = None
-        self.name = name
-        self.type = types
+        self._name = name
+        self._type = types
         if metadata is None:
             self.metadata = {}
         else:
@@ -50,27 +51,51 @@ class Radial_basis(object):
 
     def __eq__(self, other):
 
+        if not isinstance(other,Radial_basis): return False
         # convert to array to allow multiple lateral bases to be compared
-        other = tools.common.convert2nparray(other)
         result = np.ones_like(other, dtype=bool)
 
         # check if the instances have all required metadata
         self.check()
-        for indx,oth in enumerate(other):
-            try:
-                oth.check()
-            except AttributeError: # if either is not this class instance
-                result[indx] = False
+        try:
+            other.check()
+        except AttributeError: # if either is not this class instance
+            return False
 
-            # check type
-            if self.type != oth.type: result[indx] = False
+        # check type
+        if self._type != other._type: return False
 
-            # check all keys
-            for key in self.metadata.keys():
-                if not np.array_equal(self.metadata[key],oth.metadata[key]): result[indx] = False
+        # check all keys
+        for key in self.keys:
+            if not np.array_equal(self.metadata[key],other.metadata[key]): return False
+
         # assume equal otherwise
-        return result[0] if len(result)==1 else result
+        return True
 
+    def __repr__(self):
+        return '{self.__class__.__name__}({self._name})'.format(self=self)
+
+    def __getitem__(self,key):
+        """returns metadata from key"""
+        return self.metadata[key]
+
+    def __setitem__(self,key,data):
+        """sets data to key"""
+        self.metadata[key] = data
+
+    #########################       decorators       ##########################
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def keys(self):
+        return self.metadata.keys()
 
     #########################       methods       #############################
 
@@ -92,35 +117,30 @@ class Radial_basis(object):
         Checks that object contains all attributes required for evaluating a
         particular basis set.
         """
-        if self.type in ['vbspl','variable splines']:
+        if self._type in ['vbspl','variable splines']:
             for key in ['knots']:
                 try:
                     knots = self.metadata[key]
                 except KeyError:
-                    print('Current attributes : ',self.metadata.keys())
-                    raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
-        elif self.type in ['delta','dirac delta']:
+                    print('Current attributes : ',self.keys)
+                    raise KeyError('Attribute '+key+' missing for radial basis type '+self._type)
+        elif self._type in ['delta','dirac delta']:
             for key in ['info']:
                 try:
                     knots = self.metadata[key]
                 except KeyError:
-                    print('Current attributes : ',self.metadata.keys())
-                    raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
-        elif self.type in ['boxcar']:
+                    print('Current attributes : ',self.keys)
+                    raise KeyError('Attribute '+key+' missing for radial basis type '+self._type)
+        elif self._type in ['boxcar']:
             for key in ['depthtop','depthbottom']:
                 try:
                     knots = self.metadata[key]
                 except KeyError:
-                    print('Current attributes : ',self.metadata.keys())
-                    raise KeyError('Attribute '+key+' missing for radial basis type '+self.type)
+                    print('Current attributes : ',self.keys)
+                    raise KeyError('Attribute '+key+' missing for radial basis type '+self._type)
         else:
-            raise TypeError('metadata type note defined in eval_radial %s' % self.type)
+            raise TypeError('metadata type note defined in eval_radial %s' % self._type)
         return knots
-
-    def readprojfile(self,projfile):
-        """
-        Reads a projection matrix file that goes between the radial bases.
-        """
 
     def eval_radial(self,depths_in_km,store=False):
         """
@@ -138,13 +158,13 @@ class Radial_basis(object):
         depths = tools.convert2nparray(depths_in_km)
 
         # compute the radial parameteriation in specific depths
-        if self.type in ['vbspl','variable splines']:
+        if self._type in ['vbspl','variable splines']:
             knots = self.metadata['knots']
             vercof, dvercof = tools.eval_vbspl(depths,knots)
-        elif self.type in ['delta','dirac delta']:
-            vercof = np.ones(len(depths))
-            dvercof = np.zeros(len(depths))
-        elif self.type in ['boxcar','constant']:
+        elif self._type in ['delta','dirac delta']:
+            vercof = np.ones((len(depths),1))
+            dvercof = np.zeros((len(depths),1))
+        elif self._type in ['boxcar','constant']:
             # convert to numpy arrays
             depthtop = tools.convert2nparray(self.metadata['depthtop'])
             depthbottom = tools.convert2nparray(self.metadata['depthbottom'])
@@ -155,7 +175,7 @@ class Radial_basis(object):
             rrange = np.vstack((rbottom,rtop)).T
             vercof, dvercof = tools.eval_polynomial(rquery,rrange,constants.R.to('km').magnitude,types = ['CONSTANT'])
         else:
-            raise TypeError('metadata type not defined in eval_radial %s' % self.type)
+            raise TypeError('metadata type not defined in eval_radial %s' % self._type)
 
         # Store if needed
         if store:

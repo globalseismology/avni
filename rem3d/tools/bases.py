@@ -86,19 +86,17 @@ def eval_vbspl(depths,knots):
             raise ValueError('Atleast 4 knots need to be defined at or between '+str(min(knots))+' and '+str(max(knots))+' km')
         # create the arrays as Fortran-contiguous
         splpts = np.array(knots.tolist(), order = 'F')
-        jj = 0
-        for depth in depths:
-            jj = jj + 1
+        # initialize
+        vercof = np.ones((len(depths),len(knots)))
+        dvercof = np.zeros((len(depths),len(knots)))
+        for idep,depth in enumerate(depths):
             #Undefined if depth does not lie within the depth extents of knot points
             if depth < min(knots) or depth > max(knots):
                 vercof_temp = dvercof_temp = np.zeros_like(splpts)
             else:
                 (vercof_temp, dvercof_temp) = vbspl(depth,len(splpts),splpts)
-            if jj == 1:
-                vercof = vercof_temp; dvercof = dvercof_temp
-            else:
-                vercof = np.vstack([vercof,vercof_temp])
-                dvercof = np.vstack([dvercof,dvercof_temp])
+            vercof[idep]=vercof_temp
+            dvercof[idep]=dvercof_temp
     return vercof, dvercof
 
 
@@ -418,7 +416,7 @@ def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
         else:
             lonfind = np.intersect1d(np.where(lon<=lori), np.where(lon>=lole))
         findindex = np.intersect1d(latfind,lonfind)
-        if len(findindex) != 1: raise ValueError('found '+len(findindex)+' pixels for the location ('+str(lat)+','+str(lon)+')')
+        if len(findindex) != 1: raise ValueError('found '+str(len(findindex))+' pixels for the location ('+str(lat)+','+str(lon)+')')
 
         rowind = iloc*np.ones_like(findindex)
         values = np.ones_like(findindex,dtype=np.float)

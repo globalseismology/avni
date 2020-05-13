@@ -27,8 +27,8 @@ class Lateral_basis(object):
         types : 'epix','ylm','sh','wavelet','slepians'
         """
         self.data = {}
-        self.name = name
-        self.type = types
+        self._name = name
+        self._type = types
         if metadata is None:
             self.metadata = {}
         else:
@@ -36,26 +36,51 @@ class Lateral_basis(object):
 
     def __eq__(self, other):
 
+        if not isinstance(other,Lateral_basis): return False
         # convert to array to allow multiple lateral bases to be compared
-        other = tools.common.convert2nparray(other)
         result = np.ones_like(other, dtype=bool)
 
         # check if the instances have all required metadata
         self.check()
-        for indx,oth in enumerate(other):
-            try:
-                oth.check()
-            except AttributeError: # if either is not this class instance
-                result[indx] = False
+        try:
+            other.check()
+        except AttributeError: # if either is not this class instance
+            return False
 
-            # check type
-            if self.type != oth.type: result[indx] = False
+        # check type
+        if self._type != other._type: return False
 
-            # check all keys
-            for key in self.metadata.keys():
-                if not np.array_equal(self.metadata[key],oth.metadata[key]): result[indx] = False
+        # check all keys
+        for key in self.keys:
+            if not np.array_equal(self[key],other.metadata[key]): return False
+
         # assume equal otherwise
-        return result[0] if len(result)==1 else result
+        return True
+
+    def __repr__(self):
+        return '{self.__class__.__name__}({self._name})'.format(self=self)
+
+    def __getitem__(self,key):
+        """returns metadata from key"""
+        return self.metadata[key]
+
+    def __setitem__(self,key,data):
+        """sets data to key"""
+        self.metadata[key] = data
+
+    #########################       decorators       ##########################
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def keys(self):
+        return self.metadata.keys()
 
     #########################       methods       #############################
 
@@ -64,29 +89,29 @@ class Lateral_basis(object):
         Checks that object contains all attributes required for evaluating a
         particular basis set.
         """
-        if self.type == 'SPHERICAL SPLINES':
+        if self._type == 'SPHERICAL SPLINES':
             for key in ['xlaspl','xlospl','xraspl']:
                 try:
-                    knots = self.metadata[key]
+                    knots = self[key]
                 except KeyError:
-                    print('Current attributes : ',self.metadata.keys())
-                    raise KeyError('Attribute '+key+' missing for lateral basis type '+self.type)
-        elif self.type == 'SPHERICAL HARMONICS':
+                    print('Current attributes : ',self.keys)
+                    raise KeyError('Attribute '+key+' missing for lateral basis type '+self._type)
+        elif self._type == 'SPHERICAL HARMONICS':
             for key in ['lmaxhor']:
                 try:
-                    knots = self.metadata[key]
+                    knots = self[key]
                 except KeyError:
-                    print('Current attributes : ',self.metadata.keys())
-                    raise KeyError('Attribute '+key+' missing for lateral basis type '+self.type)
-        elif self.type == 'PIXELS':
+                    print('Current attributes : ',self.keys)
+                    raise KeyError('Attribute '+key+' missing for lateral basis type '+self._type)
+        elif self._type == 'PIXELS':
             for key in ['xlapix','xlopix','xsipix']:
                 try:
-                    knots = self.metadata[key]
+                    knots = self[key]
                 except KeyError:
-                    print('Current attributes : ',self.metadata.keys())
-                    raise KeyError('Attribute '+key+' missing for lateral basis type '+self.type)
+                    print('Current attributes : ',self.keys)
+                    raise KeyError('Attribute '+key+' missing for lateral basis type '+self._type)
         else:
-            raise NotImplementedError(self.type+' has not been implemented in lateral_basis.')
+            raise NotImplementedError(self._type+' has not been implemented in lateral_basis.')
         return
 
     def addtypes(self, names, types):
@@ -98,7 +123,7 @@ class Lateral_basis(object):
         if isinstance(types,string_types): types = np.array(types)
         for ii in np.arange(types.size):
             # if does not exist already`or not the same as self type
-            if types[ii] not in self.proj.keys() and types[ii] != self.metadata['type']:
+            if types[ii] not in self.proj.keys() and types[ii] != self['type']:
                 self.proj[types[ii]] = {}
                 self.proj[types[ii]][to_name[ii]] = {'data':None,'attributes':{}}
 
@@ -106,14 +131,14 @@ class Lateral_basis(object):
         """
         Evaluate radial basis at a depth interpolated from existing projection matrices.
         """
-        if self.type == 'SPHERICAL SPLINES':
-            horcof = tools.eval_splcon(lat,lon,self.metadata['xlaspl'],self.metadata['xlospl'],self.metadata['xraspl'])
-        elif self.type == 'SPHERICAL HARMONICS':
-            horcof = tools.eval_ylm(lat,lon, self.metadata['lmaxhor'])
-        elif self.type == 'PIXELS':
-            horcof = tools.eval_pixel(lat,lon, self.metadata['xlapix'],self.metadata['xlopix'],self.metadata['xsipix'])
+        if self._type == 'SPHERICAL SPLINES':
+            horcof = tools.eval_splcon(lat,lon,self['xlaspl'],self['xlospl'],self['xraspl'])
+        elif self._type == 'SPHERICAL HARMONICS':
+            horcof = tools.eval_ylm(lat,lon, self['lmaxhor'])
+        elif self._type == 'PIXELS':
+            horcof = tools.eval_pixel(lat,lon, self['xlapix'],self['xlopix'],self['xsipix'])
         else:
-            raise NotImplementedError(self.type+' has not been implemented in lateral_basis.eval_lateral')
+            raise NotImplementedError(self._type+' has not been implemented in lateral_basis.eval_lateral')
 
         if store:
             self.data['latitude'] = lat
