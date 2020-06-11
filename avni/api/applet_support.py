@@ -47,7 +47,7 @@ class SW(App):
     def filterCommonData(self,args):
         ''' SWfilterCommonData(self,args)
             for SW app: args includes plotly/dash graphical selections. See
-                        rem3d-applets.
+                        avni-applets.
             returns filename (file stored in cache)
         '''
         args['task']='filterCommonData'

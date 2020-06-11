@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """This script/module contains routines that are used to analyze/visualize the data sets
-in the standard REM3D format."""
+in the standard AVNI format."""
 
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
@@ -16,7 +16,7 @@ from configobj import ConfigObj
 import os
 import pdb
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .lateral_basis import Lateral_basis
 from .radial_basis import Radial_basis
 from .. import tools

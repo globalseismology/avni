@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """This script/module contains routines that are used to analyze/visualize the data sets
-in the standard REM3D format."""
+in the standard AVNI format."""
 
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
@@ -26,7 +26,7 @@ from six import string_types # to check if variable is string using isinstance
 import pint
 import xarray as xr
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .. import tools
 from .. import constants
 from ..mapping import spher2cart,inpolygon
@@ -1298,7 +1298,7 @@ class Model3D(object):
             reparam = copy.deepcopy(self)
             reparam[resolution] = selfmeta
             reparam[resolution,realization]['coef'] = pd.DataFrame(values.toarray())
-            reparam._infile = selfmeta['name']+'.'+selfmeta['kerstr']+'.rem3d.nc4'
+            reparam._infile = selfmeta['name']+'.'+selfmeta['kerstr']+'.avni.nc4'
 
         ####################### Invert the coefficients    ##############################
         else:

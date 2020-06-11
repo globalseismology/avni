@@ -90,7 +90,7 @@ def plot_hotspots(m, dbs_path = tools.get_filedir(), lon360 = False, **kwargs):
     m : figure axis handle
 
     dbs_path: path specified by user where hotspots.json is located. If not found,
-              defaults to downloading the file from the  REM3D server.
+              defaults to downloading the file from the  AVNI server.
 
     lon360 : is False if the no longitude above 180 is permitted and is wrapped around.
 
@@ -124,7 +124,7 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = 
     m : figure axis handle
 
     dbs_path : path specified by user where hotspots.json is located. If not found,
-              defaults to downloading the file from the  REM3D server.
+              defaults to downloading the file from the  AVNI server.
 
     boundtypes : plate boundary types that will be plotted. Default are ridge, transform
                  and trench
@@ -168,7 +168,7 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = 
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='rem3d',colorcontour=21,hotspots=False,grid=None,gridwidth=0, shading= False,model=constants.topography,resolution='l',field='z', **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='avni',colorcontour=21,hotspots=False,grid=None,gridwidth=0, shading= False,model=constants.topography,resolution='l',field='z', **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
 
@@ -186,7 +186,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
 
     dbs_path : database path containing hotpot locations, coastlines etc.
 
-    colorpalette : matploblib color scales or the REM3D one (default)
+    colorpalette : matploblib color scales or the AVNI one (default)
 
     colorcontour :  the number of contours for colors in the plot. Maximum is 520 and odd values
                     are preferred so that mid value is at white/yellow or other neutral colors.
@@ -652,7 +652,7 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
 #     title(phase, fontsize=20,loc='left')
     return ax
 
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',tree=None,parameter='vs',radii=None,dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,nearest=10):
+def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.avni.nc4',tree=None,parameter='vs',radii=None,dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,nearest=10):
     """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
     #defaults
     if radii is None: radii=[3480.,6346.6]
@@ -664,7 +664,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
     if tree == None and isinstance(model,string_types):
         ncfile = dbs_path+'/'+model
         if not os.path.isfile(ncfile):
-            print('... Downloading Earth model '+model+' from REM3D servers')
+            print('... Downloading Earth model '+model+' from AVNI servers')
             data.update_file(model)
             print('... Download completed.')
         #read values
@@ -702,7 +702,7 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.r
 
     return xsec.T,model,tree
 
-def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='rem3d',colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,width_ratios=None,numevalx=200,numevalz=300,nearest=10,topo=constants.topography,resolution='l',topotree=None,hotspots=False,plates=False):
+def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='avni',colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,width_ratios=None,numevalx=200,numevalz=300,nearest=10,topo=constants.topography,resolution='l',topotree=None,hotspots=False,plates=False):
     """Plot one section through the Earth through a pair of points."""
     #defaults
     if radii is None: radii=[3480.,6346.6]
@@ -1148,7 +1148,7 @@ def plotmodel3d(model3d,lateral_basis='pixel1',dbs_path=tools.get_filedir(),x=0,
                     plotmodel = np.zeros(len(test), dtype=dt)
                     plotmodel['lat'] = test[:,0]; plotmodel['lon'] = test[:,1]; plotmodel['val'] = test[:,2]
                     ax=fig.add_subplot(subploty,subplotx,flag)
-                    globalmap(ax,plotmodel,colormin,colormax,dbs_path=dbs_path, colorlabel='Anomaly', grid=[30.,90.],gridwidth=0,projection='robin',lat_0=0, lon_0=150., colorpalette='rem3d',colorcontour=21)
+                    globalmap(ax,plotmodel,colormin,colormax,dbs_path=dbs_path, colorlabel='Anomaly', grid=[30.,90.],gridwidth=0,projection='robin',lat_0=0, lon_0=150., colorpalette='avni',colorcontour=21)
                     ax.set_title(refstrarr[x]+' at '+str(depth)+' km.' if 'Topo' not in refstrarr[x] and 'topo' not in refstrarr[x] else refstrarr[x])
                     fig.canvas.draw()
             except SyntaxError:

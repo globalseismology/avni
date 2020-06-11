@@ -22,12 +22,12 @@ if sys.version_info[0] >= 3: unicode = str
 
 ####################       I/O ROUTINES     ######################################
 def readTTascii(file, delim = '-',required = None,warning=False):
-    """Reads the REM3D format for analysis and plotting.
+    """Reads the AVNI format for analysis and plotting.
 
     Input parameters:
     ----------------
 
-    file :  input file in default REM3D format
+    file :  input file in default AVNI format
 
     delim : delimiter that combines fields into a joint field e.g. network-station
             seperate out during I/O.
@@ -87,7 +87,7 @@ def readTTascii(file, delim = '-',required = None,warning=False):
 
 def writeTTascii(TTdata,filename,iflagthreshold=None,delim='-'):
     """
-    Writes the REM3D format for analysis and plotting
+    Writes the AVNI format for analysis and plotting
 
     Input parameters:
     ----------------

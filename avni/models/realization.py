@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """This script/module contains routines that are used to analyze/visualize the data sets
-in the standard REM3D format."""
+in the standard AVNI format."""
 
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
@@ -20,7 +20,7 @@ import traceback
 import pandas as pd
 from progressbar import progressbar
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .common import read3dmodelfile
 from ..tools import convert_to_swp,convert2nparray
 from .kernel_set import Kernel_set
@@ -394,12 +394,12 @@ class Realization(object):
 
     def to_xarray(self,outfile=None,complevel=9, engine='netcdf4', writenc4 = False):
         '''
-        write an xarrary dataset from a rem3d formatted ascii file
+        write an xarrary dataset from a avni formatted ascii file
 
         Input parameters:
         ----------------
 
-        ascii_file: path to rem3d format output file
+        ascii_file: path to avni format output file
 
         outfile: output netcdf file
 
@@ -417,7 +417,7 @@ class Realization(object):
             if self._name.endswith('.nc4'):
                 outfile = self._name
             else:
-                outfile = self._name+'.'+self['kernel_set'].name+'.rem3d.nc4'
+                outfile = self._name+'.'+self['kernel_set'].name+'.avni.nc4'
 
         # get sizes
         shape = self['shape']

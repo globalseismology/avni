@@ -14,8 +14,8 @@ from timeit import default_timer as timer
 from numba import jit,int64
 from progressbar import progressbar
 
-####################### IMPORT REM3D LIBRARIES  #######################################
-from rem3d.f2py import vbspl,dbsplrem,ylm,shold
+####################### IMPORT AVNI LIBRARIES  #######################################
+from avni.f2py import vbspl,dbsplrem,ylm,shold
 from .trigd import sind,cosd,acosd
 from .common import convert2nparray,makegrid
 #######################################################################################

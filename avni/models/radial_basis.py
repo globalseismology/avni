@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""This script/module contains routines that are used to analyze/visualize the data sets in the standard REM3D format."""
+"""This script/module contains routines that are used to analyze/visualize the data sets in the standard AVNI format."""
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np #for numerical analysis
 import pdb
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .. import tools
 from .. import constants
 #######################################################################################

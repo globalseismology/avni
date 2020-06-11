@@ -15,7 +15,7 @@ import platform
 from datetime import datetime
 import calendar
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 
 from .. import constants
 from .. import tools
@@ -35,7 +35,7 @@ def creation_date(path_to_file):
     Return
     ----------
 
-    datetime stamp in UTC as REM3D server stores datetime in UTC
+    datetime stamp in UTC as AVNI server stores datetime in UTC
     """
     if platform.system() == 'Windows':
         return datetime.utcfromtimestamp(os.path.getctime(path_to_file))
@@ -47,13 +47,13 @@ def creation_date(path_to_file):
 
 def update_file(file,folder=tools.get_filedir(),baseurl = constants.downloadpage):
     """
-    If the REM3D server contain a downloadable resource that is newer,
+    If the AVNI server contain a downloadable resource that is newer,
     download it locally.
 
     Parameters
     ----------
 
-    file: full path and name of the file to sync with REM3D servers
+    file: full path and name of the file to sync with AVNI servers
     """
     localfile = folder+'/'+file
     url = baseurl + '/'+file
@@ -75,7 +75,7 @@ def update_file(file,folder=tools.get_filedir(),baseurl = constants.downloadpage
 
     # download if needed
     if download:
-        print(".... Downloading "+file+" from REM3D server to "+localfile)
+        print(".... Downloading "+file+" from AVNI server to "+localfile)
         r = requests.get(url, allow_redirects=True)
         open(localfile, 'wb').write(r.content)
         utime = calendar.timegm(server_data.timetuple()) # calendar assumes tuple in UTC

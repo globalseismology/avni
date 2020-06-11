@@ -19,15 +19,15 @@ import decimal
 from numba import jit
 import pdb
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .. import constants
 #######################################################################################
 
 def stage(file,overwrite=False):
     """
-    Stages a file in the rem3d file directories for testing
+    Stages a file in the avni file directories for testing
     """
-    filedir = get_filedir() #REM3D file directory
+    filedir = get_filedir() #AVNI file directory
     stagedfile = get_fullpath(file)
     if not os.path.isfile(stagedfile): raise IOError(stagedfile+' not found')
     outlink = filedir+'/'+ntpath.basename(file)
@@ -39,7 +39,7 @@ def stage(file,overwrite=False):
             os.symlink(stagedfile, outlink)
             print('WARNING: overwriting an existing staged link named '+ntpath.basename(file))
         else:
-            raise IOError('A link to an actual file '+ntpath.basename(file)+' (not symlink) exists within REM3D. Delete the file '+outlink+' first before proceeding.')
+            raise IOError('A link to an actual file '+ntpath.basename(file)+' (not symlink) exists within AVNI. Delete the file '+outlink+' first before proceeding.')
     return
 
 def parse_line(line,rx_dict):
@@ -261,7 +261,7 @@ def listfolders(path):
     dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
     return dirs
 
-def get_installdir(module='rem3d',checkwrite=True,checkenv=True):
+def get_installdir(module='avni',checkwrite=True,checkenv=True):
     """
     Get the installation directory for any module. checkwrite checks for write access to the files.
     checkenv checks if the directory is specified as an environment variable.
@@ -287,7 +287,7 @@ def get_installdir(module='rem3d',checkwrite=True,checkenv=True):
 Specify "+module+"_dir environment variable or chdir to a different directory with I/O access.")
     return installdir
 
-def get_filedir(module='rem3d',checkwrite=True,makedir=True):
+def get_filedir(module='avni',checkwrite=True,makedir=True):
     """
     Get the local files directory. Make a new directory if doesn't exist (makedir==True)
     """
@@ -298,7 +298,7 @@ def get_filedir(module='rem3d',checkwrite=True,makedir=True):
             os.makedirs(filedir)
     return filedir
 
-def get_cptdir(module='rem3d',checkwrite=True,makedir=True):
+def get_cptdir(module='avni',checkwrite=True,makedir=True):
     """
     Get the directory with color palettes. Make a new directory if doesn't exist (makedir==True)
     """
@@ -309,7 +309,7 @@ def get_cptdir(module='rem3d',checkwrite=True,makedir=True):
             os.makedirs(cptdir)
     return cptdir
 
-def get_configdir(module='rem3d',checkwrite=True,makedir=True):
+def get_configdir(module='avni',checkwrite=True,makedir=True):
     """
     Get the directory containing configuration files.
     Make a new directory if doesn't exist (makedir==True)

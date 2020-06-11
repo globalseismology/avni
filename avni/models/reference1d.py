@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """This script/module contains routines that are used to analyze/visualize the data sets
-in the standard REM3D format."""
+in the standard AVNI format."""
 
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
@@ -30,10 +30,10 @@ from progressbar import progressbar
 
 if sys.version_info[0] >= 3: unicode = str
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .. import constants
 from .. import tools
-from rem3d.f2py import getbullen
+from avni.f2py import getbullen
 #######################################################################################
 # 1D model class
 
@@ -152,7 +152,7 @@ class Reference1D(object):
                         rad_temp = match.group('norm_radius')
                         self.metadata['norm_radius'] = float(rad_temp)
                         if self.metadata['norm_radius'] != constants.R.to('km').magnitude:
-                            raise AssertionError('norm_radius '+str(self.metadata['norm_radius'])+' is consistent with rem3d constant '+str(constants.R.to('km').magnitude)+'. Reinitialize rem3d with tools.common.getplanetconstants.')
+                            raise AssertionError('norm_radius '+str(self.metadata['norm_radius'])+' is consistent with avni constant '+str(constants.R.to('km').magnitude)+'. Reinitialize avni with tools.common.getplanetconstants.')
                     if key == 'parameters':
                         para_list = match.group('parameters').lower().split()
                         self.metadata['parameters']=para_list
@@ -187,7 +187,7 @@ class Reference1D(object):
                         if self.metadata['norm_radius'] != float(rad_temp2):
                             print('normalizing period not consistent!')
                         if self.metadata['norm_radius'] != constants.R.to('km').magnitude:
-                            raise AssertionError('norm_radius '+str(self.metadata['norm_radius'])+' is consistent with rem3d constant '+str(constants.R.to('km').magnitude)+'. Reinitialize rem3d with tools.common.getplanetconstants.')
+                            raise AssertionError('norm_radius '+str(self.metadata['norm_radius'])+' is consistent with avni constant '+str(constants.R.to('km').magnitude)+'. Reinitialize avni with tools.common.getplanetconstants.')
                     if key == 'parameters':
                         para_list = match.group('parameters').lower().split()
                         for para in para_list:

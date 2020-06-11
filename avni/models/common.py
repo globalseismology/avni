@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """This script/module contains routines that are used to analyze/visualize the data sets
-in the standard REM3D format."""
+in the standard AVNI format."""
 
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
@@ -26,7 +26,7 @@ import traceback
 from progressbar import progressbar
 import pdb
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .. import tools
 from .. import constants
 from .reference1d import Reference1D
@@ -327,7 +327,7 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
         print('... read to ASCII buffer. evaluations took '+str(elapsed)+' s')
     else:
         print('... written ASCII file '+asciibuffer+'. evaluations took '+str(elapsed)+' s')
-    ncfile = output_dir+'/{}.{}.rem3d.nc4'.format(model_name,kernel_set)
+    ncfile = output_dir+'/{}.{}.avni.nc4'.format(model_name,kernel_set)
     print('... writing netcdf file '+ncfile)
     ds = ascii2xarray(asciibuffer,model_dir=model_dir,outfile=ncfile,setup_file=setup_file)
 
@@ -417,7 +417,7 @@ def checksetup(parser):
 
 def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True,buffer=False, onlyheaders=False):
     '''
-    write a rem3d formatted ascii file from a directory containing epix files
+    write a avni formatted ascii file from a directory containing epix files
 
     Input parameters:
     ----------------
@@ -426,7 +426,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
     setup_file: setup file containing metadata for the model
 
-    output_file: name of rem3d format output file
+    output_file: name of avni format output file
 
     n_hpar:number of horizontal parameterizations (currently only handles
            models with 1 horizontal parameterization, and with a constant pixel width)
@@ -461,7 +461,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     forward_modeling = parser['metadata']['forward_modeling']
 
     #write header
-    outfile = output_dir+'/{}.{}.rem3d.ascii'.format(model_name,kernel_set)
+    outfile = output_dir+'/{}.{}.avni.ascii'.format(model_name,kernel_set)
     if buffer:
         # Writing to a buffer
         f_out = StringIO()
@@ -703,12 +703,12 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
 def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',complevel=9, engine='netcdf4', writenc4 = False):
     '''
-    write an xarrary dataset from a rem3d formatted ascii file
+    write an xarrary dataset from a avni formatted ascii file
 
     Input parameters:
     ----------------
 
-    ascii_file: path to rem3d format output file
+    ascii_file: path to avni format output file
 
     outfile: output netcdf file
 

@@ -17,7 +17,7 @@ import math
 from scipy import sparse
 from mpl_toolkits.basemap import shiftgrid
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .trigd import sind
 from ..mapping import spher2cart,intersection,midpoint
 from .. import constants

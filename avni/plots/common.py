@@ -94,9 +94,9 @@ def initializecolor(name,**kwargs):
         raise IOError('unable to read color palette '+name+' from standard Python, constants.py or downloadable from server.')
     return cpalette
 
-def standardcolorpalette(name='rem3d'):
+def standardcolorpalette(name='avni'):
     """
-    Get a custom REM3D color palette from constants.py
+    Get a custom AVNI color palette from constants.py
 
     Parameters
     ----------

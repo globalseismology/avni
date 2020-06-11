@@ -12,7 +12,7 @@ from math import atan
 from configobj import ConfigObj
 import pdb
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .. import constants
 from ..tools import convert2units,get_configdir
 #######################################################################################
@@ -89,7 +89,7 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
         constants.barC4hydro = None
     # correction for geographic-geocentric conversion: 0.993277 for 1/f=297
     try:
-        print('... Re - Initialized rem3d module with constants for '+planet+' from '+parser_select['cite']+' from geocentric correction '+str(constants.geoco))
+        print('... Re - Initialized avni module with constants for '+planet+' from '+parser_select['cite']+' from geocentric correction '+str(constants.geoco))
         constants.geoco = (1.0 - constants.f)**2.
     except AttributeError:
         constants.geoco = (1.0 - constants.f)**2.

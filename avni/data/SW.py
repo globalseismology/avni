@@ -81,12 +81,12 @@ def get_dispersion_curve(table,mode_type,output='pvel',overtone=0,freq_units='mh
     return freq,vel
 
 def readSWascii(file, delim = '-',required = None,warning=False):
-    """Reads the REM3D format for analysis and plotting.
+    """Reads the AVNI format for analysis and plotting.
 
     Input parameters:
     ----------------
 
-    file :  input file in default REM3D format
+    file :  input file in default AVNI format
 
     delim : delimiter that combines fields into a joint field e.g. network-station
             seperate out during I/O.
@@ -146,7 +146,7 @@ def readSWascii(file, delim = '-',required = None,warning=False):
 
 def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
     """
-    Writes the REM3D format for analysis and plotting
+    Writes the AVNI format for analysis and plotting
 
     Input parameters:
     ----------------
@@ -208,7 +208,7 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
     return
 
 
-def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
+def SWasciitohdf5(files,hdffile = 'SW.avni.data.h5',datatype='raw',delim='-'):
     """
     Read a list of files to hdf5 container format.
 
@@ -318,7 +318,7 @@ def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
 
     hf.close()
 
-def SWhdf5toascii(query = '0/25.0/L1/GDM52',hdffile = 'SW.rem3d.data.h5',iflag=0,datatype='processed',delim='-', outfile=None,model3d = None, refmodel = None,crust=None,weitype=None, sigmatype= None,stattype =None,eqtype=None):
+def SWhdf5toascii(query = '0/25.0/L1/GDM52',hdffile = 'SW.avni.data.h5',iflag=0,datatype='processed',delim='-', outfile=None,model3d = None, refmodel = None,crust=None,weitype=None, sigmatype= None,stattype =None,eqtype=None):
     """
     write hdf field to a file. None is the default i.e. the values in metadata
 
@@ -353,10 +353,10 @@ def SWhdf5toascii(query = '0/25.0/L1/GDM52',hdffile = 'SW.rem3d.data.h5',iflag=0
 
     # write the pandas to file
     fields = query.split('/')
-    if outfile is None: filename = fields[3]+'_'+fields[0]+'_'+fields[1]+'_'+fields[2]+'.REM3D'
+    if outfile is None: filename = fields[3]+'_'+fields[0]+'_'+fields[1]+'_'+fields[2]+'.AVNI'
     writeSWascii(SWdata,filename,delim=delim)
 
-def readSWhdf5(query = '0/25.0/L1/GDM52',hdffile = 'SW.rem3d.data.h5',iflag=0,datatype='raw',delim='-',model3d=None, refmodel=None,crust=None,weitype=None, sigmatype= None,stattype =None,eqtype=None):
+def readSWhdf5(query = '0/25.0/L1/GDM52',hdffile = 'SW.avni.data.h5',iflag=0,datatype='raw',delim='-',model3d=None, refmodel=None,crust=None,weitype=None, sigmatype= None,stattype =None,eqtype=None):
     """
     Read a list of files to hdf5 container format.
 

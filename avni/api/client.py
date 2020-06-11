@@ -1,4 +1,4 @@
-''' client for accessing rem3d api '''
+''' client for accessing avni api '''
 
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
@@ -37,7 +37,7 @@ class Client(object):
         return
 
     def checkConnection(self):
-        ''' checks if the rem3d api is accessible'''
+        ''' checks if the avni api is accessible'''
         self.base_url=None
 
         connected=False
@@ -49,7 +49,7 @@ class Client(object):
                     r = None
 
                 if r is not None:
-                    print("rem3d api is live at ")
+                    print("avni api is live at ")
                     print(url)
                     self.base_url=url
                     stats=self.checkUserStats()
@@ -58,7 +58,7 @@ class Client(object):
 
 
         if self.base_url is None:
-            print("no connection to rem3d api")
+            print("no connection to avni api")
         return
 
     def call(self,path,parameters=None,time_out=None):
@@ -83,7 +83,7 @@ class Client(object):
         Input:
         ------
             api_init_file: the api.ini file full path. If None, will default to
-                           looking in rem3d/config/api.ini
+                           looking in avni/config/api.ini
         Output:
         -------
             api_key: the api key. Empty string if not found
@@ -108,7 +108,7 @@ class Client(object):
                      specified.
             api_init_file: the file to store key (subsequents calls to api will
                             need to specify the directory if not using the
-                            default). Default is rem3d/config/api.ini
+                            default). Default is avni/config/api.ini
         Output:
         -------
             no output

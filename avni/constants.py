@@ -28,8 +28,8 @@ customunits = 'units.ini'
 
 #Color scales
 colorscale = {
-'rem3d': {'name': 'rem3d','description': \
-	'REM3D color scale created by combining two perceptually uniform \
+'avni': {'name': 'avni','description': \
+	'AVNI color scale created by combining two perceptually uniform \
 	 color scales linear_kry_5_95_c72 and linear_bgy_10_95_c74 from \
 	 https://bokeh.github.io/colorcet',\
 'RGB': [(0.066001, 0.066024, 0.066019), (0.07965, 0.066744, 0.064745),
@@ -225,14 +225,14 @@ colorscale = {
  (0, 0.05978, 0.53144), (0, 0.057566, 0.52435), (0, 0.055585, 0.51721),
  (0, 0.053545, 0.51004), (0, 0.051605, 0.50281), (0, 0.049756, 0.49556),
  (0, 0.047803, 0.4883)] },
-'rem3d-cluster': {'name': 'rem3d-cluster','description': \
-	'REM3D color scale for clustering of regional profiles \
+'avni-cluster': {'name': 'avni-cluster','description': \
+	'AVNI color scale for clustering of regional profiles \
 	 following Lekic and Romanowicz, EPSL, 2011',\
 'RGB': [ (0.89411765, 0.10588235, 0.10980392), (0.77254902, 0.49411765, 0.10980392),
          (0.50588235, 0.2627451 , 0.10980392), (0.56470588, 0.54901961, 0.54509804),
          (0.37254902, 0.59607843, 0.18039216), (0.21960784, 0.49411765, 0.7254902)]},
-'rem3d-vote': {'name': 'rem3d-vote','description': \
-	'REM3D color scale for voting of tomographic models \
+'avni-vote': {'name': 'avni-vote','description': \
+	'AVNI color scale for voting of tomographic models \
 	 following Lekic and Romanowicz, EPSL, 2011',\
 'RGB': [(0.2265625 , 0.33203125, 0.6328125 ),(0.25390625, 0.47265625, 0.7265625 ),
         (0.44140625, 0.80078125, 0.859375  ),(0.94921875, 0.91015625, 0.24609375),

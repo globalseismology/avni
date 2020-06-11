@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """This script/module contains routines that are used to analyze/visualize the data sets
-in the standard REM3D format."""
+in the standard AVNI format."""
 
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
@@ -10,7 +10,7 @@ import os
 import numpy as np #for numerical analysis
 import pdb    #for the debugger pdb.set_trace()
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .. import tools
 #######################################################################################
 # Horizontal basis parameter class that defines an unique combination of parameters, their lateral parameterization

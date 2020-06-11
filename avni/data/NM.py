@@ -15,8 +15,8 @@ import struct
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from rem3d.models import Reference1D
-from rem3d import constants,tools
+from avni.models import Reference1D
+from avni import constants,tools
 import pint
 import pdb
 

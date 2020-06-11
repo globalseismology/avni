@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """This script/module contains routines that are used to analyze/visualize the data sets
-in the standard REM3D format."""
+in the standard AVNI format."""
 
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
@@ -18,7 +18,7 @@ import h5py
 import xarray as xr
 import pandas as pd
 
-####################### IMPORT REM3D LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  #######################################
 from .reference1d import Reference1D
 from .common import readepixfile
 from .. import tools
@@ -88,7 +88,7 @@ class Profiles(object):
             parser = ConfigObj(file)
         for key in parser['metadata'].keys(): self.metadata[key] = parser['metadata'][key]
 
-        # loop over all files as rem3d.models.reference1d
+        # loop over all files as avni.models.reference1d
         #   save as a list of classes
         epixarr,metadata,comments = readepixfile(self.metadata['index'])
         profiles = {}
