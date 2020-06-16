@@ -53,6 +53,9 @@ before_install:
   # install latex, using source command below instead
   # - sudo apt-get install -y latexmk texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
 
+  # install requirements for pyshtools
+  - sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
+  
   # Here we just install Miniconda. If it is in the cache, then we don't need to do anything
   - if [ -d "${CONDA_BASE_PATH}" ] && [ -e "${CONDA_BASE_PATH}/bin/conda" ]; then
       echo "Miniconda install already present from cache";

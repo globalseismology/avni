@@ -345,7 +345,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % e.g. height=6.5in
 \begin{center}
 \vspace{1em}
-\includegraphics[height=3.5in]{avnilogo.png}
+\includegraphics[height=3.5in]{rem3dlogo.png}
 \hspace{5em}
 \end{center}
 \end{textblock*}
@@ -410,7 +410,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-latex_logo = 'avnilogo.png'
+latex_logo = 'rem3dlogo.png'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
