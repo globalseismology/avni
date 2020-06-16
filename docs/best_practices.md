@@ -12,7 +12,7 @@ Table of Contents
 Use *issues* to discuss intended modifications
 ----------------------------------------------
 
-GitHub provides a [system](https://github.com/geodynamics/rem3d/issues) to track issues. It should be a central place to monitor REM3D evolution. In particular:
+GitHub provides a [system](https://github.com/geodynamics/avni/issues) to track issues. It should be a central place to monitor REM3D evolution. In particular:
 
 -   report bug as they occur
 
@@ -39,7 +39,7 @@ F2PY is used by setup.py to compile fortran routines during installation. As a d
 Test your code
 ------------------
 
-[![Build Status](https://travis-ci.com/globalseismology/rem3d.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=devel)](https://travis-ci.com/globalseismology/rem3d) [![codecov](https://codecov.io/gh/globalseismology/rem3d/branch/devel/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/rem3d)
+[![Build Status](https://travis-ci.com/globalseismology/avni.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=devel)](https://travis-ci.com/globalseismology/avni) [![codecov](https://codecov.io/gh/globalseismology/avni/branch/devel/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/avni)
 
 Any new code should be tested with unit tests kept in the [tests](../tests) folder. Note that we use [coverage.py](https://coverage.readthedocs.io) for testing so all files and routines should be named test_*. We attempt to keep coverage above 90% on our development builds.
 

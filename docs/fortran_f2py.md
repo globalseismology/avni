@@ -1,6 +1,6 @@
 F2PY troubleshooting
 --------------------
-A way to troubleshoot f2py issues trouble shooting was to i) copy all of the source code to a single directory ii) make sure that the code will actually compile without f2py (either with a makefile or with a simple script) and iii) Use f2py to create a python signature file (.pyf file). See the makefile attached below which will compile all of the code, and generate the file *rem3d_forward.pyf*. The .pyf file can be used to figure out what problems are going on. In our case, there were a number of subroutines that were not being properly translated to the signature file. These subroutines are called "unknown_subroutine" in the signature file. For example, the signature file complained about a subroutine in rayseq.f:
+A way to troubleshoot f2py issues trouble shooting was to i) copy all of the source code to a single directory ii) make sure that the code will actually compile without f2py (either with a makefile or with a simple script) and iii) Use f2py to create a python signature file (.pyf file). See the makefile attached below which will compile all of the code, and generate the file *avni_forward.pyf*. The .pyf file can be used to figure out what problems are going on. In our case, there were a number of subroutines that were not being properly translated to the signature file. These subroutines are called "unknown_subroutine" in the signature file. For example, the signature file complained about a subroutine in rayseq.f:
 
 ~~~fortran
 subroutine unknown_subroutine ! in rayseq.f
@@ -38,12 +38,12 @@ F2PY = f2py
 F77 = gfortran
 F90 = fortran
 CC = gcc
-rem3d_forward.so: $(OBJS) rem3d_forward.pyf
-    $(F2PY) -c rem3d_forward.pyf $(OBJS)
-rem3d_forward.pyf: $(SRCS)
-    $(F2PY) --overwrite-signature -m rem3d_forward -h rem3d_forward.pyf $(SRCS)
+avni_forward.so: $(OBJS) avni_forward.pyf
+    $(F2PY) -c avni_forward.pyf $(OBJS)
+avni_forward.pyf: $(SRCS)
+    $(F2PY) --overwrite-signature -m avni_forward -h avni_forward.pyf $(SRCS)
 clean:
-    $(RM) $(LOBJ)/*.o $(LOBJ)/*.pyf ./rem3d_forward.so
+    $(RM) $(LOBJ)/*.o $(LOBJ)/*.pyf ./avni_forward.so
 $(LOBJ)/%.o: %.f
     $(F77) $(FFLAGS) -c $*.f -o $(LOBJ)/$*.o
 ~~~

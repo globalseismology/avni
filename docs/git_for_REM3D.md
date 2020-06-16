@@ -16,7 +16,7 @@ One time configurations for all repositories
 Open a free account at GitHub
 -----------------------------
 
--   If you do not already have one, you will need to open a free account at <https://github.com>. In order to become a contributor / developer for REM3D, you need to create an account on our [Web site](http://rem3d.org/login/register) and get access rights from us by requesting [here](http://rem3d.org/join-us/github).
+-   If you do not already have one, you will need to open a free account at <https://github.com>. In order to become a contributor / developer for REM3D, you need to create an account on our [Web site](http://avni.org/login/register) and get access rights from us by requesting [here](http://avni.org/join-us/github).
 
 Configure ssh-keys for GitHub
 -----------------------------
@@ -84,11 +84,11 @@ One-time configuration for each repository
 
 -   Clone the repository on your machine
 
-        $ git clone -b devel https://username:password@github.com/geodynamics/rem3d.git
+        $ git clone -b devel https://username:password@github.com/geodynamics/avni.git
 
 -   Checkout the `devel` branch
 
-        $ cd rem3d
+        $ cd avni
         $ git checkout -b devel origin/devel
 
 -   Confirm that you are on the `devel` branch (* next to the name)
