@@ -8,17 +8,17 @@ We maintain 3 major branches for our client libraries and these are relevant to 
 
 New branches may be created for individual projects. Please clone the `devel` branch to build upon the latest codes  
 `git checkout -b new_branch devel`  
-You can push this locally created branch to the remote `globalseismology/rem3d` with  
+You can push this locally created branch to the remote `globalseismology/avni` with  
 `git push -u origin new_branch`  
 
-The `master` branch on `https://github.com/globalseismology/rem3d` tracks the publicly open repository `https://github.com/geodynamics/rem3d`. The workflow for every public release involves getting all edits done in `public` based on a subset of codes selected from `devel`. Once `public` is tested and ready, an admin pushes it downstream to `master`, squashes all comments and tags it:  
+The `master` branch on `https://github.com/globalseismology/avni` tracks the publicly open repository `https://github.com/geodynamics/avni`. The workflow for every public release involves getting all edits done in `public` based on a subset of codes selected from `devel`. Once `public` is tested and ready, an admin pushes it downstream to `master`, squashes all comments and tags it:  
 `git checkout master`  
 `git merge --squash public`  
 `git commit -m "1.0.0"`  
 `git tag 1.0.0 -m "1.0.0"`  
 
 Then the admin pulls the latest changes and syncs with the public CIG repository using a series of commands such as below:  
-`git remote add cig git@github.com:geodynamics/rem3d.git`  
+`git remote add cig git@github.com:geodynamics/avni.git`  
 `git pull cig master`  
 `git push cig HEAD:master`  
 
