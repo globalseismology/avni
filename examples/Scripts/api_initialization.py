@@ -15,7 +15,7 @@ import argparse
 
 def main():
     # parse
-    parser = argparse.ArgumentParser(description='f2py calls via API')
+    parser = argparse.ArgumentParser(description='stores api key in config file')
     parser.add_argument('key', type=str,help='api key')
     arg = parser.parse_args()
 

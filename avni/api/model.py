@@ -112,12 +112,55 @@ class Model(object):
                 return_numpy=True
                 args[arg]=args[arg].tolist()
             args[arg]=json.dumps({'vals':args[arg]})
-        print(args)
+
         result=json.loads(self.r3dc.call(self.endpoint,args,5*60))
         if result['call_complete']:
             if return_numpy:
                 param=result['parameter']
                 result[param]=np.asarray(result[param])
+
+        return result
+
+    def depthProfile(self,args_in={},return_numpy=True):
+        '''
+        Evaluates a depth profile centered on provided lat/lon for a given
+        parameter ('vs')
+
+        Input parameters:
+        ----------------
+        args_in: dictionary of arguments:
+
+            required args:
+                'lat': latitude in degrees
+                'lon': longitude in degrees
+
+                lat, lon and depth are scalars
+
+            optional args (default):
+                'N_depth': depth in km, integer (100)
+                'depthMin': min depth, float (0.)
+                'depthMax': max depth, float (2890)
+                'model': model to use, string ('S362ANI+M')
+                'kernel': model to use, string ('BOX25km_PIX1X1')
+                'parameter': parameter to fetch, string ('vs')
+                'interpolated': 1/0 for interpolation with KdTree (1)
+
+                model+kernel must match a model file.  (see listModels() method)
+
+        Output:
+        ------
+
+        result: dictionary with numpy array of parameter, depth
+        '''
+        args_in['task']='depthProfile'
+        args_in['key']=self.r3dc.key
+        result=json.loads(self.r3dc.call(self.endpoint,args_in,5*60))
+
+        if result['call_complete']:
+            if return_numpy:
+                param=result['parameter']
+                result[param]=np.asarray(result[param])
+                result['depth']=np.asarray(result['depth'])
 
         return result
 
@@ -143,6 +186,7 @@ class Model(object):
                 'parameter': parameter to fetch, string ('vs')
                 'interpolated': 1/0 for interpolation with KdTree (1)
                 'quickInterp': 1/0 for quick interpolation (0)
+                'includeTopo': 1/0 for incuding topography along transect (0)
 
             model+kernel must match a model file.  (see listModels() method)
 
@@ -159,6 +203,7 @@ class Model(object):
                     'lat': 1d array, latitude of surface points,
                     'lon': 1d array, longitude of surface points,
                     'theta': 1d array, angular distance along transect [degrees]
+                    'topo': 1d array, topography along transect if includeTopo
                     }
         '''
         args['task']='crossSection'
@@ -167,7 +212,7 @@ class Model(object):
 
         if json_load['call_complete']:
             results={}
-            not_arrays=['parameter','call_complete']
+            not_arrays=['parameter','call_complete','topo']
             for keyn in json_load.keys():
                 if keyn not in not_arrays:
                     results[keyn]=np.asarray(json_load[keyn])
@@ -177,7 +222,90 @@ class Model(object):
             # calculate angular coord (distance along path)
             Nlatlon=results['lat'].size
             results['theta']=np.linspace(0,args['gcdelta'],Nlatlon)
+
+            # adjust topo
+            if 'topo' in results.keys() and type(results['topo'])==type(dict()):
+                goodTopo=True
+                for fld in ['z','lat','lon']:
+                    if fld in results['topo'].keys():
+                        results['topo'][fld]=np.array(results['topo'][fld])
+                    else:
+                        goodTopo=False
+
+                if goodTopo:
+                    Ntopo=len(results['topo']['z'])
+                    results['topo']['theta']=np.linspace(0,args['gcdelta'],Ntopo)
+
         else:
             results=json_load
+
+        return results
+
+    def fixedDepth(self,args={}):
+        '''
+        Interpolation at a fixed depth.
+
+        Input parameters:
+        ----------------
+
+        args: dictionary of arguments:
+
+            required args:
+                'depth': the constant depth to use in km
+
+            optional args:
+                'lat1': starting latitude in degrees, float (-90.)
+                'lon1': starting longitude in degrees, float (0.)
+                'lat2': end latitude in degrees, float (90.)
+                'lon2': end longitude in degrees, float (360.)
+                    if using any of the optional above args, you must use all of
+                    them. The result will be values in a grid formed by taking
+                    start and end coordinates are the opposing points of a box:
+
+                        (lat2,lon1)-------------(lat2,lon2)
+                            |                       |
+                            |                       |
+                            |                       |
+                        (lat1,lon1)-------------(lat1,lon2)
+
+                    if not specifying coordinates, will extract values at a
+                    fixed depth for the whole earth.
+
+                'Nlat': number of latitude points to extract, int (100)
+                'Nlon': number of longitude points to extract, int (200)
+                'model': model to use, string ('S362ANI+M')
+                'kernel': model to use, string ('BOX25km_PIX1X1')
+                'parameter': parameter to fetch, string ('vs')
+                'interpolated': 1/0 for interpolation with KdTree (1)
+                'quickInterp': 1/0 for quick interpolation (0)
+
+            model+kernel must match a model file.  (see listModels() method)
+
+        Output:
+        ------
+
+        result: dictionary of results, including numpy arrays
+
+            if args['parameter']='vs',
+
+            result={'parameter':string with parameter name, e.g., 'vs'
+                    'vs': 2d numpy array with shape (len(lat),len(lon)),
+                    'lat': 1d array, latitude
+                    'lon': 1d array, longitude
+                    }
+        '''
+        args['task']='fixeddepth'
+        args['key']=self.r3dc.key
+        json_load = json.loads(self.r3dc.call(self.endpoint,dict(args),5*60))
+        results={}
+
+        # convert the results to np arrays
+        param=json_load['parameter']
+        for fld in [param,'lat','lon']:
+            results[fld]=np.array(json_load[fld])
+
+        # copy over some of the other returns
+        results['parameter']=param
+        results['input_args']=json_load['input_args']
 
         return results
