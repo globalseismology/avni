@@ -12,13 +12,13 @@ Table of Contents
 Use *issues* to discuss intended modifications
 ----------------------------------------------
 
-GitHub provides a [system](https://github.com/geodynamics/avni/issues) to track issues. It should be a central place to monitor REM3D evolution. In particular:
+GitHub provides a [system](https://github.com/geodynamics/avni/issues) to track issues. It should be a central place to monitor AVNI evolution. In particular:
 
 -   report bug as they occur
 
 -   plan modifications.
 
-REM3D's issue tracker interface lets us track bugs being fixed and enhancements being made by assigning labels. We will reserve the labels
+AVNI's issue tracker interface lets us track bugs being fixed and enhancements being made by assigning labels. We will reserve the labels
 
 -   *bug* for issue fixing
 

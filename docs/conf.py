@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# REM3D documentation build configuration file, created by
+# AVNI documentation build configuration file, created by
 # sphinx-quickstart on Wed Apr 26 2019.
 #
 # This file is execfile()d with the current directory set to its
@@ -101,7 +101,7 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project = u'REM3D'
+project = u'AVNI'
 copyright = u'2017, Pritwiraj Moulik'
 author = u'Pritwiraj Moulik'
 
@@ -259,7 +259,7 @@ html_static_path = ['_static']
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'REM3Ddoc'
+htmlhelp_basename = 'AVNIdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -336,7 +336,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
 \hspace{0.1in}\manual{}\hspace{0.1in}} }}
 \\[12pt]
-{\Large REM3D Software User Manual}
+{\Large AVNI Software User Manual}
 \end{center}
 
 %MAIN PICTURE%
@@ -352,7 +352,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 
 %USER MANUAL%
 \color{dark_grey}
-\hfill{\Huge \fontfamily{\sfdefault}\selectfont REM3D \\
+\hfill{\Huge \fontfamily{\sfdefault}\selectfont AVNI \\
 \raggedleft \huge \fontfamily{\sfdefault}\selectfont Version
 % keep the following line as is so that we can replace this using a script:
 0.1.0-pre %VERSION-INFO%
@@ -389,7 +389,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 }
 
 %COPYRIGHT STATEMENT
-\textcopyright Copyright 2020, Pritwiraj Moulik, REM3D Project and Regents of the University of California
+\textcopyright Copyright 2020, Pritwiraj Moulik, AVNI Project and Regents of the University of California
 
 }
 
@@ -404,7 +404,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'REM3D.tex', u'REM3D Documentation',
+  (master_doc, 'AVNI.tex', u'AVNI Documentation',
    u'Pritwiraj Moulik', 'manual'),
 ]
 
@@ -434,7 +434,7 @@ latex_logo = 'rem3dlogo.png'
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'avni', u'REM3D Documentation',
+    (master_doc, 'avni', u'AVNI Documentation',
      [author], 1)
 ]
 
@@ -448,8 +448,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'REM3D', u'REM3D Documentation',
-   author, 'REM3D', 'One line description of project.',
+  (master_doc, 'AVNI', u'AVNI Documentation',
+   author, 'AVNI', 'One line description of project.',
    'Miscellaneous'),
 ]
 
