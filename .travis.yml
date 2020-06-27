@@ -126,7 +126,7 @@ script:
   - make latex
   - cd _build/latex
   # Texliveonfly will download packages automatically
-  - texliveonfly REM3D.tex
+  - texliveonfly AVNI.tex
   # Make a pdf now
   - make
   - cd ../..
@@ -171,7 +171,7 @@ deploy:
       - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         sudo chgrp -R apache docs/_build;
         rsync -r -g --delete-after -v docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
-        rsync -r -g --delete-after -v docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v docs/_build/latex/AVNI.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
         fi
     on:
       branch:
@@ -186,7 +186,7 @@ deploy:
       - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         sudo chgrp -R apache docs/_build;
         rsync -r -g --delete-after -v docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
-        rsync -r -g --delete-after -v docs/_build/latex/REM3D.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+        rsync -r -g --delete-after -v docs/_build/latex/AVNI.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
         fi
     on:
       branch: master
