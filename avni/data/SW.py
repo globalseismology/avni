@@ -13,6 +13,7 @@ import fortranformat as ff #reading/writing fortran formatted text
 import pandas as pd
 import h5py
 import progressbar
+import time
 import pdb
 
 if sys.version_info[0] >= 3: unicode = str
@@ -189,24 +190,22 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
     # reorder according to FIELDS
     data = data.reindex(namelist,axis=1)
 
-    f = open(filename,'w')
-    f.writelines(printstr)
-    for ii in progressbar.progressbar(range(len(data))):
-        line=[]
-        for val in data.values[ii]:
-            if isinstance(val,six.string_types):
-                line.append(val.ljust(15))
-            else:
-                line.append(val)
-        try:
-            arow = header_line.write(line)
-        except:
-            raise IOError('No line to print')
-        f.write(unicode(arow+'\n'))
-    f.close()
+    # all pandas version
+    cols=metadata['FIELDS']
+
+    # initialize fortranformat writer -- apply by row
+    line = ff.FortranRecordWriter('('+metadata['WRITE']+')')
+
+    # using apply
+    for field in ['cmtname','stat-net-chan-loc']: data[field] = data[field].str.ljust(15)
+    Formated_Series=data.apply(lambda x : line.write(x.values),axis=1)
+
+    # write out header
+    with open(filename,'w') as f: f.writelines(printstr)
+    # append the series to output file (one column per row now)
+    Formated_Series.to_csv(filename,index=False,header=False,mode='a')
     print("....written "+str(len(data))+" observations to "+filename)
     return
-
 
 def SWasciitohdf5(files,hdffile = 'SW.avni.data.h5',datatype='raw',delim='-'):
     """
