@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""This module contains an example of plotting a map using rem3d codes"""
+"""This module contains an example of plotting a map using avni codes"""
 
 import argparse #parsing arguments
 import matplotlib.pyplot as plt
@@ -8,16 +8,16 @@ import xarray as xr
 import numpy as np
 import pdb
 
-########################### IMPORT REM3D MODULES   #####################################
-from rem3d.tools import stage,get_fullpath,get_filedir
-from rem3d.data import update_file
-from rem3d.models import readepixfile
-from rem3d.plots import globalmap
+########################### IMPORT AVNI MODULES   #####################################
+from avni.tools import stage,get_fullpath,get_filedir
+from avni.data import update_file
+from avni.models import readepixfile
+from avni.plots import globalmap
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
     parser.add_argument('-m', '--file', type=str, default=
-        'S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',help='Model file in nc4 or epix')
+        'S362ANI+M.BOX25km_PIX1X1.avni.nc4',help='Model file in nc4 or epix')
     parser.add_argument('-p', '--parameter', type=str, default='vs',
         help='Parameter of interest')
     parser.add_argument('-d', '--depth', type=float, default=150.0,
@@ -28,8 +28,8 @@ def main():
         help='Upper bound for color scale saturation level (percent)')
     parser.add_argument('-l', '--lower_bound', type=float, default=-6.0,
         help='Lower bound for color scale saturation level (percent)')
-    parser.add_argument('-c', '--color', type=str, default='rem3d',
-        help='Color palette e.g. rem3d or bk')
+    parser.add_argument('-c', '--color', type=str, default='avni',
+        help='Color palette e.g. avni or bk')
     parser.add_argument('-r', '--resolution', type=str, default='l',
         help='Resolution')
     parser.add_argument('-t', '--colorcontour', type=int, default=20,
@@ -66,7 +66,7 @@ def main():
         ds = xr.open_dataset(get_filedir()+'/'+model)
         metadata['WHAT'] = arg.parameter
         metadata['UNIT'] = '%' if ds[arg.parameter].attrs['unit']=='percent' else ds['vs'].attrs['unit']
-        outfile = model.split('rem3d.nc4')[0]+arg.parameter+'.'+str(arg.depth)+'km.'+arg.format
+        outfile = model.split('avni.nc4')[0]+arg.parameter+'.'+str(arg.depth)+'km.'+arg.format
 
         # find the index, choosing the first if multiple ones available
         start_depths = ds[arg.parameter].attrs['start_depths']

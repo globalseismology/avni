@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-example for using the rem3d api client: fetch model cross-sections at fixed depths
+example for using the avni api client: fetch model cross-sections at fixed depths
 
 python api_model_fixeddepth -k api_key
 
@@ -10,8 +10,8 @@ api_key is optional if api_initialization has been run.
 
 '''
 
-from rem3d.api.client import Client as r3d
-from rem3d.api.model import Model
+from avni.api.client import Client as r3d
+from avni.api.model import Model
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt

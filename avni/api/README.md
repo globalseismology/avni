@@ -2,12 +2,12 @@
 
 ## initial setup
 1. get an api key. Log into https://maurya.umd.edu/ and visit https://maurya.umd.edu/tools/applets/ to get an api key
-2. (optional) If not on the main branch containing the api, you can check out the api branch from the rem3d repo. Depending on how you've installed the rem3d package, you may need to reinstall after switching branches (e.g., `python setup.py install --user` from the conda environment you're using for rem3d).
+2. (optional) If not on the main branch containing the api, you can check out the api branch from the avni repo. Depending on how you've installed the avni package, you may need to reinstall after switching branches (e.g., `python setup.py install --user` from the conda environment you're using for avni).
 3. store your api key:
  * open up a python terminal
  * import the api client:
  ```
- from rem3d.api.client import Client as r3d
+ from avni.api.client import Client as r3d
  ```
  * initialize a client connection object with
   ```
@@ -19,7 +19,7 @@
  conn.setApiConfig()
  ```
 
-At this point, your api key will be stored in the config file, `rem3d/config/api.ini` and future calls to initialize a client will pull the key from this file (i.e., you can do `conn=r3d()` to initialize).
+At this point, your api key will be stored in the config file, `avni/config/api.ini` and future calls to initialize a client will pull the key from this file (i.e., you can do `conn=r3d()` to initialize).
 
 After completing step 3 above, you can run `conn.checkUserStats()` to validate that your key works.
 
