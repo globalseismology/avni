@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ''' Example for calling an f2py function through the API '''
-from rem3d.api.client import Client as r3d
-from rem3d.api.f2py import f2pyWrapper
+from avni.api.client import Client as r3d
+from avni.api.f2py import f2pyWrapper
 import argparse
 import numpy as np
 

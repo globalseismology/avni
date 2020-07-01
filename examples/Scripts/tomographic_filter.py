@@ -5,17 +5,17 @@ Usage import """
 import argparse #parsing arguments
 import ntpath
 import pdb
-####################### IMPORT REM3D MODULES   #####################################
-from rem3d.tools import stage
-from rem3d.data import update_file
-from rem3d.models.model3d import Model3D
+####################### IMPORT AVNI MODULES   #####################################
+from avni.tools import stage
+from avni.data import update_file
+from avni.models.model3d import Model3D
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
     parser.add_argument('simulation', type=str,
-        help='A simulated geodynamic model file in REM3D netcdf format')
+        help='A simulated geodynamic model file in AVNI netcdf format')
     parser.add_argument('seismic', type=str,
-        help='A seismic model in REM3D netcdf format')
+        help='A seismic model in AVNI netcdf format')
     parser.add_argument('-p', '--parameter', type=str, default='vs',
         help='Parameter of interest')
     parser.add_argument('-u', '--upper_bound', type=float, default=2.0,

@@ -5,15 +5,15 @@ Usage import """
 import argparse #parsing arguments
 import ntpath
 import pdb
-####################### IMPORT REM3D MODULES   #####################################
-from rem3d.models.model3d import Model3D
+####################### IMPORT AVNI MODULES   #####################################
+from avni.models.model3d import Model3D
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
     parser.add_argument('original', type=str,
-        help='An orginial model file in REM3D netcdf format')
+        help='An orginial model file in AVNI netcdf format')
     parser.add_argument('target', type=str,
-        help='A target model in REM3D netcdf format')
+        help='A target model in AVNI netcdf format')
     parser.add_argument('-o', '--output', action='store_true',
         help='Save the figures in files')
     arg = parser.parse_args()
