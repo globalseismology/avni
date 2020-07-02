@@ -4,15 +4,15 @@ Usage import """
 
 import argparse #parsing arguments
 import ntpath
-################################ IMPORT REM3D MODULES   #####################################
-from rem3d.f2py import ddelazgc # geolib library from NSW
-from rem3d.plots import plot1section
-from rem3d.tools import stage,get_fullpath
-from rem3d.data import update_file
+################################ IMPORT AVNI MODULES   #####################################
+from avni.f2py import ddelazgc # geolib library from NSW
+from avni.plots import plot1section
+from avni.tools import stage,get_fullpath
+from avni.data import update_file
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
-    parser.add_argument('-m', '--file', type=str, default='S362ANI+M.BOX25km_PIX1X1.rem3d.nc4',
+    parser.add_argument('-m', '--file', type=str, default='S362ANI+M.BOX25km_PIX1X1.avni.nc4',
         help='Model file')
     parser.add_argument('-p', '--parameter', type=str, default='vs',
         help='Parameter of interest')
@@ -30,8 +30,8 @@ def main():
         help='Save the figures in files')
     parser.add_argument('-f', '--format', type=str, default='png',
         help='Outfile file format')
-    parser.add_argument('-c', '--color', type=str, default='rem3d',
-        help='Color palette e.g. rem3d or bk')
+    parser.add_argument('-c', '--color', type=str, default='avni',
+        help='Color palette e.g. avni or bk')
     arg = parser.parse_args()
 
     try:
@@ -41,7 +41,7 @@ def main():
         # update the file from the server
         update_file(arg.file)
     model3d = ntpath.basename(arg.file)
-    prefix = model3d.split('rem3d.nc4')[0]
+    prefix = model3d.split('avni.nc4')[0]
 
     ##### Example of a regional transects
     print("PLOTTING SECTION 1")
