@@ -145,7 +145,7 @@ def readSWascii(file, delim = '-',required = None,warning=False):
     SWdata = {}; SWdata['data'] = data; SWdata['metadata'] = metadata
     return SWdata
 
-def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
+def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-',writeheader=True,writedata=True,verbose=True):
     """
     Writes the AVNI format for analysis and plotting
 
@@ -164,47 +164,53 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-'):
 
     """
 
-    if iflagthreshold is None:
-        data = SWdata['data']
-    else:
-        data = SWdata['data'][SWdata['data']['iflag'] >= iflagthreshold]
 
-    metadata = SWdata['metadata'];
+    metadata = SWdata['metadata']
     header_line  =  ff.FortranRecordWriter('('+metadata['WRITE']+')')
 
-    printstr  =  [unicode('#'+key+':'+metadata[key]+'\n') for key in metadata.keys() if key not in ['FIELDS','WRITE','COMMENTS']]
-    printstr.append(unicode('#'*len(metadata['FIELDS'])+'\n'))
-    for comment in metadata['COMMENTS']: printstr.append(unicode(comment+'\n'))
-    printstr.append(unicode('#'*len(metadata['FIELDS'])+'\n'))
-    for key in metadata.keys():
-        if key in ['FIELDS','WRITE']: printstr.append(unicode('#'+key+':'+metadata[key]+'\n'))
-
-    namelist = metadata['FIELDS'].split()
-    # replace the fields by divided fields if concatenated
-    for column in namelist:
-        if delim in column:
-            oldcolumns = column.split(delim)
-
-            data[column]=data[oldcolumns].fillna('').apply(lambda x: delim.join(x.astype(str).values), axis=1)
-            data = data.drop(oldcolumns, 1) # get rid of old separate columns
-    # reorder according to FIELDS
-    data = data.reindex(namelist,axis=1)
-
-    # all pandas version
-    cols=metadata['FIELDS']
-
-    # initialize fortranformat writer -- apply by row
-    line = ff.FortranRecordWriter('('+metadata['WRITE']+')')
-
-    # using apply
-    for field in ['cmtname','stat-net-chan-loc']: data[field] = data[field].str.ljust(15)
-    Formated_Series=data.apply(lambda x : line.write(x.values),axis=1)
-
     # write out header
-    with open(filename,'w') as f: f.writelines(printstr)
+    if writeheader:
+        printstr  =  [unicode('#'+key+':'+metadata[key]+'\n') for key in metadata.keys() if key not in ['FIELDS','WRITE','COMMENTS']]
+        printstr.append(unicode('#'*len(metadata['FIELDS'])+'\n'))
+        for comment in metadata['COMMENTS']: printstr.append(unicode(comment+'\n'))
+        printstr.append(unicode('#'*len(metadata['FIELDS'])+'\n'))
+        for key in metadata.keys():
+            if key in ['FIELDS','WRITE']: printstr.append(unicode('#'+key+':'+metadata[key]+'\n'))
+
+        with open(filename,'w') as f: f.writelines(printstr)
+
     # append the series to output file (one column per row now)
-    Formated_Series.to_csv(filename,index=False,header=False,mode='a')
-    print("....written "+str(len(data))+" observations to "+filename)
+    if writedata:
+        if iflagthreshold is None:
+            data = SWdata['data']
+        else:
+            data = SWdata['data'][SWdata['data']['iflag'] >= iflagthreshold]
+
+        if len(data) == 0: raise ValueError('No data row clears threshold for ', iflagthreshold)
+        if isinstance(data, pd.Series): data = pd.DataFrame(data.to_dict(), index=[0])
+        namelist = metadata['FIELDS'].split()
+        # replace the fields by divided fields if concatenated
+        for column in namelist:
+            if delim in column:
+                oldcolumns = column.split(delim)
+
+                data[column]=data[oldcolumns].fillna('').apply(lambda x: delim.join(x.astype(str).values), axis=1)
+                data = data.drop(oldcolumns, 1) # get rid of old separate columns
+        # reorder according to FIELDS
+        data = data.reindex(namelist,axis=1)
+
+        # all pandas version
+        cols=metadata['FIELDS']
+
+        # initialize fortranformat writer -- apply by row
+        line = ff.FortranRecordWriter('('+metadata['WRITE']+')')
+
+        # using apply
+        for field in ['cmtname','stat-net-chan-loc']:
+            data[field] = data[field].str.ljust(15)
+        Formated_Series=data.apply(lambda x : line.write(x.values),axis=1)
+        Formated_Series.to_csv(filename,index=False,header=False,mode='a')
+    if verbose: print("....written "+str(len(data))+" observations to "+filename)
     return
 
 def SWasciitohdf5(files,hdffile = 'SW.avni.data.h5',datatype='raw',delim='-'):
