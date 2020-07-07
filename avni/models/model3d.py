@@ -348,10 +348,10 @@ class Model3D(object):
 
     def ifwithinregion(self,latitude,longitude,depth_in_km=None,resolution=0):
         # check if the queries is within the bounds of the model
-        lat_max = self[resolution]['geospatial_lat_max']
-        lat_min = self[resolution]['geospatial_lat_min']
-        lon_min = self[resolution]['geospatial_lon_min']
-        lon_max = self[resolution]['geospatial_lon_max']
+        lat_max = float(self[resolution]['geospatial_lat_max'])
+        lat_min = float(self[resolution]['geospatial_lat_min'])
+        lon_min = float(self[resolution]['geospatial_lon_min'])
+        lon_max = float(self[resolution]['geospatial_lon_max'])
         lon_min = lon_min + 360. if lon_min < 0. else lon_min
         lon_max = lon_max + 360. if lon_max < 0. else lon_max
         dep_min = self[resolution]['geospatial_vertical_min']
@@ -670,6 +670,7 @@ class Model3D(object):
 
         return data_vars if old else xr.Dataset(data_vars = data_vars,coords = coords)
 
+
     def evaluate_at_location(self,parameter,latitude,longitude,depth_in_km=None,resolution=0,realization=0,grid=False,interpolated=False,tree=None,nearest=None,units=None,add_reference=True,dbs_path=tools.get_filedir()):
         """
         Evaluate the mode at a location (latitude, longitude,depth)
@@ -788,6 +789,10 @@ class Model3D(object):
                                 depth_tmp[indx*nlat*nlon:(indx+1)*nlat*nlon] = depth * np.ones(nlat*nlon)
                         lat_tmp = np.tile(latitude,len(depth_in_km))
                         lon_tmp = np.tile(longitude,len(depth_in_km))
+                    else:
+                        depth_tmp = depth_in_km
+                        lat_tmp = latitude
+                        lon_tmp = longitude
 
                     # check if the queries is within the bounds of the model
                     checks = self.ifwithinregion(lat_tmp,lon_tmp,depth_tmp,resolution)
