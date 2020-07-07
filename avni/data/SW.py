@@ -14,6 +14,7 @@ import pandas as pd
 import h5py
 import progressbar
 import time
+import warnings
 import pdb
 
 if sys.version_info[0] >= 3: unicode = str
@@ -137,10 +138,14 @@ def readSWascii(file, delim = '-',required = None,warning=False):
     for column in data.columns.tolist():
         if delim in column:
             newcolumns = column.split(delim)
-            data[newcolumns] = data[column].str.split(delim,expand=True)
-            data = data.drop(column, 1) # get rid of old composite column
-            data.replace('', np.nan, inplace=True) #replace blank with nan
-    data['path'] = data['cmtname'] + '_'+ data['stat'] + '-' + data['net']
+            try:
+                data[newcolumns] = data[column].str.split(delim,expand=True)
+                data = data.drop(column, 1) # get rid of old composite column
+                data.replace('', np.nan, inplace=True) #replace blank with nan
+            except:
+                warnings.warn('could not split the column '+column+' with delimiter '+delim)
+    if 'stat' in data.columns.values and 'net' in data.columns.values:
+        data['path'] = data['cmtname'] + '_'+ data['stat'] + '-' + data['net']
 
     SWdata = {}; SWdata['data'] = data; SWdata['metadata'] = metadata
     return SWdata
@@ -191,7 +196,7 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-',writeheader=True,
         namelist = metadata['FIELDS'].split()
         # replace the fields by divided fields if concatenated
         for column in namelist:
-            if delim in column:
+            if delim in column and column not in data.columns.values:
                 oldcolumns = column.split(delim)
 
                 data[column]=data[oldcolumns].fillna('').apply(lambda x: delim.join(x.astype(str).values), axis=1)
@@ -213,7 +218,7 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-',writeheader=True,
     if verbose: print("....written "+str(len(data))+" observations to "+filename)
     return
 
-def SWasciitohdf5(files,hdffile = 'SW.avni.data.h5',datatype='raw',delim='-'):
+def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
     """
     Read a list of files to hdf5 container format.
 
