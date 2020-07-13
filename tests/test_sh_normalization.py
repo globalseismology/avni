@@ -12,7 +12,7 @@ import pdb
 
 ####################### IMPORT REM3D MODULES   #####################################
 
-from rem3d.tools import wrswpsh,eval_ylm
+from avni.tools import wrswpsh,eval_ylm
 ####################### IMPORT REM3D MODULES   #####################################
 
 

@@ -9,8 +9,8 @@ __pycache__/
 *.h5
 *.hdf5
 
-# All data files downloaded from remote REM3D server
-rem3d/files/*
+# All data files downloaded from remote AVNI server
+avni/files/*
 
 # distutil
 MANIFEST
@@ -128,4 +128,4 @@ ENV/
 *.pdf
 
 # api config file
-rem3d/config/api.ini
+avni/config/api.ini
