@@ -16,7 +16,7 @@ import progressbar
 import time
 import warnings
 import pdb
-from rem3d import constants
+from .. import constants
 
 if sys.version_info[0] >= 3: unicode = str
 
