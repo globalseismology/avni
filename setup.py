@@ -45,7 +45,7 @@ if F90 == "ifort":
 
 elif F90 == "gfortran":
     f90_flags = ["-libmil","-fopenmp", "-fPIC", "-O3", "-fbounds-check",
-                 "-ffixed-line-length-none"]
+                 "-ffixed-line-length-none","-std=legacy"]
     omp_lib = ["-lgomp"]
 
 elif F90 == "f90":
