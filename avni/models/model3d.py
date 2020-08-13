@@ -36,6 +36,7 @@ from .reference1d import Reference1D
 from .common import getLU2symmetric,readResCov
 from .profiles import Profiles
 from ..f2py import drspln,drsple # cubic spline interpolation used in our codes
+from ..plots import plot1section
 
 #######################################################################################
 
@@ -1297,7 +1298,8 @@ class Model3D(object):
             try:
                 selfmeta['kernel_set'] = Kernel_set(selfmeta.copy())
             except:
-                warnings.warn('Warning: kernel_set could not initialized for '+str(resolution))
+                #warnings.warn('Warning: kernel_set could not initialized for '+str(resolution))
+                pass
 
             # make a model3D instance and store coef panda dataframe
             reparam = copy.deepcopy(self)
