@@ -702,11 +702,31 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.a
 
     return xsec.T,model,tree
 
-def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='avni',colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,width_ratios=None,numevalx=200,numevalz=300,nearest=10,topo=constants.topography,resolution='l',topotree=None,hotspots=False,plates=False):
+def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),
+            modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='avni',
+            colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,
+            width_ratios=None,numevalx=200,numevalz=300,nearest=10,
+            topo=constants.topography,resolution='l',topotree=None,hotspots=False,
+            plates=False, xsec_data = None):
     """Plot one section through the Earth through a pair of points."""
     #defaults
     if radii is None: radii=[3480.,6346.6]
     if width_ratios is None: width_ratios=[1,3]
+
+    # only sample the data if it's not here.
+    if xsec_data is None:
+        interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
+    else:
+        interp_values = xsec_data
+        numevalx = interp_values.shape[0]
+        numevalz = interp_values.shape[1]
+        model = None
+        modeltree = None
+
+    if vmin is None:
+        vmin = interp_values.min()
+    if vmax is None:
+        vmax = interp_values.max()
 
     # Specify theta such that it is symmetric
     #lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude)
@@ -737,6 +757,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     else:
         theta=[90.-gcdelta/2.,90.+gcdelta/2.]
     theta_range=np.linspace(theta[0],theta[1],nelevinter)
+    
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
     if vexaggerate != 0:
@@ -804,12 +825,15 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     # Get the color map
     cpalette = initializecolor(colorpalette)
 
-    interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
+    # interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
 
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
-    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values.toarray(),cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+    
+    if isinstance(interp_values,xr.DataArray):
+        interp_values = interp_values.toarray()
+    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
     # add a colorbar
     #levels = MaxNLocator(nbins=colorcontour).tick_values(interp_values.min(), interp_values.max())
     #dx = (theta[1]-theta[0])/(numevalx-1); dy = (radii[1]-radii[0])/(numevalz-1)
