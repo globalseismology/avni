@@ -38,12 +38,12 @@ def main():
     args['radius_max_km']=6371-min_depth
     args['quickInterp']=1
     xs=ModelInstance.crossSection(args)
-                
+
     # now pass the cross section data to plot1section 
     xsec_data = xs['vs']
     vmin = -3 
     vmax = 3 
-    plot1section(args['lat'],args['lon'],args['azimuth'],args['gcdelta'],None,'vs',vmin,vmax,xsec_data = xsec_data)
+    sec = plot1section(args['lat'],args['lon'],args['azimuth'],args['gcdelta'],None,'vs',vmin,vmax,xsec_data = xsec_data)
 
     # get the fixed depth values 
     fixed_d = ModelInstance.fixedDepth({'depth':250.})    
