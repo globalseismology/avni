@@ -175,12 +175,12 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
     Parameters
     ----------
 
-    latlonval : a named numpy array containing latitudes (lat), longitudes (lon)
+    valarray :  a named numpy array containing latitudes (lat), longitudes (lon)
                 and values (val). Can be initialized from three numpy arrays lat, lon and val
                 $ data = np.vstack((lat,lon,val)).transpose()
-                $ dt = {'names':['lat', 'lon', 'val'], 'formats':[np.float, np.float, np.float]}
-                $ latlonval = np.zeros(len(data), dtype=dt)
-                $ latlonval['lat'] = data[:,0]; latlonval['lon'] = data[:,1]; latlonval['val'] = data[:,2]
+                $ dt = {'names':['latitude', 'longitude', 'value'], 'formats':[np.float, np.float, np.float]}
+                $ valarray = np.zeros(len(data), dtype=dt)
+                $ valarray['latitude'] = data[:,0]; valarray['longitude'] = data[:,1]; valarray['value'] = data[:,2]
 
     vmin, vmax : minimum and maximum value of the color scale
 
