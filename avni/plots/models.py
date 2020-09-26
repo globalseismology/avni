@@ -38,6 +38,7 @@ from matplotlib.projections import PolarAxes
 #from mpl_toolkits.axisartist.grid_finder import MaxNLocator,DictFormatter,FixedLocator
 from mpl_toolkits.axisartist.grid_finder import DictFormatter,FixedLocator
 from matplotlib import gridspec # Relative size of subplots
+import pandas as pd
 import pdb
 ####################       IMPORT OWN MODULES     ######################################
 from .. import mapping
@@ -168,7 +169,7 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = 
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,colorpalette='avni',colorcontour=21,hotspots=False,grid=None,gridwidth=0, shading= False,model=constants.topography,resolution='l',field='z', **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,ticklabels=None,colorpalette='avni',colorcontour=21,hotspots=False,grid=None,gridwidth=0, shading= False,model=constants.topography,resolution='l',field='z', **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
 
@@ -237,8 +238,9 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
         else:
             bounds = colorcontour
         bounds = bounds[np.where(bounds < vmax)]
-        mytks = np.append(bounds[bounds.nonzero()],np.ceil(vmax))
+
         bounds = np.append(bounds,np.ceil(vmax))
+        mytks = np.append(bounds[bounds.nonzero()],np.ceil(vmax))
         spacing='uniform'
     elif isinstance(colorcontour,(int, float)): # Number of intervals for color bar
         bounds = np.linspace(vmin,vmax,colorcontour+1)
@@ -247,6 +249,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
         spacing='proportional'
     else:
         raise ValueError("Undefined colorcontour in globalmap; should be a numpy array, list or integer")
+    if np.all(ticklabels!=None): mytks=np.array(ticklabels) # modify to custom ticks
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
 
     #################################################################
@@ -370,7 +373,7 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
             #cbar.ax.tick_params(labelsize=15)
             # Customize colorbar tick labels
             cbar.set_ticks(mytks)
-            mytkslabels = [str(int(a)) if (a).is_integer() else str(a) for a in mytks]
+            mytkslabels = [str(int(a)) if isinstance(a, (int, np.integer)) else str(a) for a in mytks]
             cbar.ax.set_yticklabels(mytkslabels)
         else:
             # Remove color bar tick lines, while keeping the tick labels
@@ -887,21 +890,31 @@ def plot1hitmap(hitfile,dbs_path=tools.get_filedir(),projection='robin',lat_0=0,
 
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
-    hit_array,grid_spacing = data.read_SWhitcount(hitfile)
-    maxhit=max(hit_array['val'])
+    header_list = ["latitude", "longitude", "value"]
+    hit_array = np.genfromtxt(hitfile,names=header_list,delimiter=None)
+    grids = np.delete(np.unique(np.ediff1d(hit_array['latitude'])),[0])
+    if len(grids) != 1: raise ValueError('len(grids) != 1')
+    grid_spacing=grids[0]
+    maxhit=max(hit_array['value'])
     colorcontour=np.array(colorcontour)
     idx = (np.abs(colorcontour - maxhit)).argmin() # find nearest index to upper centile
     colorcontour = colorcontour[:idx+1]
-    if maxhit > 1500: colorcontour=np.logspace(0,np.log10(maxhit),8).astype(int);maxhit=int(maxhit)
+    if maxhit > 1500:
+        maxlog10 = int(np.log10(maxhit))
+        ticklabels=np.logspace(0,maxlog10,maxlog10+1).astype(int)
+        colorcontour=np.logspace(0,maxlog10,2*maxlog10+1).astype(int)
+        remaining=np.logspace(maxlog10,np.log10(maxhit),3).astype(int)[1:]
+        colorcontour =  np.concatenate((colorcontour,remaining))
+        ticklabels = np.append(ticklabels,int(maxhit))
+    maxhit=int(maxhit)
     #hit_array['val']=np.log10(hit_array['val'])
-    if(grid_spacing.is_integer()): grid_spacing=int(grid_spacing)
+    if isinstance(grid_spacing, (int, np.integer)): grid_spacing=int(grid_spacing)
     colorlabel="# "+"$Rays$"+" "+"$(%s$"%grid_spacing+"$^\circ bins)$"
-    group, overtone, wavetype, period = data.get_info_datafile(hitfile,extension='.interp.')
     if projection=='ortho':
-        globalmap(ax,hit_array,0.,maxhit,dbs_path,colorlabel=colorlabel,colorcontour=colorcontour,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
+        globalmap(ax,hit_array,0.,int(maxhit),dbs_path,ticklabels=ticklabels,colorlabel=colorlabel,colorcontour=colorcontour,grid=[30.,30.],gridwidth=1,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
     else:
-        globalmap(ax,hit_array,0.,maxhit,dbs_path,colorlabel=colorlabel,colorcontour=colorcontour,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
-    ax.set_title(group+': Overtone '+overtone+', '+wavetype+' at '+period)
+        globalmap(ax,hit_array,0.,int(maxhit),dbs_path,ticklabels=ticklabels,colorlabel=colorlabel,colorcontour=colorcontour,grid=[30.,90.],gridwidth=0,projection=projection,lat_0=lat_0, lon_0=lon_0,colorpalette=colorpalette)
+    ax.set_title(hitfile)
     if ifshow: plt.show()
     fig.savefig(hitfile+outformat,dpi=300)
     return
