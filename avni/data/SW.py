@@ -22,7 +22,59 @@ if sys.version_info[0] >= 3: unicode = str
 
 ####################       I/O ROUTINES     ######################################
 
-def get_travel_times1D(table,distance_in_degree,period,output='pvel',mode_type='spheroidal',overtone=0,phase=None,arc='minor'):
+def get_travel_times1D(table,distance_in_degree,period,output='pvel',overtone=0,phase=None):
+    """
+    Return the arrival time in seconds of a surface-wave phase or mode type/overtone.
+    When phase is queries, mode_type/overtone/arc are ignored
+
+    Input Parameters:
+    ----------------
+
+    table <str>: path to hdf5 format modes table
+    distance_in_degree <float>: great circle distance, can be minor or major arc
+    period <float>: period in second
+    mode_type <str>: either "spheroidal", "toroidal", or "radial"
+    overtone <int>: overtone number (defaults to 0, ie. fundamental mode)
+
+    """
+
+    # Perform some checks
+    if phase == None: #if no phase is given, assume minor arc
+        mode_type='spheroidal'
+        iorbit=1
+    else:
+
+        if isinstance(phase, str):
+            # heuristics: 'R1' - call spheroidal, G1=toroidal
+            if phase.startswith('L') or phase.startswith('G'):
+                mode_type='toroidal'
+            elif phase.startswith('R'):
+                mode_type='spheroidal'
+            iorbit=int(phase[1])
+        else:
+            raise ValueError('Only phases like R1, G1 can be called')
+
+
+    # Perform interpolation to get velocity for requested period
+    vel_i = get_velocity(table=table,period=period,overtone=overtone,mode_type=mode_type,output=output)
+
+    # Find travel time
+    if iorbit==1:
+        distance_in_km = constants.deg2km.magnitude * distance_in_degree
+        igc_count=0
+    else:
+        if np.mod(iorbit,2) == 0: #even orbit hence G2,G4, etc.
+            igc_count=iorbit/2   #number of times almost circled the earth
+            distance_in_km = constants.deg2km.magnitude * (360.*float(igc_count)-distance_in_degree)
+        else:
+            igc_count=(iorbit-1)/2
+            distance_in_km = constants.deg2km.magnitude * (360.*float(igc_count)+distance_in_degree)
+
+    time_in_s =  distance_in_km * (1./vel_i)
+
+    return time_in_s
+
+def get_velocity(table,period,overtone,mode_type,output='pvel'):
     """
     Return the arrival time in seconds of a surface-wave phase or mode type/overtone.
     When phase is queries, mode_type/overtone/arc are ignored
@@ -41,19 +93,15 @@ def get_travel_times1D(table,distance_in_degree,period,output='pvel',mode_type='
     table = h5py.File(table,'r')
     omega_query = (1./period) * (2.*np.pi) #the requested frequency in rad/s
 
-    # Perform some checks
-    if phase == None: #if no phase is given, assume minor arc
-        omega = table[mode_type][str(overtone)].attrs['omega']
-        vel = table[mode_type][str(overtone)].attrs[output]
-    else:
+    if mode_type=='S':
+        mode_type='spheroidal'
+    elif mode_type=='T':
+        mode_type='toroidal'
+    elif mode_type=='R':
+        mode_type='radial'
 
-        if isinstance(phase, str):
-            # heuristics: 'R1' - call spheroidal, G1=toroidal
-            omega = table[mode_type][str(overtone)].attrs['omega']
-            vel = table[mode_type][str(overtone)].attrs[output]
-
-        else:
-            raise ValueError('Only phases like R1, G1 can be called')
+    omega = table[mode_type][str(overtone)].attrs['omega']
+    vel = table[mode_type][str(overtone)].attrs[output]
 
     if omega_query < np.min(omega) or omega_query > np.max(omega):
         raise ValueError('period {} doesnt exist in table for requested mode'.format(period))
@@ -61,12 +109,7 @@ def get_travel_times1D(table,distance_in_degree,period,output='pvel',mode_type='
     # Perform interpolation to get velocity for requested period
     vel_i = np.interp(omega_query,omega,vel)
 
-    # Find travel time
-    distance_in_km = constants.deg2km.magnitude * distance_in_degree
-    time_in_s =  distance_in_km * (1./vel_i)
-
-    return time_in_s
-
+    return vel_i
 
 def get_dispersion_curve(table,mode_type,output='pvel',overtone=0,freq_units='mhz'):
     '''
