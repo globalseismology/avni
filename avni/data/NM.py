@@ -346,6 +346,42 @@ def write_modes_hdf(infile,table_name,absorption_band='None'):
 
     #TODO write model attributes and max degree / overtone for S and T modes
 
+def get_mode_attribute(table,mode_type,radial_order,angular_order,attribute):
+    '''
+    returns the eigenfrequency of a single mode
+
+    params:
+    table <str>: path to hdf5 format modes table
+    mode_type <str>: either "spheroidal", "toroidal", or "radial"
+    radial_order <int>: radial order (ie. overtone number)
+    angular_order <int>: angular order
+    attribute: characteristics of a mode such as pvel,gvel,omega
+
+    returns:
+    value: value of attribute queried
+    '''
+
+    table = h5py.File(table,'r')
+
+    if mode_type=='S':
+        mode_type='spheroidal'
+    elif mode_type=='T':
+        mode_type='toroidal'
+    elif mode_type=='R':
+        mode_type='radial'
+
+    if mode_type == 'radial':
+        mode_name = '{}R{}'.format(radial_order,angular_order)
+    elif mode_type == 'toroidal':
+        mode_name = '{}T{}'.format(radial_order,angular_order)
+    elif mode_type == 'spheroidal':
+        mode_name = '{}S{}'.format(radial_order,angular_order)
+
+    value = table[mode_type][str(radial_order)][mode_name][attribute][()]
+
+    return value
+
+
 def get_mode_freq(table,mode_type,radial_order,angular_order,freq_units='mhz'):
     '''
     returns the eigenfrequency of a single mode
@@ -360,16 +396,7 @@ def get_mode_freq(table,mode_type,radial_order,angular_order,freq_units='mhz'):
     freq: eigen frequency of the mode in freq_units
     '''
 
-    table = h5py.File(table,'r')
-
-    if mode_type == 'radial':
-        mode_name = '{}R{}'.format(radial_order,angular_order)
-    elif mode_type == 'toroidal':
-        mode_name = '{}T{}'.format(radial_order,angular_order)
-    elif mode_type == 'spheroidal':
-        mode_name = '{}S{}'.format(radial_order,angular_order)
-
-    omega = table[mode_type][str(radial_order)][mode_name]['omega'][()]
+    omega = get_mode_attribute(table,mode_type,radial_order,angular_order,'omega')
 
     if freq_units.lower() == 'hz':
         freq = omega/(2.*np.pi)
