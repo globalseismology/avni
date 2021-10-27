@@ -266,7 +266,7 @@ htmlhelp_basename = 'AVNIdoc'
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
 'papersize': 'letterpaper',
-'babel': '\usepackage[english]{babel}',
+'babel': r'\usepackage[english]{babel}',
 
 # The font size ('10pt', '11pt' or '12pt').
 'pointsize': '11pt',
