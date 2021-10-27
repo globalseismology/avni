@@ -6,7 +6,7 @@
 
 AVNI is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has legacy routines in C and Fortran as well, which are interfaced with Python subroutines. Some installation files as well as applets and API access require registration on our [homepage](http://avni.org/login/register).
 
-Homepage: [avni.org](http://avni.org)
+Homepage: [avni.org](http://avni.globalseismology.com)
 
 Documentation: readthedocs [html](http://avni.readthedocs.io), [pdf](https://media.readthedocs.org/pdf/avni/latest/avni.pdf)
 
@@ -54,7 +54,7 @@ where `CONDA_PREFIX` is the location of Anaconda installation, which should be a
 
 Please note the license terms below specific to developers. If you want to use AVNI's development routines, you will need to do the following additional steps. This assumes that you have a free account at <https://github.com>
 
-1. Create an account on our [Web site](http://avni.org/login/register) and request access rights from [here](http://avni.org/join-us/github).
+1. Create an account on our [Web site](http://avni.globalseismology.com/login/register) and request access rights from [here](http://avni.globalseismology.com/join-us/github).
 2. Please accept the invitation through e-mail. Clone the development branch from the AVNI git repository through the terminal. This will create a directory that contains a folder called `avni`.  
 `git clone -b devel https://username:password@github.com/globalseismology/avni.git`  
 3. Install AVNI module by opening a terminal window, navigating to `avni` directory and entering  
@@ -81,8 +81,7 @@ Please read [contributing.md](docs/contributing.md) for details on our code of c
 
 ### Authors
 
-* **Pritwiraj Moulik** - *Primary administrator* - [github](https://github.com/pmoulik)
-* **Ved Lekic** - *Co-administrator* - [github](https://github.com/vedlekic)
+* **Pritwiraj Moulik** - *Administrator* - [github](https://github.com/pmoulik)
 
 See also the list of [Github contributors](https://github.com/globalseismology/avni/contributors) who participated in this project.
 
@@ -96,8 +95,8 @@ We use [SemVer](http://semver.org/) for versioning as explained in [versioning_c
 
 ## Acknowledgments
 
-* Funded by the National Science Foundation and the David and Lucile Packard Foundation.
+* Funded by the National Science Foundation, [Computational Infrastructure for Geodynamics](http://geodynamics.org), and the David and Lucile Packard Foundation.
 * We thank Göran Ekström, Adam Dziewonski, other members of the open source and Earth Science community for their input and non-Github contributions.
-* Computational resources maintained at the University of Maryland at College Park. We thank Todd Karowski and other system administrators for assistance.
+* Computational resources maintained at Princeton University. We thank the system administrators for assistance.
 
 <img src="docs/NSF.png" width="100"> <img src="docs/packard.png" width="200"> <img src="docs/UMD.png" width="100">
