@@ -102,7 +102,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'AVNI'
-copyright = u'2017, Pritwiraj Moulik'
+copyright = u'2021, Pritwiraj Moulik'
 author = u'Pritwiraj Moulik'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -410,7 +410,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-latex_logo = 'rem3dlogo.png'
+latex_logo = 'avnilogo.png'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
