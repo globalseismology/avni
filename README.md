@@ -6,7 +6,7 @@
 
 AVNI is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has legacy routines in C and Fortran as well, which are interfaced with Python subroutines. Some installation files as well as applets and API access require registration on our [homepage](http://avni.org/login/register).
 
-Homepage: [avni.org](http://avni.globalseismology.com)
+Homepage: [avni.globalseismology.com](http://avni.globalseismology.com)
 
 Documentation: readthedocs [html](http://avni.readthedocs.io), [pdf](https://media.readthedocs.org/pdf/avni/latest/avni.pdf)
 
