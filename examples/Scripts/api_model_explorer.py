@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-example for using the rem3d api client: fetch model evaluations and cross-sections
+example for using the avni api client: fetch model evaluations and cross-sections
 
 python api_model_explorer api_key
 
@@ -10,14 +10,14 @@ api_key is optional if api_initialization has been run.
 
 '''
 
-from rem3d.api.client import Client as r3d
-from rem3d.api.model import Model
+from avni.api.client import Client as r3d
+from avni.api.model import Model
 import numpy as np
 import argparse
 
 def main():
     # parse
-    parser = argparse.ArgumentParser(description='f2py calls via API')
+    parser = argparse.ArgumentParser(description='some model api calls')
     parser.add_argument('-k', '--key', type=str,default='',help='api key')
     arg = parser.parse_args()
 
@@ -70,6 +70,15 @@ def main():
     args['quickInterp']=1
     args['model']='S40RTS'
     xs=ModelInstance.crossSection(args)
+
+    # get some depth profiles
+    print("\ndepth profile with defaults")
+    args={'lat':42.2,'lon':232.0}
+    depth_profile=ModelInstance.depthProfile(args)
+
+    print("\ndepth profile specified depth range")
+    args={'lat':-21.2,'lon':150.0,'depthMin':50,'depthMax':250,'N_depth':10}
+    depth_profile_2=ModelInstance.depthProfile(args)
 
 
 if __name__== "__main__":

@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 '''
-example for using the rem3d api client: filter the CMT catalogue and plot result
+example for using the avni api client: filter the CMT catalogue and plot result
 
 python api_fetchCMT_events api_key
 
 api_key is optional if api_initialization has been run.
 '''
 
-from rem3d.api.client import Client as r3d
-from rem3d.api.cmt import CMT
+from avni.api.client import Client as r3d
+from avni.api.cmt import CMT
 import matplotlib.pyplot as plt
 import argparse
 
 def main():
     # parse
-    parser = argparse.ArgumentParser(description='f2py calls via API')
+    parser = argparse.ArgumentParser(description='fetches CMT events via API')
     parser.add_argument('-k', '--key', type=str,default='',help='api key')
     arg = parser.parse_args()
 

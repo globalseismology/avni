@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 '''
-example for using the rem3d api client: checks api stats and status for a user
+example for using the avni api client: checks api stats and status for a user
 
 python api_checkUserCallCount api_key
 
 api_key is optional if api_initialization has been run.
 '''
-from rem3d.api.client import Client as r3d
+from avni.api.client import Client as r3d
 import argparse
 
 def main():

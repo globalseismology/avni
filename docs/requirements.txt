@@ -16,6 +16,7 @@ sphinx_rtd_theme
 sphinxcontrib
 sphinxcontrib-bibtex
 recommonmark
+pyshtools
 
 ######## Requirements with Version Specifiers #######
 fortranformat==0.2.5
