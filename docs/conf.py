@@ -347,7 +347,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % e.g. height=6.5in
 \begin{center}
 \vspace{1em}
-\includegraphics[height=3.5in]{rem3dlogo.png}
+\includegraphics[height=3.5in]{avnilogo.png}
 \hspace{5em}
 \end{center}
 \end{textblock*}
