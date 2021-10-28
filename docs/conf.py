@@ -73,6 +73,8 @@ extensions = [
 ]
 #    'sphinxcontrib.matlab',
 
+bibtex_bibfiles = ['refs.bib']
+
 numpydoc_show_class_members = False
 
 autodoc_default_flags = [
