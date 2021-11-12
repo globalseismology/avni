@@ -87,15 +87,12 @@ install:
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
       source activate avni_${TRAVIS_PYTHON_VERSION};
     else
-      conda create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION;
+      conda create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION -f environment_doc.yml;
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
       source activate avni_${TRAVIS_PYTHON_VERSION};
       conda config --append channels conda-forge;
-      conda install --yes --file docs/requirements.txt;
       conda install --yes -c conda-forge python-slugify;
-      conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
       conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
-      conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme;
     fi
 
   # Install TexLive
