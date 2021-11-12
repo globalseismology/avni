@@ -119,6 +119,11 @@ script:
   - sphinx-apidoc -o api/ ../avni
   - make html
 
+  # Remove API for latex document, it is broken
+  # TODO: Fix this. Currently we create too many nested
+  # lists in the API. Is this a sphinx problem or a
+  # AVNI problem?
+  - rm -r api
   # Make a latex file for the next step
   - make latex
   - cd _build/latex
