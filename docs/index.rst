@@ -8,7 +8,7 @@ Welcome to AVNI's documentation!
 
 Write a few sentences about what AVNI is here. You can also link to other documents such as the
 
-.. include:: contributing.md
+.. include:: README_Developers.md
 
 
 .. toctree::

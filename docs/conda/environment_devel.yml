@@ -1,4 +1,4 @@
-name: avni-doc
+name: avni-devel
 channels:
   - default
   - conda-forge

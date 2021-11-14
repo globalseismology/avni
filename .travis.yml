@@ -55,7 +55,7 @@ before_install:
 
   # install requirements for pyshtools
   - sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
-  
+
   # Here we just install Miniconda. If it is in the cache, then we don't need to do anything
   - if [ -d "${CONDA_BASE_PATH}" ] && [ -e "${CONDA_BASE_PATH}/bin/conda" ]; then
       echo "Miniconda install already present from cache";
@@ -87,7 +87,7 @@ install:
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
       source activate avni_${TRAVIS_PYTHON_VERSION};
     else
-      conda create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION -f environment_doc.yml;
+      conda create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION -f docs/conda/environment_doc.yml;
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
       source activate avni_${TRAVIS_PYTHON_VERSION};
       conda config --append channels conda-forge;
