@@ -73,6 +73,8 @@ extensions = [
 ]
 #    'sphinxcontrib.matlab',
 
+bibtex_bibfiles = ['refs.bib']
+
 numpydoc_show_class_members = False
 
 autodoc_default_flags = [
@@ -266,7 +268,7 @@ htmlhelp_basename = 'AVNIdoc'
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
 'papersize': 'letterpaper',
-'babel': '\usepackage[english]{babel}',
+'babel': r'\usepackage[english]{babel}',
 
 # The font size ('10pt', '11pt' or '12pt').
 'pointsize': '11pt',
@@ -345,7 +347,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % e.g. height=6.5in
 \begin{center}
 \vspace{1em}
-\includegraphics[height=3.5in]{rem3dlogo.png}
+\includegraphics[height=3.5in]{avnilogo.png}
 \hspace{5em}
 \end{center}
 \end{textblock*}
