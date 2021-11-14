@@ -104,8 +104,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'AVNI'
-copyright = u'2021, Pritwiraj Moulik'
-author = u'Pritwiraj Moulik'
+copyright = u'2021, Raj Moulik'
+author = u'Raj Moulik'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -359,7 +359,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % keep the following line as is so that we can replace this using a script:
 0.1.0-pre %VERSION-INFO%
 \\\large(generated \today)\\
-{\Large Pritwiraj Moulik\\Vedran Lekic\\G{\"o}ran Ekstr{\"o}m\\Barbara Romanowicz\\}
+{\Large Raj Moulik}
 }
 
 %AUTHOR(S) & WEBSITE%
@@ -372,14 +372,13 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % be sure to have a newline (\\) after the final author
 \large
 \noindent with contributions by (in alphabetical order): \\
-    Anant Hariharan,
-    Chao Gao,
+    Rene Gassmoeller,
     Chris Havlin,
     Ross Maguire\\
 \vspace{1.0em}
 
 {\noindent
-{\href{https://geodynamics.org}{geodynamics.org} \\ \href{https://avni.org}{avni.org}}
+{\href{https://geodynamics.org}{geodynamics.org} \\ \href{https://avni.globalseismology.org}{avni.globalseismology.org}}
 }
 }
 
@@ -391,7 +390,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 }
 
 %COPYRIGHT STATEMENT
-\textcopyright Copyright 2020, Pritwiraj Moulik, AVNI Project and Regents of the University of California
+\textcopyright Copyright 2021, Raj Moulik, AVNI Project and Regents of the University of California
 
 }
 
@@ -407,7 +406,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   (master_doc, 'AVNI.tex', u'AVNI Documentation',
-   u'Pritwiraj Moulik', 'manual'),
+   u'Raj Moulik', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
