@@ -87,4 +87,4 @@ This software is published under the GNU GPL v3 license - see the [LICENSE](LICE
 * We thank Göran Ekström, Adam Dziewonski, and other members of the open source and Earth Science community for their input and non-Github contributions.
 * Computational resources maintained by Princeton University accessible through the [AVNI website](http://avni.globalseismology.org). We thank the system administrators for assistance.
 
-<img src="docs/logos/NSF.png" width="100">     <img src="docs/logos/CIG_logo.png" width="200">     <img src="docs/logos/PU-standard.png" width="300">
+<img src="docs/logos/NSF.png" width="100">     <img src="docs/logos/CIG_logo.png" width="200">     <img src="docs/logos/PU-standard.png" width="325">
