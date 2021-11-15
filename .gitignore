@@ -127,5 +127,8 @@ ENV/
 *.png
 *.pdf
 
+# MacOS files
+.DS_Store
+
 # api config file
 avni/config/api.ini
