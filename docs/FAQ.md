@@ -1,6 +1,7 @@
 Frequently Asked Questions
 ==========================
 
+
   1. [General](#general)  
     * [Is it free?](#is-it-free)  
     * [Is all your code open-source?](#is-all-your-code-open-source)  
