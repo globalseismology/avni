@@ -1,6 +1,7 @@
       subroutine getcmtbyname(event,ievt,
      # iyear,month,iday,ihour,minute,fsec,
      # elat,elon,edep,xmw,ierror)
+
 c
 c---- this subroutine returns cmt parameters for a given
 c---- event by copying them from common
@@ -8,6 +9,8 @@ c
 Cf2py intent(inout) event
 Cf2py intent(out) ievt,iyear,month,iday,ihour,minute,fsec,elat,elon,edep,xmw,ierror
 
+       real fsec,elat,elon,edep,xmw
+       integer ievt,iyear,month,iday,ihour,minute,ierror,iprtlv
       character*16 event
       character*16 ch16
       real*8 dadd

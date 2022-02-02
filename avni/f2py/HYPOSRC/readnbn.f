@@ -1,13 +1,13 @@
 c---- subroutine to read CMT catalog in binary nbn format
 c---- modified 6/11/2009 to swap byte order depending on endianess
 c
-      subroutine readnbn(lu,nread)
+      subroutine readnbn(lu,nread,ierror)
       character*16 DEVENT
       character*16 timestamp
       character*24 region
       character*4 catalog
       DIMENSION XM(6),XERR(6),EV(3),IPL(3),IAZ(3),
-     1   ISTR(2),IDIP(2),ISLP(2) 
+     1   ISTR(2),IDIP(2),ISLP(2)
 c
 c---- include file for storing the whole catalog
 c
@@ -41,7 +41,8 @@ c
 c              write(6,"('I will swap bytes reading -.nbn file')")
             else
 	      write(6,"('in readnbn -- file neither big or little endian')")
-              stop
+              ierror=2
+              return
             endif
           endif
         endif
@@ -111,77 +112,82 @@ c
 	  enddo
 	endif
 c
-        ivernbn(irec)=iversion
-        cmtnamenbn(irec)=devent
-        stampnbn(irec)=timestamp
-        catalognbn(irec)=catalog
-        regionnbn(irec)=region
-        lyearnbn(irec)=lyear
-        monthnbn(irec)=month
-        idaynbn(irec)=iday
-        ihnbn(irec)=ih
-        minnbn(irec)=min
-        fsecnbn(irec)=fsec
-        eplatnbn(irec)=eplat
-        eplongnbn(irec)=eplong
-        depthnbn(irec)=depth
-        xmbnbn(irec)=xmb
-        xmsnbn(irec)=xms
-        itypcmtnbn(irec)=itypcmt
-        itypstfnbn(irec)=itypstf
-        isbnbn(irec)=isb
-        icbnbn(irec)=icb
-        icutbnbn(irec)=icutb
-        issnbn(irec)=iss
-        icsnbn(irec)=ics
-        icutsnbn(irec)=icuts
-        ismnbn(irec)=ism
-        icmnbn(irec)=icm
-        icutmnbn(irec)=icutm
-        ires1nbn(irec)=ires1
-        ires2nbn(irec)=ires2
-        ires3nbn(irec)=ires3
-        ires4nbn(irec)=ires4
-        ires5nbn(irec)=ires5
-        ires6nbn(irec)=ires6
-        torgnbn(irec)=torg
-        jhnbn(irec)=jh
-        jminnbn(irec)=jmin
+       if(nreadnbn+irec.gt.mxnbn) then
+        write(6,"('too many CMTs read by readnbn.f')")
+        ierror=2
+        return
+       endif
+        ivernbn(nreadnbn+irec)=iversion
+        cmtnamenbn(nreadnbn+irec)=devent
+        stampnbn(nreadnbn+irec)=timestamp
+        catalognbn(nreadnbn+irec)=catalog
+        regionnbn(nreadnbn+irec)=region
+        lyearnbn(nreadnbn+irec)=lyear
+        monthnbn(nreadnbn+irec)=month
+        idaynbn(nreadnbn+irec)=iday
+        ihnbn(nreadnbn+irec)=ih
+        minnbn(nreadnbn+irec)=min
+        fsecnbn(nreadnbn+irec)=fsec
+        eplatnbn(nreadnbn+irec)=eplat
+        eplongnbn(nreadnbn+irec)=eplong
+        depthnbn(nreadnbn+irec)=depth
+        xmbnbn(nreadnbn+irec)=xmb
+        xmsnbn(nreadnbn+irec)=xms
+        itypcmtnbn(nreadnbn+irec)=itypcmt
+        itypstfnbn(nreadnbn+irec)=itypstf
+        isbnbn(nreadnbn+irec)=isb
+        icbnbn(nreadnbn+irec)=icb
+        icutbnbn(nreadnbn+irec)=icutb
+        issnbn(nreadnbn+irec)=iss
+        icsnbn(nreadnbn+irec)=ics
+        icutsnbn(nreadnbn+irec)=icuts
+        ismnbn(nreadnbn+irec)=ism
+        icmnbn(nreadnbn+irec)=icm
+        icutmnbn(nreadnbn+irec)=icutm
+        ires1nbn(nreadnbn+irec)=ires1
+        ires2nbn(nreadnbn+irec)=ires2
+        ires3nbn(nreadnbn+irec)=ires3
+        ires4nbn(nreadnbn+irec)=ires4
+        ires5nbn(nreadnbn+irec)=ires5
+        ires6nbn(nreadnbn+irec)=ires6
+        torgnbn(nreadnbn+irec)=torg
+        jhnbn(nreadnbn+irec)=jh
+        jminnbn(nreadnbn+irec)=jmin
 c
-        xsecnbn(irec)=xsec
-        errtnbn(irec)=errt
-        epanbn(irec)=epa
-        xlatnbn(irec)=xlat
-        insnbn(irec)=ins
-        erranbn(irec)=erra
-        eponbn(irec)=epo
-        xlonnbn(irec)=xlon
-        iewnbn(irec)=iew
-        erronbn(irec)=erro
-        xdnbn(irec)=xd
-        errdnbn(irec)=errd
-        itypdepnbn(irec)=itypdep
-        durtnbn(irec)=durt
-        iexpnbn(irec)=iexp
+        xsecnbn(nreadnbn+irec)=xsec
+        errtnbn(nreadnbn+irec)=errt
+        epanbn(nreadnbn+irec)=epa
+        xlatnbn(nreadnbn+irec)=xlat
+        insnbn(nreadnbn+irec)=ins
+        erranbn(nreadnbn+irec)=erra
+        eponbn(nreadnbn+irec)=epo
+        xlonnbn(nreadnbn+irec)=xlon
+        iewnbn(nreadnbn+irec)=iew
+        erronbn(nreadnbn+irec)=erro
+        xdnbn(nreadnbn+irec)=xd
+        errdnbn(nreadnbn+irec)=errd
+        itypdepnbn(nreadnbn+irec)=itypdep
+        durtnbn(nreadnbn+irec)=durt
+        iexpnbn(nreadnbn+irec)=iexp
         do i=1,6
-          xmnbn(i,irec)=xm(i)
-          xerrnbn(i,irec)=xerr(i)
+          xmnbn(i,nreadnbn+irec)=xm(i)
+          xerrnbn(i,nreadnbn+irec)=xerr(i)
         enddo
         do i=1,3
-          evnbn(i,irec)=ev(i)
-          iplnbn(i,irec)=ipl(i)
-          iaznbn(i,irec)=iaz(i)
+          evnbn(i,nreadnbn+irec)=ev(i)
+          iplnbn(i,nreadnbn+irec)=ipl(i)
+          iaznbn(i,nreadnbn+irec)=iaz(i)
         enddo
-        scnbn(irec)=sc
+        scnbn(nreadnbn+irec)=sc
         do i=1,2
-          istrnbn(i,irec)=istr(i)
-          idipnbn(i,irec)=idip(i)
-          islpnbn(i,irec)=islp(i)
+          istrnbn(i,nreadnbn+irec)=istr(i)
+          idipnbn(i,nreadnbn+irec)=idip(i)
+          islpnbn(i,nreadnbn+irec)=islp(i)
         enddo
         irec=irec+1
       enddo
    99 continue
-      nread=irec-1
+      nread=nreadnbn+irec-1
       nreadnbn=nread
       return
       end

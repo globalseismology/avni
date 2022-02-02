@@ -60,7 +60,7 @@ def update_file(file,folder=tools.get_filedir(),baseurl = constants.downloadpage
     h = requests.head(url, allow_redirects=True)
     download=False
     if h.status_code == 404:
-        print("Warning: Unknown status code ("+str(h.status_code)+") while quering "+file)
+        print("Warning: File not found with status code ("+str(h.status_code)+") while querying "+file)
     elif h.status_code == 200:
         header = h.headers
         lmd = header.get('Last-Modified')  # Check when the file was modified
@@ -71,7 +71,7 @@ def update_file(file,folder=tools.get_filedir(),baseurl = constants.downloadpage
         else:
             download = True
     else:
-        print("Warning: Unknown status code ("+str(h.status_code)+") while quering "+file)
+        print("Warning: Unknown status code ("+str(h.status_code)+") while querying "+file)
 
     # download if needed
     if download:
@@ -82,5 +82,5 @@ def update_file(file,folder=tools.get_filedir(),baseurl = constants.downloadpage
         # set the time to server time but taking UTC into account above
         os.utime(localfile, (utime, utime))
         print(".... Download completed.")
-    return h.status_code
+    return localfile
 
