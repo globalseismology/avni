@@ -8,6 +8,7 @@ Table of Contents
   6. [Coding style](#coding-style)
   	* [Python](#python-formatting)
   	* [Fortran](#fortran-formatting)
+  	* [MATLAB](#matlab-formatting)
 
 Use *issues* to discuss intended modifications
 ----------------------------------------------
