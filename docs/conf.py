@@ -347,7 +347,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % e.g. height=6.5in
 \begin{center}
 \vspace{1em}
-\includegraphics[height=3.5in]{avnilogo.png}
+\includegraphics[height=3.5in]{logos/avnilogo.png}
 \hspace{5em}
 \end{center}
 \end{textblock*}
@@ -406,12 +406,12 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   (master_doc, 'AVNI.tex', u'AVNI Documentation',
-   u'Raj Moulik', 'manual'),
+   u'Pritwiraj (Raj) Moulik', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-latex_logo = 'avnilogo.png'
+latex_logo = 'logos/avnilogo.png'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.

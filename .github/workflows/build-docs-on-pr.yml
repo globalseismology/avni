@@ -26,12 +26,14 @@ jobs:
 
 #     Caching based on https://stackoverflow.com/a/57958803
       - name: Cache Tex dependencies
-        uses: actions/cache@v1
+        id: cache-tex
+        uses: actions/cache@v3
         with:
           path: /tmp/texlive
-          key: ${{ runner.OS }}-tex-cache-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-tex-cache-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.OS }}-tex-cache-
+            ${{ runner.os }}-tex-cache-${{ env.cache-name }}-
+            ${{ runner.os }}-tex-cache-
 
 #     Install TexLive
 # https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
