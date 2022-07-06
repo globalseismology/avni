@@ -7,10 +7,10 @@ jobs:
     steps:
       - name: Prerequisites
         run: conda config --append channels conda-forge
-          && conda install sphinx=4.3.0
-          && conda install sphinx_rtd_theme=1.0.0
-          && conda install sphinxcontrib=1.0
-          && conda install sphinxcontrib-bibtex=2.4.1
+          && conda install sphinx
+          && conda install sphinx_rtd_theme
+          && conda install sphinxcontrib
+          && conda install sphinxcontrib-bibtex
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Build docs
