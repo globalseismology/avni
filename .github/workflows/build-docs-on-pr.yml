@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Prerequisites
-        run: pip install -U Sphinx
+        run: conda install sphinx
 #      - name: Checkout repo
 #        uses: actions/checkout@v2
 #      - name: Build docs
