@@ -6,8 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Prerequisites
-        run: lsb_release -a
-          && apt-get update -qq
+        run: apt-get update -qq
           && groupadd -g 10000 apache
           && apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
       - name: Conda
