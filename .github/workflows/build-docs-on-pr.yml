@@ -2,7 +2,7 @@ name: Build docs on PR
 on: push
 jobs:
   build-and-preview:
-    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
+#    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
     runs-on: ubuntu-latest
     steps:
       - name: Prerequisites
