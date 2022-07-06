@@ -90,8 +90,8 @@ install:
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
       conda activate avni_${TRAVIS_PYTHON_VERSION};
       conda config --append channels conda-forge;
-      conda install --yes -c conda-forge python-slugify;
-      conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
+      travis_wait 30 conda install --yes -c conda-forge python-slugify;
+      travis_wait 30 conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
     fi
 
   # Install TexLive
