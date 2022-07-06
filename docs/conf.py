@@ -124,7 +124,7 @@ release = '0.0.1'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -359,7 +359,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % keep the following line as is so that we can replace this using a script:
 0.1.0-pre %VERSION-INFO%
 \\\large(generated \today)\\
-{\Large Raj Moulik}
+{\Large Pritwiraj (Raj) Moulik}
 }
 
 %AUTHOR(S) & WEBSITE%
@@ -390,7 +390,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 }
 
 %COPYRIGHT STATEMENT
-\textcopyright Copyright 2021, Raj Moulik, AVNI Project and Regents of the University of California
+\textcopyright Copyright 2021, Pritwiraj (Raj) Moulik, AVNI Project and Regents of the University of California
 
 }
 
