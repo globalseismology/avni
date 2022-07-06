@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Build docs
         run: cd docs
-          && sphinx-apidoc -o api/ ../avni
+          && sphinx-build -o api/ ../avni
           && make html
 
 #        run: cd docs_sphinx
