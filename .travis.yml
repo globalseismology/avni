@@ -146,7 +146,7 @@ after_success:
   - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
 
 before_deploy:
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
     eval "$(ssh-agent -s)";
     chmod 600 $HOME/travis_deploy_rsa;
     sudo echo -e "Host *\n\tStrictHostKeyChecking no\n\tPort 41557\n" >> ~/.ssh/config;
