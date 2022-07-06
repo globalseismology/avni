@@ -65,6 +65,7 @@ before_install:
     fi
   - export PATH="${CONDA_BASE_PATH}/bin:$PATH"
   - export F90=gfortran
+  - conda update --yes conda
 
   # Decrypt rsync key
   - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
