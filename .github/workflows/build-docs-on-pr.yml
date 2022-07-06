@@ -30,6 +30,16 @@ jobs:
           && touch .nojekyll
           && mkdir ../../../public
           && cp -r * ../../../public
+      - name: Run .travis.yml build script
+        uses: ktomk/run-travis-yml@v1
+        with:
+          file: .travis.yml
+          steps: |
+            install
+            script
+          allow-failure: false
+        env:
+          TRAVIS_PHP_VERSION: ${{ matrix.php-versions }}
       - name: Deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
