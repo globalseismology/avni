@@ -10,7 +10,7 @@ jobs:
          && conda install sphinx_rtd_theme
          && conda install sphinx-sitemap
          && conda install sphinxcontrib
-         && conda instal numpydoc
+         && conda install numpydoc
          && conda install sphinxcontrib-bibtex
 #    runs-on: macos-latest
 #    steps:
