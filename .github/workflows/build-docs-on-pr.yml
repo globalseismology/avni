@@ -7,9 +7,13 @@ jobs:
     steps:
       - name: Prerequisites
         run: conda install sphinx
-#      - name: Checkout repo
-#        uses: actions/checkout@v2
-#      - name: Build docs
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Build docs
+        run: cd docs
+          && sphinx-apidoc -o api/ ../avni
+          && make html
+
 #        run: cd docs_sphinx
 #          && make html
 #          && cd _build/html
