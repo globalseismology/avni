@@ -27,7 +27,9 @@ jobs:
       - name: Cache Tex dependencies
         uses: actions/cache@v1
         with:
-          path: [~/.texlive,/tmp/texlive]
+          path:  |
+            ~/.texlive
+            /tmp/texlive
           key: ${{ runner.OS }}-tex-cache-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.OS }}-tex-cache-
