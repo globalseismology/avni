@@ -31,12 +31,12 @@ jobs:
           && make html
           && cd _build/html
           && touch .nojekyll
-#          && mkdir ../../../public
-#          && cp -r * ../../../public
+          && mkdir ../../../public
+          && cp -r * ../../../public
       - name: Deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DOXYGEN_TEST }}'
-          projectId: doxygen-test
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_AVNI_EC064 }}'
+          projectId: avni-ec064
           expires: 7d
