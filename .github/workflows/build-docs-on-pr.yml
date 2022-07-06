@@ -2,30 +2,41 @@ name: Build docs on PR
 on: push
 jobs:
   build-and-preview:
-#    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
-    runs-on: ubuntu-latest
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Prerequisites
+#        run: conda config --append channels conda-forge
+#          && conda install sphinx
+#          && conda install sphinx_rtd_theme
+#          && conda install sphinxcontrib
+#          && conda install sphinxcontrib-bibtex
+#      - name: Checkout repo
+#        uses: actions/checkout@v2
+#      - name: Build docs
+#        run: conda list
+
+
+    runs-on: macos-latest
     steps:
-      - name: Prerequisites
-        run: conda config --append channels conda-forge
-          && conda install sphinx
-          && conda install sphinx_rtd_theme
-          && conda install sphinxcontrib
-          && conda install sphinxcontrib-bibtex
+      - name: Requirements
+        run: brew install doxygen
+          && brew install sphinx-doc
+          && pip3 install sphinx-rtd-theme
+          && pip3 install breathe
+          && pip3 install sphinx-sitemap
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Build docs
-        run: conda list
-
-#        run: cd docs_sphinx
-#          && make html
-#          && cd _build/html
-#          && touch .nojekyll
+        run: cd docs
+          && make html
+          && cd _build/html
+          && touch .nojekyll
 #          && mkdir ../../../public
 #          && cp -r * ../../../public
-#      - name: Deploy
-#        uses: FirebaseExtended/action-hosting-deploy@v0
-#        with:
-#          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-#          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DOXYGEN_TEST }}'
-#          projectId: doxygen-test
-#          expires: 7d
+      - name: Deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DOXYGEN_TEST }}'
+          projectId: doxygen-test
+          expires: 7d
