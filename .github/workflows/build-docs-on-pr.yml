@@ -38,19 +38,21 @@ jobs:
       - name: Install Tex dependencies
         run: source docs/texlive/texlive_install.sh
 
-      - name: Build docs
+      - name: Build html docs
         run: cd docs
           && make html
           && cd _build/html
-          && touch .nojekyll
           && mkdir ../../../public
           && cp -r * ../../../public
-          && cd ../..
-          && rm -r api
+          && cd ../../..
+
+      - name: Build pdf docs
+        run: cd docs
           && make latex
           && cd _build/latex
           && texliveonfly AVNI.tex
           && make
+          && cd ../../..
 
 #     Deploy to Firebase
       - name: Deploy
