@@ -104,8 +104,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'AVNI'
-copyright = u'2021, Raj Moulik'
-author = u'Raj Moulik'
+copyright = u'2021, Pritwiraj (Raj) Moulik'
+author = u'Pritwiraj (Raj) Moulik'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
