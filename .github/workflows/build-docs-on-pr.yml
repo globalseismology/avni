@@ -14,9 +14,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Build docs
-        run: cd docs
-          && sphinx-build -o api/ ../avni
-          && make html
+        run: conda list
 
 #        run: cd docs_sphinx
 #          && make html
