@@ -2,30 +2,27 @@ name: Build docs on PR
 on: push
 jobs:
   build-and-preview:
-#    runs-on: ubuntu-latest
+   runs-on: ubuntu-latest
+   steps:
+     - name: Requirements
+       run: conda config --append channels conda-forge
+         && apt-get install doxygen sphinx-doc
+         && conda install sphinx_rtd_theme sphinx-sitemap
+         && conda install sphinxcontrib numpydoc
+         && conda install sphinxcontrib-bibtex
+
+
+
+#    runs-on: macos-latest
 #    steps:
-#      - name: Prerequisites
-#        run: conda config --append channels conda-forge
-#          && conda install sphinx
-#          && conda install sphinx_rtd_theme
-#          && conda install sphinxcontrib
-#          && conda install sphinxcontrib-bibtex
-#      - name: Checkout repo
-#        uses: actions/checkout@v2
-#      - name: Build docs
-#        run: conda list
-
-
-    runs-on: macos-latest
-    steps:
-      - name: Requirements
-        run: brew install doxygen
-          && brew install sphinx-doc
-          && pip3 install sphinx-rtd-theme
-          && pip3 install breathe
-          && pip3 install sphinx-sitemap
-          && pip3 install numpydoc
-          && pip3 install sphinxcontrib-bibtex
+#      - name: Requirements
+#        run: brew install doxygen
+#          && brew install sphinx-doc
+#          && pip3 install sphinx-rtd-theme
+#          && pip3 install breathe
+#          && pip3 install sphinx-sitemap
+#          && pip3 install numpydoc
+#          && pip3 install sphinxcontrib-bibtex
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Build docs
