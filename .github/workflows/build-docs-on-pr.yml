@@ -45,7 +45,19 @@ jobs:
           && touch .nojekyll
           && mkdir ../../../public
           && cp -r * ../../../public
-
+          # Remove API for latex document, it is broken
+          # TODO: Fix this. Currently we create too many nested
+          # lists in the API. Is this a sphinx problem or a
+          # AVNI problem?
+          && cd ../..
+          && rm -r api
+          # Make a latex file for the next step
+          && make latex
+          && cd _build/latex
+          # Texliveonfly will download packages automatically
+          && texliveonfly AVNI.tex
+          # Make a pdf now
+          && make
 
 #     Deploy to Firebase
       - name: Deploy
