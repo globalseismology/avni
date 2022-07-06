@@ -6,7 +6,7 @@ jobs:
    steps:
       - name: Requirements
         run: conda config --append channels conda-forge
-         && sudo apt-get install doxygen sphinx-doc
+         && sudo apt-get install doxygen python3-sphinx
          && conda install sphinx_rtd_theme sphinx-sitemap
          && conda install sphinxcontrib numpydoc
          && conda install sphinxcontrib-bibtex
