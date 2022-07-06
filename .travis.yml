@@ -85,11 +85,11 @@ install:
   - if [ -d "${CONDA_BASE_PATH}/envs/avni_${TRAVIS_PYTHON_VERSION}" ]; then
       echo "Environment available from cache";
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate avni_${TRAVIS_PYTHON_VERSION};
+      conda activate avni_${TRAVIS_PYTHON_VERSION};
     else
-      conda create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION --file docs/conda/environment_doc.yml;
+      conda env create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION --f docs/conda/environment_doc.yml;
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate avni_${TRAVIS_PYTHON_VERSION};
+      conda activate avni_${TRAVIS_PYTHON_VERSION};
       conda config --append channels conda-forge;
       conda install --yes -c conda-forge python-slugify;
       conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
