@@ -3,15 +3,10 @@ on: push
 jobs:
   build-and-preview:
 #    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest (python-version: [ '3.7' ])
     steps:
       - name: Prerequisites
-        run: apt-get update -qq
-          && groupadd -g 10000 apache
-          && apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
-      - name: Conda
-        run: wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-          && bash miniconda.sh -b -p ${HOME}
+        run: pip install -U Sphinx
 #      - name: Checkout repo
 #        uses: actions/checkout@v2
 #      - name: Build docs
