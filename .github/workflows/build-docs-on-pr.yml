@@ -1,0 +1,31 @@
+name: Build docs on PR
+on: push
+jobs:
+  build-and-preview:
+    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prerequisites
+        run: lsb_release -a
+          && apt-get update -qq
+          && groupadd -g 10000 apache
+          && apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
+      - name: Conda
+        run: wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+          && bash miniconda.sh -b -p ${HOME}
+#      - name: Checkout repo
+#        uses: actions/checkout@v2
+#      - name: Build docs
+#        run: cd docs_sphinx
+#          && make html
+#          && cd _build/html
+#          && touch .nojekyll
+#          && mkdir ../../../public
+#          && cp -r * ../../../public
+#      - name: Deploy
+#        uses: FirebaseExtended/action-hosting-deploy@v0
+#        with:
+#          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+#          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DOXYGEN_TEST }}'
+#          projectId: doxygen-test
+#          expires: 7d
