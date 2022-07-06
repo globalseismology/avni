@@ -7,8 +7,10 @@ jobs:
       - name: Requirements
         run: conda config --append channels conda-forge
          && sudo apt-get install doxygen python3-sphinx
-         && conda install sphinx_rtd_theme sphinx-sitemap
-         && conda install sphinxcontrib numpydoc
+         && conda install sphinx_rtd_theme
+         && conda install sphinx-sitemap
+         && conda install sphinxcontrib
+         && conda instal numpydoc
          && conda install sphinxcontrib-bibtex
 #    runs-on: macos-latest
 #    steps:
