@@ -4,7 +4,7 @@
 
 ## About
 
-AVNI is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has legacy routines in C and Fortran as well, which are interfaced with Python subroutines. Some installation files as well as applets and API access require registration on our [homepage](http://avni.globalseismology.org/login/register).
+AVNI is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has legacy routines in C and Fortran as well, which are interfaced with Python subroutines. Some installation files as well as applets and API access require registration on our [homepage](http://globalseismology.org/register).
 
 Homepage: [avni.globalseismology.org](http://avni.globalseismology.org)
 
@@ -53,7 +53,7 @@ where `CONDA_PREFIX` is the location of Anaconda installation, which should be a
 4. Install the stable version of AVNI and its additional dependencies with
 `pip install avni`
 
-5. Create an account on our [Web site](http://globalseismology.org/login/register) to be allotted an API key for submitting queries to our servers. Enter the key when AVNI is
+5. Create an account on our [Web site](http://globalseismology.org/register) to be allotted an API key for submitting queries to our servers. Enter the key when AVNI is
 initialized when run for the first time.
 
 ## Start Here
@@ -83,7 +83,7 @@ This software is published under the GNU GPL v3 license - see the [LICENSE](LICE
 
 ## Acknowledgments
 
-* Funded by the National Science Foundation and the [Computational Infrastructure for Geodynamics](http://geodynamics.org).
+* Funded by the [National Science Foundation](http://nsf.gov) and the [Computational Infrastructure for Geodynamics](http://geodynamics.org).
 * We thank Göran Ekström, Adam Dziewonski, and other members of the open source and Earth Science community for their input and non-Github contributions.
 * Computational resources maintained by Princeton University accessible through the [AVNI website](http://avni.globalseismology.org). We thank the system administrators for assistance.
 
