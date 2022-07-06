@@ -23,6 +23,20 @@ jobs:
 #          && pip3 install sphinxcontrib-bibtex
       - name: Checkout repo
         uses: actions/checkout@v2
+
+      - name: Cache Tex dependencies
+        uses: actions/cache@v1
+        with:
+          path: [~/.texlive,/tmp/texlive]
+          key: ${{ runner.OS }}-tex-cache-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-tex-cache-
+
+# Install TexLive
+# https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
+      - name: Install Tex dependencies
+        run: source docs/texlive/texlive_install.sh
+
       - name: Build docs
         run: cd docs
           && make html
