@@ -6,7 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Prerequisites
-        run: conda install sphinx=4.3.0
+        run: conda config --append channels conda-forge
+          && conda install sphinx=4.3.0
           && conda install sphinx_rtd_theme=1.0.0
           && conda install sphinxcontrib=1.0
           && conda install sphinxcontrib-bibtex=2.4.1
