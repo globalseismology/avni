@@ -87,7 +87,7 @@ install:
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
       source activate avni_${TRAVIS_PYTHON_VERSION};
     else
-      conda create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION -f docs/conda/environment_doc.yml;
+      conda create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION --file docs/conda/environment_doc.yml;
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
       source activate avni_${TRAVIS_PYTHON_VERSION};
       conda config --append channels conda-forge;
