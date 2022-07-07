@@ -29,7 +29,9 @@ jobs:
         id: cache-tex
         uses: actions/cache@v3
         with:
-          path: /tmp/texlive
+          path:  |
+            /tmp/texlive
+            $HOME/.texlive
           key: ${{ runner.os }}-tex-cache-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-tex-cache-${{ env.cache-name }}-
@@ -38,7 +40,9 @@ jobs:
 #     Install TexLive
 # https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
       - name: Install Tex dependencies
-        run: source docs/texlive/texlive_install.sh
+        run: |
+          pip install numpy pygments
+          source docs/texlive/texlive_install.sh
 
       - name: Build html docs
         run: cd docs
