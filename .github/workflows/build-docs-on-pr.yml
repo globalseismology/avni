@@ -16,6 +16,7 @@ jobs:
          && pip3 install sphinxcontrib-apidoc
          && pip3 install sphinxcontrib-bibtex
          && pip3 install numpy pygments
+         && pip3 install recommonmark
       - name: Checkout repo
         uses: actions/checkout@v2
 
