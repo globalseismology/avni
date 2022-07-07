@@ -1,7 +1,7 @@
 name: Build docs on PR
 on: push
 jobs:
-  build-and-preview:
+  build-html-and-preview:
    runs-on: ubuntu-latest
    steps:
       - name: Requirements
@@ -69,3 +69,76 @@ jobs:
           projectId: avni-ec064
           channelId: 'pr-${{ github.event.number }}'
           expires: 7d
+
+
+
+  build-html-and-preview:
+   runs-on: ubuntu-latest
+   steps:
+      - name: Requirements
+        run: conda config --append channels conda-forge
+         && sudo apt-get install doxygen python3-sphinx latexmk texliveonfly
+         && pip3 install sphinx_rtd_theme
+         && pip3 install sphinx-sitemap
+         && pip3 install numpydoc
+         && pip3 install sphinxcontrib-bibtex
+#    runs-on: macos-latest
+#    steps:
+#      - name: Requirements
+#        run: brew install doxygen
+#          && brew install sphinx-doc
+#          && pip3 install sphinx-rtd-theme
+#          && pip3 install breathe
+#          && pip3 install sphinx-sitemap
+#          && pip3 install numpydoc
+#          && pip3 install sphinxcontrib-bibtex
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+#     Caching based on https://stackoverflow.com/a/57958803
+      - name: Cache Tex dependencies
+        id: cache-tex
+        uses: actions/cache@v3
+        with:
+          path:  |
+            /tmp/texlive
+            $HOME/.texlive
+          key: ${{ runner.os }}-tex-cache-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-tex-cache-${{ env.cache-name }}-
+            ${{ runner.os }}-tex-cache-
+
+#     Install TexLive
+# https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
+      - name: Install Tex dependencies
+        run: |
+          pip install numpy pygments
+          source docs/texlive/texlive_install.sh
+
+      - name: Build html docs
+        run: cd docs
+          && make html
+          && cd _build/html
+          && mkdir ../../../public
+          && cp -r * ../../../public
+          && cd ../../..
+
+      - name: Build pdf docs
+        run: cd docs
+          && make latex
+          && cd _build/latex
+          && texliveonfly AVNI.tex
+          && make
+          && cd ../../..
+          && ls /tmp/texlive/bin/x86_64-linux
+
+#     Deploy to Firebase
+      - name: Deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_AVNI_EC064 }}'
+          projectId: avni-ec064
+          channelId: 'pr-${{ github.event.number }}'
+          expires: 7d
+
