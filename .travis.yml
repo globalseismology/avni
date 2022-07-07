@@ -65,7 +65,6 @@ before_install:
     fi
   - export PATH="${CONDA_BASE_PATH}/bin:$PATH"
   - export F90=gfortran
-  - conda update --yes conda
 
   # Decrypt rsync key
   - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
@@ -85,14 +84,14 @@ install:
   - if [ -d "${CONDA_BASE_PATH}/envs/avni_${TRAVIS_PYTHON_VERSION}" ]; then
       echo "Environment available from cache";
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate avni_${TRAVIS_PYTHON_VERSION};
+      conda activate avni_${TRAVIS_PYTHON_VERSION};
     else
-      conda create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION -f docs/conda/environment_doc.yml;
+      travis_wait 30 conda env create --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION --file docs/conda/environment_doc.yml;
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate avni_${TRAVIS_PYTHON_VERSION};
+      conda activate avni_${TRAVIS_PYTHON_VERSION};
       conda config --append channels conda-forge;
-      conda install --yes -c conda-forge python-slugify;
-      conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
+      travis_wait 60 conda install --yes -c conda-forge python-slugify;
+      travis_wait 60 conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
     fi
 
   # Install TexLive
@@ -147,7 +146,7 @@ after_success:
   - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
 
 before_deploy:
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
     eval "$(ssh-agent -s)";
     chmod 600 $HOME/travis_deploy_rsa;
     sudo echo -e "Host *\n\tStrictHostKeyChecking no\n\tPort 41557\n" >> ~/.ssh/config;

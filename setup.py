@@ -12,13 +12,13 @@ import os
 try:
     import numpy
 except:
-    raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
+    raise ImportError( 'AVNI requires Numpy 1.7 or later.' )
 
 npv = numpy.__version__.split('.')
 if int(npv[0]) != 1:
-    raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
+    raise ImportError( 'AVNI requires Numpy 1.7 or later.' )
 if int(npv[1]) < 7:
-    raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
+    raise ImportError( 'AVNI requires Numpy 1.7 or later.' )
 
 import numpy.distutils.fcompiler
 
@@ -31,7 +31,7 @@ F90 = os.getenv("F90")
 # !! comment out this if statement for manual install !!
 #------------------------------------------------------------
 if F90 == None or F90 == "":
-    l1 = 'REM3D requires environment variable F90 to be set. \n '
+    l1 = 'AVNI requires environment variable F90 to be set. \n '
     l2 = 'Please set to one of {"ifort", "gfortran"}'
     raise RuntimeError( l1 + l2 )
 
