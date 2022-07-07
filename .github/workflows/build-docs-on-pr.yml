@@ -6,7 +6,7 @@ jobs:
    steps:
       - name: Requirements
         run: conda config --append channels conda-forge
-         && sudo apt-get install doxygen python3-sphinx latexmk texliveonfly
+         && sudo apt-get install doxygen python3-sphinx latexmk
          && pip3 install sphinx_rtd_theme
          && pip3 install sphinx-sitemap
          && pip3 install numpydoc
