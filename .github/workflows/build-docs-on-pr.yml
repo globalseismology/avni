@@ -56,9 +56,9 @@ jobs:
         run: cd docs
           && make latex
           && cd _build/latex
-          && texliveonfly AVNI.tex
           && make
           && cd ../../..
+          && ls /tmp/texlive/bin/x86_64-linux
 
 #     Deploy to Firebase
       - name: Deploy
