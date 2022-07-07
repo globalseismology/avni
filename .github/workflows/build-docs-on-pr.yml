@@ -1,5 +1,5 @@
 name: Build docs on PR
-on: pull_request
+on: push
 jobs:
   build-html-and-preview:
    runs-on: ubuntu-latest
@@ -13,6 +13,7 @@ jobs:
          && pip3 install sphinx-sitemap
          && pip3 install numpydoc
          && pip3 install -U Sphinx
+         && pip3 install sphinxcontrib-apidoc
          && pip3 install sphinxcontrib-bibtex
          && pip3 install numpy pygments
       - name: Checkout repo
@@ -40,6 +41,7 @@ jobs:
 
       - name: Build html docs
         run: cd docs
+          && sphinx-apidoc -o api/ ../avni
           && make html
           && cd _build/html
           && mkdir ../../../public
