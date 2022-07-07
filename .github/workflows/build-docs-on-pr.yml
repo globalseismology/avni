@@ -20,6 +20,10 @@ jobs:
             ${{ runner.os }}-npm-${{ env.cache-name }}-
             ${{ runner.os }}-npm-
 
+#   The following installs the repo and cd's to it
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
 #     Install Requirements
       - name: Requirements
         run: conda config --append channels conda-forge
@@ -32,8 +36,6 @@ jobs:
          && pip3 install sphinxcontrib-bibtex
          && pip3 install numpy pygments
          && pip3 install recommonmark
-      - name: Checkout repo
-        uses: actions/checkout@v2
 
 #     Caching based on https://stackoverflow.com/a/57958803
       - name: Cache Tex dependencies
