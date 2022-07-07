@@ -12,6 +12,7 @@ jobs:
          && pip3 install numpydoc
          && pip3 install -U Sphinx
          && pip3 install sphinxcontrib-bibtex
+         && pip3 install numpy pygments
       - name: Checkout repo
         uses: actions/checkout@v2
 
@@ -28,11 +29,10 @@ jobs:
             ${{ runner.os }}-tex-cache-${{ env.cache-name }}-
             ${{ runner.os }}-tex-cache-
 
-#     Install TexLive
+#       Install TexLive
 # https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
       - name: Install Tex dependencies
         run: |
-          pip install numpy pygments
           source docs/texlive/texlive_install.sh
           echo "/tmp/texlive/bin/x86_64-linux" >> $GITHUB_PATH
 
@@ -53,6 +53,7 @@ jobs:
           && make
           && cd ../../..
 
+#     Cache npm modules
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v3
