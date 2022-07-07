@@ -6,21 +6,12 @@ jobs:
    steps:
       - name: Requirements
         run: conda config --append channels conda-forge
-         && sudo apt-get install doxygen python3-sphinx sphinx-apidoc
+         && sudo apt-get install doxygen python3-sphinx
          && pip3 install sphinx_rtd_theme
          && pip3 install sphinx-sitemap
          && pip3 install numpydoc
+         && pip3 install -U Sphinx
          && pip3 install sphinxcontrib-bibtex
-#    runs-on: macos-latest
-#    steps:
-#      - name: Requirements
-#        run: brew install doxygen
-#          && brew install sphinx-doc
-#          && pip3 install sphinx-rtd-theme
-#          && pip3 install breathe
-#          && pip3 install sphinx-sitemap
-#          && pip3 install numpydoc
-#          && pip3 install sphinxcontrib-bibtex
       - name: Checkout repo
         uses: actions/checkout@v2
 
