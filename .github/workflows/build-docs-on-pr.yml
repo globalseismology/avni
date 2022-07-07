@@ -6,7 +6,7 @@ jobs:
    steps:
       - name: Requirements
         run: conda config --append channels conda-forge
-         && sudo apt-get install doxygen python3-sphinx
+         && sudo apt-get install doxygen python3-sphinx sphinx-apidoc
          && pip3 install sphinx_rtd_theme
          && pip3 install sphinx-sitemap
          && pip3 install numpydoc
@@ -43,7 +43,7 @@ jobs:
         run: |
           pip install numpy pygments
           source docs/texlive/texlive_install.sh
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          echo "/tmp/texlive/bin/x86_64-linux" >> $GITHUB_PATH
 
       - name: Build html docs
         run: cd docs
