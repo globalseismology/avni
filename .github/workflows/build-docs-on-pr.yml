@@ -73,12 +73,22 @@ jobs:
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY_DWAR }}
           known_hosts: unnecessary
-
-
 #      - name: Adding Known Hosts
 #        run: ssh-keyscan -H ${{ secrets.SSH_HOST_DWAR }} >> ~/.ssh/known_hosts
 #      - name: Deploy with rsync
 #        run: rsync -avz docs/_build/html/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/home/pm5113/actions/
+
+
+#     Deploy to Firebase
+      - name: Deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_AVNI_EC064 }}'
+          projectId: avni-ec064
+          channelId: 'pr-${{ github.event.number }}'
+          expires: 7d
+
 
 #     Slack notification
       - name: Send custom JSON data to Slack workflow
@@ -94,7 +104,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                    "text": "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nTemporary ReadtheDocs: https://avni-ec064--pr-${{ github.event.number }}.web.app'"
                   }
                 }
               ]
@@ -102,14 +112,3 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
-#     Deploy to Firebase
-      - name: Deploy
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_AVNI_EC064 }}'
-          projectId: avni-ec064
-          channelId: 'pr-${{ github.event.number }}'
-          expires: 7d
-
