@@ -55,10 +55,10 @@ jobs:
       - name: Build pdf docs
         run: cd docs
           && make latex
-#          && cd _build/latex
+          && cd _build/latex
+          && ls /tmp/texlive/bin/x86_64-linux
 #          && make
 #          && cd ../../..
-#          && ls /tmp/texlive/bin/x86_64-linux
 
 #     Deploy to Firebase
       - name: Deploy
