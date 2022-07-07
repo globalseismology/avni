@@ -1,5 +1,5 @@
 name: Build docs on PR
-on: push
+on: pull
 jobs:
   build-html-and-preview:
    runs-on: ubuntu-latest
