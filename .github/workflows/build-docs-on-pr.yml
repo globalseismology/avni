@@ -57,9 +57,10 @@ jobs:
         run: cd docs
           && make latex
           && cd _build/latex
+          && texliveonfly AVNI.tex
           && ls /tmp/texlive/bin/x86_64-linux
-#          && make
-#          && cd ../../..
+          && make
+          && cd ../../..
 
       - name: Cache node modules
         id: cache-npm
