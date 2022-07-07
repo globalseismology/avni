@@ -3,7 +3,8 @@ on: pull_request
 jobs:
   build-html-and-preview:
    runs-on: ubuntu-latest
-   if: github.ref == 'refs/heads/devel'
+#   Use the following if you want to run only on devel
+#   if: github.ref == 'refs/heads/devel'
    steps:
       - name: Requirements
         run: conda config --append channels conda-forge
