@@ -34,7 +34,7 @@ jobs:
 #     Install Conda Requirements
       - name: Conda Requirements
         run: conda config --append channels conda-forge
-         && conda env create --name avni-doc --file docs/conda/environment_doc.yml
+         && conda env create --file docs/conda/environment_doc.yml
          && conda activate avni-doc
          && pip install -e .
 
