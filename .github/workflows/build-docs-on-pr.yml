@@ -24,10 +24,18 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-#     Install Requirements
-      - name: Requirements
+#     Install System Requirements
+      - name: System Requirements
+        run: sudo apt-get install doxygen python3-sphinx
+         # install requirements for pyshtools
+         && sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
+
+#     Install Conda Requirements
+
+      - name: Conda Requirements
         run: conda config --append channels conda-forge
-         && sudo apt-get install doxygen python3-sphinx
+         && conda env create --name avni --file docs/conda/environment_doc.yml
+         && conda activate avni
          && pip3 install sphinx_rtd_theme
          && pip3 install sphinx-sitemap
          && pip3 install numpydoc
