@@ -77,7 +77,7 @@ def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
     if ifglobal: m.set_global()    # set global extent
     return m
 
-def plot_hotspots(m, dbs_path = tools.get_filedir(), lon360 = False, **kwargs):
+def plot_hotspots(m, dbs_path = None, lon360 = False, **kwargs):
     """
     Reads hotspots.pkl from dbs_path and plots on to map index m
 
@@ -99,12 +99,18 @@ def plot_hotspots(m, dbs_path = tools.get_filedir(), lon360 = False, **kwargs):
 
     """
 
+    # Get the correct path
+    if dbs_path is None:
+        dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
+
     try:
         hotspots = tools.readjson('%s/hotspots.json' % (dbs_path))
     except IOError: #Download to default directory
-        filedir = tools.get_filedir(checkwrite=True,makedir=True)
-        data.update_file('hotspots.json')
-        hotspots = tools.readjson('%s/hotspots.json' % (filedir))
+        success = False
+        _,success = data.update_file('hotspots.json',
+                                      subdirectory=constants.dbsfolder)
+        if not success: ValueError("Could not find file hotspots.json")
+        hotspots = tools.readjson('%s/hotspots.json' % (dbs_path))
 
     if lon360:
         hotspots[:,0] = (hotspots[:,0] + 360) % 360.0
@@ -115,7 +121,7 @@ def plot_hotspots(m, dbs_path = tools.get_filedir(), lon360 = False, **kwargs):
         m.scatter(x, y)
     return
 
-def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = None,**kwargs):
+def plot_plates(m, dbs_path = None, lon360 = False, boundtypes = None,**kwargs):
     """
     Plots different types of tectonic plates
 
@@ -135,6 +141,11 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = 
     kwargs : denotes the arguments, if any, for scatter
 
     """
+
+    # Get the correct path
+    if dbs_path is None:
+        dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
+
     #defaults
     if boundtypes is None: boundtypes = ['ridge', 'transform', 'trench']
 
@@ -147,9 +158,11 @@ def plot_plates(m, dbs_path = tools.get_filedir(), lon360 = False, boundtypes = 
         try:
             _ , segs = tools.readjson('%s/%s.json' % (dbs_path,bound))
         except IOError: #Download to default directory
-            filedir = tools.get_filedir(checkwrite=True,makedir=True)
-            data.update_file('%s.json' % (bound))
-            _ , segs = tools.readjson('%s/%s.json' % (filedir,bound))
+            success = False
+            _,success = data.update_file('%s.json' % (bound),
+                                            subdirectory=constants.dbsfolder)
+            if not success: ValueError("Could not find file "+bound+'.json')
+            _ , segs = tools.readjson('%s/%s.json' % (dbs_path,bound))
 
         segs=np.array(segs)
         ind_nan, = np.nonzero(np.isnan(segs[:,0]))

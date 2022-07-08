@@ -287,27 +287,24 @@ def get_installdir(module='avni',checkwrite=True,checkenv=True):
 Specify "+module+"_dir environment variable or chdir to a different directory with I/O access.")
     return installdir
 
-def get_filedir(module='avni',checkwrite=True,makedir=True):
+def get_filedir(module='avni',subdirectory=None,checkwrite=True,makedir=True):
     """
     Get the local files directory. Make a new directory if doesn't exist (makedir==True)
     """
     installdir = get_installdir(module=module,checkwrite=checkwrite)
-    filedir = installdir+'/'+constants.localfilefolder
+    filedir = os.path.join(installdir,constants.localfilefolder)
+    if subdirectory is not None: filedir = os.path.join(filedir,subdirectory)
+
     if checkwrite and makedir:
-        if not os.path.exists(filedir):
-            os.makedirs(filedir)
+        if not os.path.exists(filedir): os.makedirs(filedir)
     return filedir
 
 def get_cptdir(module='avni',checkwrite=True,makedir=True):
     """
     Get the directory with color palettes. Make a new directory if doesn't exist (makedir==True)
     """
-    filedir = get_filedir(module=module,checkwrite=checkwrite,makedir=makedir)
-    cptdir = filedir+'/'+constants.cptfolder
-    if checkwrite and makedir:
-        if not os.path.exists(cptdir):
-            os.makedirs(cptdir)
-    return cptdir
+    return get_filedir(module=module,subdirectory=constants.cptfolder,
+                        checkwrite=checkwrite,makedir=makedir)
 
 def get_configdir(module='avni',checkwrite=True,makedir=True):
     """

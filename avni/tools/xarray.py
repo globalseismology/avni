@@ -15,7 +15,7 @@ import warnings
 import pdb
 import math
 from scipy import sparse
-from mpl_toolkits.basemap import shiftgrid
+#from mpl_toolkits.basemap import shiftgrid
 
 ####################### IMPORT AVNI LIBRARIES  #######################################
 from .trigd import sind
@@ -184,23 +184,27 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,resolution='h', radius_in_k
     tree = tree3D(treefile,gridlat,gridlon,gridrad)
     return tree
 
-def readtopography(model=constants.topography,resolution='h',field = 'z',latitude='lat',longitude='lon',latitude_limits=[-90,90],longitude_limits=[-180,180], dbs_path=get_filedir()):
+def readtopography(model=constants.topography,resolution='h',field = 'z',latitude='lat',longitude='lon',latitude_limits=[-90,90],longitude_limits=[-180,180], dbs_path=None):
     """
     resolution: stride is 1 for high, 10 for low
     """
-    stride = get_stride(resolution)
-    if dbs_path == None:
-        ncfile = model
-    else:
-        ncfile = dbs_path+'/'+model
-    if not os.path.isfile(ncfile): update_file(model)
-    #read values
-    if os.path.isfile(ncfile):
-        f = xr.open_dataset(ncfile)
-    else:
-        raise ValueError("Error: Could not find file "+ncfile)
 
+    # Get the directory location where CPT files are kep
+    if dbs_path is None: dbs_path = get_filedir(subdirectory=constants.topofolder)
+
+    # Download file if possible
+    ncfile = os.path.join(dbs_path,model)
+    if not os.path.isfile(ncfile):
+        success = False
+        _,success = update_file(model,subdirectory=constants.topofolder)
+        if not success: ValueError("Could not find file "+model)
+
+    f = xr.open_dataset(ncfile)
+
+    # Get the stride based on requested resolution
+    stride = get_stride(resolution)
     model = f[field][::stride,::stride]
+
     # subselect region within -not implemented yet
     #shift it by the grid
 #     valout, lonout = shiftgrid(longitude_limits[0],model.data,model['lon'].data,start=True)
