@@ -27,14 +27,13 @@ jobs:
 #     Install System Requirements
      # install requirements for docs, pyshtools
       - name: System Requirements
-        run: sudo apt-get install doxygen python3-sphinx
+        run: ifconfig -a
+         & sudo apt-get install doxygen python3-sphinx
          && sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
 
 #     Install Conda Requirements
       - name: Conda Requirements
         run: conda config --append channels conda-forge
-         && conda env create --name avni --file docs/conda/environment_doc.yml
-         && conda activate avni
          && pip3 install sphinx_rtd_theme
          && pip3 install sphinx-sitemap
          && pip3 install numpydoc
