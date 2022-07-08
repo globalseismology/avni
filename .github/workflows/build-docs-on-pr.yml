@@ -28,7 +28,7 @@ jobs:
      # install requirements for docs, pyshtools
       - name: System Requirements
         run: ifconfig -a
-         & sudo apt-get install doxygen python3-sphinx
+         && sudo apt-get install doxygen python3-sphinx
          && sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
 
 #     Install Conda Requirements

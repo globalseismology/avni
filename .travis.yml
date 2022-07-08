@@ -23,6 +23,7 @@ branches:
     - master
     - forward
     - api
+    - docs
 
 env:
   global:
