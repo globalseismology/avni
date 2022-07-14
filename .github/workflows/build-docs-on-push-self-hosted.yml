@@ -2,8 +2,10 @@ name: Build docs on PR
 on: push
 jobs:
   build-html-and-preview:
+# Use this YAML in your workflow file for each job
+   runs-on: self-hosted
 # Use the following if using Github hosted workflows
-   runs-on:ubuntu-latest
+#  runs-on:ubuntu-latest
 #   Use the following if you want to run only on devel
 #   if: github.ref == 'refs/heads/devel'
    steps:
@@ -27,10 +29,10 @@ jobs:
 
 #     Install System Requirements
      # install requirements for docs, pyshtools
-      - name: System Requirements
-        run: ifconfig -a
-         && sudo apt-get install doxygen python3-sphinx
-         && sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
+#      - name: System Requirements
+#        run: ifconfig -a
+#         && sudo apt-get install doxygen python3-sphinx
+#         && sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
 
 #     Install Conda Requirements
       - name: Conda Requirements
