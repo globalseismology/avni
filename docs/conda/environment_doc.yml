@@ -10,8 +10,10 @@ dependencies:
   - sphinx
   - sphinx_rtd_theme
   - sphinx-sitemap
+  - pydata_sphinx_theme
   - sphinxcontrib
   - sphinxcontrib-apidoc
   - sphinxcontrib-bibtex
+  - sphinx-gallery
   - pyshtools
   - basemap

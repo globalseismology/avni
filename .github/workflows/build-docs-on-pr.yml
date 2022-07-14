@@ -41,10 +41,12 @@ jobs:
 
 #         && pip3 install sphinx_rtd_theme
 #         && pip3 install sphinx-sitemap
+#         && pip3 install pydata_sphinx_theme
 #         && pip3 install numpydoc
 #         && pip3 install -U Sphinx
 #         && pip3 install sphinxcontrib-apidoc
 #         && pip3 install sphinxcontrib-bibtex
+#         && pip3 install sphinx-gallery
 #         && pip3 install numpy pygments
 #         && pip3 install recommonmark
 

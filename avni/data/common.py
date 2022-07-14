@@ -22,21 +22,31 @@ from .. import tools
 
 #######################################################################################
 
-def creation_date(path_to_file):
-    """
-    Try to get the date that a file was created, falling back to when it was
+def creation_date(path_to_file: str):
+    """Try to get the date that a file was created, falling back to when it was
     last modified if that isn't possible.
 
     Parameters
     ----------
+    path_to_file : str
+        full path to a file
 
-    path_to_file : full path to a file
+    Returns
+    -------
+    _type_
+        datetime stamp in UTC as AVNI server stores datetime in UTC
 
-    Return
-    ----------
+    Notes
+    -----
 
-    datetime stamp in UTC as AVNI server stores datetime in UTC
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+
+    :Last Modified:
+        2020.01.06 11.00
     """
+
+
     if platform.system() == 'Windows':
         return datetime.utcfromtimestamp(os.path.getctime(path_to_file))
     else:
