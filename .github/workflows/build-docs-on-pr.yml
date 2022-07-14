@@ -2,6 +2,8 @@ name: Build docs on PR
 on: push
 jobs:
   build-html-and-preview:
+# Use this YAML in your workflow file for each job
+   runs-on: self-hosted
    runs-on: ubuntu-latest
 #   Use the following if you want to run only on devel
 #   if: github.ref == 'refs/heads/devel'
@@ -37,6 +39,15 @@ jobs:
          && conda env create --file docs/conda/environment_doc.yml
          && conda activate avni-doc
          && pip install -e .
+
+#         && pip3 install sphinx_rtd_theme
+#         && pip3 install sphinx-sitemap
+#         && pip3 install numpydoc
+#         && pip3 install -U Sphinx
+#         && pip3 install sphinxcontrib-apidoc
+#         && pip3 install sphinxcontrib-bibtex
+#         && pip3 install numpy pygments
+#         && pip3 install recommonmark
 
 #     Caching based on https://stackoverflow.com/a/57958803
       - name: Cache Tex dependencies
