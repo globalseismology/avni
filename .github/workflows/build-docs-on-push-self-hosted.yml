@@ -2,7 +2,6 @@ name: Build docs on push self hosted
 on: pull_request
 jobs:
    build-html-and-preview:
-# Use this YAML in your workflow file for each job
    runs-on: self-hosted
 # Use the following if using Github hosted workflows
 #  runs-on:ubuntu-latest
