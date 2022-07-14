@@ -3,8 +3,7 @@ on: push
 jobs:
   build-html-and-preview:
 # Use this YAML in your workflow file for each job
-   runs-on: self-hosted
-   runs-on: ubuntu-latest
+   runs-on: self-hosted, ubuntu-latest
 #   Use the following if you want to run only on devel
 #   if: github.ref == 'refs/heads/devel'
    steps:
