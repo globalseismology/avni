@@ -1,7 +1,7 @@
 name: Build docs on push self hosted
-on: pull_request
+on: push
 jobs:
-   build-html-and-preview:
+  build-html-and-preview:
    runs-on: self-hosted
 # Use the following if using Github hosted workflows
 #  runs-on:ubuntu-latest

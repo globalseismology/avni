@@ -1,8 +1,8 @@
 name: Build docs on PR
 on: push
 jobs:
-   build-html-and-preview:
-   runs-on:ubuntu-latest
+  build-html-and-preview:
+   runs-on: ubuntu-latest
 #   Use the following if you want to run only on devel
 #   if: github.ref == 'refs/heads/devel'
    steps:
