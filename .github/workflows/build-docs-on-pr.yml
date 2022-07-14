@@ -1,7 +1,7 @@
 name: Build docs on PR
 on: push
 jobs:
-  build-html-and-preview:
+   build-html-and-preview:
 # Use the following if using Github hosted workflows
    runs-on:ubuntu-latest
 #   Use the following if you want to run only on devel
