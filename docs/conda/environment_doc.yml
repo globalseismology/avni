@@ -10,7 +10,7 @@ dependencies:
   - sphinx
   - sphinx_rtd_theme
   - sphinx-sitemap
-  - pydata_sphinx_theme
+  - pydata-sphinx-theme
   - sphinxcontrib
   - sphinxcontrib-apidoc
   - sphinxcontrib-bibtex
