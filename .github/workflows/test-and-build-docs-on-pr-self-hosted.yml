@@ -33,8 +33,10 @@ jobs:
           if_key_exists: replace
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.SSH_HOST_DWAR }} >> ~/.ssh/known_hosts
-#      - name: Deploy with rsync
-#        run: rsync -avz docs/_build/html/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
+      - name: Deploy with rsync
+        run: mkdir docs/keep
+         && rsync -avz docs/keep ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
+#        rsync -avz docs/_build/html/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
 
 
 
@@ -51,6 +53,7 @@ jobs:
 
 #     Install Conda Requirements
       - name: Conda Requirements
+        shell: tcsh
         run: conda config --append channels conda-forge
          && conda activate avni-doc
          && pip install -e .
