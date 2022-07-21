@@ -3,8 +3,6 @@ on: push
 jobs:
   build-html-and-preview:
    runs-on: self-hosted
-# Use the following if using Github hosted workflows
-#  runs-on:ubuntu-latest
 #   Use the following if you want to run only on devel
 #   if: github.ref == 'refs/heads/devel'
    steps:
@@ -24,48 +22,16 @@ jobs:
       - name: Deploy with rsync
         run: mkdir docs/_build
          && touch docs/_build/touch
-#         && rsync -r -g --delete-after -v docs/_build/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
-#        rsync -avz docs/_build/html/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
-
-
-#     Install System Requirements
-     # install requirements for docs, pyshtools
-#      - name: System Requirements
-#        run: ifconfig -a
-#         && sudo apt-get install doxygen python3-sphinx
-#         && sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
+         && rsync -r -g --delete-after -v docs/_build/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
 
 #     Install Conda Requirements
       - name: Conda Requirements
         shell: bash
         run: eval `modulecmd bash load anaconda3`
+         && conda config --set channel_priority flexible
          && conda config --append channels conda-forge
          && conda activate avni-doc
          && pip install -e .
-
-#         && pip3 install sphinx_rtd_theme
-#         && pip3 install sphinx-sitemap
-#         && pip3 install pydata_sphinx_theme
-#         && pip3 install numpydoc
-#         && pip3 install -U Sphinx
-#         && pip3 install sphinxcontrib-apidoc
-#         && pip3 install sphinxcontrib-bibtex
-#         && pip3 install sphinx-gallery
-#         && pip3 install numpy pygments
-#         && pip3 install recommonmark
-
-#     Caching based on https://stackoverflow.com/a/57958803
-      - name: Cache Tex dependencies
-        id: cache-tex
-        uses: actions/cache@v3
-        with:
-          path:  |
-            /tmp/texlive
-            $HOME/.texlive
-          key: ${{ runner.os }}-tex-cache-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-tex-cache-${{ env.cache-name }}-
-            ${{ runner.os }}-tex-cache-
 
       - name: Build html docs
         run: cd docs
