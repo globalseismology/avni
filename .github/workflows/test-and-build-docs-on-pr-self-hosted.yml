@@ -53,7 +53,7 @@ jobs:
 #     Install Conda Requirements
       - name: Conda Requirements
         shell: bash
-        run: modulecmd bash load anaconda3
+        run: eval `modulecmd bash load anaconda3`
          && conda config --append channels conda-forge
          && conda activate avni-doc
          && pip install -e .
