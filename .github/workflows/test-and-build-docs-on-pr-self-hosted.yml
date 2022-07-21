@@ -52,7 +52,7 @@ jobs:
 
 #     Install Conda Requirements
       - name: Conda Requirements
-        shell: bash
+        shell: csh
         run: module load anaconda
          && conda config --append channels conda-forge
          && conda activate avni-doc
