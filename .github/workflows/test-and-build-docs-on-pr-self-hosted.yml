@@ -25,9 +25,8 @@ jobs:
 
 #   The following installs the repo and cd's to it
       - name: Checkout repo
+        shell: tcsh
         uses: actions/checkout@v2
-
-
 
 #     Rsync with SSH
       - name: Install SSH Key
@@ -41,7 +40,7 @@ jobs:
       - name: Deploy with rsync
         run: mkdir docs/_build
          && touch docs/_build/touch
-         && rsync -r -g --delete-after -v docs/_build/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
+#         && rsync -r -g --delete-after -v docs/_build/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
 #        rsync -avz docs/_build/html/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
 
 
