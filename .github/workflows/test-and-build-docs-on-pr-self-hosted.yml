@@ -41,7 +41,6 @@ jobs:
       - name: Deploy with rsync
         run: mkdir docs/_build
          && touch docs/_build/touch
-         && chgrp -R apache docs/_build
          && rsync -r -g --delete-after -v docs/keep ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
 #        rsync -avz docs/_build/html/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
 
