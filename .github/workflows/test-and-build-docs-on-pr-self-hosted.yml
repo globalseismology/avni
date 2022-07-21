@@ -52,8 +52,8 @@ jobs:
 
 #     Install Conda Requirements
       - name: Conda Requirements
-        shell: tcsh
-        run: conda config --append channels conda-forge
+        run: module load anaconda
+         && conda config --append channels conda-forge
          && conda activate avni-doc
          && pip install -e .
 
