@@ -23,6 +23,11 @@ jobs:
             ${{ runner.os }}-npm-
 
 
+#   The following installs the repo and cd's to it
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+
 
 #     Rsync with SSH
       - name: Install SSH Key
@@ -34,15 +39,12 @@ jobs:
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.SSH_HOST_DWAR }} >> ~/.ssh/known_hosts
       - name: Deploy with rsync
-        run: mkdir docs/keep
-         && rsync -avz docs/keep ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
+        run: mkdir docs/_build
+         && touch docs/_build/touch
+         && chgrp -R apache docs/_build;
+         && rsync -r -g --delete-after -v docs/keep ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
 #        rsync -avz docs/_build/html/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
 
-
-
-#   The following installs the repo and cd's to it
-      - name: Checkout repo
-        uses: actions/checkout@v2
 
 #     Install System Requirements
      # install requirements for docs, pyshtools
