@@ -26,7 +26,6 @@ jobs:
 #   The following installs the repo and cd's to it
       - name: Checkout repo
         uses: actions/checkout@v2
-        shell: tcsh
 
 #     Rsync with SSH
       - name: Install SSH Key
