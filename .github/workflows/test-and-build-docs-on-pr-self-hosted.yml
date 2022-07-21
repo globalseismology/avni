@@ -1,4 +1,4 @@
-name: Build docs on push self hosted
+name: Test and build docs on pull request self hosted
 on: push
 jobs:
   build-html-and-preview:
@@ -22,6 +22,21 @@ jobs:
             ${{ runner.os }}-npm-${{ env.cache-name }}-
             ${{ runner.os }}-npm-
 
+
+
+#     Rsync with SSH
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY_DWAR }}
+          known_hosts: unnecessary
+      - name: Adding Known Hosts
+        run: ssh-keyscan -H ${{ secrets.SSH_HOST_DWAR }} >> ~/.ssh/known_hosts
+#      - name: Deploy with rsync
+#        run: rsync -avz docs/_build/html/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
+
+
+
 #   The following installs the repo and cd's to it
       - name: Checkout repo
         uses: actions/checkout@v2
@@ -36,7 +51,6 @@ jobs:
 #     Install Conda Requirements
       - name: Conda Requirements
         run: conda config --append channels conda-forge
-         && conda env create --file docs/conda/environment_doc.yml
          && conda activate avni-doc
          && pip install -e .
 
@@ -92,17 +106,6 @@ jobs:
           && ls /tmp/texlive/bin/x86_64-linux
           && make
           && cd ../../..
-
-#     Rsync with SSH
-      - name: Install SSH Key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY_DWAR }}
-          known_hosts: unnecessary
-#      - name: Adding Known Hosts
-#        run: ssh-keyscan -H ${{ secrets.SSH_HOST_DWAR }} >> ~/.ssh/known_hosts
-#      - name: Deploy with rsync
-#        run: rsync -avz docs/_build/html/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/home/pm5113/actions/
 
 
 #     Deploy to Firebase
