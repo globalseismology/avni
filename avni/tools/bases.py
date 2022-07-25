@@ -2,9 +2,7 @@
 
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
-import sys
-if (sys.version_info[:2] < (3, 0)):
-    from builtins import list,tuple
+from builtins import *
 
 import numpy as np
 from collections import Counter
@@ -20,22 +18,23 @@ from .trigd import sind,cosd,acosd
 from .common import convert2nparray,makegrid
 #######################################################################################
 
-def eval_vbspl(depths,knots):
+def eval_vbspl(radius,knots):
     """
     Evaluate the cubic spline know with second derivative as 0 at end points.
 
     Input parameters:
     ----------------
 
-    depth: value or array of depths queried in km
+    radius: value or array of radii (or depths) queried in km
 
-    knots: numpy array or list of depths of spline knots
+    knots: numpy array or list of radii (or depths) of spline knots
 
     Output:
     ------
 
-    vercof, dvercof: value of the spline coefficients at each depth and its derivative.
-                      Both arrays have size (Ndepth, Nknots).
+    vercof, dvercof: value of the spline coefficients at each radius (or depth)
+                     and its derivative.
+                     Both arrays have size (Ndepth, Nknots).
     """
     if isinstance(knots, (list,tuple,np.ndarray)):
         knots = np.asarray(knots)
@@ -44,7 +43,7 @@ def eval_vbspl(depths,knots):
         raise TypeError('knots must be list or tuple, not %s' % type(knots))
 
     # convert to numpy arrays
-    depths = convert2nparray(depths)
+    radius = convert2nparray(radius)
 
     # find repeated values
     repeats = [item for item, count in Counter(knots).items() if count > 1]
@@ -61,16 +60,16 @@ def eval_vbspl(depths,knots):
                 raise ValueError('Atleast 4 knots need to be defined at or between '+str(min(knots))+' and '+str(max(knots))+' km')
 
         jj = 0
-        for depth in depths:
+        for query in radius:
             jj = jj + 1
             for index,value in enumerate(knots_list):
                 # create the arrays as Fortran-contiguous
                 splpts = np.array(value.tolist(), order = 'F')
-                #Undefined if depth does not lie within the depth extents of knot points
-                if depth < min(value) or depth > max(value):
+                #Undefined if query does not lie within the query extents of knot points
+                if query < min(value) or query > max(value):
                     temp1 = temp2 = np.zeros_like(splpts)
                 else:
-                    (temp1, temp2) = vbspl(depth,len(splpts),splpts)
+                    (temp1, temp2) = vbspl(query,len(splpts),splpts)
                 if index == 0:
                     vercof_temp = temp1; dvercof_temp = temp2
                 else:
@@ -83,18 +82,18 @@ def eval_vbspl(depths,knots):
                 dvercof = np.vstack([dvercof,dvercof_temp])
     else:
         if len(knots) < 4:
-            raise ValueError('Atleast 4 knots need to be defined at or between '+str(min(knots))+' and '+str(max(knots))+' km')
+            raise ValueError('Atleast 4 knots need to be defined at or between '+str(min(knots))+' and '+str(max(knots)))
         # create the arrays as Fortran-contiguous
         splpts = np.array(knots.tolist(), order = 'F')
         # initialize
-        vercof = np.ones((len(depths),len(knots)))
-        dvercof = np.zeros((len(depths),len(knots)))
-        for idep,depth in enumerate(depths):
-            #Undefined if depth does not lie within the depth extents of knot points
-            if depth < min(knots) or depth > max(knots):
+        vercof = np.ones((len(radius),len(knots)))
+        dvercof = np.zeros((len(radius),len(knots)))
+        for idep,query in enumerate(radius):
+            #Undefined if query does not lie within the query extents of knot points
+            if query < min(knots) or query > max(knots):
                 vercof_temp = dvercof_temp = np.zeros_like(splpts)
             else:
-                (vercof_temp, dvercof_temp) = vbspl(depth,len(splpts),splpts)
+                (vercof_temp, dvercof_temp) = vbspl(query,len(splpts),splpts)
             vercof[idep]=vercof_temp
             dvercof[idep]=dvercof_temp
     return vercof, dvercof
@@ -107,9 +106,9 @@ def eval_splrem(radius, radius_range, nsplines):
     Input parameters:
     ----------------
 
-    radius: value or array of radii queried
+    radius: value or array of radii (or depths) queried
 
-    radius_range: limits of the radius limits of the region
+    radius_range: limits of the radius (or depths) limits of the region
 
     nsplines: number of splines within the range
 
