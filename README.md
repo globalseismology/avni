@@ -1,6 +1,6 @@
 # AVNI - A toolkit for analyzing and interpreting reference Earth models and data sets
 
-<img src="docs/logos/avnilogo.png" width="256">
+<img src="docs/logos/logo_global_seismology_color.png" width="256">
 
 ## About
 
