@@ -1,0 +1,24 @@
+# Contributing to AVNI
+
+All folders listed below go with the public release at
+[CIG](https://github.com/geodynamics/avni). The symbol * means all files
+(but not subfolders) are to be included. All subfolders need to be specified explicitly.
+
+## Common files in the main folder following CIG guidelines
+LICENSE
+CHANGES
+AUTHORS
+CONTRIBUTING.md
+README.md
+
+## Setup files for installations
+setup.cfg
+setup.py
+
+## tests folder has all
+tests/*
+
+## documents folder
+docs/git_for_AVNI.md
+docs/best_practices.md
+docs/conda/environment.yml

@@ -1,0 +1,26 @@
+#####################################################
+######## Dependencies for faster Travis builds ######
+#####################################################
+
+###### Requirements without Version Specifiers ######
+pandas
+scipy
+numpy
+numpydoc
+joblib
+configobj
+xarray
+matplotlib
+sphinx
+sphinx_rtd_theme
+sphinxcontrib
+sphinxcontrib-bibtex
+recommonmark
+pyshtools
+
+######## Requirements with Version Specifiers #######
+fortranformat==0.2.5
+progressbar2==3.38.0
+future==0.16.0
+pint==0.8.1
+h5py==2.8.0
