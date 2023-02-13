@@ -16,7 +16,7 @@ One time configurations for all repositories
 Open a free account at GitHub
 -----------------------------
 
--   If you do not already have one, you will need to open a free account at <https://github.com>. In order to become a contributor / developer for AVNI, you need to create an account on our [Web site](http://avni.org/login/register) and get access rights from us by requesting [here](http://avni.org/join-us/github).
+-   If you do not already have one, you will need to open a free account at <https://github.com>. In order to become a contributor / developer for AVNI, you need to create an account on our [Web site](http://globalseismology.org/register) and get access rights from us by requesting [here](http://avni.org/join-us/github).
 
 Configure ssh-keys for GitHub
 -----------------------------

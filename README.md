@@ -8,11 +8,9 @@ AVNI is a Python library for analyzing and interpreting reference Earth models a
 
 Homepage: [avni.globalseismology.org](http://avni.globalseismology.org)
 
-Documentation: readthedocs [html](http://avni.readthedocs.io), [pdf](https://media.readthedocs.org/pdf/avni/latest/avni.pdf)
+Source code: [github](https://github.com/globalseismology/avni)
 
-Source code: [github](https://github.com/geodynamics/avni)
-
-Requests/Bug Reports: [issues](https://github.com/geodynamics/avni/issues)
+Requests/Bug Reports: [issues](https://github.com/globalseismology/avni/issues)
 
 Contact: **avni@globalseismology.org**
 
@@ -20,7 +18,7 @@ Frequently Asked Questions: [FAQ](docs/FAQ.md)
 
 A core team maintains the public repository and releases versions after benchmarking; if you do not see activity on Github, that does not mean improvements or bug fixes are not underway! We provide APIs that interface with heavy, legacy codes hosted our servers so that AVNI installation remains light to serve various applications. Contact the AVNI team at **avni@globalseismology.org** with any questions or suggestions.
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/110c5a409f60485f83d442b8834eba2c)](https://www.codacy.com?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=globalseismology/avni&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.com/globalseismology/avni.svg?token=Z1JjFn7SrxG1nGGE9y1u&branch=devel)](https://travis-ci.com/globalseismology/avni) [![Documentation Status](https://readthedocs.org/projects/avni/badge/?version=latest)](https://avni.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/globalseismology/avni/branch/devel/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/avni) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![PyPI version](https://badge.fury.io/py/avni.svg)](https://badge.fury.io/py/avni) [![Gitter](https://badges.gitter.im/avni/community.svg)](https://gitter.im/avni/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/avni.svg?style=popout)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![PyPI version](https://badge.fury.io/py/avni.svg)](https://badge.fury.io/py/avni) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/avni.svg?style=popout)
 
 ## Requirements
 
@@ -38,7 +36,7 @@ These instructions will get you a copy of the project up and running on your loc
 2. Create a new `avni` environment for AVNI and activate it. You may use the list of
 packages that work in tandem with AVNI and have been tested, provided as [environment.yml](docs/conda/environment.yml). Please enterin the following in a terminal:
 ```
-conda create --yes --name avni -f docs/conda/environment.yml
+conda env create --name avni -f docs/conda/environment.yml
 source $CONDA_ROOT/etc/profile.d/conda.sh
 conda activate avni
 ```
@@ -71,7 +69,7 @@ involved in the community and keep them in the
 
 ## Authors
 
-The *Principal Developers* that maintain AVNI are listed in [AUTHORS](AUTHORS). See also the list of [Github contributors](https://github.com/geodynamics/avni/contributors) who participate in this project.
+The *Principal Developers* that maintain AVNI are listed in [AUTHORS](AUTHORS). See also the list of [Github contributors](https://github.com/globalseismology/avni/contributors) who participate in this project.
 
 ## Versioning
 
