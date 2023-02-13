@@ -1,6 +1,6 @@
 # AVNI - A toolkit for analyzing and interpreting reference Earth models and data sets
 
-<img src="docs/logos/avnilogo.png" width="256">
+<img src="docs/logos/logo_avni_color.png" width="256">
 
 ## About
 
@@ -8,11 +8,9 @@ AVNI is a Python library for analyzing and interpreting reference Earth models a
 
 Homepage: [avni.globalseismology.org](http://avni.globalseismology.org)
 
-Documentation: readthedocs [html](http://avni.readthedocs.io), [pdf](https://media.readthedocs.org/pdf/avni/latest/avni.pdf)
+Source code: [github](https://github.com/globalseismology/avni)
 
-Source code: [github](https://github.com/geodynamics/avni)
-
-Requests/Bug Reports: [issues](https://github.com/geodynamics/avni/issues)
+Requests/Bug Reports: [issues](https://github.com/globalseismology/avni/issues)
 
 Contact: **avni@globalseismology.org**
 
@@ -20,8 +18,7 @@ Frequently Asked Questions: [FAQ](docs/FAQ.md)
 
 A core team maintains the public repository and releases versions after benchmarking; if you do not see activity on Github, that does not mean improvements or bug fixes are not underway! We provide APIs that interface with heavy, legacy codes hosted our servers so that AVNI installation remains light to serve various applications. Contact the AVNI team at **avni@globalseismology.org** with any questions or suggestions.
 
-[![Documentation Status](https://readthedocs.org/projects/avni/badge/?version=latest)](https://avni.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/globalseismology/avni/branch/devel/graph/badge.svg?token=NTCVjCUfJm)](https://codecov.io/gh/globalseismology/avni) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![PyPI version](https://badge.fury.io/py/avni.svg)](https://badge.fury.io/py/avni) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/avni.svg?style=popout)
-![Build Status](https://github.com/globalseismology/avni/actions/workflows/test-and-build-docs-on-pr-self-hosted.yml/badge.svg)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![PyPI version](https://badge.fury.io/py/avni.svg)](https://badge.fury.io/py/avni) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/avni.svg?style=popout)
 
 ## Requirements
 
@@ -72,7 +69,7 @@ involved in the community and keep them in the
 
 ## Authors
 
-The *Principal Developers* that maintain AVNI are listed in [AUTHORS](AUTHORS). See also the list of [Github contributors](https://github.com/geodynamics/avni/contributors) who participate in this project.
+The *Principal Developers* that maintain AVNI are listed in [AUTHORS](AUTHORS). See also the list of [Github contributors](https://github.com/globalseismology/avni/contributors) who participate in this project.
 
 ## Versioning
 
