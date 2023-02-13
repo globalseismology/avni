@@ -1,0 +1,90 @@
+name: Test and build docs on pull request self hosted
+on: push
+jobs:
+  build-html-and-preview:
+   runs-on: self-hosted
+#   Use the following if you want to run only on devel
+#   if: github.ref == 'refs/heads/devel'
+   steps:
+#   The following installs the repo and cd's to it
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+#     Rsync with SSH
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY_DWAR }}
+          known_hosts: unnecessary
+          if_key_exists: replace
+      - name: Adding Known Hosts
+        run: ssh-keyscan -H ${{ secrets.SSH_HOST_DWAR }} >> ~/.ssh/known_hosts
+      - name: Deploy with rsync
+        run: mkdir docs/_build
+         && touch docs/_build/touch
+         && rsync -r -g --delete-after -v docs/_build/* ${{ secrets.SSH_USER_DWAR }}@${{ secrets.SSH_HOST_DWAR }}:/var/www/portal/drupal/docs/
+
+#     Install Conda Requirements
+      - name: Conda Requirements
+        shell: bash
+        run: eval `modulecmd bash load anaconda3`
+         && conda config --set channel_priority flexible
+         && conda config --append channels conda-forge
+         && conda activate avni-doc
+         && pip install -e .
+
+      - name: Build html docs
+        run: cd docs
+          && sphinx-apidoc -o api/ ../avni
+          && make html
+          && cd _build/html
+          && mkdir ../../../public
+          && cp -r * ../../../public
+          && cd ../../..
+
+# Remove API for latex document, it is broken
+# TODO: Fix this. Currently we create too many nested
+# lists in the API. Is this a sphinx problem or AVNI problem?
+      - name: Build pdf docs
+        run: cd docs
+          && rm -r api
+          && make latex
+          && cd _build/latex
+          && texliveonfly AVNI.tex
+          && make
+          && cd ../../..
+
+
+#     Deploy to Firebase
+      - name: Deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_AVNI_EC064 }}'
+          projectId: avni-ec064
+          channelId: 'pr-${{ github.event.number }}'
+          expires: 7d
+
+
+#     Slack notification
+      - name: Send custom JSON data to Slack workflow
+        id: slack
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "text": "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nTemporary ReadtheDocs: https://avni-ec064--pr-${{ github.event.number }}.web.app'"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

@@ -9,14 +9,20 @@ __pycache__/
 *.h5
 *.hdf5
 
-# All data files downloaded from remote REM3D server
-rem3d/files/*
+# Firebase autmated output
+firebase-hosting-pull-request.yml
+
+# All data files downloaded from remote AVNI server
+avni/files/*
 
 # distutil
 MANIFEST
 
 # C extensions
 *.so
+*.o
+*.a
+*.pyf
 
 # json temporary files
 *.json
@@ -24,6 +30,7 @@ MANIFEST
 # Distribution / packaging
 .Python
 build/
+docs/api/
 develop-eggs/
 dist/
 downloads/
@@ -41,7 +48,8 @@ wheels/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+#  before PyInstaller builds the exe, 
+#  so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -121,3 +129,9 @@ ENV/
 *.eps
 *.png
 *.pdf
+
+# MacOS files
+.DS_Store
+
+# api config file
+avni/config/api.ini

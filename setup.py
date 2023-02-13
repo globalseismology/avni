@@ -12,13 +12,13 @@ import os
 try:
     import numpy
 except:
-    raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
+    raise ImportError( 'AVNI requires Numpy 1.7 or later.' )
 
 npv = numpy.__version__.split('.')
 if int(npv[0]) != 1:
-    raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
+    raise ImportError( 'AVNI requires Numpy 1.7 or later.' )
 if int(npv[1]) < 7:
-    raise ImportError( 'REM3D requires Numpy 1.7 or later.' )
+    raise ImportError( 'AVNI requires Numpy 1.7 or later.' )
 
 import numpy.distutils.fcompiler
 
@@ -31,7 +31,7 @@ F90 = os.getenv("F90")
 # !! comment out this if statement for manual install !!
 #------------------------------------------------------------
 if F90 == None or F90 == "":
-    l1 = 'REM3D requires environment variable F90 to be set. \n '
+    l1 = 'AVNI requires environment variable F90 to be set. \n '
     l2 = 'Please set to one of {"ifort", "gfortran"}'
     raise RuntimeError( l1 + l2 )
 
@@ -44,8 +44,8 @@ if F90 == "ifort":
     omp_lib = ["-liomp5"]
 
 elif F90 == "gfortran":
-    f90_flags = ["-fopenmp", "-fPIC", "-O3", "-fbounds-check",
-                 "-ffixed-line-length-none"]
+    f90_flags = ["-libmil","-fopenmp", "-fPIC", "-O3", "-fbounds-check",
+                 "-ffixed-line-length-none","-std=legacy"]
     omp_lib = ["-lgomp"]
 
 elif F90 == "f90":
@@ -61,6 +61,9 @@ else:
     l2 = "Environment variable F90 not recognized.  \n"
     raise RuntimeError( l1 + l2 )
 
+# use old version of memcpy
+# https://snorfalorpagus.net/blog/2016/07/17/compiling-python-extensions-for-old-glibc-versions/
+# os.environ['CFLAGS']="-I. -include docs/.glibc_version_fix.h"
 
 # for manual install comment out the above section and define
 # the variables f90_flags and omp_lib below
@@ -84,10 +87,10 @@ else:
 # setup fortran 90 extension
 #---------------------------------------------------------------------------
 
-f90_dir='rem3d/f2py'
-packagelist=['rem3d','rem3d.data','rem3d.models','rem3d.tools',
-             'rem3d.mapping','rem3d.plots']
-for module in os.listdir(f90_dir): packagelist.append('rem3d.f2py.'+module)
+f90_dir='avni/f2py'
+packagelist=['avni','avni.api','avni.data','avni.models','avni.tools',
+             'avni.mapping','avni.plots']
+for module in os.listdir(f90_dir): packagelist.append('avni.f2py.'+module)
 
 
 # write short description
@@ -106,7 +109,7 @@ with open('README.md') as file:
 #--------------------------------------------------------------------------
 
 versionstuff = dict(
-    re.findall("(.+) = '(.+)'\n", open('rem3d/version.py').read()))
+    re.findall("(.+) = '(.+)'\n", open('avni/version.py').read()))
 
 
 # Tried to use setuptools in order to check dependencies.
@@ -121,42 +124,46 @@ from os.path import join
 from numpy.distutils.core import Extension
 from numpy.distutils.core import setup
 
-# Use this if you need import rem3d.module for every module folder
-# extf = [Extension(name='rem3d.'+module,
+# Use this if you need import avni.module for every module folder
+# extf = [Extension(name='avni.'+module,
 #                 sources = [join(f90_dir,module,f) for f in os.listdir(join(f90_dir,module)) if f.endswith('.f')],
 #                 extra_f77_compile_args = f90_flags,
 #                 extra_f90_compile_args = f90_flags,
 #                 extra_link_args = omp_lib)
 #             for module in os.listdir(f90_dir)]
 #
-# Use this if you need a single module for all subroutines import rem3d.f2py
+# Use this if you need a single module for all subroutines import avni.f2py
 sourcefiles = []
 for path,_,filelist in os.walk(join(f90_dir)):
     for f in filelist:
         if f.endswith('.f'): sourcefiles.append(join(path,f))
-extf = [Extension(name='rem3d.f2py',
+extf = [Extension(name='avni.f2py',
                 sources = sourcefiles,
                 extra_f77_compile_args = f90_flags,
                 extra_f90_compile_args = f90_flags,
                 extra_link_args = omp_lib)]
 
-metadata = dict(name = 'rem3d',
+metadata = dict(name = 'avni',
                 version=versionstuff['version'],
                 description=description,
                 long_description = long_description,
-                url='http://www.rem3d.org',
+                url='http://www.avni.org',
                 author = 'Pritwiraj Moulik',
                 author_email='pritwiraj.moulik@gmail.com',
                 license='GPL',
                 packages = packagelist,
                 ext_modules = extf,
-                install_requires=['fortranformat==0.2.5','joblib==0.11',
-                'progressbar2==3.38.0','requests==2.20.1','future==0.16.0',
-                'msgpack==0.5.6','argparse==1.4.0','configobj==5.0.6','pint==0.8.1',
-                'xarray==0.11.3','h5py==2.8.0','matplotlib==2.2.2','pygeodesy',
-                'pandas','scipy','numpy'],
-                data_files=[('rem3d', ['README.md']),
-                ('rem3d/config',['rem3d/config/attributes.ini','rem3d/config/planets.ini'])],
+                # Notes on why numpy and setuptools version are needed
+                # https://numpy.org/devdocs/reference/distutils_status_migration.html
+                install_requires=['numpy<=1.22','setuptools<60.0',
+                'fortranformat','numba',
+                'progressbar2','requests','future',
+                'msgpack','h5py','matplotlib',
+                'pygeodesy','argparse','xarray','configobj',
+                'joblib','pandas','scipy','numpy','pint'],
+                data_files=[('avni', ['README.md']),
+                ('avni/config',['avni/config/attributes.ini',
+                'avni/config/planets.ini','avni/config/units.ini'])],
                 keywords = ['earth-science','earth-observation','earthquake',
                 'earth','earthquake-data','geology','geophysics',
                 'geophysical-inversions','seismology','seismic-inversion',
