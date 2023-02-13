@@ -36,7 +36,7 @@ These instructions will get you a copy of the project up and running on your loc
 2. Create a new `avni` environment for AVNI and activate it. You may use the list of
 packages that work in tandem with AVNI and have been tested, provided as [environment.yml](docs/conda/environment.yml). Please enterin the following in a terminal:
 ```
-conda create --yes --name avni -f docs/conda/environment.yml
+conda env create --name avni -f docs/conda/environment.yml
 source $CONDA_ROOT/etc/profile.d/conda.sh
 conda activate avni
 ```
