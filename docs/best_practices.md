@@ -8,6 +8,7 @@ Table of Contents
   6. [Coding style](#coding-style)
   	* [Python](#python-formatting)
   	* [Fortran](#fortran-formatting)
+  	* [MATLAB](#matlab-formatting)
 
 Use *issues* to discuss intended modifications
 ----------------------------------------------
@@ -28,7 +29,7 @@ AVNI's issue tracker interface lets us track bugs being fixed and enhancements b
 Document your code
 ------------------
 
-Any new code should be fully Doxygen commented in [Python](#python-formatting) or [fortran](#fortran-formatting). If you have some free time, feel free to comment any code you modify.
+Any new code should be fully Doxygen commented in [Python](#python-formatting), [MATLAB](#matlab-formatting) or [fortran](#fortran-formatting). If you have some free time, feel free to comment any code you modify.
 
 F2PY troubleshooting
 ------------------
@@ -50,6 +51,7 @@ When modifying an existing file, try to maintain consistency with its original s
 
   - [Python](#python-formatting)
   - [Fortran](#fortran-formatting)
+  - [MATLAB](#matlab-formatting)
 
 Python formatting
 ------------------
@@ -163,18 +165,16 @@ bad
 
 good
 ~~~fortran
-  ! gets associated normal on GLL point
-  ! (note convention: pointing outwards of acoustic element)
-  nx = coupling_ac_el_normal(1,igll,iface)
+  ! gets associated values
+  fg = vbspl(4,2)
 
-  ! continuity of displacement and pressure on global point
-  accel(1,iglob) = accel(1,iglob) + jacobianw*nx*pressure
+  ! find values
+  gt = fg
 ~~~
 
 bad
 ~~~fortran
-  nx = coupling_ac_el_normal(1,igll,iface)
-  accel(1,iglob) = accel(1,iglob) + jacobianw*nx*pressure
+  fg = vbspl(4,2)
 ~~~
 
 Note we prefer indenting the comments as well to make it easier for reading the code, e.g., when inside multiple if-then statements. Putting the comment at the beginning breaks the flow.
@@ -183,7 +183,7 @@ Note we prefer indenting the comments as well to make it easier for reading the 
 
 good
 ~~~fortran
-  subroutine get_cg_direction_tiso()
+  subroutine blah_blah_function()
 
 ! calculates TI gradient based on a conjugate gradient method
 !
@@ -193,42 +193,20 @@ good
 !
 ! note: we use a preconditioner F_0 = 1, thus lambda_n = gamma_n in (6.322)
 !          and use gamma_n as the smoothed kernel (for bulk_c, bulk_betav,..).
-!
-!          however, one could see smoothing as preconditioner F_0, thus
-!          gamma_n would be un-smoothed kernel and lambda_n would be smoothed one...
-!          i'm not sure if this makes a difference.
 
   ..
 ~~~
 
 bad
 ~~~fortran
-  subroutine get_cg_direction_tiso()
+  subroutine blah_blah_function()
 
-! CG step
+! computation step
 
   ..
 ~~~
 
-Note that we haven't been very strict in adopting a doxygen-readable function declaration. It is nice though to have it.
-For example, you would do:
-~~~fortran
-!> Define an ADIOS scalar integer variable and autoincrement the adios
-!! group size by (4).
-!! \param adios_group The adios group where the variables belongs
-!! \param group_size_inc The inout adios group size to increment
-!!                       with the size of the variable
-!! \param path The logical path structuring the data and containing
-!!             the variable
-!! \param name The variable name in the ADIOS file.
-!! \param var The variable to be defined. Used for type inference. Can be
-!             ignored.
-!!
-!! \note See define_adios_double_scalar()
-  subroutine define_adios_integer_scalar(adios_group, group_size_inc, path, name, var)
-  ..
-~~~
-
+Note that we haven't been very strict in adopting a doxygen-readable function declaration.
 
 **use double-colons for parameter declarations:**
 
@@ -265,4 +243,85 @@ end subroutine
 subroutine get_color(icolor)
   ..
 ~~~
+
+MATLAB formatting
+------------------
+
+**comment, comment, comment your functions using Doxygen convention:**
+
+good
+~~~matlab
+function out=function(input)
+% cm_data=rem3dcolorscal(m, reverse)
+% Loads the color scale
+%
+% INPUT:
+%
+% m            number of contours (default: same as in cm below : 512)
+% reverse      0 for standard, 1 for reversing color palatte (default: 0)
+%
+% OUTPUT:
+%
+% d            interpolated values for use with colormap
+%
+% EXAMPLE:
+%
+% colormap(rem3dcolorscal(20));
+%
+% TESTED ON:
+%
+% R2019a (9.6.0.1072779)
+~~~
+
+bad
+~~~matlab
+function out=function(input)
+~~~
+
+**give space for breathing:**
+
+good
+~~~matlab
+  dx = 0.5 * fac * (a - b);
+~~~
+
+bad
+~~~matlab
+  dx=1/2*fac*(a-b);
+~~~
+
+Note that in performance critical sections, please use multiplication by 0.5 rather than divide by 2 for floating-points.
+
+**provide the default value of arguments:**
+
+good
+~~~matlab
+function out=function(input)
+
+% Comment on what input does
+defval('input',0)
+~~~
+
+**use optional output arguments:**
+
+good
+~~~matlab
+function varargout=function(input)
+
+% optional output
+varns = {out};
+varargout = varns(1:nargout);
+
+if nargout == 0:
+   %plot something
+end
+~~~
+
+bad
+~~~matlab
+function out=function(input)
+~~~
+
+
+
 

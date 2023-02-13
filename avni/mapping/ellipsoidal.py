@@ -23,7 +23,6 @@ def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
     stlat = convert2nparray(stlat)
     stlon = convert2nparray(stlon)
     if not (len(stlat) == len(stlon) == len(eplat) == len(eplon)):
-        pdb.set_trace()
         raise ValueError('latitude and longitude need to be of same length')
 
     if len(eplat) > 1: # if the input is a list loop

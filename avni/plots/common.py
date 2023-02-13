@@ -155,14 +155,14 @@ def make_colormap(seq,name='CustomMap'):
             cdict['blue'].append([item, b1, b2])
     return mcolors.LinearSegmentedColormap(name, cdict)
 
-def getcolorlist(cptfile,type='rem'):
+def getcolorlist(cptfile,type='avni'):
     """Get a tuple for colorlist from a cptfile"""
 
     if not os.path.isfile(cptfile): raise IOError("File ("+cptfile+") does not exist.")
     colorlist=[]
 
-    # if it is the format in the REM project
-    if type=='rem':
+    # if it is the format in the AVNI project
+    if type=='avni':
         cptarr=np.genfromtxt(cptfile, dtype=None,comments="#")
         for irow in np.arange(len(cptarr)):
             tups=cptarr[irow][1]/255.,cptarr[irow][2]/255.,cptarr[irow][3]/255.
@@ -255,35 +255,41 @@ def readstandardcpt(cptfile):
     # return colormap
     return colorlist
 
-def downloadcpt(url):
-    file = url.split('/')[-1]
-    baseurl = url.replace('/'+file,'')
-    data.update_file(file,folder=tools.get_cptdir(),baseurl = baseurl)
-
-def customcolorpalette(name='bk',cptfolder=tools.get_cptdir(),colorlist=None,colormax=2.,middlelimit=0.5,ifgraytest=0):
+def customcolorpalette(name='bk',cptfolder=None,colorlist=None,
+                       colormax=2.,middlelimit=0.5,ifgraytest=0):
     """Used to return preset color palettes from cptfolder. ifgraytest test how the figure looks in gray scale. (-colormax,colormax) are the limits of the colorbar. zerolimit is the limit to which the middle color (e.g. grey) will extend on either side of colorttmax mid. """
+    # Get the directory location where CPT files are kep
+    if cptfolder is None: cptfolder = tools.get_filedir(subdirectory=constants.cptfolder)
+
+    # Get the rgb colors
     c = mcolors.ColorConverter().to_rgb
     if name=='r_lgrey_b':
         colorlist=[c('blue'), c('lightgray'), (2.*colormax-2.*middlelimit)/(4.*colormax), c('lightgray'),c('lightgray'), (2.*colormax+2.*middlelimit)/(4.*colormax), c('lightgray'),c('red'), 1., c('red')]
     else:
+        # These are standard files available from the CPT folder
         if name=='bk':
             file = 'bk1_0.cpt_'
-            type = 'rem'
+            type = 'avni'
         elif name=='hit1':
             file = 'hit1.cpt_'
-            type = 'rem'
+            type = 'avni'
         elif name=='yuguinv':
             file = 'yu1_2inv.new.cpt_'
-            type = 'rem'
+            type = 'avni'
         else:
             file = name+'.cpt'
             type = 'standard'
-        cptfolder=tools.get_fullpath(cptfolder)
-        if os.path.isfile(cptfolder+'/'+file):
-            colorlist=getcolorlist(cptfolder+'/'+file,type=type)
-        else:
-            if type =='rem': data.update_file(file,folder=cptfolder)
-            raise ValueError("Could not find file "+cptfolder+'/'+file)
+
+        # Download file if possible
+        cptfile = os.path.join(cptfolder,file)
+        try:
+            colorlist=getcolorlist(cptfile,type=type)
+        except IOError: #Download to default directory
+            success = False
+            if type =='avni':
+                _,success = data.update_file(file,subdirectory=constants.cptfolder)
+            if not success: ValueError("Could not find file "+cptfile)
+            colorlist=getcolorlist(cptfile,type=type)
 
     if colorlist is None: raise ValueError("No colorlist found")
     custom_cmap = make_colormap(colorlist,name)

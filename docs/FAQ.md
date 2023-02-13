@@ -1,18 +1,16 @@
 Frequently Asked Questions
 ==========================
 
-
-  1. [General](#general)  
-    * [Is it free?](#is-it-free)  
-    * [Is all your code open-source?](#is-all-your-code-open-source)  
-    * [How can we get involved?](#how-can-we-get-involved)  
-    * [I am a domain expert in geosciences. Why should I get involved?](#i-am-a-domain-expert-in-geosciences-why-should-i-get-involved)  
-  2. [Installation](#installation)  
-    * [What are the system requirements for AVNI?](#what-are-the-system-requirements-for-avni)  
-  3. [Privacy](#privacy)  
-    * [Why do you provide APIs?](#why_do_you_provide_apis)  
-    * [Is there a cap on the number of calls to the API?](#is-there-a-cap-on-the-number-of-calls-to-the-api) 
-
+  1. [General](#general)
+    * [Is it free?](#is-it-free)
+    * [Is all your code open-source?](#is-all-your-code-open-source)
+    * [How can we get involved?](#how-can-we-get-involved)
+    * [I am a domain expert in geosciences. Why should I get involved?](#i-am-a-domain-expert-in-geosciences-why-should-i-get-involved)
+  2. [Installation](#installation)
+    * [What are the system requirements for AVNI?](#what-are-the-system-requirements-for-avni)
+  3. [Privacy](#privacy)
+    * [Why do you provide APIs?](#why_do_you_provide_apis)
+    * [Is there a cap on the number of calls to the API?](#is-there-a-cap-on-the-number-of-calls-to-the-api)
 
 General
 -------
@@ -25,12 +23,12 @@ Yes! The master branch of our repository that hosts the client-side Python codes
 Is all your code open-source?
 ----------------------------
 
-Our public Github pure-Python repository is provided open-source with the GNU GPL v3 [LICENSE](../LICENSE). In order to encourage involvement by the relevant domain experts without the necessary overhead of immediately catering to requests in an open-source environment, we keep a portion of the hard-to-compile Fortran, C and other Python routines private to the AVNI development team. Feel free to raise an issue [issue](https://github.com/globalseismology/avni/issues) that you can help with or write to use at **info@avni.org** if you want to get involved.
+Our public Github pure-Python repository is provided open-source with the GNU GPL v3 [LICENSE](../LICENSE). In order to encourage involvement by the relevant domain experts without the necessary overhead of immediately catering to requests in an open-source environment, we keep a portion of the hard-to-compile Fortran, C and other Python routines private to the AVNI development team. Feel free to raise an issue [issue](https://github.com/geodynamics/avni/issues) that you can help with or write to use at **avni@globalseismology.org** if you want to get involved.
 
 How can we get involved?
 ------------------------
 
-Become a tester or contributor! Please try out our codes in various applications and let us know. Fork our public repository, contribute code and raise [issues or requests](https://github.com/globalseismology/avni/issues). If you want to be a co-developer, please request access through our [Website](http://avni.org/join-us/github).
+Become a tester or contributor! Please try out our codes in various applications and let us know. Fork our public repository, contribute code and raise [issues or requests](https://github.com/geodynamics/avni/issues). If you want to be a co-developer, please request access through our [Website](http://avni.globalseismology.org).
 
 I am a domain expert in geosciences. Why should I get involved?
 ---------------------------------------------------------------
@@ -43,7 +41,7 @@ Installation
 What are the system requirements?
 --------------------------------
 
-AVNI has been tested on the following platforms: Linux (Ubuntu, Redhat, CentOS), MacOS and Windows. It requires a python installation with versions 3.3 and above.
+AVNI has been tested on the following platforms: Linux (Ubuntu, Redhat, CentOS), MacOS and Windows. It requires a Python installation with versions 3.3 or above.
 
 Privacy
 -------
@@ -51,9 +49,9 @@ Privacy
 Why do you provide APIs?
 ------------------------
 
-We provide application programming interfaces (APIs) that interface with heavy, legacy codes hosted on our servers so that AVNI installation remains light to serve various applications. We care deeply about facilitating science by reducing the time a typical researcher or student spends installing complex dependencies and debugging code. Some users may not have the necessary infrastructure to deal with big data and our scientific codes. It is very difficult for us to spend time testing our server-side codes across platforms and transfer terabytes of data to a client computer. 
+We provide application programming interfaces (APIs) that interface with heavy, legacy codes hosted on our servers so that AVNI installation remains light to serve various applications. We care deeply about facilitating science by reducing the time a typical researcher or student spends installing complex dependencies and debugging code. Some users may not have the necessary infrastructure to deal with big data and our scientific codes. It is very difficult for us to spend time testing our server-side codes across platforms and transfer terabytes of data to a client computer.
 
 Is there a cap on the number of calls to the API?
 -------------------------------------------------
 
-The number of calls are capped at 5000 per day per public user. This is limited by the current hardware and as the project evolves, we hope to increase the limit. If you find AVNI useful or want more features, please let the funding agencies know or leave a public [comment](https://github.com/globalseismology/avni/issues).
+The number of calls are capped at 1000 per day per user. This is limited by the current hardware and as the project evolves, we hope to increase the limit. If you find AVNI useful or want more features, please let the funding agencies know or leave a public [comment](https://github.com/geodynamics/avni/issues).

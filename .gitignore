@@ -9,6 +9,9 @@ __pycache__/
 *.h5
 *.hdf5
 
+# Firebase autmated output
+firebase-hosting-pull-request.yml
+
 # All data files downloaded from remote AVNI server
 avni/files/*
 
@@ -126,6 +129,9 @@ ENV/
 *.eps
 *.png
 *.pdf
+
+# MacOS files
+.DS_Store
 
 # api config file
 avni/config/api.ini

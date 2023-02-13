@@ -5,8 +5,11 @@ from __future__ import absolute_import, division, print_function
 #import scipy.constants
 
 #download files
-downloadpage = 'https://maurya.umd.edu/files/common'
+downloadpage = 'https://portal.globalseismology.org/files'
 localfilefolder = 'files'
+
+# Default database folder
+dbsfolder = 'dbs'
 
 #configuration folder
 configfolder = 'config'
@@ -17,6 +20,9 @@ cptfolder = 'CPT'
 #Mapping constants
 planetconstants = 'planets.ini'
 planetpreferred = 'Earth'
+
+# Topography
+topofolder = 'DATA/GLOBALTOPO'
 topography = 'ETOPO1_Bed_g_gmt4.grd'
 
 #Attribute information for the parameterizations

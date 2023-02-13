@@ -1,4 +1,5 @@
 sudo: required
+os: linux
 dist: xenial
 
 language: python
@@ -22,6 +23,7 @@ branches:
     - master
     - forward
     - api
+    - docs
 
 env:
   global:
@@ -55,22 +57,21 @@ before_install:
 
   # install requirements for pyshtools
   - sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
-  
+
   # Here we just install Miniconda. If it is in the cache, then we don't need to do anything
   - if [ -d "${CONDA_BASE_PATH}" ] && [ -e "${CONDA_BASE_PATH}/bin/conda" ]; then
       echo "Miniconda install already present from cache";
-    else
+      else
       wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
       bash miniconda.sh -b -p ${CONDA_BASE_PATH};
-    fi
+      fi
   - export PATH="${CONDA_BASE_PATH}/bin:$PATH"
   - export F90=gfortran
-  - conda update --yes conda
 
   # Decrypt rsync key
   - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
       sudo openssl aes-256-cbc -K $encrypted_43caa601570c_key -iv $encrypted_43caa601570c_iv -in travis_deploy_rsa.enc -out $HOME/travis_deploy_rsa -d;
-    fi
+      fi
 
   # Dropbox uploader key
   # travis encrypt-file ~/.dropbox_uploader
@@ -85,18 +86,15 @@ install:
   - if [ -d "${CONDA_BASE_PATH}/envs/avni_${TRAVIS_PYTHON_VERSION}" ]; then
       echo "Environment available from cache";
       source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate avni_${TRAVIS_PYTHON_VERSION};
-    else
-      conda create --yes --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION;
-      source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
-      source activate avni_${TRAVIS_PYTHON_VERSION};
-      conda config --append channels conda-forge;
-      conda install --yes --file docs/requirements.txt;
-      conda install --yes -c conda-forge python-slugify;
-      conda install --yes -c conda-forge netcdf4 basemap basemap-data-hires;
-      conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
-      conda install --yes -c conda-forge sphinx numpydoc sphinxcontrib-bibtex recommonmark sphinx_rtd_theme;
-    fi
+      conda activate avni_${TRAVIS_PYTHON_VERSION};
+      else
+        travis_wait 30 conda env create --name avni_${TRAVIS_PYTHON_VERSION} python=$TRAVIS_PYTHON_VERSION --file docs/conda/environment_doc.yml;
+        source ${CONDA_BASE_PATH}/etc/profile.d/conda.sh;
+        conda activate avni_${TRAVIS_PYTHON_VERSION};
+        conda config --append channels conda-forge;
+        travis_wait 60 conda install --yes -c conda-forge python-slugify;
+        travis_wait 60 conda install --yes -c conda-forge codecov pytest-cov pytest jupyter nbformat;
+      fi
 
   # Install TexLive
   # https://github.com/PHPirates/travis-ci-latex-pdf#instructions-for-building-with-pdflatexlualatexlatexmkxelatextexliveonflyetc-and-tex-live
@@ -122,6 +120,11 @@ script:
   - sphinx-apidoc -o api/ ../avni
   - make html
 
+  # Remove API for latex document, it is broken
+  # TODO: Fix this. Currently we create too many nested
+  # lists in the API. Is this a sphinx problem or a
+  # AVNI problem?
+  - rm -r api
   # Make a latex file for the next step
   - make latex
   - cd _build/latex
@@ -145,15 +148,15 @@ after_success:
   - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN || echo "Codecov did not collect coverage reports"
 
 before_deploy:
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
     eval "$(ssh-agent -s)";
     chmod 600 $HOME/travis_deploy_rsa;
     sudo echo -e "Host *\n\tStrictHostKeyChecking no\n\tPort 41557\n" >> ~/.ssh/config;
     ssh-add $HOME/travis_deploy_rsa;
-  fi
+    fi
 
 # deploy to pypi-test from master when tagged
-deploy:
+deploy_pypi_test:
   provider: pypi
   server: https://test.pypi.org/legacy/ # Remove for deployment to official PyPi repo
   user: pmoulik
@@ -164,15 +167,15 @@ deploy:
     tags: true
 
 # deploy documents to devel and master (if tagged)
-deploy:
+deploy_pypi:
   - provider: script
     skip_cleanup: true
     script:
       - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         sudo chgrp -R apache docs/_build;
-        rsync -r -g --delete-after -v docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
-        rsync -r -g --delete-after -v docs/_build/latex/AVNI.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
-        fi
+#        rsync -r -g --delete-after -v docs/_build/html/* moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+#        rsync -r -g --delete-after -v docs/_build/latex/AVNI.pdf moulik@$REM_SERVER:/var/www/html/wordpress/files/docs/$TRAVIS_BRANCH;
+#        fi
     on:
       branch:
         - devel
