@@ -110,8 +110,9 @@ class Realization(object):
             self.decode_scaling()
             self.scale_coefficients()
         except:
-            print(traceback.format_exc())
-            print('Warning: kernel_set could not be initialized in realization instance for '+file)
+            pass
+            #print(traceback.format_exc())
+            #print('Warning: kernel_set could not be initialized in realization instance for '+file)
 
     def decode_units(self):
         if 'attrs' not in self.keys: self['attrs']={}

@@ -865,16 +865,16 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
 #         plt.setp(cbarytks, visible=False)
     return fig,topo,topotree,model,modeltree
 
-def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,figuresize=None,outfile=None,**kwargs):
+def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,vmin,vmax,figuresize=None,outfile=None,**kwargs):
     """Plot one section through the Earth through a pair of points."""
     #defaults
     if figuresize is None: figuresize=[8,4]
 
     fig = plt.figure(figsize=(figuresize[0],figuresize[1]))
     if kwargs:
-        fig,topo,topotree,model,modeltree = section(fig,latitude,longitude,azimuth,gcdelta,model,parameter,**kwargs)
+        fig,topo,topotree,model,modeltree = section(fig,latitude,longitude,azimuth,gcdelta,model,parameter,vmin=vmin,vmax=vmax,**kwargs)
     else:
-        fig,topo,topotree,model,modeltree = section(fig,latitude,longitude,azimuth,gcdelta,model,parameter)
+        fig,topo,topotree,model,modeltree = section(fig,latitude,longitude,azimuth,gcdelta,model,parameter,vmin=vmin,vmax=vmax)
     if outfile is not None:
         fig.savefig(outfile,dpi=300)
     else:
