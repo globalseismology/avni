@@ -206,7 +206,6 @@ html_theme_options = {
         },
     ],
     "github_url": "https://github.com/globalseismology/avni",
-    "header_links_before_dropdown": 4,
     "icon_links": [
         {
             "name": "PyPI",
@@ -237,15 +236,6 @@ html_theme_options = {
     }
     # "search_bar_position": "navbar",  # TODO: Deprecated - remove in future version
     
-}
-
-html_sidebars = {
-    "community/index": [
-        "sidebar-nav-bs",
-        "custom-template",
-    ],  # This ensures we test for custom sidebars
-    "examples/no-sidebar": [],  # Test what page looks like with no sidebar items
-    "examples/persistent-search-field": ["search-field"],
 }
 
 html_context = {
