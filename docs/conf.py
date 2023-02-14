@@ -15,6 +15,7 @@
 import sys
 import os
 import shlex
+import sphinx_fontawesome
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -71,6 +72,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
     'sphinx_gallery.gen_gallery',
+    'sphinx_fontawesome'
 ]
 #    'sphinxcontrib.matlab',
 
@@ -199,10 +201,6 @@ html_theme_options = {
    "show_prev_next": False,
         "external_links": [
         {
-            "url": "https://avni.globalseismology.org",
-            "name": "Home",
-        },
-        {
             "url": "https://globalseismology.org/register",
             "name": "Register",
         },
@@ -232,13 +230,22 @@ html_theme_options = {
     # "navbar_persistent": ["search-button"],
     # "primary_sidebar_end": ["custom-template.html", "sidebar-ethical-ads.html"],
     "footer_items": ["copyright", "sphinx-version"],
-    "secondary_sidebar_items": ["page-toc", "edit-this-page", "sourcelink"],
+    #"secondary_sidebar_items": ["page-toc", "edit-this-page", "sourcelink"],
     "switcher": {
         "json_url": json_url,
         "version_match": version,
     }
     # "search_bar_position": "navbar",  # TODO: Deprecated - remove in future version
     
+}
+
+html_sidebars = {
+    "community/index": [
+        "sidebar-nav-bs",
+        "custom-template",
+    ],  # This ensures we test for custom sidebars
+    "examples/no-sidebar": [],  # Test what page looks like with no sidebar items
+    "examples/persistent-search-field": ["search-field"],
 }
 
 html_context = {

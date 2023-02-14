@@ -1,7 +1,6 @@
 name: avni-doc
 channels:
   - conda-forge
-  - conda-forge/label/dev
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
@@ -213,7 +212,6 @@ dependencies:
   - six=1.16.0=pyh6c4a22f_0
   - snappy=1.1.9=hbd366e4_1
   - snowballstemmer=2.2.0=pyhd8ed1ab_0
-  - sphinx=5.0.2=pyh6c4a22f_0
   - sphinx-sitemap=2.2.0=pyhd8ed1ab_0
   - sphinx_rtd_theme=1.0.0=pyhd8ed1ab_0
   - sphinxcontrib=1.0=py37_1
@@ -267,10 +265,19 @@ dependencies:
     - beautifulsoup4==4.11.2
     - configobj==5.0.6
     - fortranformat==1.2.0
+    - h5py==3.8.0
     - joblib==1.1.0
+    - llvmlite==0.39.1
     - msgpack==1.0.4
+    - numba==0.56.4
+    - pint==0.18
     - progressbar2==4.0.0
-    - pydata-sphinx-theme==0.12.0
+    - pydata-sphinx-theme==0.8.1
+    - pygeodesy==23.1.9
     - python-utils==3.3.3
     - soupsieve==2.4
+    - sphinx==4.5.0
+    - sphinx-book-theme==0.3.3
+    - sphinx-fontawesome==0.0.6
     - sphinx-gallery==0.11.1
+
