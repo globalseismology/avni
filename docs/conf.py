@@ -78,7 +78,7 @@ extensions = [
 # Sphinx Gallery config
 sphinx_gallery_conf = {
     # path to your example scripts
-    'examples_dirs': ['../examples/Notebooks'],
+    #'examples_dirs': ['../examples/Notebooks'],
     # path to where to save gallery generated output
     'gallery_dirs': ["tutorials"],
     # Checks matplotlib for figure creation
@@ -119,7 +119,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'AVNI'
-copyright = u'2021, Pritwiraj (Raj) Moulik'
+copyright = u'2022, Pritwiraj (Raj) Moulik'
 author = u'Pritwiraj (Raj) Moulik'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -127,10 +127,10 @@ author = u'Pritwiraj (Raj) Moulik'
 # built documents.
 #
 # The short X.Y version.
-version = '0.0.1'
+version = '0.1.0'
 #version = avni.version.short_version
 # The full version, including alpha/beta/rc tags.
-release = '0.0.1'
+release = '0.1.0'
 #release = avni.__version__
 
 
