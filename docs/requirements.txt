@@ -21,6 +21,6 @@ pyshtools
 ######## Requirements with Version Specifiers #######
 fortranformat==0.2.5
 progressbar2==3.38.0
-future==0.16.0
+future==0.18.3
 pint==0.8.1
 h5py==2.8.0
