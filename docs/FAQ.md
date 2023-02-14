@@ -12,8 +12,10 @@ Frequently Asked Questions
     * [Why do you provide APIs?](#why_do_you_provide_apis)
     * [Is there a cap on the number of calls to the API?](#is-there-a-cap-on-the-number-of-calls-to-the-api)
 
+
 General
 -------
+
 
 Is it free?
 -----------
