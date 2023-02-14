@@ -24,8 +24,8 @@ import numpy.distutils.fcompiler
 
 # get F90 environment variable
 #----------------------------------------
-F90 = os.getenv("F90")
-
+# F90 = os.getenv("F90")
+F90 = "gfortran"
 
 # raise error if F90 not defined
 # !! comment out this if statement for manual install !!
@@ -95,15 +95,17 @@ for module in os.listdir(f90_dir): packagelist.append('avni.f2py.'+module)
 
 # write short description
 #--------------------------------------------------------------------------
-description = 'a modeling and analysis toolkit for reference Earth ' + \
-    'datasets and tomographic models.'
+description = 'Analysis and Visualization toolkit for plaNetary Inferences ' + \
+    'provides web-based and backend code access to tools, techniques, models and data.'
 
 
 # puts the contents of the README file in the variable long_description
 #--------------------------------------------------------------------------
-with open('README.md') as file:
-    long_description = '\n\n ' + file.read()
-
+file = open('README.md', 'r')
+Lines = file.readlines()
+long_description = '\n\n '
+for string in Lines:
+    if '<img' not in string: long_description += string
 
 # call setup
 #--------------------------------------------------------------------------
@@ -121,6 +123,7 @@ versionstuff = dict(
 # Build the f2py fortran extension
 # --------------------------------
 from os.path import join
+import setuptools # added to make the Markdown long_description work for PyPi
 from numpy.distutils.core import Extension
 from numpy.distutils.core import setup
 
@@ -146,10 +149,11 @@ extf = [Extension(name='avni.f2py',
 metadata = dict(name = 'avni',
                 version=versionstuff['version'],
                 description=description,
+                long_description_content_type='text/markdown',
                 long_description = long_description,
-                url='http://www.avni.org',
+                url='https://avni.globalseismology.org',
                 author = 'Pritwiraj Moulik',
-                author_email='pritwiraj.moulik@gmail.com',
+                author_email='moulik@caa.columbia.edu',
                 license='GPL',
                 packages = packagelist,
                 ext_modules = extf,

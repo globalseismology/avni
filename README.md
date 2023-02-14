@@ -23,6 +23,7 @@ A core team maintains the public repository and releases versions after benchmar
 ## Requirements
 
 AVNI needs the following python modules installed in the system.
+* The gfortran Fortran compiler
 * Python 3.6+
 * Python modules provided in [environment.yml](docs/conda/environment.yml)
 
@@ -32,8 +33,10 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Basic Installation
 
-1. Install the [Anaconda Python Distribution](https://www.continuum.io/downloads). We recommend the 64-bit Python 3.7 version.
-2. Create a new `avni` environment for AVNI and activate it. You may use the list of
+1. Install the gfortran Fortran compiler on your machine from the [GNU Fortran project](https://gcc.gnu.org/wiki/GFortran).
+
+2. Install the [Anaconda Python Distribution](https://www.continuum.io/downloads). We recommend the 64-bit Python 3.7 version.
+3. Create a new `avni` environment for AVNI and activate it. You may use the list of
 packages that work in tandem with AVNI and have been tested, provided as [environment.yml](docs/conda/environment.yml). Please enterin the following in a terminal:
 ```
 conda env create --name avni -f docs/conda/environment.yml
@@ -42,16 +45,16 @@ conda activate avni
 ```
 where `CONDA_ROOT` is the location of Anaconda directory (e.g. `/home/user/anaconda3`)
 
-3. (Optional) You may install some mapping toolboxes (Basemap data) with the following options to add topography at all resolutions:
+4. (Optional) You may install some mapping toolboxes (Basemap data) with the following options to add topography at all resolutions:
 `conda install -c conda-forge basemap-data-hires`
 Basemap installation may give errors for the PROJ4 library. We have found it useful to specify the location of the library using the following in our .tcshrc shell configuration
 `setenv PROJ_LIB $CONDA_PREFIX/share/proj`
 where `CONDA_PREFIX` is the location of Anaconda installation, which should be automatically initialized with step 2.
 
-4. Install the stable version of AVNI and its additional dependencies with
+5. Install the stable version of AVNI and its additional dependencies with
 `pip install avni`
 
-5. Create an account on our [Web site](http://globalseismology.org/register) to be allotted an API key for submitting queries to our servers. Enter the key when AVNI is
+6. Create an account on our [Web site](http://globalseismology.org/register) to be allotted an API key for submitting queries to our servers. Enter the key when AVNI is
 initialized when run for the first time.
 
 ## Start Here
@@ -82,7 +85,7 @@ This software is published under the GNU GPL v3 license - see the [LICENSE](LICE
 ## Acknowledgments
 
 * Funded by the [National Science Foundation](http://nsf.gov) and the [Computational Infrastructure for Geodynamics](http://geodynamics.org).
-* We thank Göran Ekström, Adam Dziewonski, and other members of the open source and Earth Science community for their input and non-Github contributions.
+* A project like this one is a culmination of feedback and input from several excellent [colleagues and organizations](https://globalseismology.princeton.edu/about/people). We thank members of the open source and Earth Science community for their input and non-Github contributions.  
 * Computational resources maintained by Princeton University accessible through the [AVNI website](http://avni.globalseismology.org). We thank the system administrators for assistance.
 
 <img src="docs/logos/NSF.png" width="100"> &nbsp; &nbsp; &nbsp; &nbsp; <img src="docs/logos/CIG_logo.png" width="200"> &nbsp; &nbsp; &nbsp; &nbsp; <img src="docs/logos/PU-standard.png" width="325">
