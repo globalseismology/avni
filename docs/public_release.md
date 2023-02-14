@@ -19,7 +19,10 @@ Layout of branches
 
 We maintain 3 major branches for our client libraries that are relevant to public releases. Read/write access to these are restricted to main administrators and developers:
 * `main` — Active development occurs on this branch or in branches that spin off from this.
-* `public` — Development for bug fixes happens here. We also bump versions and update the changelog on this branch. We squash commits from the release branch into single release commits on this branch as well as tagging releases.
+* `public` — Development for bug fixes happens here. We also bump versions and update the changelog on this branch. 
+* `release` — We squash commits from the public branch into single release commits on this branch as well as tagging releases. 
+
+Separate `public` and `release` branches are needed so that all the testing, removing private files and merging from `main` can be removed within the isolated `'public` branch.  These branches were created as `git checkout -b public 6aa31bf` based on the first SHA commit of the main branch (6aa31bf), which was found using `git log --abbrev-commit --pretty=oneline`. In order for merging to happen seamlessly, this procedure of accounting for commit history was needed to preserve the record.
 
 New branches may be created for individual projects. Please clone the `main` branch to build upon the latest codes
 `git checkout -b new_branch main`
@@ -31,22 +34,24 @@ Public Release Workflow
 
 The `public` branch on [avni-private repository](https://github.com/globalseismology/avni-private) tracks the publicly open [avni repository](https://github.com/globalseismology/avni). The workflow for every public release involves getting all edits done in `public` based on a subset of codes selected from `main`. We need to write a shell script that removes the files not in [public file](.public) and parts of the files that are marked as private.
 
-Once `public` is tested and ready, an admin squashes all comments to a `'release-v1.0.0` branch and tags it:
-`git checkout release-v1.0.0`
-`git merge --squash public`
-`git commit -m "1.0.0"`
-`git tag 1.0.0 -m "1.0.0"`
+Once `public` is tested and ready, an admin squashes all comments to the `release` branch and tags it:
+`git checkout release`  
+`git merge --squash public`  
+`git commit -m "v1.0.0"`  
+`git tag v1.0.0 -m "v1.0.0"`  
+`git push origin v1.0.0`  
 
 Then the admin pulls the latest changes from and syncs with the [public repository](https://github.com/globalseismology/avni) using a series of commands such as below:
-`git remote add cig git@github.com:globalseismology/avni.git`
-`git pull cig master`
-`git push cig HEAD:master`
+`git remote add cig git@github.com:globalseismology/avni.git`  
+`git pull cig main`  
+`git push cig HEAD:main`  
+`git push cig v1.0.0`  
 
-We also need to push these changes to the branches on origin and merge the squashed commit back to `public` and `devel`. You may suspect that git would be confused merging a squashed commit back into branches containing the non-collapsed commits, but it all works just as expected. Git is smart enough to realize no changes need to be made when merging in the squashed commit, but we should still merge to keep our branches in sync.
-`git push origin master`
-`git checkout public`
-`git merge master`
-`git push origin public`
-`git checkout devel`
-`git merge public`
-`git push origin devel`
+We also need to push these changes to the branches on origin and merge the squashed commit back to `main`. You may suspect that git would be confused merging a squashed commit back into branches containing the non-collapsed commits, but it all works just as expected. Git is smart enough to realize no changes need to be made when merging in the squashed commit, but we should still merge to keep our branches in sync.
+`git push origin release`  
+`git checkout public`  
+`git merge release`  
+`git push origin public`  
+`git checkout main`  
+`git merge public`  
+`git push origin main`  
