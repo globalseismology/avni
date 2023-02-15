@@ -17,7 +17,8 @@ import os
 import shlex
 import sphinx_fontawesome
 
-import datetime
+from datetime import datetime, timezone
+from dateutil import tz
 import faulthandler
 import locale
 
@@ -67,6 +68,7 @@ import avni
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "myst_parser",
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
@@ -131,11 +133,20 @@ source_suffix = ['.rst', '.md']
 # The master toctree document.
 master_doc = 'index'
 
-# General information about the project.
-project = u'AVNI'
-copyright = u'2022, Pritwiraj (Raj) Moulik'
-author = u'Pritwiraj (Raj) Moulik'
 
+# -- Project information -----------------------------------------------------
+
+project = u'AVNI'
+td = datetime.now(tz=timezone.utc)
+to_zone = tz.tzlocal()
+
+# We need to triage which date type we use so that incremental builds work
+# (Sphinx looks at variable changes and rewrites all files if some change)
+copyright = (
+    f'2016–{td.year}, Pritwiraj (Raj) Moulik and AVNI Developers. Last updated {td.astimezone(to_zone).strftime("%b %d, %Y, %I:%M:%S %p %Z")}') 
+author = u'Pritwiraj (Raj) Moulik'
+    
+    
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
@@ -203,7 +214,7 @@ html_theme = "pydata_sphinx_theme"
 #html_theme = "sphinx_book_theme"
 
 # Define the json_url for our version switcher.
-json_url = "https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json"
+json_url = "https://portal.globalseismology.org/docs/avni/current/_static/versions.json"
 
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -214,6 +225,11 @@ html_theme_options = {
     "show_prev_next": False,
     "collapse_navigation": True,
     "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/globalseismology/avni",
+            "icon": "fab fa-github-square",
+        },
         {
             "name": "PyPI",
             "url": "https://pypi.org/project/avni",
@@ -283,12 +299,12 @@ html_context = {
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "logos/logo_avni_color.png"
+html_logo = "_static/logos/logo_avni_color.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = "logos/logo_avni_color.png"
+html_favicon = "_static/logos/logo_avni_color.png"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -357,6 +373,37 @@ html_static_path = ['_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'AVNIdoc'
+
+# -- Fontawesome support -----------------------------------------------------
+
+brand_icons = ('apple', 'linux', 'windows', 'discourse', 'python')
+fixed_width_icons = (
+    # homepage:
+    'book', 'code-branch', 'newspaper', 'circle-question', 'quote-left',
+    # contrib guide:
+    'bug-slash', 'comment', 'computer-mouse', 'hand-sparkles', 'pencil',
+    'text-slash', 'universal-access', 'wand-magic-sparkles',
+    'discourse', 'python',
+)
+other_icons = (
+    'hand-paper', 'question', 'rocket', 'server', 'code', 'desktop',
+    'terminal', 'cloud-arrow-down', 'wrench', 'hourglass-half'
+)
+icon_class = dict()
+for icon in brand_icons + fixed_width_icons + other_icons:
+    icon_class[icon] = ('fa-brands',) if icon in brand_icons else ('fa-solid',)
+    icon_class[icon] += ('fa-fw',) if icon in fixed_width_icons else ()
+
+prolog = ''
+for icon, classes in icon_class.items():
+    prolog += f'''
+.. |{icon}| raw:: html
+    <i class="{' '.join(classes + (f'fa-{icon}',))}"></i>
+'''
+
+prolog += '''
+.. |ensp| unicode:: U+2002 .. EN SPACE
+'''
 
 # -- Options for LaTeX output ---------------------------------------------
 

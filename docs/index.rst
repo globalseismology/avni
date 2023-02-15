@@ -12,24 +12,17 @@
 
 Overview
 ********
-AVNI is...
 
-* *Pythonic VTK*: a high-level API to the `Visualization Toolkit`_ (VTK)
-* mesh data structures and filtering methods for spatial datasets
-* 3D plotting made simple and built for large/complex data geometries
+AVNI is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has legacy routines in C and Fortran as well, which are interfaced with Python subroutines. Some installation files as well as applets and API access require registration on `our homepage`_.
 
-.. _Visualization Toolkit: https://vtk.org
+* Open-source Python package with APIs to handle intensive queries
+* Introduce HDF5 storage formats for planetary models and processed seismic data
+* Interactive web-based visualization tools for data and model exploration
+* Formulate and benchmark solvers for rapid data validation of models
 
-AVNI is a helper library for the Visualization Toolkit (VTK) that
-takes a different approach on interfacing with VTK through NumPy and
-direct array access.  This package provides a Pythonic,
-well-documented interface exposing VTK's powerful visualization
-backend to facilitate rapid prototyping, analysis, and visual
-integration of spatially referenced datasets.
 
-This module can be used for scientific plotting for presentations and
-research papers as well as a supporting module for other mesh
-dependent Python modules.
+.. _our homepage: http://globalseismology.org
+
 
 .. |tweet| image:: https://img.shields.io/twitter/url.svg?style=social&url=http%3A%2F%2Fshields.io
    :target: https://twitter.com/intent/tweet?text=Check%20out%20this%20project%20for%20Earth%20and%20other%20planets%20in%20Python&url=https://avni.globalseismology.org&hashtags=3D,visualization,Python,vtk,mesh,plotting,AVNI
@@ -37,32 +30,34 @@ dependent Python modules.
 Share this project on Twitter: |tweet|
 
 
-.. |binder| image:: https://static.mybinder.org/badge_logo.svg
-   :target: https://mybinder.org/v2/gh/pyvista/pyvista-examples/master
-   :alt: Launch on Binder
+.. |Hubzero| image:: https://img.shields.io/badge/Launch-Hubzero-orange.svg
+   :target: https://geodynamics.org/tools/avninotebooks
+   :alt: Launch on Hubzero
 
-Want to test-drive AVNI? Check out our live examples on MyBinder: |binder|
+Want to test-drive AVNI? Check out our live examples on Hubzero: |Hubzero|
 
 .. grid::
 
-   .. grid-item-card:: AVNI is a NumFOCUS affiliated project
-      :link: https://numfocus.org/sponsored-projects/affiliated-projects
-      :class-title: pyvista-card-title
+   .. grid-item-card:: AVNI is a CIG affiliated project
+      :link: https://geodynamics.org
+      :class-title: avni-card-title
 
-      .. image:: https://raw.githubusercontent.com/numfocus/templates/master/images/numfocus-logo.png
+      .. image:: _static/logos/CIG_logo_with_text.png
          :target: https://numfocus.org/sponsored-projects/affiliated-projects
-         :alt: NumFOCUS affiliated projects
+         :alt: CIG affiliated projects
          :height: 60px
+
 
 
 .. toctree::
    :hidden:
 
-   getting-started/index
-   user-guide/index
-   examples/index
-   api/index
-   extras/index
+   Getting Started <getting-started/index>
+   Install <install/index>
+   Documentation <overview/index>
+   API Reference <python_reference>
+   Get help <overview/get_help>
+   Development <overview/development>
 
 
 Brief Examples
@@ -78,54 +73,6 @@ might want to use AVNI:
    import avni
    print(avni.__version__)
 
-
-Maps and Geoscience
-~~~~~~~~~~~~~~~~~~~
-Download the surface elevation map of Mount St. Helens and plot it.
-
-.. jupyter-execute::
-
-   import avni
-   print(avni.__version__)
-
-
-Finite Element Analysis
-~~~~~~~~~~~~~~~~~~~~~~~
-Plot the 'X' component of elastic stress of a 3D notch specimen.
-
-.. jupyter-execute::
-
-   import avni
-   print(avni.__version__)
-
-Simple Point Cloud with Numpy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Easily integrate with NumPy and create a variety of geometries and plot
-them.  You could use any geometry to create your glyphs, or even plot
-the points directly.
-
-.. jupyter-execute::
-
-   import avni
-   print(avni.__version__)
-
-Plot a Spline
-~~~~~~~~~~~~~
-Generate a spline from an array of NumPy points.
-
-.. jupyter-execute::
-
-   import avni
-   print(avni.__version__)
-
-Boolean Operations on Meshes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Subtract a sphere from a cube mesh.
-
-.. jupyter-execute::
-
-   import avni
-   print(avni.__version__)
    
 Plot Volumetric Data
 ~~~~~~~~~~~~~~~~~~~~
@@ -139,30 +86,6 @@ Plot the :math:`3d_{xy}` orbital of a hydrogen atom.
    import avni
    print(avni.__version__)
 
-Translating
-***********
-The recommended way for new contributors to translate AVNI's
-documentation is to join the translation team on Transifex.
-
-There is a `pyvista translation page`_ for pyvista (main) documentation.
-
-1. Login to transifex_ service.
-2. Go to `pyvista translation page`_.
-3. Click ``Request language`` and fill form.
-4. Wait acceptance by transifex pyvista translation maintainers.
-5. (After acceptance) Translate on transifex.
-6. We can host the translated document in `GitHub Pages`_ by creating `GitHub repository`_.
-7. Translation is backed up in `pyvista-doc-translations`_.
-
-Details can be found here: https://docs.transifex.com/getting-started-1/translators
-
-.. _`pyvista translation page`: https://www.transifex.com/tkoyama010/pyvista-doc/
-.. _Transifex: https://www.transifex.com/
-.. _`GitHub Pages`: https://pyvista.github.io/pyvista-docs-dev-ja/index.html
-.. _`GitHub repository`: https://github.com/pyvista/pyvista-docs-dev-ja
-.. _`pyvista-doc-translations`: https://github.com/pyvista/pyvista-doc-translations
-
-
 Status
 ******
 
@@ -172,21 +95,21 @@ Status
 .. |MIT| image:: https://img.shields.io/badge/License-MIT-yellow.svg
    :target: https://opensource.org/licenses/MIT
 
-.. |PyPIact| image:: https://img.shields.io/pypi/dm/pyvista.svg?label=PyPI%20downloads
-   :target: https://pypi.org/project/pyvista/
-
-.. |discuss| image:: https://img.shields.io/badge/GitHub-Issues-green?logo=github
+.. |issues| image:: https://img.shields.io/badge/GitHub-Issues-green?logo=github
    :target: https://github.com/globalseismology/avni/issues
 
 .. |python| image:: https://img.shields.io/badge/python-3.6+-blue.svg
    :target: https://www.python.org/downloads/
+   
+.. |discuss| image:: https://img.shields.io/badge/GitHub-Discussions-green?logo=github
+   :target: https://github.com/globalseismology/avni/discussions
 
 +----------------------+----------------+-------------+
-| Deployment           | |pypi|         |  |PyPIact|  |
+| Deployment           | |pypi|         |             |
 +----------------------+----------------+-------------+
 | License              | |MIT|          |             |
 +----------------------+----------------+-------------+
-| Community            | |discuss|      |             |
+| Community            | |discuss|      |  |issues|   |
 +----------------------+----------------+-------------+
 
 
