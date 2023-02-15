@@ -33,7 +33,7 @@ research papers as well as a supporting module for other mesh
 dependent Python modules.
 
 .. |tweet| image:: https://img.shields.io/twitter/url.svg?style=social&url=http%3A%2F%2Fshields.io
-   :target: https://twitter.com/intent/tweet?text=Check%20out%20this%20project%20for%203D%20visualization%20in%20Python&url=https://github.com/pyvista/pyvista&hashtags=3D,visualization,Python,vtk,mesh,plotting,AVNI
+   :target: https://twitter.com/intent/tweet?text=Check%20out%20this%20project%20for%20Earth%20and%20other%20planets%20in%20Python&url=https://avni.globalseismology.org&hashtags=3D,visualization,Python,vtk,mesh,plotting,AVNI
 
 Share this project on Twitter: |tweet|
 
