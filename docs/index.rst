@@ -218,7 +218,7 @@ Details can be found here: https://docs.transifex.com/getting-started-1/translat
 Status
 ******
 
-.. |pypi| image:: https://img.shields.io/avni/v/avni.svg?logo=python&logoColor=white
+.. |pypi| image:: https://img.shields.io/pypi/v/avni?logo=python&logoColor=white
    :target: https://pypi.org/project/avni/
 
 .. |MIT| image:: https://img.shields.io/badge/License-MIT-yellow.svg
