@@ -474,7 +474,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'AVNI.tex', u'AVNI Documentation',
+  (master_doc, 'manual_AVNI.tex', u'AVNI Documentation',
    u'Pritwiraj (Raj) Moulik', 'manual'),
 ]
 
