@@ -14,7 +14,8 @@ make latexpdf
 make html
 
 # Move files
-#rsync -rv _build/latex/manual_AVNI.pdf pm5113@dwar.princeton.edu:~/web/docs/avni/v0.0.24/
-#rsync -rv _build/html/* pm5113@dwar.princeton.edu:~/web/docs/avni/v0.0.24
+set version = ` python -c "import avni; print(avni.__version__)" `
+rsync -rv _build/latex/manual_AVNI.pdf pm5113@dwar.princeton.edu:~/web/docs/avni/v$version/
+rsync -rv _build/html/* pm5113@dwar.princeton.edu:~/web/docs/avni/v$version
 
 echo '...files have been created. Check _build folder for .pdf and .html documentations. Note to the administrator: Open readthedocs.io to check docs through webhook or upload online.'

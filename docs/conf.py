@@ -366,7 +366,7 @@ latex_elements = {
 \makeindex[name=prmindex, title=Index of run-time parameter entries]
 \makeindex[name=prmindexfull, title=Index of run-time parameters with section names]
 
-\newcommand{\manual}{\textsc{Reference Earth Model}}
+\newcommand{\manual}{\textsc{Analysis and Visualization toolkit for plaNetary Inferences}}
     ''',
 
     'maketitle': r'''
@@ -406,8 +406,8 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % You may want to add \hspace to both sides of the codename to better center it, such as:
 % \newcommand{\codename}{\hspace{0.1in}CodeName\hspace{0.1in}}
 \hspace{0.1in}\manual{}\hspace{0.1in}} }}
-\\[12pt]
-{\Large AVNI Software User Manual}
+\\[15pt]
+{\Large Software User Manual}
 \end{center}
 
 %MAIN PICTURE%
@@ -426,7 +426,9 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont AVNI \\
 \raggedleft \huge \fontfamily{\sfdefault}\selectfont Version
 % keep the following line as is so that we can replace this using a script:
-0.1.0-pre %VERSION-INFO%
+'''+
+version+
+r''' %VERSION-INFO%
 \\\large(generated \today)\\
 {\Large Pritwiraj (Raj) Moulik}
 }
@@ -440,6 +442,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % e.g. Author One\\Author Two\\Author Three\\
 % be sure to have a newline (\\) after the final author
 \large
+\vspace{3.0em}
 \noindent with contributions by (in alphabetical order): \\
     Rene Gassmoeller,
     Chris Havlin,
@@ -447,9 +450,11 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \vspace{1.0em}
 
 {\noindent
-{\href{https://geodynamics.org}{geodynamics.org} \\ \href{https://avni.globalseismology.org}{avni.globalseismology.org}}
+{Website: \href{https://avni.globalseismology.org}{avni.globalseismology.org}}
 }
 }
+
+\vspace{3.0em}
 
 
 %LINE%
