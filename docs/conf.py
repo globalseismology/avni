@@ -17,6 +17,15 @@ import os
 import shlex
 import sphinx_fontawesome
 
+import datetime
+import faulthandler
+import locale
+
+# Otherwise VTK reader issues on some systems, causing sphinx to crash. See also #226.
+locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
+
+faulthandler.enable()
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -72,7 +81,10 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
     'sphinx_gallery.gen_gallery',
-    'sphinx_fontawesome'
+    'sphinx_fontawesome',
+    'jupyter_sphinx',
+    'sphinx_design',
+    'sphinxcontrib.youtube'
 ]
 #    'sphinxcontrib.matlab',
 
@@ -193,24 +205,24 @@ html_theme = "pydata_sphinx_theme"
 # Define the json_url for our version switcher.
 json_url = "https://pydata-sphinx-theme.readthedocs.io/en/latest/_static/switcher.json"
 
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
-   "show_prev_next": False,
-        "external_links": [
-        {
-            "url": "https://globalseismology.org/register",
-            "name": "Register",
-        },
-    ],
-    "github_url": "https://github.com/globalseismology/avni",
+    "show_prev_next": False,
+    "collapse_navigation": True,
     "icon_links": [
         {
             "name": "PyPI",
             "url": "https://pypi.org/project/avni",
             "icon": "fa-solid fa-box",
+        },
+        {
+            "name": "Support",
+            "url": "https://github.com/globalseismology/avni/discussions",
+            "icon": "fa fa-comment fa-fw",
         },
         {
             "name": "AVNI",
@@ -220,15 +232,29 @@ html_theme_options = {
             "attributes": {"target": "_blank"},
         },
     ],
-    "use_edit_page_button": True,
-    "show_toc_level": 1,
-    "navbar_center": ["version-switcher", "navbar-nav"],
+    'icon_links_label': 'External Links',  # for screen reader
+    "external_links": [
+        {
+            "url": "https://globalseismology.princeton.edu/register",
+            "name": "Register",
+        },
+    ],
+    "github_url": "https://github.com/globalseismology/avni",
+    
+    'use_edit_page_button': False,
+    'navigation_with_keys': False,
+    'show_toc_level': 1,
+    'navbar_end': ['theme-switcher', 'version-switcher', 'navbar-icon-links'],
+    'footer_items': ['copyright'],
+    'secondary_sidebar_items': ['page-toc'],
+    #'analytics': dict(google_analytics_id='G-5TBCPCRB6X'),
+    'pygment_light_style': 'default',
+    'pygment_dark_style': 'github-dark',
+    # "navbar_center": ["version-switcher", "navbar-nav"],
     # "show_nav_level": 2,
     # "navbar_start": ["navbar-logo"],
-    # "navbar_end": ["theme-switcher", "navbar-icon-links"],
     # "navbar_persistent": ["search-button"],
     # "primary_sidebar_end": ["custom-template.html", "sidebar-ethical-ads.html"],
-    "footer_items": ["copyright", "sphinx-version"],
     #"secondary_sidebar_items": ["page-toc", "edit-this-page", "sourcelink"],
     "switcher": {
         "json_url": json_url,

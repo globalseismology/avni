@@ -262,22 +262,51 @@ dependencies:
   - zstd=1.5.2=h8a70e8d_2
   - pip:
     - argparse==1.4.0
+    - attrs==22.2.0
     - beautifulsoup4==4.11.2
+    - bleach==6.0.0
     - configobj==5.0.6
+    - debugpy==1.6.6
+    - defusedxml==0.7.1
+    - entrypoints==0.4
+    - fastjsonschema==2.16.2
     - fortranformat==1.2.0
     - h5py==3.8.0
+    - importlib-resources==5.10.2
+    - ipykernel==6.16.2
+    - ipywidgets==8.0.4
     - joblib==1.1.0
+    - jsonschema==4.17.3
+    - jupyter-client==7.4.9
+    - jupyter-core==4.12.0
+    - jupyter-sphinx==0.4.0
+    - jupyterlab-pygments==0.2.2
+    - jupyterlab-widgets==3.0.5
     - llvmlite==0.39.1
+    - mistune==2.0.5
     - msgpack==1.0.4
+    - nbclient==0.7.2
+    - nbconvert==7.2.9
+    - nbformat==5.7.3
+    - nest-asyncio==1.5.6
     - numba==0.56.4
+    - pandocfilters==1.5.0
     - pint==0.18
+    - pkgutil-resolve-name==1.3.10
     - progressbar2==4.0.0
-    - pydata-sphinx-theme==0.8.1
+    - psutil==5.9.4
+    - pydata-sphinx-theme==0.12.0
     - pygeodesy==23.1.9
+    - pyrsistent==0.19.3
     - python-utils==3.3.3
+    - pyzmq==25.0.0
     - soupsieve==2.4
     - sphinx==4.5.0
-    - sphinx-book-theme==0.3.3
+    - sphinx-design==0.3.0
     - sphinx-fontawesome==0.0.6
     - sphinx-gallery==0.11.1
-
+    - sphinxcontrib-youtube==1.2.0
+    - tinycss2==1.2.1
+    - tornado==6.2
+    - webencodings==0.5.1
+    - widgetsnbextension==4.0.5

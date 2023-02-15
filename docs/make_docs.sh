@@ -1,6 +1,9 @@
-#!/bin/csh
+#!/bin/tcsh
 
 # NOTE: Only for administrator. This is for publishing to pypi and readthedocs.
+
+conda activate avni-doc
+
 # First check avni/version.py then upload to server
 #python ../setup.py sdist upload -r pypitest
 # Update avni module locally
@@ -10,7 +13,7 @@
 sphinx-apidoc -o api/ ../avni
 
 #Make the html and pdf versions in local /docs/_build directory
-make latexpdf
+#make latexpdf
 make html
 
 # Move files

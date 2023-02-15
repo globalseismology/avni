@@ -3,9 +3,8 @@
 .. raw:: html
 
     <div class="banner">
-        <a href="./examples/index.html"><center><img src="_static/pyvista_logo.png" alt="pyvista" width="75%"/></a>
-        <h3>3D plotting and mesh analysis through a streamlined interface for the Visualization Toolkit (VTK)</h2>
-        <a href="./examples/index.html"><img src="_static/pyvista_banner_small.png" alt="pyvista" width="100%"/></a>
+        <a href="./examples/index.html"><center><img src="_static/logo_avni_color.png" alt="avni" width="30%"/></a>
+        <h2>Analysis and Visualization toolkit for plaNetary Inferences</h2>
     </div>
 
 |
@@ -76,13 +75,8 @@ might want to use AVNI:
    :hide-code:
 
    # Configure for panel
-   import pyvista
-   pyvista.set_jupyter_backend('panel')
-   pyvista.global_theme.background = 'white'
-   pyvista.global_theme.window_size = [600, 400]
-   pyvista.global_theme.axes.show = False
-   pyvista.global_theme.smooth_shading = True
-   pyvista.global_theme.anti_aliasing = 'fxaa'
+   import avni
+   print(avni.__version__)
 
 
 Maps and Geoscience
@@ -91,12 +85,8 @@ Download the surface elevation map of Mount St. Helens and plot it.
 
 .. jupyter-execute::
 
-    from pyvista import examples
-    mesh = examples.download_st_helens()
-    warped = mesh.warp_by_scalar('Elevation')
-    surf = warped.extract_surface().triangulate()
-    surf = surf.decimate_pro(0.75)  # reduce the density of the mesh by 75%
-    surf.plot(cmap='gist_earth')
+   import avni
+   print(avni.__version__)
 
 
 Finite Element Analysis
@@ -105,10 +95,8 @@ Plot the 'X' component of elastic stress of a 3D notch specimen.
 
 .. jupyter-execute::
 
-   from pyvista import examples
-   mesh = examples.download_notch_stress()
-   mesh.plot(scalars='Nodal Stress', component=0, cmap='turbo', cpos='xy')
-
+   import avni
+   print(avni.__version__)
 
 Simple Point Cloud with Numpy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,18 +106,8 @@ the points directly.
 
 .. jupyter-execute::
 
-    import numpy as np
-    import pyvista
-
-    point_cloud = np.random.random((100, 3))
-    pdata = pyvista.PolyData(point_cloud)
-    pdata['orig_sphere'] = np.arange(100)
-
-    # create many spheres from the point cloud
-    sphere = pyvista.Sphere(radius=0.02, phi_resolution=10, theta_resolution=10)
-    pc = pdata.glyph(scale=False, geom=sphere, orient=False)
-    pc.plot(cmap='Reds')
-
+   import avni
+   print(avni.__version__)
 
 Plot a Spline
 ~~~~~~~~~~~~~
@@ -137,20 +115,8 @@ Generate a spline from an array of NumPy points.
 
 .. jupyter-execute::
 
-    import numpy as np
-    import pyvista
-
-    # Make the xyz points
-    theta = np.linspace(-10 * np.pi, 10 * np.pi, 100)
-    z = np.linspace(-2, 2, 100)
-    r = z**2 + 1
-    x = r * np.sin(theta)
-    y = r * np.cos(theta)
-    points = np.column_stack((x, y, z))
-
-    spline = pyvista.Spline(points, 500).tube(radius=0.1)
-    spline.plot(scalars='arc_length', show_scalar_bar=False)
-
+   import avni
+   print(avni.__version__)
 
 Boolean Operations on Meshes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -158,25 +124,9 @@ Subtract a sphere from a cube mesh.
 
 .. jupyter-execute::
 
-    import pyvista
-    import numpy as np
-
-    def make_cube():
-        x = np.linspace(-0.5, 0.5, 25)
-        grid = pyvista.StructuredGrid(*np.meshgrid(x, x, x))
-        surf = grid.extract_surface().triangulate()
-        surf.flip_normals()
-        return surf
-
-    # Create example PolyData meshes for boolean operations
-    sphere = pyvista.Sphere(radius=0.65, center=(0, 0, 0))
-    cube = make_cube()
-
-    # Perform a boolean difference
-    boolean = cube.boolean_difference(sphere)
-    boolean.plot(color='darkgrey', smooth_shading=True, split_sharp_edges=True)
-
-
+   import avni
+   print(avni.__version__)
+   
 Plot Volumetric Data
 ~~~~~~~~~~~~~~~~~~~~
 Plot the :math:`3d_{xy}` orbital of a hydrogen atom.
@@ -186,10 +136,8 @@ Plot the :math:`3d_{xy}` orbital of a hydrogen atom.
 
 .. jupyter-execute::
 
-    from pyvista import examples
-    grid = examples.load_hydrogen_orbital(3, 2, -2)
-    grid.plot(volume=True, opacity=[1, 0, 1], cmap='magma')
-
+   import avni
+   print(avni.__version__)
 
 Translating
 ***********
