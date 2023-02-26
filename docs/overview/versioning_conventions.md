@@ -1,5 +1,5 @@
 Versioning conventions
-----------------------
+======================
 
 Version tagging is based on a `major.minor.patch` numbering scheme following Semantic Versioning Specification ([SemVer](https://semver.org)).
 

@@ -122,7 +122,7 @@ typing ``--channel=conda-forge`` with each ``conda install`` command).
 
 It is also possible to use a system-level installation of Python (version
 |min_python_version| or higher) and use ``pip`` to install AVNI and its
-dependencies, using the provided `requirements file`_:
+dependencies, using the provided requirements file:
 
 .. code-block:: console
 

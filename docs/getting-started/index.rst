@@ -128,7 +128,7 @@ Support
 =======
 
 For general questions about the project, its applications, or about software
-usage, please create a discussion in |discuss|
+usage, please create a discussion in `AVNI Forum`_
 where the community can collectively address your questions. You are also send one of the developers an email.
 The project support team can be reached at `avni@globalseismology.org`_.
 

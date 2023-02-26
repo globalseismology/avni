@@ -34,4 +34,5 @@ The documentation for AVNI is divided into three main sections:
    :hidden:
 
    design_philosophy
+   CODE_OF_CONDUCT
    cite

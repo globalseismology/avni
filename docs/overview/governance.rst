@@ -43,7 +43,7 @@ relationships with legal entities.
 Community Effort
 ================
 
-AVNI software ecosystem (The Project) is part of the the community effort to
+AVNI software ecosystem (The Project) is part of the wider community effort to
 create a three-dimensional reference Earth model `REM3D
 <REM3D_>`_. A description
 of the REM3D project is provided in :footcite:`moulik_rem_surface_waves`, and a complete

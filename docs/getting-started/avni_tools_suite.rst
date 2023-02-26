@@ -1,7 +1,7 @@
 .. include:: ../links.inc
 
 Overview of the AVNI tools suite
-===============================
+================================
 
 AVNI is an open-source Python module for processing, analysis, and
 visualization of functional neuroimaging data (EEG, MEG, sEEG, ECoG, and

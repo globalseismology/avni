@@ -6,6 +6,11 @@ Contributing guide
 .. include:: ../links.inc
 .. highlight:: console
 
+.. note:: If you do not already have one, you will need to open a free account
+   on `github`_. You might also need to create an account on our `Web
+   site <http://globalseismology.org/register>`__ for API access.
+   Please feel free to reaching out to us at `avni@globalseismology.org`_.
+
 Thanks for taking the time to contribute! AVNI is an open-source project
 sustained mostly by volunteer effort. We welcome contributions from anyone as
 long as they abide by our `Code of Conduct`_.
@@ -52,9 +57,9 @@ possible.
 
 
 Overview of the contribution process
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. note:: Reminder: all contributors are expected to follow our
+.. warning:: Reminder: all contributors are expected to follow our
           `code of conduct`_.
 
 Changes to AVNI are typically made by `forking`_ the AVNI
@@ -146,7 +151,7 @@ official version of AVNI (often called the "upstream version") through a
 "pull request". This process will be described in detail below; a summary
 of how that structure is set up is given here:
 
-.. graphviz:: ../_static/diagrams/git_setup.dot
+.. image:: ../_static/diagrams/git_setup_AVNI.png
    :alt: Diagram of recommended git setup
    :align: left
 
@@ -373,6 +378,74 @@ advice about how to fix them.
 To learn more about git, check out the `GitHub help`_ website, the `GitHub
 skills`_ tutorial series, and the `pro git book`_.
 
+Regular daily git usage
+~~~~~~~~~~~~~~~~~~~~~~~
+
+A typical workflow on a given workda involves the following steps in sequence on
+your local machine:
+
+-  update your copy of the repository::
+
+       $ git pull
+
+-  if you get conflicts when doing so (i.e. if local changes you have
+   made conflict with changes made by others on the same line of the
+   same file of the source code), a powerful way of resolving them is to
+   type this: (*meld* needs to be installed on your system; if it is
+   not, you can install it with *apt-get install meld* or similar)::
+
+       $ git mergetool --tool=meld
+
+-  make some changes to any file you want using your favorite editor (in
+   the line below we use ``vi`` as an example)::
+
+       $ vim some_file.f90
+
+-  commit your changes locally, adding a very short message (one line)
+   explaining what you have changed; it is recommended to do a git pull
+   right before that in order to make sure that your local copy is
+   up-to-date::
+
+       $ git pull ; git commit -a -m "Explain your commit"
+
+-  if you get conflicts when committing your changes (i.e. if your
+   changes conflict with changes made by others on the same line of the
+   same file of the source code), a powerful way of resolving them is to
+   type this: (`meld <http://meldmerge.org>`__ needs to be installed on
+   your system; if it is not, you can install it with *yum install meld*
+   in Linux, download MacOS version from `this webpage <https://yousseb.github.io/meld>`__.
+   )::
+
+       $ git mergetool --tool=meld
+
+-  (optional) if you want to check what has changed (and thus what will
+   be committed) before typing the ``git commit`` above, you can type
+   one or both of these two commands::
+
+       $ git status -s
+       $ git diff
+
+-  push your changes to your GitHub fork; it is recommended to do a git
+   pull right before that in order to make sure that your local copy is
+   up-to-date::
+
+       $ git pull ; git push
+
+-  Create a pull-request to get your changes into the main repository
+   (this is needed only once for each change; if you are fixing an
+   existing change after receiving an error message from our BuildBot
+   code-consistency checking system, you need the "git push" above again
+   but you do NOT need to create a pull request a second time); it is
+   recommended to do a git pull right before that in order to make sure
+   that your local copy is up-to-date::
+
+       $ git pull ; git pull-request
+
+*Note (optional):* It is not strictly necessary to create a pull request
+for *every* commit you make if you do not want to, you can safely submit
+pull requests after making a few commits instead if you prefer. However,
+it also does not hurt to do so.
+
 
 .. _github-ssh:
 
@@ -386,7 +459,7 @@ while the public half of your key pair is added to your GitHub account; when
 you connect to GitHub from your computer, the local git client checks the
 remote (public) key against your local (private) key, and grants access your
 account only if the keys fit. GitHub has `several help pages`_ that guide you
-through the process.
+through the process. As of the date of writing this document,
 
 Once you have set up GitHub to use SSH authentication, you should change the
 addresses of your AVNI GitHub remotes, from ``https://`` addresses to
@@ -396,6 +469,7 @@ example::
     $ git remote -v  # show existing remote addresses
     $ git remote set-url origin git@github.com:$GITHUB_USERNAME/avni.git
     $ git remote set-url upstream git@github.com:globalseismology/avni.git
+
 
 
 AVNI coding conventions
@@ -524,6 +598,20 @@ defined but never used). We allow very few exceptions to these guidelines, and
 use tools such as pep8_, pyflakes_, and flake8_ to check code style
 automatically.
 
+When modifying an existing file, try to maintain consistency with its
+original style. If the code you add looks drastically different from the
+original code, it may be difficult for readers to follow. Try to avoid
+this. Please give space for breathing by use 4 spaces instead of tabs:
+
+good
+```{code-block} python
+dx = 0.5 \* fac \* (a - b)
+```
+
+bad
+```{code-block} python
+dx=1/2\ *fac*\ (a-b)
+```
 
 Use consistent variable naming
 ------------------------------
@@ -541,7 +629,9 @@ In most cases you can look at existing AVNI docstrings to figure out how
 yours should be formatted. If you can't find a relevant example, consult the
 `Numpy docstring style guidelines`_ for examples of more complicated formatting
 such as embedding example code, citing references, or including rendered
-mathematics.  Note that we diverge from the NumPy docstring standard in a few
+mathematics.
+
+Note that we diverge from the NumPy docstring standard in a few
 ways:
 
 1. We use a module called ``sphinxcontrib-bibtex`` to render citations. Search
@@ -560,9 +650,10 @@ ways:
 4. We don't include a ``Raises`` or ``Warns`` section describing
    errors/warnings that might occur.
 
-
 Other style guidance
 --------------------
+
+- Guidelines for formatting in Fortran is provided
 
 - Use single quotes whenever possible.
 
@@ -589,7 +680,9 @@ Importing
 Import modules in this order, preferably alphabetized within each subsection:
 
 1. Python built-in (``copy``, ``functools``, ``os``, etc.)
+
 2. NumPy (``numpy as np``) and, in test files, pytest (``pytest``)
+
 3. AVNI imports (e.g., ``from .pick import pick_types``)
 
 When importing from other parts of AVNI, use relative imports in the main

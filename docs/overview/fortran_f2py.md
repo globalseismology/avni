@@ -1,5 +1,159 @@
-Fortran Troubleshooting
---------------------
+# Fortran Guidelines
+
+
+## Coding style
+
+When modifying an existing file, try to maintain consistency with its original style.  If the code you add looks drastically different from the original code, it may be difficult for readers to follow. Try to avoid this. As a general guideline, we recommend the following code formatting style:
+
+**give space for breathing:**
+
+good
+~~~fortran
+  dx = 0.5 * fac * (a - b)
+~~~
+
+bad
+~~~fortran
+  dx=1/2*fac*(a-b)
+~~~
+
+Note that in performance critical sections, please use multiplication by 0.5 rather than divide by 2 for floating-points.
+
+**use consistent 2-space indents:**
+
+good
+~~~fortran
+  if (i == 1) then
+    print *,'great'
+  endif
+~~~
+
+bad
+~~~fortran
+  if(i == 1)then
+        print *,'not so great'
+  endif
+~~~
+
+**start your code with an indent:**
+
+good
+~~~fortran
+  subroutine vbspl()
+  implicit none
+  ..
+~~~
+
+bad
+~~~fortran
+subroutine vbspl
+  implicit none
+  ..
+~~~
+
+The line beginning should only be used for *very important* sections, as it makes the line *very prominent* to read.
+For example, only use it for function descriptions, important comments, or file headers. For comments, see also next point...
+
+*exception, module definitions start at beginning:*
+
+good
+~~~fortran
+module models
+  integer :: count
+end module
+~~~
+
+bad
+~~~fortran
+  module models
+  integer :: count
+  end module
+~~~
+
+**comment, comment, comment your code:**
+
+good
+~~~fortran
+  ! gets associated values
+  fg = vbspl(4,2)
+
+  ! find values
+  gt = fg
+~~~
+
+bad
+~~~fortran
+  fg = vbspl(4,2)
+~~~
+
+Note we prefer indenting the comments as well to make it easier for reading the code, e.g., when inside multiple if-then statements. Putting the comment at the beginning breaks the flow.
+
+**comment, comment, comment your functions:**
+
+good
+~~~fortran
+  subroutine blah_blah_function()
+
+! calculates TI gradient based on a conjugate gradient method
+!
+! based on: Tarantola, inverse problem theory, 2005.
+!                  section 6.22.7 conjugate directions, page 217.
+!                  formula for alpha_n based on Polak & Ribiere (1969)
+!
+! note: we use a preconditioner F_0 = 1, thus lambda_n = gamma_n in (6.322)
+!          and use gamma_n as the smoothed kernel (for bulk_c, bulk_betav,..).
+
+  ..
+~~~
+
+bad
+~~~fortran
+  subroutine blah_blah_function()
+
+! computation step
+
+  ..
+~~~
+
+Note that we haven't been very strict in adopting a doxygen-readable function declaration.
+
+**use double-colons for parameter declarations:**
+
+good
+~~~fortran
+  integer :: i,j,k
+~~~
+
+bad
+~~~fortran
+  integer i,j,k
+~~~
+
+**use separators between subroutines:**
+
+good
+~~~fortran
+  ..
+  end subroutine
+
+!
+!----------------------------------------------------------
+!
+
+  subroutine get_color(icolor)
+  ..
+~~~
+
+bad
+~~~fortran
+  ..
+end subroutine
+
+subroutine get_color(icolor)
+  ..
+~~~
+
+## F2PY Troubleshooting
 
 :::{warning}
 AVNI used [F2PY](https://numpy.org/doc/stable/f2py/) to wrap legacy Python code by building from source code using the `numpy.distutils`. This requires restricting the versions to `numpy<=1.22` and `setuptools<60.0` in `setup.py` following [this link](https://numpy.org/doc/stable/reference/distutils_status_migration.html#moving-to-setuptools). Ultimately, AVNI will be migrated to use the latest version of the `setuptools` package.
