@@ -1,10 +1,10 @@
-# AVNI - A toolkit for analyzing and interpreting reference Earth models and data sets
+# AVNI - Analysis and Visualization toolkit for plaNetary Inferences
 
 <img src="https://portal.globalseismology.org/docs/avni/stable/_static/logos/logo_avni_color_withname.png" width="256">
 
 ## About
 
-AVNI is a Python library for analyzing and interpreting reference Earth models and data sets. The development version has legacy routines in C and Fortran as well, which are interfaced with Python subroutines. Some installation files as well as applets and API access require registration on our [homepage](http://globalseismology.org/register).
+AVNI is a software ecosystem for analyzing and interpreting planetary models and data sets that were initially designed or the three-dimensional reference Earth model project [REM3D](https://rem3d.org). The codes are primary written in Python with interfaces to legacy routines in C and Fortran. Some installation files as well as applets and API access require registration on the AVNI Homepage below.
 
 **Homepage**: [avni.globalseismology.org](http://avni.globalseismology.org)
 
