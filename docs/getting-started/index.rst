@@ -1,3 +1,5 @@
+.. include:: ../links.inc
+
 Getting Started
 ***************
 
@@ -38,9 +40,13 @@ with the help of our examples and tutorials.
    why
    authors
    installation
-   connections
    external_examples
-
+   installers
+   manual_install
+   advanced
+   check_installation
+   updating
+   avni_tools_suite
 
 Installation
 ============
@@ -65,13 +71,46 @@ the `Anaconda Distribution <https://www.anaconda.com/>`_.
        :columns: auto
        :class-title: avni-card-title
 
-       AVNI can be installed via pip from `PyPI
-       <https://pypi.org/project/avni>`__.
+       AVNI can be installed via pip from `PyPI`_.
 
        .. code-block:: bash
 
           pip install avni
 
+
+.. when https://github.com/executablebooks/sphinx-design/issues/66 is fixed,
+   prepend |cloud-arrow-down| |ensp| to the "Download installers" button text
+   and |wrench| |ensp| to the "Setup instructions" button text
+
+.. grid:: 2
+
+
+    .. grid-item-card::
+        :text-align: center
+
+        .. rst-class:: font-weight-bold mb-0
+
+            Install via ``pip`` or ``conda``
+
+        .. rst-class:: card-subtitle text-muted mt-0
+
+            For Advanced Users
+
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        .. image:: ../_static/avni_installer_console.png
+           :alt: Terminal Window
+
+        **Already familiar with Python?**
+        Follow our advanced setup instructions for ``pip`` and ``conda``!
+        +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        .. button-ref:: manual-install
+            :ref-type: ref
+            :color: primary
+            :shadow:
+            :class: font-weight-bold
+
+            Setup Instructions
 
 .. grid::
 
@@ -84,100 +123,20 @@ the `Anaconda Distribution <https://www.anaconda.com/>`_.
       :ref:`install_ref` page.
 
 
-First Steps
-===========
-We've provided a variety of resources for you to get used to AVNI's API
-through a range of examples and tutorials.
-
-
-.. grid::
-
-   .. grid-item-card:: Tutorial
-      :link: https://tutorial.avni.org/tutorial.html
-      :class-title: avni-card-title
-
-      Probably the best way for you to get used to AVNI is to visit our
-      dedicated `tutorial <https://tutorial.avni.org/tutorial.html>`_.
-
-..
-   This code is used in the plot in the card.
-
-.. avni-plot::
-   :include-source: False
-   :context:
-
-   >>> bunny_cpos = [( 0.14826, 0.275729,  0.4215911),
-   ...               (-0.01684, 0.110154, -0.0015369),
-   ...               (-0.15446, 0.939031, -0.3071841)]
-
-
-.. grid:: 2
-
-   .. grid-item-card:: Why AVNI?
-      :link: why_avni
-      :link-type: ref
-      :class-title: avni-card-title
-
-      Learn more about why we created AVNI as an interface to the
-      Visualization Toolkit (VTK).
-
-      .. code:: python
-
-         import avni
-         mesh = avni.read('bunny.stl')
-         mesh.plot()
-
-      .. avni-plot::
-         :include-source: False
-         :context:
-
-         from avni import examples
-         mesh = examples.download_bunny()
-         mesh.plot(cpos=bunny_cpos, anti_aliasing='ssao')
-
-
-   .. grid-item-card:: Authors & Citation
-      :link: authors_ref
-      :link-type: ref
-      :class-title: avni-card-title
-
-      Using AVNI in your research? Please consider citing or acknowledging
-      us.  We have a `JOSS Publication`_!
-
-      .. image:: ../images/user-generated/joss.png
-         :target: https://joss.theoj.org/papers/10.21105/joss.01450
-
-.. grid::
-
-   .. grid-item-card:: See AVNI in External Efforts
-      :link: external_examples
-      :link-type: ref
-      :class-title: avni-card-title
-
-      Take a look at third party projects using AVNI.
-
 
 Support
 =======
 
 For general questions about the project, its applications, or about software
-usage, please create a discussion in `avni/discussions`_
-where the community can collectively address your questions. You are also
-welcome to join us on Slack_ or send one of the developers an email.
-The project support team can be reached at `info@avni.org`_.
-
-.. _avni/discussions: https://github.com/avni/avni/discussions
-.. _Slack: http://slack.avni.org
-.. _info@avni.org: mailto:info@avni.org
+usage, please create a discussion in |discuss|
+where the community can collectively address your questions. You are also send one of the developers an email.
+The project support team can be reached at `avni@globalseismology.org`_.
 
 
 Citing AVNI
 ==============
 
-There is a `paper about AVNI <https://doi.org/10.21105/joss.01450>`_!
 
 If you are using AVNI in your scientific research, please help our scientific
-visibility by citing our work! Head over to :ref:`citation_ref` to learn more
+visibility by citing our work! Head over to :ref:`cite` page to learn more
 about citing AVNI.
-
-.. _JOSS Publication: https://joss.theoj.org/papers/10.21105/joss.01450

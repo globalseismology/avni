@@ -1,0 +1,26 @@
+<!-- sponsors -->
+<div class="container my-4">
+  <p class="h4 text-center font-weight-light">Sponsors</p>
+  <div id="sponsor-logos" class="d-flex flex-wrap flex-row justify-content-center align-items-center">
+    {% for item in sponsors -%}
+      <div class="card my-1 mx-2 {{ item.klass }}" style="{{ 'width: ' + item.size + 'rem;' }}">
+        <a href="{{ pathto('index.html', 1) }}">
+            <img class="card-img institution" src="{{ pathto('_static/sponsors/' + item.img, 1) }}" title="{{ item.title }}" alt="{{ item.title }}">
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+<!-- contributors -->
+<div class="container my-4">
+  <p class="h4 text-center font-weight-light">Contributing institutions</p>
+  <div id="institution-logos" class="d-flex flex-wrap flex-row justify-content-center align-items-center">
+    {% for inst in institutions -%}
+      <div class="card my-1 mx-2 {{ inst.klass }}" style="{{ 'width: ' + inst.size + 'rem;' }}">
+        <a href="{{ inst.url }}">
+          <img class="card-img institution" src="{{ pathto('_static/institution_logos/' + inst.img, 1) }}" title="{{ inst.name }}" alt="{{ inst.name }}"/>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+</div>
