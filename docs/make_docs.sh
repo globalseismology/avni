@@ -2,7 +2,7 @@
 
 # NOTE: Only for administrator. This is for publishing to pypi and readthedocs.
 
-conda activate avni-doc
+conda activate avni-docs
 
 # First check avni/version.py then upload to server
 #python ../setup.py sdist upload -r pypitest

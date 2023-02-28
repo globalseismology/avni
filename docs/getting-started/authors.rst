@@ -1,29 +1,48 @@
 Authors & Citation
 ==================
 
-PyVista is an open-source project with a community of contributors.
-While many of PyVista's contributors are listed in the :ref:`authors_ref`
-section, please be sure to head over to the `Contributors Graph`_.
+AVNI is an open-source project with a community of contributors.
 
-.. _Contributors Graph: https://github.com/pyvista/pyvista/graphs/contributors/
+.. dropdown:: List of contributors
+    :color: info
+    :icon: typography
+
+    .. include:: ../../AUTHORS
+      :literal:
+
+.. _cite:
+
+Citing the software
+-------------------
+
+To cite specific version numbers of the software, you can use the DOIs provided
+by `Zenodo <https://doi.org>`_. Additionally, we request that
+when citing the AVNI package, you cite the canonical journal article
+reference :footcite:`Moulik_etal_2023_AVNI`:
+
+.. footbibliography::
+
+.. dropdown:: BibTeX for AVNI
+    :color: info
+    :icon: typography
+
+    .. include:: ../references.bib
+        :code: bibtex
+        :start-after: % AVNI reference
+        :end-before: % everything else
 
 
-.. note::
+Citing other algorithms
+-----------------------
 
-  PyVista stands on the shoulders of giants, namely the Visualization Toolkit
-  (VTK) and NumPy. We owe so many thanks to the companies and communities that
-  have worked diligently to build the software stack that makes PyVista
-  possible.
-
-
-.. include:: ../../CITATION.rst
-
-
-.. include:: ../../AUTHORS.rst
-
+Depending on your research topic, it may also be appropriate to cite related
+method papers, some of which are listed in the documentation strings of the
+relevant functions or methods. All references cited in the AVNI codebase
+and documentation are collected in the :ref:`general_bibliography`.
 
 
 License
 -------
 
 .. include:: ../../LICENSE
+   :literal:

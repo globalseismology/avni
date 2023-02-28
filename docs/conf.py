@@ -15,7 +15,6 @@
 import sys
 import os
 import shlex
-import sphinx_fontawesome
 
 from datetime import datetime, timezone
 from dateutil import tz
@@ -71,7 +70,9 @@ sys.path.append(os.path.abspath(os.path.join(curdir, 'sphinxext')))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "myst_parser",
+    'nbsphinx',
+    'sphinx_gallery.load_style',
+    'myst_parser',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
@@ -81,7 +82,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'numpydoc',
-    'sphinx.ext.ifconfig',
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
@@ -110,13 +110,13 @@ myst_enable_extensions = [
 # Sphinx Gallery config
 sphinx_gallery_conf = {
     # path to your example scripts
-    #'examples_dirs': ['../examples/Notebooks'],
+    #'examples_dirs': ['../examples/Scripts'],
     # path to where to save gallery generated output
-    'gallery_dirs': ["tutorials"],
+    'gallery_dirs': ["overview/scripts"],
     # Checks matplotlib for figure creation
     'image_scrapers': ('matplotlib'),
     # Which files to include
-    'filename_pattern': r"\.py"
+    #'filename_pattern': r"\.py"
 }
 
 

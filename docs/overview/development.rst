@@ -79,7 +79,6 @@ or see our `FAQ <faq.html>`__ for more details.
 .. toctree::
    :hidden:
 
-   governance
    contributing
    ../whats_new
    MyST_quickref

@@ -13,7 +13,7 @@ Contributing guide
 
 Thanks for taking the time to contribute! AVNI is an open-source project
 sustained mostly by volunteer effort. We welcome contributions from anyone as
-long as they abide by our `Code of Conduct`_.
+long as they abide by our `code of conduct <CODE_OF_CONDUCT.html>`_.
 
 There are several ways to contribute:
 
@@ -59,7 +59,7 @@ Overview of the contribution process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. warning:: Reminder: all contributors are expected to follow our
-          `code of conduct`_.
+          `code of conduct <CODE_OF_CONDUCT.html>`_.
 
 Changes to AVNI are typically made by `forking`_ the `AVNI GitHub`_
 repository, making changes to your fork (usually by `cloning`_ it to your
