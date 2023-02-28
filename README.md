@@ -1,12 +1,14 @@
 # AVNI - Analysis and Visualization toolkit for plaNetary Inferences
 
-<img src="https://portal.globalseismology.org/docs/avni/stable/_static/logos/logo_avni_color_withname.png" width="256">
+<img src="https://portal.globalseismology.org/docs/avni/stable/_static/logos/logo_avni_color_withname.png" width="512">
 
 ## About
 
 AVNI is a software ecosystem for analyzing and interpreting planetary models and data sets that were initially designed or the three-dimensional reference Earth model project [REM3D](https://rem3d.org). The codes are primary written in Python with interfaces to legacy routines in C and Fortran. Some installation files as well as applets and API access require registration on the AVNI Homepage below.
 
-**Homepage**: [avni.globalseismology.org](http://avni.globalseismology.org)
+**ReadTheDocs**: [ReadTheDocs](https://portal.globalseismology.org/docs/avni)
+
+**Project Homepage**: [avni.globalseismology.org](http://avni.globalseismology.org)
 
 **Source code**: [github](https://github.com/globalseismology/avni)
 
@@ -56,5 +58,7 @@ This software is published under the GNU GPL v3 license - see the [LICENSE](LICE
 ## Acknowledgments
 
 * Funded by the [National Science Foundation](http://nsf.gov) and the [Computational Infrastructure for Geodynamics](http://geodynamics.org).
-* A project like this one is a culmination of feedback and input from several excellent [colleagues and organizations](https://globalseismology.princeton.edu/about/people). We thank members of the open source and Earth Science community for their input and non-Github contributions.
+* A project like this one is a culmination of feedback and input from several excellent [colleagues and organizations](https://globalseismology.princeton.edu/about/people). We thank members of the open source and Earth Science communities for their input and non-Github contributions.
 * Computational resources maintained by Princeton University accessible through the [AVNI website](http://avni.globalseismology.org). We thank the system administrators for assistance.
+
+<img src="https://portal.globalseismology.org/docs/avni/stable/_static/NSF.png" width="100"> &nbsp; &nbsp; &nbsp; &nbsp; <img src="https://portal.globalseismology.org/docs/avni/stable/_static/CIG_logo.png" width="200"> &nbsp; &nbsp; &nbsp; &nbsp; <img src="https://portal.globalseismology.org/docs/avni/stable/_static/logos/PU-standard.png" width="325">

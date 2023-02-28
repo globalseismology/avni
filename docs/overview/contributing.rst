@@ -15,26 +15,26 @@ Thanks for taking the time to contribute! AVNI is an open-source project
 sustained mostly by volunteer effort. We welcome contributions from anyone as
 long as they abide by our `Code of Conduct`_.
 
-There are lots of ways to contribute, such as:
+There are several ways to contribute:
 
 .. rst-class:: icon-bullets
 
 - |computer-mouse| Use the software, and when you find bugs, tell us about them!
 - |bug-slash| Fix bugs on your own.
-- |comment| Tell us about parts of the documentation that you find confusing or
+- |comment| Tell `AVNI Forum`_ about parts of the documentation that you find confusing or
   unclear.
-- |hand-sparkles| Tell us about things you wish AVNI could do.
+- |hand-sparkles| Tell `AVNI Forum`_ about things you wish AVNI could do.
 - |discourse| Answer questions on the `AVNI Forum`_.
 - |text-slash| Fix mistakes or add notes in our function documentation strings.
-- |wand-magic-sparkles| Implement new features.
 - |pencil| Improve existing tutorials or write new ones.
+- |wand-magic-sparkles| Implement new features.
 
-To *report* bugs, *request* new features, or *ask about* confusing
-documentation, it's usually best to open a new issue on `AVNI Forum`_
-first; you'll probably get help fastest that way, and it helps keep our GitHub
-issue tracker focused on things that we *know* will require changes to our
+In order to *report* bugs, *request* new features, or *ask about* confusing
+documentation, it's best to open a new issue on the `AVNI Forum`_.
+You will get help fastest that way, and it helps keep our `GitHub issues page`_
+focused on things that we *know* will require changes to our
 software (as opposed to problems that can be fixed in the user's code). We may
-ultimately ask you to open an issue on GitHub too, but starting on the forum
+ultimately ask you to open an issue on the `GitHub issues page`_ too, but starting on the forum
 helps us keep things organized. For fastest results, be sure to include
 information about your operating system and AVNI version, and (if
 applicable) include a reproducible code sample that is as short as possible.
@@ -42,8 +42,7 @@ applicable) include a reproducible code sample that is as short as possible.
 If you want to *fix* bugs, *add* new features, or *improve* our
 docstrings/tutorials/website, those kinds of contributions are made through
 `our GitHub repository <AVNI GitHub_>`_. The rest of this page explains
-how to set up your workflow to make contributing via GitHub as easy as
-possible.
+how to set up your workflow to make contributing via GitHub seamless.
 
 
 .. dropdown:: Want an example to work through?
@@ -62,7 +61,7 @@ Overview of the contribution process
 .. warning:: Reminder: all contributors are expected to follow our
           `code of conduct`_.
 
-Changes to AVNI are typically made by `forking`_ the AVNI
+Changes to AVNI are typically made by `forking`_ the `AVNI GitHub`_
 repository, making changes to your fork (usually by `cloning`_ it to your
 personal computer, making the changes locally, and then `pushing`_ the local
 changes up to your fork on GitHub), and finally creating a `pull request`_ to incorporate
@@ -93,7 +92,7 @@ Setting up your local development environment
 Configuring git
 ~~~~~~~~~~~~~~~
 
-.. note:: Git GUI alternative
+.. note::
     :class: sidebar
 
     `GitHub desktop`_ is a GUI alternative to command line git that some users
@@ -130,7 +129,7 @@ emails, you can add the local email to the GitHub account.
 Sooner or later, git is going to ask you what text editor you want it to use
 when writing commit messages, so you might as well configure that now too::
 
-   $ git config --global core.editor emacs    # or vim, or nano, or subl, or...
+   $ git config --global core.editor vim    # or vim, or nano, or subl, or...
 
 There are many other ways to customize git's behavior; see `configuring git`_
 for more information.
@@ -171,9 +170,9 @@ Creating the virtual environment
 
 These instructions will set up a Python environment that is separated from your
 system-level Python and any other managed Python environments on your computer.
-This lets you switch between different versions of Python (AVNI requires
-version 3.7 or higher) and also switch between the stable and development
-versions of AVNI (so you can, for example, use the same computer to
+This lets you switch between different versions of Python (AVNI version |version|
+requires Python version |min_python_version| or higher) and also switch between
+the stable and development versions of AVNI (so you can, for example, use the same computer to
 analyze your data with the stable release, and also work with the latest
 development version to fix bugs or add new features). Even if you've already
 followed the :ref:`installation instructions <install-python>` for the stable

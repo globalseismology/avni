@@ -17,8 +17,9 @@
 .. _`AVNI Hubzero`: https://geodynamics.org/tools/avninotebooks
 .. _`AVNI GitHub`: https://github.com/globalseismology/avni
 .. _`AVNI-Scripts`: https://github.com/globalseismology/avni/examples/Scripts
+.. _`AVNI Releases`: https://github.com/globalseismology/avni/tags
 .. _`AVNI Docs`: https://portal.globalseismology.org/docs/avni
-.. _`AVNI manual`: https://portal.globalseismology.org/docs/avni/current/manual_AVNI.pdf
+.. _`AVNI manual`: https://portal.globalseismology.org/docs/avni/stable/manual_AVNI.pdf
 .. _`GitHub issues page`: https://github.com/globalseismology/avni/issues
 .. _`AVNI Forum`: https://github.com/globalseismology/avni/discussions
 .. _`code of conduct`: https://github.com/globalseismology/avni/blob/main/CODE_OF_CONDUCT.md
@@ -215,6 +216,7 @@
 .. other stuff
 
 .. _python: http://www.python.org
+.. _Semver: https://semver.org
 
 .. python packages
 

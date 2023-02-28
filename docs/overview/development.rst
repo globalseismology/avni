@@ -12,17 +12,31 @@ members — i.e. including you! It is our goal to build an inclusive
 and participatory community so we are happy that you are interested in
 participating!
 
-This project is maintained by a community of
-scientists and research labs. The project accepts contributions in the form of
-bug reports, fixes, feature additions, and documentation improvements
-(including typo corrections). The best way to start contributing is by raising
-|issues| on our GitHub page to discuss ideas for changes or enhancements,
-or to tell us about behavior that you think might be a bug. For *general troubleshooting*
+To *report* bugs, *request* new features, or *ask about* confusing
+documentation, it's usually best to open a new issue on `AVNI Forum`_
+first; you'll probably get help fastest that way, and it helps keep our GitHub
+issue tracker focused on things that we *know* will require changes to our
+software (as opposed to problems that can be fixed in the user's code). We may
+ultimately ask you to open an issue on GitHub too, but starting on the forum
+helps us keep things organized. For fastest results, be sure to include
+information about your operating system and AVNI version, and (if
+applicable) include a reproducible code sample that is as short as possible.
+
+
+The project accepts contributions in the form of
+bug reports, fixes and feature additions.
+For *general troubleshooting*
 or *usage questions*, please consider posting your questions on our |discuss|.
+The best way to start contributing is by raising
+|issues| on our GitHub page to discuss ideas for changes or enhancements,
+or to tell us about behavior that you think might be a bug.
 
 The goal of this page is to provide instructions and best practices to guide developers and
-contributing scientists. It is intended as a developer reference, not as
-a replacement for the user manual.
+contributing scientists. .
+
+.. note:: Please route your *general* questions to the `AVNI Forum`_.  The helps our GitHub
+         issue tracker focused on things that we *know* will require changes to our
+         software (as opposed to problems that can be fixed in the user's code).
 
 Further reading
 ---------------

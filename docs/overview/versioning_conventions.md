@@ -9,4 +9,4 @@ Version tagging is based on a `major.minor.patch` numbering scheme following Sem
 
 - The *patch* number is used to denote bug fixes or other minor revisions. Updates to parameter files or other input files are not required.
 
-Tagged releases are fairly infrequent because the associated testing is very time consuming.
+[Tagged releases](https://github.com/globalseismology/avni/tags) are fairly infrequent because the associated testing is very time consuming.

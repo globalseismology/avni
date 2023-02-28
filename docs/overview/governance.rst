@@ -6,8 +6,7 @@ Project Governance
 ==================
 
 The purpose of this document is to formalize the governance process
-used by the AVNI project in various
-situations, and to clarify how decisions are made and how the various
+used by the AVNI project and to clarify how decisions are made and how the various
 elements of our community interact.  This document elucidates the relationship between
 open source collaborative development and work that may be funded by entities
 that require private development.
@@ -28,7 +27,7 @@ documentation, designs, or other work to the Project. Anyone can be a
 Contributor. Contributors can be affiliated with any legal entity or
 none. Contributors participate in the project by submitting, reviewing,
 and discussing GitHub Pull Requests and Issues and participating in open
-and public Project discussions on GitHub, Discourse, and other
+and public Project discussions on GitHub and other
 channels. The foundation of Project participation is openness and
 transparency.
 
@@ -45,8 +44,10 @@ Community Effort
 
 AVNI software ecosystem (The Project) is part of the wider community effort to
 create a three-dimensional reference Earth model `REM3D
-<REM3D_>`_. A description
-of the REM3D project is provided in :footcite:`moulik_rem_surface_waves`, and a complete
+<REM3D_>`_. The Project aims to provide tools that
+reduce to the barrier of entry for the adoption of Earth models and
+datasets. A description of the REM3D project is provided in
+:footcite:`moulik_rem_surface_waves`, and a complete
 list of relevant papers is provided below:
 
 .. footbibliography::
@@ -60,9 +61,11 @@ list of relevant papers is provided below:
         :start-after: % REM3D reference
         :end-before: % everything else
 
-In order to maximize the likelihood of success and utility to the broader deep Earth community,
+While AVNI is a distinct project from REM3D, the avenues of community pariticipation
+are similar. In order to maximize the likelihood of success and utility to the broader deep Earth community,
 the REM3D project receives input from two advisory working groups,
 one focused on the reference dataset, and the other on the reference model.
+Both working groups provide feedback and data to the REM3D project theough various channels.
 
 .. figure:: ../_static/Community_Effort_REM3D.svg
    :width: 80%
@@ -82,7 +85,7 @@ The foundations of Project governance are:
 -  institutional neutrality
 
 
-Traditionally, Project leadership was provided by a subset of Contributors,
+Traditionally, Project leadership is provided by a subset of Contributors,
 informally called Core Developers, whose active and consistent contributions
 were rewarded by granting them “commit rights” to the Project GitHub
 repositories. In general, all Project decisions are made through consensus among
