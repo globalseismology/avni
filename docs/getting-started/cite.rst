@@ -1,4 +1,7 @@
-Authors & Citation
+.. include:: ../links.inc
+.. include:: ../buttons.inc
+
+Citation & License
 ==================
 
 AVNI is an open-source project with a community of contributors.
@@ -43,6 +46,12 @@ and documentation are collected in the :ref:`general_bibliography`.
 
 License
 -------
+
+The main branch of this project is licensed under the GNU GPL v3 or
+newer and may be installed
+in any platform - see the |GNU GPL| file for details; a copy is provided below for
+reference. Please write to `avni@globalseismology.org`_
+or see our `FAQ <../overview/faq.html>`__ for more details.
 
 .. include:: ../../LICENSE
    :literal:

@@ -1,4 +1,5 @@
 .. title:: AVNI
+.. include:: links.inc
 .. include:: buttons.inc
 .. raw:: html
 

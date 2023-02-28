@@ -688,7 +688,7 @@ When importing from other parts of AVNI, use relative imports in the main
 codebase and absolute imports in tests, tutorials, and how-to examples. Imports
 for ``matplotlib``, ``scipy``, and optional modules (``sklearn``, ``pandas``,
 etc.) should be nested (i.e., within a function or method, not at the top of a
-file). This helps reduce import time and limit hard requirements for using MNE.
+file). This helps reduce import time and limit hard requirements for using AVNI.
 
 
 Return types

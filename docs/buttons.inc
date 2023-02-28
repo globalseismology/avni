@@ -1,5 +1,3 @@
-.. include:: links.inc
-
 .. buttons
 .. |home| image:: https://img.shields.io/badge/AVNI-Website-green?logo=googlehome&logoColor=white
    :target: `AVNI`_
