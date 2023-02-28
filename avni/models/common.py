@@ -24,6 +24,7 @@ import pandas as pd
 import struct
 import traceback
 from progressbar import progressbar
+import typing as tp
 import pdb
 
 ####################### IMPORT AVNI LIBRARIES  #######################################
@@ -32,25 +33,42 @@ from .. import constants
 from .reference1d import Reference1D
 #######################################################################################
 
-def readepixfile(filename):
-    """Read .epix file format from a file.
+def readepixfile(filename: str) -> tp.Tuple[np.ndarray, dict, list]:
+    """Read an extended pixel format from a local text file. This
 
-    Parameters:
+    Parameters
     ----------
+    filename : str
+        Name of the file containing four columns:
+        (`latitude`, `longitude`, `pixel_size`, `value`)
 
-    filename : Name of the file containing four columns
-              (latitude, longitude, pixel_size, value)
+    Returns
+    -------
+    tp.Tuple[np.ndarray, dict, list]
+        First element is an array containing (`latitude`, `longitude`, `pixel_size`, `value`)
+        Second element are metadata from input fields if specified
+        Third element are all other comments except lines containing metadata
 
-    fields: metadata fields that are stored in a dictionary, if available
-
-    Output:
+    Raises
     ------
+    IOError
+        File not found in local directory
 
-    epixarr: array containing lat, lon, pixel size and value
+    Examples
+    --------
+    >>> is_power2(2 ** 3)
+    True
+    >>> is_power2(5)
+    False
 
-    metadata: metadata fields from input fields if specified
+    Notes
+    -----
+    Some notes.
 
-    comments: all other comments except lines containing metadata
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
     try:
@@ -72,7 +90,8 @@ def readepixfile(filename):
                     comments.append(line.strip())
     return epixarr,metadata,comments
 
-def writeepixfile(filename,epixarr,metadata=None,comments=None):
+def writeepixfile(filename: str, epixarr: np.ndarray , metadata: dict = None,
+                  comments: list = None) -> None:
     """Write .epix file format from a named array.
 
     Parameters

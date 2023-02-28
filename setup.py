@@ -146,6 +146,23 @@ extf = [Extension(name='avni.f2py',
                 extra_f90_compile_args = f90_flags,
                 extra_link_args = omp_lib)]
 
+def parse_requirements_file(fname):
+    requirements = list()
+    with open(fname, 'r') as fid:
+        for line in fid:
+            req = line.strip()
+            if req.startswith('#'):
+                continue
+            # strip end-of-line comments
+            req = req.split('#', maxsplit=1)[0].strip()
+            requirements.append(req)
+    return requirements
+
+# data_dependencies is empty, but let's leave them so that we don't break
+# people's workflows who did `pip install avni[data]`
+install_requires = parse_requirements_file('requirements_base.txt')
+data_requires = []
+
 metadata = dict(name = 'avni',
                 version=versionstuff['version'],
                 description=description,
@@ -159,12 +176,6 @@ metadata = dict(name = 'avni',
                 ext_modules = extf,
                 # Notes on why numpy and setuptools version are needed
                 # https://numpy.org/devdocs/reference/distutils_status_migration.html
-                install_requires=['numpy<=1.22','setuptools<60.0',
-                'fortranformat','numba',
-                'progressbar2','requests','future',
-                'msgpack','h5py','matplotlib',
-                'pygeodesy','argparse','xarray','configobj',
-                'joblib','pandas','scipy','numpy','pint'],
                 data_files=[('avni', ['README.md']),
                 ('avni/config',['avni/config/attributes.ini',
                 'avni/config/planets.ini','avni/config/units.ini'])],
@@ -177,12 +188,22 @@ metadata = dict(name = 'avni',
                 classifiers=[
                 'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                 'Programming Language :: Fortran',
-                'Programming Language :: Python :: 3.6',
-                'Programming Language :: Python :: 3.7',
+                'Programming Language :: Python :: 3',
                 'Intended Audience :: Science/Research',
                 'Topic :: Education',
                 'Natural Language :: English',
                 ],
+                project_urls={
+                    'Documentation': 'https://portal.globalseismology.org/docs/avni',
+                    'Source': 'https://github.com/globalseismology/avni',
+                    'Tracker': 'https://github.com/globalseismology/avni/issues',
+                },
+                platforms='any',
+                python_requires='>=3.6',
+                install_requires=install_requires,
+                extras_require={
+                    'data': data_requires,
+                },
                 )
 
 setup(**metadata)

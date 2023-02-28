@@ -1,0 +1,3 @@
+[submodule "docs/overview/tutorials/intro"]
+	path = docs/overview/tutorials/intro
+	url = git@github.com:globalseismology/avni-courses.introduction.git

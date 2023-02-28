@@ -10,19 +10,19 @@ guide on the process of managing a github project: https://guides.github.com/int
 
 ## Asking and answering questions about AVNI
 For questions about AVNI on all levels, please use the
-[AVNI forum](https://community.geodynamics.org/).
+[AVNI forum](https://github.com/globalseismology/avni/discussions).
 
 ## Bug reports
 It is a great help to the community if you report any bugs that you
 may find. We keep track of all open issues related to AVNI
-[here](https://github.com/geodynamics/avni/issues).
+[here](https://github.com/globalseismology/avni/issues).
 
 Please follow these simple instructions before opening a new bug report:
 
 - Do a quick search in the list of open and closed issues for a duplicate of
   your issue.
 - If you did not find an answer, open a new
-  [issue](https://github.com/geodynamics/avni/issues/new) and explain your
+  [issue](https://github.com/globalseismology/avni/issues/new) and explain your
   problem in as much detail as possible.
 - Attach as much as possible of the following information to your issue:
   - a minimal setup that reproduces the issue,
@@ -33,11 +33,11 @@ Please follow these simple instructions before opening a new bug report:
 
 ## Making AVNI better
 AVNI is a community project, and we are encouraging all kinds of
-contributions.
+contributions. The governance of the project is descibed on the [docs website](https://portal.globalseismology.org/docs/avni/stable/overview/governance.html).
 
 
 If you consider making a larger contribution to the core functionality, please
-open a new [issue](https://github.com/geodynamics/avni/issues/new)
+open a new [issue](https://github.com/globalseismology/avni/issues/new)
 first, to discuss your idea with one of the maintainers. This allows us to give
 you early feedback and prevents you from spending much time on a project that
 might already be planned, or that conflicts with other plans.
@@ -65,8 +65,8 @@ it easier to coordinate changes to the code (and there are usually several
 people making changes to the code at once). Please do not hesitate to ask
 questions about the workflow on the forum if you are not sure what to do.
 
-We follow certain coding conventions that are described in more
-describe it here. New contributors can set up their machine
+We follow certain coding conventions that are described in the [Contributing guide](https://portal.globalseismology.org/docs/avni/stable/overview/contributing.html).
+New contributors can set up their machine
 to follow these coding conventions.
 
 If you are new to the project then we will work with you to ensure your
@@ -78,7 +78,7 @@ While we are grateful for every contribution, there are also several official
 ways your contribution will be acknowledged by the AVNI community:
 - Every commit that was merged into the AVNI repository will make you part of
   the growing group of AVNI
-  [contributors](https://github.com/geodynamics/avni/graphs/contributors).
+  [contributors](https://github.com/globalseismology/avni/graphs/contributors).
 - Mention through any other kind of attribution the project provides (e.g. newsletters, release papers, manual authorship).
 - Regularly, the *Principal Developers* of AVNI come together and discuss based
   on the contributions of the last years who should be invited to join the
@@ -96,14 +96,12 @@ ways your contribution will be acknowledged by the AVNI community:
   file in the main repository.
 
 ## Further reading
+
+- [Contributing guide](https://portal.globalseismology.org/docs/avni/stable/overview/contributing.html): The standard way of contributing to AVNI development is described here. To create a product that is maintainable over the long term, it is important that contributing scientists follow these conventions. This approach is recommended for most users, especially those not familiar with Git. These instructions are adequate for contributing to AVNI, but we recommend that all new users to Git attempt the tutorial below for more complete understanding of the workflow.
+
 - [Software Carpentry Git Tutorial](https://swcarpentry.github.io/git-novice/index.html): For those who are not familiar with Git, we recommend attempting this tutorial, or even better, attending an in-person tutorial session if available in your area.
 
-- [Using Git for AVNI](docs/git_for_AVNI.md):  The standard way of contributing to AVNI development is described here. This approach is recommended for most users, especially those not familiar with Git. These instructions are adequate for contributing to AVNI, but we recommend that all new users to Git attempt the tutorial above for more complete understanding of the workflow.
-
-- [Best Practices](docs/best_practices.md):  Accepted conventions for AVNI development are described here.  To create a product that is maintainable over the long term, it is important that contributing scientists follow these conventions.
-
-
 ## License
-AVNI is published under the [GNU GENERAL PUBLIC LICENSE](LICENSE); while you
+AVNI is published under the [GNU GENERAL PUBLIC LICENSE](https://www.gnu.org/licenses/gpl-3.0.en.html); while you
 will retain copyright on your contributions, all changes to the code
-must be provided under this common license.
+must be provided under this common license. A copy of this LICENSE is provided in the [AVNI Github repository](https://github.com/globalseismology/avni/blob/main/LICENSE)

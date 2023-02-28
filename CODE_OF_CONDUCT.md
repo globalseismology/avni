@@ -1,8 +1,8 @@
-# Contributor Covenant Code of Conduct
+# Community Code of Conduct
 
 ## Our Pledge
 
-In the interest of fostering an open and welcoming environment, we as contributors and maintainers pledge to
+In the interest of fostering an open and welcoming environment, we as contributors, users and maintainers pledge to
 making participation in our project and our community a harassment-free experience for everyone,
 regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion (or lack thereof), sexual identity and orientation, or technology choices.
 
@@ -44,10 +44,10 @@ This Code of Conduct applies both within project spaces and in public spaces whe
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting any [maintainer](README.md) of the project, or CIG leadership at <private@geodynamics.org>. CIG leadership will review and investigate all complaints, and will respond in a way that it deems appropriate to the circumstances. CIG leadership is obligated to maintain confidentiality with regard to the reporter of an incident, although confidentiality cannot be promised in all situations under the Title IX law of the United States. Further details of specific enforcement policies may be posted separately.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting AVNI maintainers at <avni@globalseismology.org>, or CIG leadership at <private@geodynamics.org>. CIG leadership will review and investigate all complaints, and will respond in a way that it deems appropriate to the circumstances. CIG leadership is obligated to maintain confidentiality with regard to the reporter of an incident, although confidentiality cannot be promised in all situations under the Title IX law of the United States. Further details of specific enforcement policies may be posted separately.
 
 Project maintainers who do not follow or enforce the Code of Conduct in good faith may face temporary or permanent repercussions as determined by other members of the project's leadership.
 
 ## Attribution
 
-This Code of Conduct is adapted from the [Contributor Covenant homepage](http://contributor-covenant.org), version 1.4, available [here](http://contributor-covenant.org/version/1/4) and draws on the Community Code of Conduct of the Computational Infrastructure for Geodynamics, available [here](https://geodynamics.org/cig/about/code-conduct/).
+This Code of Conduct is adapted from the [Contributor Covenant homepage](http://contributor-covenant.org), version 1.4, available [here](http://contributor-covenant.org/version/1/4) and draws on the Community Code of Conduct of the Computational Infrastructure for Geodynamics, available [here](https://geodynamics.org/about/conduct).
