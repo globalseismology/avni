@@ -1,25 +1,24 @@
-```{eval-rst}
-.. include:: ../links.inc
-```
-
 (faq)=
+```{eval-rst}
+.. include:: ../../links.inc
+.. include:: ../../buttons.inc
+```
 
 # Frequently Asked Questions (FAQ)
 
 ```{eval-rst}
 .. highlight:: python
 ```
-
 ## General queries
 
 ### Is it free?
 
-Yes! The master branch of our repository that hosts the client-side Python codes is synchronized for open-source access from various locations on the internet - pypi, conda-forge - and is hosted in a public Github account. This repository can be used for free under the `GNU GPL`_.
+Yes! The master branch of our repository that hosts the client-side Python codes is synchronized for open-source access from various locations on the internet - pypi, conda-forge - and is hosted in a public Github account. This repository can be used for free under the terms of [our license](../getting-started/cite).
 
 
 ### Is all your code open-source?
 
-Our public Github pure-Python repository is provided open-source with the GNU GPL v3 |GNU GPL|. In order to encourage involvement by the relevant domain experts without the necessary overhead of immediately catering to requests in an open-source environment, we keep a portion of the hard-to-compile Fortran, C and other Python routines private to the AVNI development team. Feel free to raise an issue [issue](https://github.com/globalseismology/avni/issues) that you can help with or write to use at **avni@globalseismology.org** if you want to get involved.
+Our public Github pure-Python repository is provided open-source with the GNU GPL v3 [license](../getting-started/cite). In order to encourage involvement by the relevant domain experts without the necessary overhead of immediately catering to requests in an open-source environment, we keep a portion of the hard-to-compile Fortran, C and other Python routines private to the AVNI development team. Feel free to raise an [issue](https://github.com/globalseismology/avni/issues) that you can help with or write to use at **avni@globalseismology.org** if you want to get involved.
 
 ### How can we get involved?
 
@@ -29,14 +28,14 @@ Become a tester or contributor! Please try out our codes in various applications
 
 Because you will have fun and work with other domain experts! We have the necessary infrastructure in place for benchmarking, developing and testing algorithms. Your work will be preserved for other colleagues to build on and benchmark against. You will leverage legacy codes spanning multiple decades, modified and optimized for modern infrastructure. You will work in a copyrighted, private branch or repository that will not be released publicly or used in other projects or branches without your written approval. Given other scientific commitments, you will avoid the necessary overhead of immediately catering to requests inherent in other standard open-source environments.
 
-### How do I cite MNE?
+### How do I cite AVNI?
 
 See {ref}`cite`.
 
 ### I'm not sure how to do *X* analysis step with my *Y* data...
 
 Knowing "the right thing" to do with geoscience data is challenging. We use
-the [MNE Forum] to discuss analysis strategies for different kinds of
+the [AVNI Forum](https://github.com/globalseismology/avni/discussions) to discuss analysis strategies for different kinds of
 data. It's worth searching the archives to see if there have been relevant
 discussions in the past, but don't hesitate to ask a new question if the answer
 isn't out there already.
@@ -85,7 +84,8 @@ If it takes several seconds you can either:
 When you encounter an error message or unexpected results, it can be hard to
 tell whether it happened because of a bug in AVNI, a mistake in user
 code, a corrupted data file, or irregularities in the data itself. Your first
-step when asking for help should be the [MNE Forum], not GitHub. This bears
+step when asking for help should be the
+[AVNI Forum](https://github.com/globalseismology/avni/discussions), not GitHub. This bears
 repeating: *the GitHub issue tracker is not for usage help* — it is for
 software bugs, feature requests, and improvements to documentation. If you
 open an issue that contains only a usage question, we will close the issue and

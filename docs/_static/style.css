@@ -113,11 +113,11 @@ html[data-theme="dark"] img {
 a.sphx-glr-backref-instance:hover {
     text-decoration: underline;
 }
-/* backreference links: make non-MNE func/meth calls resemble regular code */
+/* backreference links: make non-AVNI func/meth calls resemble regular code */
 a[class^="sphx-glr-backref-module"] {
     color: rgb(var(--pst-color-text-base));
 }
-/* backreference links: make MNE calls bold and colorful */
+/* backreference links: make AVNI calls bold and colorful */
 a[class^="sphx-glr-backref-module-avni"] {
     color: rgb(var(--pst-color-link));
     font-weight: var(--avni-font-weight-semibold);

@@ -1,24 +1,32 @@
-# Contributing to AVNI
+# Files in AVNI
 
-# All folders listed below go with the 
+# All folders listed below go with the
 # [public release](https://github.com/globalseismology/avni). The symbol * means all files
 # (but not subfolders) are to be included. All subfolders need to be specified explicitly.
 
+## Main avni folder - It is prudent to take all files here and simply exclude in .private
+avni/*
+
 ## Common files in the main folder following CIG guidelines
 LICENSE
-CHANGES
 AUTHORS
+CHANGES.md
 CONTRIBUTING.md
 README.md
+.gitignore
+requirements*.txt
+setup.cfg
+setup.py
 
 ## Setup files for installations
 setup.cfg
 setup.py
 
 ## tests folder has all
-tests/*
+tests/*.py
+examples
 
 ## documents folder
-docs/git_for_AVNI.md
-docs/best_practices.md
-docs/conda/environment.yml
+docs/whats_new.rst
+docs/conda/*.yml
+docs/changes/*.inc*

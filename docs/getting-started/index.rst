@@ -38,7 +38,7 @@ with the help of our examples and tutorials.
    :hidden:
 
    why
-   authors
+   cite
    installation
    external_examples
    installers
@@ -46,7 +46,6 @@ with the help of our examples and tutorials.
    advanced
    check_installation
    updating
-   avni_tools_suite
 
 Installation
 ============

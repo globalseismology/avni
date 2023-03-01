@@ -204,7 +204,7 @@ contributors. First, edit these two variables for your situation::
 Then make a local clone of your remote fork (``origin``)::
 
     $ cd $INSTALL_LOCATION
-    $ git clone https://github.com/$GITHUB_USERNAME/AVNI.git
+    $ git clone https://github.com/$GITHUB_USERNAME/avni.git
 
 Finally, set up a link between your local clone and the official repository
 (``upstream``)::
@@ -602,15 +602,17 @@ original style. If the code you add looks drastically different from the
 original code, it may be difficult for readers to follow. Try to avoid
 this. Please give space for breathing by use 4 spaces instead of tabs:
 
-good
-```{code-block} python
-dx = 0.5 \* fac \* (a - b)
-```
 
-bad
-```{code-block} python
-dx=1/2\ *fac*\ (a-b)
-```
+.. code-block:: python
+  :caption: good
+
+  dx = 0.5 \* fac \* (a - b)
+
+.. code-block:: python
+  :caption: bad
+
+  dx=1/2\ *fac*\ (a-b)
+
 
 Use consistent variable naming
 ------------------------------
@@ -652,7 +654,7 @@ ways:
 Other style guidance
 --------------------
 
-- Guidelines for formatting in Fortran is provided
+- Guidelines for formatting in Fortran is provided in the :ref:`Fortran Guidelines <fortran>` page.
 
 - Use single quotes whenever possible.
 
@@ -688,7 +690,7 @@ When importing from other parts of AVNI, use relative imports in the main
 codebase and absolute imports in tests, tutorials, and how-to examples. Imports
 for ``matplotlib``, ``scipy``, and optional modules (``sklearn``, ``pandas``,
 etc.) should be nested (i.e., within a function or method, not at the top of a
-file). This helps reduce import time and limit hard requirements for using MNE.
+file). This helps reduce import time and limit hard requirements for using AVNI.
 
 
 Return types
@@ -704,6 +706,13 @@ stored under that name in the code.
 
 Building the documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. important::
+  Latest documentation should generally be written in MyST_ format, unless the use
+  case requires more complicated use of the reStructuredText_ format. Conversion
+  between the two formats can be done using pandoc_:
+  ``pandoc --from=rst --to=markdown --output=README.md README.rst``
+
 
 Our documentation (including docstrings in code files) is in two formats that are built using Sphinx_:
 
@@ -764,7 +773,7 @@ down the road. Here are the guidelines:
 
 - Search the `GitHub issues page`_ (both open and closed issues) in case
   someone else has already started work on the same bugfix or feature. If you
-  don't find anything, `open a new issue`_ to discuss changes with maintainers
+  don't find anything, open a new issue to discuss changes with maintainers
   before starting work on your proposed changes.
 
 - Implement only one new feature or bugfix per pull request (PR). Occasionally

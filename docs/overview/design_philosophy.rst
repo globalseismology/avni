@@ -29,10 +29,10 @@ one of `scikit-learn's <scikit-learn_>`_ machine learning pipelines.
 AVNI's 2-D plotting functions also return `matplotlib`_
 :class:`~matplotlib.figure.Figure` objects, and the 3D plotting functions
 return :class:`avni.viz.Figure3D` classes with a ``.plotter`` attribute
-pointing to :class:`pyvista.Plotter` instances,
+pointing to :class:`avni.Plotter` instances,
 so you can customize your AVNI plots using any
-of matplotlib or PyVista's plotting commands. The intent is that AVNI
-will get most neuroscientists 90% of the way to their desired analysis goal,
+of matplotlib or AVNI's plotting commands. The intent is that AVNI
+will get most geoscientist 90% of the way to their desired analysis goal,
 and other packages can get them over the finish line.
 
 

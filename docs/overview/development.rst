@@ -1,11 +1,12 @@
-.. include:: ../buttons.inc
 .. include:: ../links.inc
+.. include:: ../buttons.inc
 
 AVNI Development
 ================
 
 .. warning:: Reminder: all contributors are expected to follow our
-          `code of conduct`_.
+          :doc:`code of conduct <CODE_OF_CONDUCT>`. All contributions
+          are governed by the terms of our :doc:`license <../getting-started/cite>`.
 
 AVNI is a community project that lives by the participation of its
 members — i.e. including you! It is our goal to build an inclusive
@@ -32,7 +33,7 @@ The best way to start contributing is by raising
 or to tell us about behavior that you think might be a bug.
 
 The goal of this page is to provide instructions and best practices to guide developers and
-contributing scientists. .
+contributing scientists.
 
 .. note:: Please route your *general* questions to the `AVNI Forum`_.  The helps our GitHub
          issue tracker focused on things that we *know* will require changes to our
@@ -65,15 +66,6 @@ Further reading
 -  `Versioning Conventions <versioning_conventions.html>`__: The
    conventions behind AVNI's version numbering system are explained
    here.
-
-
-License
--------
-
-The master branch of this project is licensed under the GNU GPL v3 or
-newer and may be installed
-in any platform - see the |GNU GPL| file for details. Please write to `avni@globalseismology.org`_
-or see our `FAQ <faq.html>`__ for more details.
 
 
 .. toctree::
