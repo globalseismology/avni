@@ -9,7 +9,7 @@ There are several places to obtain help with avni software tools.
 
 - The `AVNI Forum`_ is a good placed to go for both troubleshooting and general
   questions.
-- The :ref:`faq` page has some troubleshooting tips, and is a good source of
+- The :ref:`FAQ <faq>` page has some troubleshooting tips, and is a good source of
   general information. There are also some troubleshooting tips built into
   the :ref:`Python <install-python>` and
   :ref:`AVNI <standard-instructions>` installation pages.

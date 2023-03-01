@@ -53,7 +53,7 @@ Want to test-drive AVNI? Check out our live examples on Hubzero: |Hubzero|
 +----------------------+----------------+-------------+
 | Website              | |home|         |  |Github|   |
 +----------------------+----------------+-------------+
-| Deployment           | |pypi|         |  |Hubzero|  |
+| Deployment           | |pypi_button|  |  |Hubzero|  |
 +----------------------+----------------+-------------+
 | License              | |GNU GPL|      |             |
 +----------------------+----------------+-------------+

@@ -484,14 +484,14 @@ becomes:
 ```md
 Traditional citation {cite}`Moulik:2014cr`.
 Citation as noun {cite:t}`Moulik:2014cr`.
-Use a comma for multiple, like {cite:t}`Moulik:2014cr,moulik_rem_surface_waves`.
+Use a comma for multiple, like {cite:t}`Moulik:2014cr,MoulikEtAl2021`.
 ```
 
 becomes
 
 Traditional citation {cite}`Moulik:2014cr`.
 Citation as noun {cite:t}`Moulik:2014cr`.
-Use a comma for multiple, like {cite:t}`Moulik:2014cr,moulik_rem_surface_waves`.
+Use a comma for multiple, like {cite:t}`Moulik:2014cr,MoulikEtAl2021`.
 
 If the paper you wish to cite is not already in [references.bib](https://github.com/globalseismology/avni/blob/main/doc/references.bib), you will need to add its bibtex entry. Please format the citation tag as:
 

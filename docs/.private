@@ -1,0 +1,8 @@
+# Files in AVNI
+
+# All folders listed below are excluded from the
+# [public release](https://github.com/globalseismology/avni). The symbol * means all files
+# (but not subfolders) are to be excluded. All subfolders need to be specified explicitly.
+
+## Excluded from main avni folder - It is prudent to take all files in .public and simply exclude here
+avni/api

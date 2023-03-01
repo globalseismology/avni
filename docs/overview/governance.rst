@@ -47,7 +47,7 @@ create a three-dimensional reference Earth model `REM3D
 <REM3D_>`_. The Project aims to provide tools that
 reduce to the barrier of entry for the adoption of Earth models and
 datasets. A description of the REM3D project is provided in
-:footcite:`moulik_rem_surface_waves`, and a complete
+:footcite:`MoulikEtAl2021`, and a complete
 list of relevant papers is provided below:
 
 .. footbibliography::

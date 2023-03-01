@@ -234,6 +234,8 @@
 .. _PIL: https://pypi.python.org/pypi/PIL
 .. _tqdm: https://tqdm.github.io/
 .. _pooch: https://www.fatiando.org/pooch/latest/
+.. _myst_parser: https://myst-parser.readthedocs.io
+.. _pandoc: https://pandoc.org
 
 .. python editors
 

@@ -21,7 +21,7 @@ Citing the software
 To cite specific version numbers of the software, you can use the DOIs provided
 by `Zenodo <https://doi.org>`_. Additionally, we request that
 when citing the AVNI package, you cite the canonical journal article
-reference :footcite:`Moulik_etal_2023_AVNI`:
+reference :footcite:`MoulikEtAl2023`:
 
 .. footbibliography::
 

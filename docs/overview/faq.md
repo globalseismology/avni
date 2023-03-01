@@ -1,11 +1,14 @@
 (faq)=
+```{eval-rst}
+.. include:: ../../links.inc
+.. include:: ../../buttons.inc
+```
 
 # Frequently Asked Questions (FAQ)
 
 ```{eval-rst}
 .. highlight:: python
 ```
-
 ## General queries
 
 ### Is it free?
@@ -15,7 +18,7 @@ Yes! The master branch of our repository that hosts the client-side Python codes
 
 ### Is all your code open-source?
 
-Our public Github pure-Python repository is provided open-source with the GNU GPL v3 [license](../getting-started/cite). In order to encourage involvement by the relevant domain experts without the necessary overhead of immediately catering to requests in an open-source environment, we keep a portion of the hard-to-compile Fortran, C and other Python routines private to the AVNI development team. Feel free to raise an issue [issue](https://github.com/globalseismology/avni/issues) that you can help with or write to use at **avni@globalseismology.org** if you want to get involved.
+Our public Github pure-Python repository is provided open-source with the GNU GPL v3 [license](../getting-started/cite). In order to encourage involvement by the relevant domain experts without the necessary overhead of immediately catering to requests in an open-source environment, we keep a portion of the hard-to-compile Fortran, C and other Python routines private to the AVNI development team. Feel free to raise an [issue](https://github.com/globalseismology/avni/issues) that you can help with or write to use at **avni@globalseismology.org** if you want to get involved.
 
 ### How can we get involved?
 

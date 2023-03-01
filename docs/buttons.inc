@@ -5,13 +5,13 @@
    :target: `REM3D`_
 .. |Github| image:: https://img.shields.io/badge/AVNI-GitHub-blue?logo=github
    :target: `AVNI GitHub`_
-.. |pypi| image:: https://img.shields.io/pypi/v/avni?logo=python&logoColor=white
+.. |pypi_button| image:: https://img.shields.io/pypi/v/avni?logo=python&logoColor=white
    :target: `PyPI`_
 .. |GNU GPL| image:: https://img.shields.io/badge/License-GNU%20GPL%20v3-orange?logo=gnu
    :target: `LICENSE`_
 .. |issues| image:: https://img.shields.io/badge/GitHub-Issues-green?logo=github
    :target: `GitHub issues page`_
-.. |python| image:: https://img.shields.io/badge/python-3.6+-blue.svg
+.. |python_button| image:: https://img.shields.io/badge/python-3.6+-blue.svg
    :target: https://www.python.org/downloads/
 .. |discuss| image:: https://img.shields.io/badge/GitHub-Discussions-blue?logo=github
    :target: `AVNI Forum`_

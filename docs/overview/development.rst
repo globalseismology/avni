@@ -33,7 +33,7 @@ The best way to start contributing is by raising
 or to tell us about behavior that you think might be a bug.
 
 The goal of this page is to provide instructions and best practices to guide developers and
-contributing scientists. .
+contributing scientists.
 
 .. note:: Please route your *general* questions to the `AVNI Forum`_.  The helps our GitHub
          issue tracker focused on things that we *know* will require changes to our
