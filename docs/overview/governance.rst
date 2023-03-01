@@ -102,5 +102,4 @@ License
 
 To the extent possible under law, the authors have waived all
 copyright and related or neighboring rights to the AVNI project
-governance document, as per the GNU GPL v3 `license
-<LICENSE_>`_.
+governance document, as per the terms of our :doc:`license <../getting-started/cite>`.

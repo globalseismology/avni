@@ -44,8 +44,8 @@ relevant functions or methods. All references cited in the AVNI codebase
 and documentation are collected in the :ref:`general_bibliography`.
 
 
-License
--------
+Open-source License
+-------------------
 
 The main branch of this project is licensed under the GNU GPL v3 or
 newer and may be installed

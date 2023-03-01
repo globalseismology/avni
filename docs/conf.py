@@ -241,7 +241,7 @@ html_theme = "pydata_sphinx_theme"
 #html_theme = "sphinx_book_theme"
 
 # Define the json_url for our version switcher.
-json_url = "https://portal.globalseismology.org/docs/avni/dev/_static/versions.json"
+json_url = "https://avni.globalseismology.org/dev/_static/versions.json"
 switcher_version_match = 'dev' if release.endswith('dev0') else version
 
 
@@ -275,7 +275,7 @@ html_theme_options = {
     'icon_links_label': 'External Links',  # for screen reader
     "external_links": [
         {
-            "url": "https://dwar.princeton.edu:8443/realms/GlobalSeismology/protocol/openid-connect/auth?client_id=web_js&response_type=code&scope=openid&redirect_uri=https%3A//portal.globalseismology.org/docs/avni",
+            "url": "https://dwar.princeton.edu:8443/realms/GlobalSeismology/protocol/openid-connect/auth?client_id=web_js&response_type=code&scope=openid&redirect_uri=https%3A//avni.globalseismology.org",
             "name": "Register",
         },
     ],
@@ -286,7 +286,6 @@ html_theme_options = {
     'navbar_end': ['theme-switcher', 'version-switcher', 'navbar-icon-links'],
     'footer_items': ['copyright'],
     'secondary_sidebar_items': ['page-toc'],
-    #'analytics': dict(google_analytics_id='G-5TBCPCRB6X'),
     'pygment_light_style': 'default',
     'pygment_dark_style': 'monokai',
     # "navbar_center": ["version-switcher", "navbar-nav"],

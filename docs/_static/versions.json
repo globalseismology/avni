@@ -2,17 +2,17 @@
     {
         "name": "0.1 (dev)",
         "version": "dev",
-        "url": "https://portal.globalseismology.org/docs/avni/dev/"
+        "url": "https://avni.globalseismology.org/dev/"
     },
     {
         "name": "0.0.24 (stable)",
         "version": "stable",
-        "url": "https://portal.globalseismology.org/docs/avni/stable/"
+        "url": "https://avni.globalseismology.org/stable/"
     },
     {
         "name": "0.0.1",
         "version": "0.0.1",
-        "url": "https://portal.globalseismology.org/docs/avni/v0.0.1/"
+        "url": "https://avni.globalseismology.org/v0.0.1/"
     }
 
 ]
