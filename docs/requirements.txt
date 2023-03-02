@@ -15,6 +15,7 @@ sphinx
 sphinx_rtd_theme
 sphinxcontrib
 sphinxcontrib-bibtex
+sphinxcontrib-svg2pdfconverter
 recommonmark
 pyshtools
 
