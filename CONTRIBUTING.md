@@ -33,7 +33,7 @@ Please follow these simple instructions before opening a new bug report:
 
 ## Making AVNI better
 AVNI is a community project, and we are encouraging all kinds of
-contributions. The governance of the project is descibed on the [docs website](https://portal.globalseismology.org/docs/avni/stable/overview/governance.html).
+contributions. The governance of the project is descibed on the [docs website](https://avni.globalseismology.org/stable/overview/governance.html).
 
 
 If you consider making a larger contribution to the core functionality, please
@@ -65,7 +65,7 @@ it easier to coordinate changes to the code (and there are usually several
 people making changes to the code at once). Please do not hesitate to ask
 questions about the workflow on the forum if you are not sure what to do.
 
-We follow certain coding conventions that are described in the [Contributing guide](https://portal.globalseismology.org/docs/avni/stable/overview/contributing.html).
+We follow certain coding conventions that are described in the [Contributing guide](https://avni.globalseismology.org/stable/overview/contributing.html).
 New contributors can set up their machine
 to follow these coding conventions.
 
@@ -97,7 +97,7 @@ ways your contribution will be acknowledged by the AVNI community:
 
 ## Further reading
 
-- [Contributing guide](https://portal.globalseismology.org/docs/avni/stable/overview/contributing.html): The standard way of contributing to AVNI development is described here. To create a product that is maintainable over the long term, it is important that contributing scientists follow these conventions. This approach is recommended for most users, especially those not familiar with Git. These instructions are adequate for contributing to AVNI, but we recommend that all new users to Git attempt the tutorial below for more complete understanding of the workflow.
+- [Contributing guide](https://avni.globalseismology.org/stable/overview/contributing.html): The standard way of contributing to AVNI development is described here. To create a product that is maintainable over the long term, it is important that contributing scientists follow these conventions. This approach is recommended for most users, especially those not familiar with Git. These instructions are adequate for contributing to AVNI, but we recommend that all new users to Git attempt the tutorial below for more complete understanding of the workflow.
 
 - [Software Carpentry Git Tutorial](https://swcarpentry.github.io/git-novice/index.html): For those who are not familiar with Git, we recommend attempting this tutorial, or even better, attending an in-person tutorial session if available in your area.
 

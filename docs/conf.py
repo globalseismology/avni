@@ -70,8 +70,9 @@ sys.path.append(os.path.abspath(os.path.join(curdir, 'sphinxext')))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'nbsphinx',
     'sphinx_gallery.load_style',
+    'sphinx_gallery.gen_gallery',
+    'nbsphinx',
     'myst_parser',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -85,7 +86,7 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
-    'sphinx_gallery.gen_gallery',
+    'sphinxcontrib.inkscapeconverter',
     'sphinx_fontawesome',
     'jupyter_sphinx',
     'sphinx_design',
@@ -241,7 +242,7 @@ html_theme = "pydata_sphinx_theme"
 #html_theme = "sphinx_book_theme"
 
 # Define the json_url for our version switcher.
-json_url = "https://portal.globalseismology.org/docs/avni/dev/_static/versions.json"
+json_url = "https://avni.globalseismology.org/dev/_static/versions.json"
 switcher_version_match = 'dev' if release.endswith('dev0') else version
 
 
@@ -265,8 +266,8 @@ html_theme_options = {
             "icon": "fa fa-comment fa-fw",
         },
         {
-            "name": "Website",
-            "url": "https://avni.globalseismology.org",
+            "name": "Global Seismology Website",
+            "url": "https://globalseismology.org",
             "icon": "_static/logo_avni_bw.png",
             "type": "local",
             "attributes": {"target": "_blank"},
@@ -275,7 +276,7 @@ html_theme_options = {
     'icon_links_label': 'External Links',  # for screen reader
     "external_links": [
         {
-            "url": "https://dwar.princeton.edu:8443/realms/GlobalSeismology/protocol/openid-connect/auth?client_id=web_js&response_type=code&scope=openid&redirect_uri=https%3A//portal.globalseismology.org/docs/avni",
+            "url": "https://dwar.princeton.edu:8443/realms/GlobalSeismology/protocol/openid-connect/auth?client_id=web_js&response_type=code&scope=openid&redirect_uri=https%3A//avni.globalseismology.org",
             "name": "Register",
         },
     ],
@@ -286,7 +287,6 @@ html_theme_options = {
     'navbar_end': ['theme-switcher', 'version-switcher', 'navbar-icon-links'],
     'footer_items': ['copyright'],
     'secondary_sidebar_items': ['page-toc'],
-    #'analytics': dict(google_analytics_id='G-5TBCPCRB6X'),
     'pygment_light_style': 'default',
     'pygment_dark_style': 'monokai',
     # "navbar_center": ["version-switcher", "navbar-nav"],
@@ -480,10 +480,6 @@ for icon, classes in icon_class.items():
 .. |{icon}| raw:: html
 
     <i class="{' '.join(classes + (f'fa-{icon}',))}"></i>
-'''
-
-prolog += '''
-.. |ensp| unicode:: U+2002 .. EN SPACE
 '''
 
 # -- Dependency info ----------------------------------------------------------

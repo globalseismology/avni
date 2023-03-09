@@ -258,18 +258,12 @@ class Model(object):
                 'lon1': starting longitude in degrees, float (0.)
                 'lat2': end latitude in degrees, float (90.)
                 'lon2': end longitude in degrees, float (360.)
-                    if using any of the optional above args, you must use all of
-                    them. The result will be values in a grid formed by taking
-                    start and end coordinates are the opposing points of a box:
-
-                        (lat2,lon1)-------------(lat2,lon2)
-                            |                       |
-                            |                       |
-                            |                       |
-                        (lat1,lon1)-------------(lat1,lon2)
-
-                    if not specifying coordinates, will extract values at a
-                    fixed depth for the whole earth.
+                if using any of the optional above args, you must use all of
+                them. The result will be values in a grid formed by taking
+                start and end coordinates are the opposing points of a box
+                with the vertex coordinates (lat2,lon1), (lat2,lon2),
+                (lat1,lon1), (lat1,lon2). If not specifying coordinates,
+                will extract values at a fixed depth for the whole earth.
 
                 'Nlat': number of latitude points to extract, int (100)
                 'Nlon': number of longitude points to extract, int (200)

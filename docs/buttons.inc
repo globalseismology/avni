@@ -1,13 +1,15 @@
 .. buttons
 .. |home| image:: https://img.shields.io/badge/AVNI-Website-green?logo=googlehome&logoColor=white
    :target: `AVNI`_
+.. |register| image:: https://img.shields.io/badge/Register-AVNI-green?logo=googlehome&logoColor=white
+   :target: `Register AVNI`_
 .. |REM3D| image:: https://img.shields.io/badge/REM3D-Website-blue?logo=googlehome&logoColor=white
    :target: `REM3D`_
 .. |Github| image:: https://img.shields.io/badge/AVNI-GitHub-blue?logo=github
    :target: `AVNI GitHub`_
 .. |pypi_button| image:: https://img.shields.io/pypi/v/avni?logo=python&logoColor=white
    :target: `PyPI`_
-.. |GNU GPL| image:: https://img.shields.io/badge/License-GNU%20GPL%20v3-orange?logo=gnu
+.. |GNU GPL| image:: https://img.shields.io/badge/License-GNU_GPL_v3-orange?logo=gnu
    :target: `LICENSE`_
 .. |issues| image:: https://img.shields.io/badge/GitHub-Issues-green?logo=github
    :target: `GitHub issues page`_

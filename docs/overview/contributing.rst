@@ -517,7 +517,7 @@ first-time contributor or have been mentioned in the changelog before.
 First-time contributors
 """""""""""""""""""""""
 
-Welcome to AVNI! We're very happy to have you here. 🤗 And to ensure you
+Welcome to AVNI! We're very happy to have you here. And to ensure you
 get proper credit for your work, please add a changelog entry with the
 following pattern **at the top** of the respective subsection (bugs,
 enhancements, etc.):

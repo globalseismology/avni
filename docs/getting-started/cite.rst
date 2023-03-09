@@ -25,15 +25,6 @@ reference :footcite:`MoulikEtAl2023`:
 
 .. footbibliography::
 
-.. dropdown:: BibTeX for AVNI
-    :color: info
-    :icon: typography
-
-    .. include:: ../references.bib
-        :code: bibtex
-        :start-after: % AVNI reference
-        :end-before: % everything else
-
 
 Citing other algorithms
 -----------------------
@@ -44,8 +35,8 @@ relevant functions or methods. All references cited in the AVNI codebase
 and documentation are collected in the :ref:`general_bibliography`.
 
 
-License
--------
+Open-source License
+-------------------
 
 The main branch of this project is licensed under the GNU GPL v3 or
 newer and may be installed

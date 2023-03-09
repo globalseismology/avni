@@ -194,7 +194,7 @@ metadata = dict(name = 'avni',
                 'Natural Language :: English',
                 ],
                 project_urls={
-                    'Documentation': 'https://portal.globalseismology.org/docs/avni',
+                    'Documentation': 'https://avni.globalseismology.org',
                     'Source': 'https://github.com/globalseismology/avni',
                     'Tracker': 'https://github.com/globalseismology/avni/issues',
                 },

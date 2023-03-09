@@ -1,12 +1,12 @@
 # AVNI - Analysis and Visualization toolkit for plaNetary Inferences
 
-<img src="https://portal.globalseismology.org/docs/avni/stable/_static/logos/logo_avni_color_withname.png" width="512">
+<img src="https://avni.globalseismology.org/stable/_static/logos/logo_avni_color_withname.png" width="512">
 
 ## About
 
 AVNI is a software ecosystem for analyzing and interpreting planetary models and data sets that were initially designed or the three-dimensional reference Earth model project [REM3D](https://rem3d.org). The codes are primary written in Python with interfaces to legacy routines in C and Fortran. Some installation files as well as applets and API access require registration on the AVNI Homepage below.
 
-**ReadTheDocs**: [ReadTheDocs](https://portal.globalseismology.org/docs/avni)
+**ReadTheDocs**: [ReadTheDocs](https://avni.globalseismology.org)
 
 **Project Homepage**: [avni.globalseismology.org](http://avni.globalseismology.org)
 
@@ -16,7 +16,7 @@ AVNI is a software ecosystem for analyzing and interpreting planetary models and
 
 **Contact**: **avni@globalseismology.org**
 
-**Frequently Asked Questions**: [FAQ](https://portal.globalseismology.org/docs/avni/stable/overview/faq.html)
+**Frequently Asked Questions**: [FAQ](https://avni.globalseismology.org/stable/overview/faq.html)
 
 A core team maintains the public repository and releases versions after benchmarking; if you do not see activity on Github, that does not mean improvements or bug fixes are not underway! We provide APIs that interface with heavy, legacy codes hosted our servers so that AVNI installation remains light to serve various applications. Contact the AVNI team at **avni@globalseismology.org** with any questions or suggestions.
 
@@ -40,7 +40,7 @@ members — i.e., including you! It is our goal to build an inclusive and
 participatory community so we are happy that you are interested in
 participating! We have collected a set of guidelines and advice on how to get
 involved in the community and keep them in the
-[Contributing Guide](https://portal.globalseismology.org/docs/avni/stable/overview/contributing.html).
+[Contributing Guide](https://avni.globalseismology.org/stable/overview/contributing.html).
 Please follow the contributor covenant code of conduct specified in the [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) in all interactions and deliberations.
 
 ## Authors
@@ -49,11 +49,11 @@ The *Principal Developers* that maintain AVNI are listed in [AUTHORS](AUTHORS). 
 
 ## Versioning
 
-Current software version is provided in the file [version](avni/version.py) file. We use [SemVer](http://semver.org/) for versioning as explained in our [versioning conventions](https://portal.globalseismology.org/docs/avni/stable/overview/versioning_conventions.html). For the versions available, see the [tags on this repository](https://github.com/globalseismology/avni/tags).
+Current software version is provided in the file [version](avni/version.py) file. We use [SemVer](http://semver.org/) for versioning as explained in our [versioning conventions](https://avni.globalseismology.org/stable/overview/versioning_conventions.html). For the versions available, see the [tags on this repository](https://github.com/globalseismology/avni/tags).
 
 ## License
 
-This software is published under the GNU GPL v3 license - see the [LICENSE](LICENSE) file for details. Please write to **avni@globalseismology.org** or see our [FAQs](https://portal.globalseismology.org/docs/avni/stable/overview/faq.html) for additional clarifications.
+This software is published under the GNU GPL v3 license - see the [LICENSE](LICENSE) file for details. Please write to **avni@globalseismology.org** or see our [FAQs](https://avni.globalseismology.org/stable/overview/faq.html) for additional clarifications.
 
 ## Acknowledgments
 
@@ -61,4 +61,4 @@ This software is published under the GNU GPL v3 license - see the [LICENSE](LICE
 * A project like this one is a culmination of feedback and input from several excellent [colleagues and organizations](https://globalseismology.princeton.edu/about/people). We thank members of the open source and Earth Science communities for their input and non-Github contributions.
 * Computational resources maintained by Princeton University accessible through the [AVNI website](http://avni.globalseismology.org). We thank the system administrators for assistance.
 
-<img src="https://portal.globalseismology.org/docs/avni/stable/_static/logos/NSF.png" width="100"> &nbsp; &nbsp; &nbsp; &nbsp; <img src="https://portal.globalseismology.org/docs/avni/stable/_static/logos/CIG_logo.png" width="200"> &nbsp; &nbsp; &nbsp; &nbsp; <img src="https://portal.globalseismology.org/docs/avni/stable/_static/logos/PU-standard.png" width="325">
+<img src="https://avni.globalseismology.org/stable/_static/logos/NSF.png" width="100"> &nbsp; &nbsp; &nbsp; &nbsp; <img src="https://avni.globalseismology.org/stable/_static/logos/CIG_logo.png" width="200"> &nbsp; &nbsp; &nbsp; &nbsp; <img src="https://avni.globalseismology.org/stable/_static/logos/PU-standard.png" width="325">
