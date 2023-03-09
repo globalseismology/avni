@@ -266,8 +266,8 @@ html_theme_options = {
             "icon": "fa fa-comment fa-fw",
         },
         {
-            "name": "Website",
-            "url": "https://avni.globalseismology.org",
+            "name": "Global Seismology Website",
+            "url": "https://globalseismology.org",
             "icon": "_static/logo_avni_bw.png",
             "type": "local",
             "attributes": {"target": "_blank"},

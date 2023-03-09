@@ -1,6 +1,8 @@
 .. buttons
 .. |home| image:: https://img.shields.io/badge/AVNI-Website-green?logo=googlehome&logoColor=white
    :target: `AVNI`_
+.. |register| image:: https://img.shields.io/badge/Register-AVNI-green?logo=googlehome&logoColor=white
+   :target: `Register AVNI`_
 .. |REM3D| image:: https://img.shields.io/badge/REM3D-Website-blue?logo=googlehome&logoColor=white
    :target: `REM3D`_
 .. |Github| image:: https://img.shields.io/badge/AVNI-GitHub-blue?logo=github
