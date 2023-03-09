@@ -22,7 +22,7 @@
 AVNI is a software ecosystem for analyzing and interpreting planetary models and data sets that were initially
 designed or the three-dimensional reference Earth model project |REM3D|.
 The codes are primary written in Python with interfaces to legacy routines in C and Fortran.
-Some installation files as well as applets and API access require registration on the |home|.
+Some installation files as well as applets and API access require registration on the |register| link.
 
 * Open-source Python package with APIs to handle intensive queries |GNU GPL|
 * Introduce HDF5 storage formats for planetary models and processed seismic data
