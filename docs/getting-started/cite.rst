@@ -25,15 +25,6 @@ reference :footcite:`MoulikEtAl2023`:
 
 .. footbibliography::
 
-.. dropdown:: BibTeX for AVNI
-    :color: info
-    :icon: typography
-
-    .. include:: ../references.bib
-        :code: bibtex
-        :start-after: % AVNI reference
-        :end-before: % everything else
-
 
 Citing other algorithms
 -----------------------

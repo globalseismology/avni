@@ -9,7 +9,7 @@
    :target: `AVNI GitHub`_
 .. |pypi_button| image:: https://img.shields.io/pypi/v/avni?logo=python&logoColor=white
    :target: `PyPI`_
-.. |GNU GPL| image:: https://img.shields.io/badge/License-GNU%20GPL%20v3-orange?logo=gnu
+.. |GNU GPL| image:: https://img.shields.io/badge/License-GNU_GPL_v3-orange?logo=gnu
    :target: `LICENSE`_
 .. |issues| image:: https://img.shields.io/badge/GitHub-Issues-green?logo=github
    :target: `GitHub issues page`_

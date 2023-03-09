@@ -23,7 +23,7 @@ Got any questions? Let us know on the `AVNI Forum`_!
             :shadow:
             :class: font-weight-bold mt-3
 
-            |cloud-arrow-down| |ensp| Download for Linux
+            |cloud-arrow-down| Download for Linux
 
         **Supported platforms:** Ubuntu 18.04 (Bionic Beaver) and newer
 
@@ -44,7 +44,7 @@ Got any questions? Let us know on the `AVNI Forum`_!
             :shadow:
             :class: font-weight-bold mt-3
 
-            |cloud-arrow-down| |ensp| Download for macOS (Intel)
+            |cloud-arrow-down| Download for macOS (Intel)
 
         **Supported platforms:**
         macOS 10.15 (Catalina) and newer
@@ -60,7 +60,7 @@ Got any questions? Let us know on the `AVNI Forum`_!
             :shadow:
             :class: font-weight-bold mt-3
 
-            |cloud-arrow-down| |ensp| Download for macOS (Apple Silicon)
+            |cloud-arrow-down| Download for macOS (Apple Silicon)
 
 
         **Supported platforms:**
@@ -76,7 +76,7 @@ Got any questions? Let us know on the `AVNI Forum`_!
             :shadow:
             :class: font-weight-bold mt-3
 
-            |cloud-arrow-down| |ensp| Download for Windows
+            |cloud-arrow-down| Download for Windows
 
         **Supported platforms:** Windows 10 and newer
 
@@ -92,17 +92,17 @@ bundles to the ``Applications`` folder on macOS.
 .. rst-class:: mt-4
 .. rst-class:: mb-5
 
-- |code| |ensp| Use **Spyder** to start writing your own analysis scripts right away, or to run one of our examples from this website.
+- |code| Use **Spyder** to start writing your own analysis scripts right away, or to run one of our examples from this website.
 
   .. rst-class:: mt-3
-- |desktop| |ensp| With **System Info**, list the versions of all installed AVNI-related packages.
+- |desktop| With **System Info**, list the versions of all installed AVNI-related packages.
 
   .. rst-class:: mt-3
-- |terminal| |ensp| The **Prompt** drops you into a command line interface with a properly activated AVNI environment.
+- |terminal| The **Prompt** drops you into a command line interface with a properly activated AVNI environment.
 
 
 .. note::
-   |hourglass-half| |ensp| Depending on your system, it may take a little while for these
+   |hourglass-half| Depending on your system, it may take a little while for these
    applications to start, especially on the very first run – which may take
    particularly long on Apple Silicon-based computers. Subsequent runs should
    usually be much faster.

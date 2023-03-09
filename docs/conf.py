@@ -70,8 +70,9 @@ sys.path.append(os.path.abspath(os.path.join(curdir, 'sphinxext')))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'nbsphinx',
     'sphinx_gallery.load_style',
+    'sphinx_gallery.gen_gallery',
+    'nbsphinx',
     'myst_parser',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -85,7 +86,7 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
-    'sphinx_gallery.gen_gallery',
+    'sphinxcontrib.inkscapeconverter',
     'sphinx_fontawesome',
     'jupyter_sphinx',
     'sphinx_design',
@@ -479,10 +480,6 @@ for icon, classes in icon_class.items():
 .. |{icon}| raw:: html
 
     <i class="{' '.join(classes + (f'fa-{icon}',))}"></i>
-'''
-
-prolog += '''
-.. |ensp| unicode:: U+2002 .. EN SPACE
 '''
 
 # -- Dependency info ----------------------------------------------------------

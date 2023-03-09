@@ -14,8 +14,8 @@ sphinx-apidoc -o api/ ../avni --force --separate --module-first --no-toc
 
 #Make the html and pdf versions in local /docs/_build directory
 make clean
-#make latexpdf
 make html
+make latexpdf
 
 # Move files
 set version = ` python -c "exec(open('../avni/version.py').read()); print(short_version)" `
