@@ -25,8 +25,8 @@ AVNI includes several optional dependencies for visualization and reading a vari
 * `matplotlib <https://pypi.org/project/matplotlib/>`_ - Used for colormaps and 2D plotting.
 
 
-PyPI
-~~~~
+From PyPI
+~~~~~~~~~
 
 .. image:: https://img.shields.io/pypi/v/avni?logo=python&logoColor=white
    :target: https://pypi.org/project/avni/
@@ -41,10 +41,8 @@ To install all the additional packages that extend AVNI, install using
 
     pip install avni[all]
 
-.. asciinema:: 507562
-
-Anaconda
-~~~~~~~~
+From Anaconda
+~~~~~~~~~~~~~
 
 .. image:: https://img.shields.io/conda/vn/conda-forge/avni.svg?logo=conda-forge&logoColor=white
    :target: https://anaconda.org/conda-forge/avni

@@ -72,9 +72,7 @@ still yield an informative plot of the data. Similarly, they all have the
 methods ``copy()``, ``crop()``, ``resample()`` and ``save()`` with similar or
 identical method signatures. The sensor-level classes also all have an ``info``
 attribute containing an :class:`~avni.Info` object, which keeps track of channel
-names and types, applied filters, projectors, etc. See :ref:`tut-info-class`
-for more info.
-
+names and types, applied filters, projectors, etc.
 
 .. _sect-meth-chain:
 
