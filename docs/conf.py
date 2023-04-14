@@ -120,6 +120,11 @@ sphinx_gallery_conf = {
     #'filename_pattern': r"\.py"
 }
 
+# Without this setting, you should see a message when running
+# sphinx-build that says "WARNING: numfig is disabled. :numref: is ignored".
+# This works for HTML and LaTeX output.
+# See https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-numfig
+numfig = True
 
 # sphinxcontrib-bibtex
 bibtex_bibfiles = ['./references.bib']

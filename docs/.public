@@ -5,7 +5,7 @@
 # (but not subfolders) are to be included. All subfolders need to be specified explicitly.
 
 ## Main avni folder - It is prudent to take all files here and simply exclude in .private
-avni/*
+avni
 
 ## Common files in the main folder following CIG guidelines
 LICENSE

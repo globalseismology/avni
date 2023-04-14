@@ -40,7 +40,6 @@ with the help of our examples and tutorials.
    why
    cite
    installation
-   external_examples
    installers
    manual_install
    advanced

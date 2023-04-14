@@ -353,8 +353,8 @@ cycle, adding the unit tests and documentation changes::
 
 When you're done, it's time to run the test suite to make sure your changes
 haven't broken any existing functionality, and to make sure your new test
-covers the lines of code you've added (see :ref:`run-tests` and
-:ref:`build-docs`, below). Once everything looks good, it's time to push your
+covers the lines of code you've added (see :ref:`build-docs`, below).
+Once everything looks good, it's time to push your
 changes to your fork::
 
     $ # push local changes to remote branch origin/new-feature-x
@@ -376,6 +376,8 @@ advice about how to fix them.
 
 To learn more about git, check out the `GitHub help`_ website, the `GitHub
 skills`_ tutorial series, and the `pro git book`_.
+
+.. _github-workflow:
 
 Regular daily git usage
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -580,7 +582,7 @@ AVNI uses `continuous integration`_ (CI) to ensure code quality and
 test across multiple installation targets. However, the CIs are often slower
 than testing locally, especially when other contributors also have open PRs
 (which is basically always the case). Therefore, do not rely on the CIs to
-catch bugs and style errors for you; :ref:`run the tests locally <run-tests>`
+catch bugs and style errors for you; run the tests locally
 instead before opening a new PR and before each time you push additional
 changes to an already-open PR.
 
