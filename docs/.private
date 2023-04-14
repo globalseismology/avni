@@ -4,5 +4,9 @@
 # [public release](https://github.com/globalseismology/avni). The symbol * means all files
 # (but not subfolders) are to be excluded. All subfolders need to be specified explicitly.
 
-## Excluded from main avni folder - It is prudent to take all files in .public and simply exclude here
+# It is prudent to first take all files in .public and start excluding here
+
+## Excluded from main avni folder
 avni/api
+avni/gui.py
+avni/*.so*
