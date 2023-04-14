@@ -1,0 +1,15 @@
+#! /bin/csh
+
+set MYLIB=~/mylib/F2PY
+set outlib=libhypo.so
+
+gfortran -shared -O2 -ffixed-line-length-none -o $MYLIB/$outlib -fPIC readnbn.f getcmtbyname.f getcmt5.f DiffTime.f
+
+set MYBIN=~/mybin/F2PY
+set outbin=hypolib
+f2py -c --fcompiler=gfortran --f77flags=-ffixed-line-length-none  -L$MYLIB -I. -lhypo -lgio -lSEED_V24 -m $outbin getcmtdatetime.f
+mv -f $outbin.so $MYBIN
+
+#rm *.o 
+
+#http://stackoverflow.com/questions/27270543/including-a-compiled-module-in-module-that-is-wrapped-with-f2py-minimum-working

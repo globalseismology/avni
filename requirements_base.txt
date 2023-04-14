@@ -1,0 +1,28 @@
+#####################################################
+######## Dependencies for normal installations ######
+#####################################################
+
+###### Requirements without Version Specifiers ######
+fortranformat
+numba
+progressbar2
+requests
+future
+msgpack
+h5py
+matplotlib
+pygeodesy
+argparse
+xarray
+configobj
+joblib
+pandas
+scipy
+numpy
+pint
+
+######## Requirements with Version Specifiers #######
+# Notes on why numpy and setuptools version are needed
+# https://numpy.org/devdocs/reference/distutils_status_migration.html
+numpy<=1.22
+setuptools<60.0
