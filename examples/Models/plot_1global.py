@@ -47,7 +47,7 @@ def main():
         ierror = stage(get_fullpath(arg.file),overwrite=True)
     except:
         # update the file from the server
-        update_file(arg.file)
+        update_file(arg.file,subdirectory='MODELS')
     model = ntpath.basename(arg.file)
 
     # Read the file

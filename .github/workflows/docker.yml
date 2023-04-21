@@ -40,7 +40,7 @@ jobs:
           cache-to: type=inline
           push: true
           tags: |
-            ${{ github.repository_owner }}/${{ github.repository }}:latest
+            globalseismology/avni:latest
 
       - name: Build and push Docker image for release
         if: contains(github.event_name, 'release')
@@ -50,5 +50,5 @@ jobs:
           cache-to: type=inline
           push: true
           tags: |
-            ${{ github.repository_owner }}/${{ github.repository }}:${{github.ref_name}}
+            globalseismology/avni:${{github.ref_name}}
 

@@ -23,10 +23,22 @@ import pdb
 from .. import constants
 #######################################################################################
 
-def stage(file,overwrite=False):
+def stage(file: str, overwrite: bool = False):
+    """Stages a file in the AVNI file directories for testing
+
+    Parameters
+    ----------
+    file : str
+        file name to be staged
+    overwrite : bool, optional
+        overwite any existing symlink or file, by default False
+
+    Raises
+    ------
+    IOError
+        File not found or a symlink alrea exists
     """
-    Stages a file in the avni file directories for testing
-    """
+
     filedir = get_filedir() #AVNI file directory
     stagedfile = get_fullpath(file)
     if not os.path.isfile(stagedfile): raise IOError(stagedfile+' not found')
