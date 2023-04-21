@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""This script/module contains routines that are used to analyze/visualize the data sets
-in the standard AVNI format."""
+"""This script/module contains routines that are used to Earth models"""
 
 #####################  IMPORT STANDARD MODULES   ######################################
 # python 3 compatibility
@@ -34,7 +33,7 @@ from .reference1d import Reference1D
 #######################################################################################
 
 def readepixfile(filename: str) -> tp.Tuple[np.ndarray, dict, list]:
-    """Read an extended pixel format from a local text file. This
+    """Read a local file in extended pixel (.epix) format.
 
     Parameters
     ----------
@@ -45,9 +44,11 @@ def readepixfile(filename: str) -> tp.Tuple[np.ndarray, dict, list]:
     Returns
     -------
     tp.Tuple[np.ndarray, dict, list]
-        First element is an array containing (`latitude`, `longitude`, `pixel_size`, `value`)
-        Second element are metadata from input fields if specified
-        Third element are all other comments except lines containing metadata
+        First element is an array containing (`latitude`, `longitude`, `pixel_size`, `value`).
+
+        Second element are metadata from input fields if specified.
+
+        Third element are all other comments except lines containing metadata.
 
     Raises
     ------
@@ -56,14 +57,12 @@ def readepixfile(filename: str) -> tp.Tuple[np.ndarray, dict, list]:
 
     Examples
     --------
-    >>> is_power2(2 ** 3)
-    True
-    >>> is_power2(5)
-    False
+    >>> epixarr,metadata,comments = readepixfile('file.epix')
 
     Notes
     -----
-    Some notes.
+    This function assumes cell-centered values within a pixel of size `pixel_size`.
+    In order to interpolate in arbitrary locations, this assumption needs to be used.
 
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)
@@ -71,13 +70,14 @@ def readepixfile(filename: str) -> tp.Tuple[np.ndarray, dict, list]:
         2023.02.16 5.00
     """
 
+    # Read the file if available
     try:
         f = open(filename, 'r')
         epixarr=np.genfromtxt(filename, dtype=None,comments="#",names=['latitude','longitude','pixel_size','value'])
     except IOError:
         raise IOError("File (",filename,") cannot be read.")
 
-    #read header and store basic metadata
+    # strip header and store basic metadata
     metadata = {}
     comments = []
     with open(filename) as f:
@@ -88,31 +88,54 @@ def readepixfile(filename: str) -> tp.Tuple[np.ndarray, dict, list]:
                     metadata[field] = line.lstrip('#').split(':')[1].strip()
                 else:
                     comments.append(line.strip())
+
     return epixarr,metadata,comments
 
-def writeepixfile(filename: str, epixarr: np.ndarray , metadata: dict = None,
+def writeepixfile(filename: str, epixarr: np.ndarray ,
+                  metadata: dict = {'BASIS':'PIX','FORMAT':'50'},
                   comments: list = None) -> None:
-    """Write .epix file format from a named array.
+    """Write named numpy array to extended pixel format (.epix) file.
 
     Parameters
     ----------
+    filename : str
+        Name of the file containing four columns:
+        (`latitude`, `longitude`, `pixel_size`, `value`)
+    epixarr : np.ndarray
+        array containing (`latitude`, `longitude`, `pixel_size`, `value`)
+    metadata : dict, optional
+        metadata from input fields if specified, by default {'BASIS':'PIX','FORMAT':'50'}
+    comments : list, optional
+        all other comments except lines containing metadata, by default None
 
-    filename : Name of the file containing four columns
-              (latitude, longitude, pixel_size, value)
+    Raises
+    ------
+    IOError
+        File cannot be written in local directory
 
-    metadata: metadata fields from input fields if specified.
-              default : {'BASIS':'PIX','FORMAT':'50'}
+    Examples
+    --------
+    >>> writeepixfile('file.epix',epixarr,metadata,comments)
 
-    comments: all other comments except lines containing metadata
+    Notes
+    -----
+    This function assumes cell-centered values within a pixel of size `pixel_size`.
+    In order to interpolate in arbitrary locations, this assumption needs to be used.
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    # default value
-    if metadata is None: metadata = {'BASIS':'PIX','FORMAT':'50'}
-    #combine headers
+
+    # combine headers
     header=''
     for key in sorted(metadata.keys()): header=header+'#'+key+':'+metadata[key]+'\n'
     if comments is not None:
         for comment in comments: header = header+comment+'\n'
     header = header[:-1] # to get rid of the last \n in header
+
+    # try writing the file
     try:
         np.savetxt(filename, epixarr, fmt='%8.3f %8.3f %8.3f  %+12.7e',header=header,comments='')
     except :
@@ -120,19 +143,58 @@ def writeepixfile(filename: str, epixarr: np.ndarray , metadata: dict = None,
 
     return
 
-def read3dmodelfile(modelfile):
+def read3dmodelfile(modelfile: str) -> dict:
+    """Reads a standard 3D model file into a `model3d` dictionary containing `data`
+    and `metadata`. The `data` field contains the basis coefficients of the
+    parameterization employed in the 3D model file. The `metadata` fields contain
+    various parameters relevant for evaluating the 3D model at various locations.
+
+    Parameters
+    ----------
+    modelfile : str
+        Text file describing the 3D model
+
+    Returns
+    -------
+    dict
+        A `model3d` dictionary containing `data` and `metadata`
+
+    Raises
+    ------
+    IOError
+        File not found in local directory
+    ValueError
+        Parameterization type has not been implemented yet.
+        Current ones include spherical harmonics, spherical splines and pixels.
+
+    Examples
+    --------
+    >>> model3d = read3dmodelfile('S362ANI+M')
+
+    Notes
+    -----
+    This function has several fields in the `data` and `matadata` fields.
+    The details depend on what kind of parameterization is employed.
+    In general, `maxkern` is the maximum number of radial kernels
+    and `maxcoeff` is the maximum number of corresponding lateral basis functions,
+    `resolution` and `realization` are the indices for the resolution level
+    and the realization from a model ensemble (usually 0 if it is a single file).
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Reads a standard 3D model file. maxkern is the maximum number of radial kernels
-    and maxcoeff is the maximum number of corresponding lateral basis functions.
-    resolution and realization are the indices for the resolution level
-    and the realization from a model ensemble (usually 0 if a single file)
-    """
+
+    # check if file exists
     if (not os.path.isfile(modelfile)): raise IOError("Filename ("+modelfile+") does not exist")
 
     #defaults
     desckern=[];ihorpar=[]
     refmodel = None; kerstr = None; crust = None; null_model= None
     interpolant = None; cite = None; shortcite = None
+
+    # read the fields
     with open(modelfile) as f: lines = f.readlines()
     ii=0;   model3d = {}
     foundsplines = False; foundpixels = False; #foundharmonics = False
@@ -246,6 +308,7 @@ def read3dmodelfile(modelfile):
             if remain > 0:
                 arr=lines[ii].rstrip('\n').split(); ii=ii+1
                 for val in arr: coef[idummy-1].append(float(val))
+
     # Store the variables
     numvar=0; varstr=np.zeros(nmodkern, dtype='U200')
     ivarkern=np.zeros(nmodkern,dtype=np.int)
@@ -283,6 +346,7 @@ def read3dmodelfile(modelfile):
     metadata['interpolant']=interpolant; metadata['cite']=cite
     metadata['shortcite']=shortcite
 
+    # Get number of coefficients - lmax, number of splines or pixels
     if 'SPHERICAL HARMONICS' in typehpar:
         metadata['lmaxhor']=lmaxhor
     if 'PIXELS' in typehpar:
@@ -292,6 +356,7 @@ def read3dmodelfile(modelfile):
         metadata['ixlspl']=np.array(ixlspl); metadata['xlaspl']=np.array(xlaspl)
         metadata['xlospl']=np.array(xlospl); metadata['xraspl']=np.array(xraspl)
 
+    # Fill the basis coefficients as pandas DataFrame
     model3d['data']={}
     model3d['data']['coef']=pd.DataFrame(coef)
     try:
@@ -299,24 +364,41 @@ def read3dmodelfile(modelfile):
     except:
         model3d['data']['name']=ntpath.basename(modelfile)
     model3d['metadata']=metadata
+
     return model3d
 
+def epix2xarray(model_dir: str = '.', setup_file: str = 'setup.cfg',
+                output_dir: str = '.', n_hpar: int = 1, buffer: bool = True) -> xr.Dataset:
+    """Convert a set of extended pixel format (.epix) files in a directory
+    to a netCDF4 file in AVNI format using xarray.
 
-def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True,buffer=True):
-    """
-    Input parameters:
-    ----------------
+    Parameters
+    ----------
+    model_dir : str, optional
+        path to directory containing epix layer files, by default '.'
+    setup_file : str, optional
+        setup file containing metadata for the model, by default 'setup.cfg'
+    output_dir : str, optional
+        path to output directory, by default '.'
+    n_hpar : int, optional
+        number of unique horizontal parameterizations, by default 1
+    buffer : bool, optional
+        write to buffer instead of file for the intermediate step of the ascii file, by default True
 
-    model_dir: path to directory containing epix layer files
+    Returns
+    -------
+    xr.Dataset
+        An xarray Dataset that stores the values from a 3D model.
 
-    output_dir: path to output directory
+    Raises
+    ------
+    IOError
+        File not found in local directory
 
-    setup_file: setup file containing metadata for the model
-
-    n_hpar: number of unique horizontal parameterizations
-
-    buffer: write to buffer instead of file for the intermediate step of the ascii file
-
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
     start_time  =  timeit.default_timer()
@@ -339,7 +421,7 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
         print('... writing ASCII buffer')
     else:
         print('... writing ASCII file')
-    asciibuffer = epix2ascii(model_dir=model_dir,setup_file=setup_file,output_dir=output_dir,n_hpar=n_hpar,write_zeros=write_zeros,buffer=buffer)
+    asciibuffer = epix2ascii(model_dir=model_dir,setup_file=setup_file,output_dir=output_dir,n_hpar=n_hpar,buffer=buffer)
     elapsed  =  timeit.default_timer() - start_time
     print("........ evaluations took "+str(elapsed)+" s")
     if buffer:
@@ -353,13 +435,22 @@ def epix2xarray(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,wri
     return ds
 
 def checksetup(parser):
+    """Check the arguments in the model setup file and populate the default options
+
+    Parameters
+    ----------
+    parser : A ConfigObj object
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Check the arguments in the model setup file and populate the default options
-    """
+
     # Required arguments
     for key in ['name','cite']:
         if key not in parser['metadata'].keys():
-            raise KeyError(key+' needs to be specified in '+cfg_file)
+            raise KeyError(key+' needs to be specified')
     for field in ['min','units','max','resolution']:
         for type in ['lat','lon']:
             key = 'geospatial_'+type+'_'+field
@@ -377,7 +468,7 @@ def checksetup(parser):
         if key in parser['metadata'].keys():
             parser['metadata'][key] = parser['metadata'][key] if field=='units' else float(parser['metadata'][key])
         else:
-            raise KeyError(key+' needs to be specified in '+cfg_file)
+            raise KeyError(key+' needs to be specified')
 
     # Optional arguments
     try:
@@ -432,33 +523,52 @@ def checksetup(parser):
             else:
                 if key == 'unit': raise ValueError('need to define '+key+' for variable '+var+' in acceptable units (% NOT allowed, use percent).')
 
+def epix2ascii(model_dir: str = '.', setup_file: str = 'setup.cfg',
+               output_dir: str = '.', n_hpar: int = 1,
+               checks: bool = True, buffer: bool = True, onlyheaders: bool = False):
+    """Write AVNI formatted ASCII file from a directory containing extended pixel format (.epix) files
 
+    Parameters
+    ----------
+    model_dir : str, optional
+        path to directory containing epix layer files, by default '.'
+    setup_file : str, optional
+        setup file containing metadata for the model, by default 'setup.cfg'
+    output_dir : str, optional
+        path to output directory, by default '.'
+    n_hpar : int, optional
+        number of horizontal parameterizations (currently only handles
+        models with 1 horizontal parameterization, and with a constant pixel width), by default 1
+    checks : bool, optional
+        checks if the metadata in `setup_file` is consistent with epix files, by default True
+    buffer : bool, optional
+        write to buffer instead of file for the intermediate step of the ascii file, by default True
+    onlyheaders : bool, optional
+        write only headers, not the coefficients, by default False
 
-def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,write_zeros=True, checks=True,buffer=False, onlyheaders=False):
-    '''
-    write a avni formatted ascii file from a directory containing epix files
+    Returns
+    -------
+    buffer or file name
+        The memory buffer containing the file output (buffer=True) or the output file name on disk.
 
-    Input parameters:
-    ----------------
+    Raises
+    ------
+    IOError
+        Some epix files have not been found in the directory
+    AssertionError
+        Checks for compatibility across epix files are not satisfied
+    ValueError
+        Invalid values are found for some metadata fields
 
-    epix_dir: path to directory containing epix layer files
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
 
-    setup_file: setup file containing metadata for the model
-
-    output_file: name of avni format output file
-
-    n_hpar:number of horizontal parameterizations (currently only handles
-           models with 1 horizontal parameterization, and with a constant pixel width)
-
-    checks: if True, checks if the metadata in setup_file is consistent with epix files
-
-    buffer: write to buffer instead of file for the intermediate step of the ascii file
-
-    onlyheaders: only write headers, not the coefficients
-    '''
+    # Check the configuration file
     cfg_file = model_dir+'/'+setup_file
     ref_dict = {} #dictionary containing reference values
-
     if not os.path.isfile(cfg_file):
         raise IOError('No configuration file found.'\
 	                 'Model directory must contain '+setup_file)
@@ -520,6 +630,7 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
     print('... read '+str(np.sum(epix_lengths))+' radial structure kernels of '+str(len(string))+' variables: \n'+'\n'.join(string))
     f_out.write(u'RADIAL STRUCTURE KERNELS: {}\n'.format(np.sum(epix_lengths)))
 
+    # Read through various parameters
     stru_indx = []
     #stru_list = []
     lats = []
@@ -709,35 +820,62 @@ def epix2ascii(model_dir='.',setup_file='setup.cfg',output_dir='.',n_hpar=1,writ
 
                 #check ifremav. if it's 1, add in average
                 if ref_dict[parameter]['ifremav'][j] == 1:
-                    coefs += refs_dict[parameter]['average'][j]
+                    coefs += ref_dict[parameter]['average'][j]
                     print('... adding average back to parameter '+parameter+' # '+str(j))
                 f_out.write(u'STRU  {:3.0f}:  {:1.0f}\n'.format(k,px_w))
                 f_out.write(line.write(coefs)+u'\n')
                 k += 1
+
+    # Write to buffer or file name
     if buffer:
         f_out.seek(0)
         return f_out
     else:
         return outfile
 
-def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',complevel=9, engine='netcdf4', writenc4 = False):
-    '''
-    write an xarrary dataset from a avni formatted ascii file
+def ascii2xarray(asciioutput,outfile = None, model_dir: str = '.',
+                 setup_file: str = 'setup.cfg', complevel: int = 9,
+                 engine: str = 'netcdf4', writenc4: bool = False):
+    """Create an xarray Dataset from AVNI formatted ASCII file
 
-    Input parameters:
-    ----------------
+    Parameters
+    ----------
+    asciioutput : buffer or str
+        A filename string or buffer that will be read
+    outfile : str, optional
+        Output file in netCDF4 format, by default None
+    model_dir : str, optional
+        _description_, by default '.'
+    setup_file : str, optional
+        setup file containing metadata for the model, by default 'setup.cfg'
+    complevel : int, optional
+        options for compression in netcdf file, by default 9
+    engine : str, optional
+        options in netcdf file, by default 'netcdf4'
+    writenc4 : bool, optional
+        write a netcdf4 file, by default False
 
-    ascii_file: path to avni format output file
+    Returns
+    -------
+    ds: xarray Dataset
+        Contains the model description in a new xarray Dataset
 
-    outfile: output netcdf file
+    Raises
+    ------
+    IOError
+        Configuration file has not been found in the directory
+    AssertionError
+        Checks for compatibility across files are not satisfied
+    ValueError
+        Only pixels are allowed as parameterization for netCDF files
+    warnings.warn
+        Checks for number of pixels not satisfied
 
-    setup_file: setup file containing metadata for the model
-
-    complevel, engine: options for compression in netcdf file
-
-    writenc4: write a netcdf4 file, if True
-
-    '''
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
 
     model_dict = {}
     cfg_file = model_dir+'/'+setup_file
@@ -848,7 +986,6 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
             if not indx in model_dict[var].keys(): raise AssertionError(var+' not read properly with index '+indx)
 
     for i in range(nhpar):
-
         lons = []
         lats = []
         pxwd = []
@@ -1092,8 +1229,12 @@ def ascii2xarray(asciioutput,outfile=None,model_dir='.',setup_file='setup.cfg',c
     return ds
 
 def getLU2symmetric(insparse):
-    """
-    Get the full symmetric matrix
+    """Get the full symmetric matrix from LU matrix
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     print(".... Converting from LU matrix to symmetric matrix")
     outsparse=insparse.tolil(copy=True)
@@ -1102,10 +1243,41 @@ def getLU2symmetric(insparse):
     outsparse=outsparse+insparse.T
     return outsparse
 
-def readResCov(infile,onlymetadata=False):
-    """
-    Reads Resolution or Covariance matrix created by invwdata_pm64 with option -r.
+def readResCov(infile: str, onlymetadata: bool = False):
+    """Reads Resolution or Covariance matrix created by invwdata_pm64 with option -r.
     R=inv(ATA+DTD)ATA and the name of file is typically outmodel.Resolution.bin
+
+    Parameters
+    ----------
+    infile : str
+        Binary file containing Resolution or Covariance matrix
+    onlymetadata : bool, optional
+        Only read the metadata and ignore the elements of the matrix, by default False
+
+    Returns
+    -------
+    refmdl : str
+        Reference 1D model
+    kerstr : str
+        Kernel signifying the basis sets comprising radial and horizontal parameterization
+    ntot : int
+        Number of parameters or basis coefficients in the model
+    indexrad1,indexrad2,indexhor1,indexhor2 : np.ndarray
+        Arrays describing the radial and horizontal basis sets that each ATA element in `out` correponds to
+    out : np.ndarray
+        Elements of the sparse Resolution or Covariance matrix
+
+    Raises
+    ------
+    IOError
+        Input file has not been found in the directory
+    ValueError
+        Number of bytes in binary file does not match expected
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     #read all the bytes to indata
     if (not os.path.isfile(infile)): raise IOError("Filename (",infile,") does not exist")

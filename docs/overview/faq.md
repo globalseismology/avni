@@ -1,7 +1,7 @@
 (faq)=
 ```{eval-rst}
-.. include:: ../../links.inc
-.. include:: ../../buttons.inc
+.. include:: ../links.inc
+.. include:: ../buttons.inc
 ```
 
 # Frequently Asked Questions (FAQ)

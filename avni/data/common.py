@@ -33,15 +33,11 @@ def creation_date(path_to_file: str):
 
     Returns
     -------
-    _type_
+    datetime
         datetime stamp in UTC as AVNI server stores datetime in UTC
-
-    Notes
-    -----
 
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)
-
     :Last Modified:
         2020.01.06 11.00
     """
@@ -56,14 +52,23 @@ def creation_date(path_to_file: str):
     return datetime.utcfromtimestamp(stat.st_mtime)
 
 def update_file(file,folder = None, baseurl = None, subdirectory = None):
-    """
-    If the AVNI server contain a downloadable resource that is newer,
-    download it locally.
+    """If the AVNI server contain a downloadable resource that is newer, download it locally.
 
     Parameters
     ----------
+    file : str
+        full path and name of the file to sync with AVNI servers
+    folder : str
+        folder where local files are store, by default as output from tools.get_filedir()
+    baseurl: str
+        public URL from where the public downloads can take place, by default as specified as `downloadpage` in `constants.py`
+    subdirectory: str
+        subdirectory inside the baseurl and folder where the file should be synced
 
-    file: full path and name of the file to sync with AVNI servers
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.01.06 11.00
     """
 
     # Get the correct default paths
