@@ -621,7 +621,7 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model=constants.topography, tree=N
     if tree == None and isinstance(model,string_types):
         treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.'+resolution+'.pkl'
         ncfile = dbs_path+'/'+model
-        if not os.path.isfile(ncfile): data.update_file(model)
+        if not os.path.isfile(ncfile): data.update_file(model,subdirectory=constants.topofolder)
         tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],resolution=resolution,radius_in_km=constants.R.to('km').magnitude)
         #read values
         model = tools.readtopography(model=model,resolution=resolution,field = 'z', dbs_path=dbs_path)
@@ -773,16 +773,16 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     else:
         theta=[90.-gcdelta/2.,90.+gcdelta/2.]
     theta_range=np.linspace(theta[0],theta[1],nelevinter)
-    
+
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
     if vexaggerate != 0:
-        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,resolution=resolution,nearest=1)        
-        # hot fix: some combinations of gcdelta, lat,lon result in elev array being 
+        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,resolution=resolution,nearest=1)
+        # hot fix: some combinations of gcdelta, lat,lon result in elev array being
         # 1 element shorter. Not sure why.
         if theta_range.size - elev.size == 1:
             theta_range = theta_range[:-1]
-            
+
         if elev.min()< 0.:
             extend_radius=(elev.max()-elev.min())*vexaggerate/1000.
         else:
@@ -851,7 +851,7 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
-    
+
     if isinstance(interp_values,xr.DataArray):
         interp_values = interp_values.toarray()
     im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)

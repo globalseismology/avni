@@ -250,10 +250,10 @@ def getDestination(lat,lng,azimuth,distance):
     '''returns the lat an long of destination point
     given the start lat, long, aziuth, and distance (in meters)'''
     R = constants.R.to_base_units().magnitude #Radius of the Earth in m
-    d = distance #Distance m
+    if not isinstance(distance, (float,int)): distance = distance.to_base_units().magnitude #Distance m
     if lng > 180.: lng = lng -360.
     start = LatLon(lat,lng)
-    end = start.destination(d,azimuth,R)
+    end = start.destination(distance,azimuth,R)
     return[end.lat, end.lon]
 
 def calculateBearing(lat1,lng1,lat2,lng2):
@@ -302,4 +302,4 @@ def calculateDistance(lat1,lng1,lat2,lng2,final_units='m',radius_in_km=6371.):
         return gcdist
     else:
         return None
-    
+
