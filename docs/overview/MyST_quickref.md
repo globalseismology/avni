@@ -518,6 +518,3 @@ file).
 
 [^footnote1]: And here's what the footnote says (put this at the very bottom of
     the document)
-
-```{bibliography}
-```

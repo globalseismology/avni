@@ -45,3 +45,13 @@ see our `FAQ <../overview/faq.html>`__ for more details.
 
 .. include:: ../../LICENSE
    :literal:
+
+.. _general_bibliography:
+
+General bibliography
+--------------------
+
+Following are the references cited elsewhere in this documentation:
+
+.. include:: bibliography.md
+   :parser: myst_parser.sphinx_
