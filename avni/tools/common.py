@@ -19,9 +19,9 @@ import decimal
 from numba import jit
 import pdb
 
-####################### IMPORT AVNI LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  ###########################
 from .. import constants
-#######################################################################################
+##########################################################################
 
 def stage(file: str, overwrite: bool = False):
     """Stages a file in the AVNI file directories for testing
@@ -36,7 +36,7 @@ def stage(file: str, overwrite: bool = False):
     Raises
     ------
     IOError
-        File not found or a symlink alrea exists
+        File not found or a symlink already exists
     """
 
     filedir = get_filedir() #AVNI file directory
@@ -388,7 +388,7 @@ def sanitised_input(prompt, type_=None, min_=None, max_=None, range_=None):
         elif min_ is not None and ui < min_:
             print("Input must be greater than or equal to {0}.".format(min_))
         elif range_ is not None and ui not in range_:
-            if isinstance(range_, xrange):
+            if isinstance(range_, range):
                 template = "Input must be between {0} and {1}."
                 print(template.format(range_[0],range_[-1]))
             else:
