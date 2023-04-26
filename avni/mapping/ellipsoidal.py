@@ -1,21 +1,56 @@
 #!/usr/bin/env python
 
+#####################  IMPORT STANDARD MODULES   #########################
+
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 
 import multiprocessing
 from joblib import Parallel, delayed
 import numpy as np
+import typing as tp
 import pdb
-############################### PLOTTING ROUTINES ################################
+
+####################### IMPORT AVNI LIBRARIES  ###########################
+
 from ..tools.trigd import atand,tand
 from ..tools.common import convert2nparray
 from ..f2py import ddelazgc # geolib library from NSW
 from .. import constants
-###############################
 
-def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
-    """Get the distance and azimuths from positions in geographic coordinates"""
+##########################################################################
+
+def get_distaz(eplat: tp.Union[float,list,tuple,np.ndarray],
+               eplon: tp.Union[float,list,tuple,np.ndarray],
+               stlat: tp.Union[float,list,tuple,np.ndarray],
+               stlon: tp.Union[float,list,tuple,np.ndarray],
+               num_cores: int = 1):
+    """Get the distance and azimuths from positions in geographic coordinates
+
+    Parameters
+    ----------
+    eplat : tp.Union[float,list,tuple,np.ndarray]
+        Latitudes of source location(s)
+    eplon : tp.Union[float,list,tuple,np.ndarray]
+        Longitudes of source location(s)
+    stlat : tp.Union[float,list,tuple,np.ndarray]
+        Latitudes of station location(s)
+    stlon : tp.Union[float,list,tuple,np.ndarray]
+        Longitudes of station location(s)
+    num_cores : int, optional
+        Number of cores to use in the calculation, by default 1
+
+    Returns
+    -------
+    delta,azep,azst
+        A tuple with elements as distance in degrees, azimuth from source(s), and
+        backazimuth from station(s).
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
 
     geoco = constants.geoco.magnitude
     eplat = convert2nparray(eplat)
@@ -46,12 +81,11 @@ def get_distaz(eplat,eplon,stlat,stlon,num_cores=1):
     return delta,azep,azst
 
 def delazgc_helper(args):
+    """A helper function to parallelize ddelazgc"""
     return ddelazgc(*args)
 
-def geographic_to_geocentric(latin):
-    """
-    convert a geographic coordinate to geocentric coordinate
-    """
+def geographic_to_geocentric(latin: float):
+    """Convert a geographic coordinate to geocentric coordinate"""
     xlat=latin
     fac = constants.geoco.magnitude
     theta = radians(90.0-xlat)
@@ -60,10 +94,8 @@ def geographic_to_geocentric(latin):
 
     return latout
 
-def geocentric_to_geographic(latin):
-    """
-    convert a geocentric coordinate to geographic coordinate
-    """
+def geocentric_to_geographic(latin: float):
+    """Convert a geocentric coordinate to geographic coordinate"""
     xlat=latin
     fac = constants.geoco.magnitude
     if xlat != 0.:
@@ -76,29 +108,39 @@ def geocentric_to_geographic(latin):
 
     return latout
 
-def inpolygon(latitude,longitude,polygon_latitude,polygon_longitude,num_cores=1, orientation = 'anti-clockwise', threshold = 1E-6):
-    """
-    Finds whether a (set of) point(s) is within a closed polygon
+def inpolygon(latitude: tp.Union[float,list,tuple,np.ndarray],
+              longitude: tp.Union[float,list,tuple,np.ndarray],
+              polygon_latitude: tp.Union[list,tuple,np.ndarray],
+              polygon_longitude: tp.Union[list,tuple,np.ndarray],
+              num_cores: int = 1, orientation: str = 'anti-clockwise',
+              threshold: float = 1E-6) -> tp.Union[np.ndarray,bool]:
+    """Finds whether a (set of) point(s) is within a closed polygon
 
-    Input Parameters:
-    ----------------
+    Parameters
+    ----------
+    latitude,longitude : tp.Union[float,list,tuple,np.ndarray]
+        Set of queried locations
+    polygon_latitude,polygon_longitude : tp.Union[list,tuple,np.ndarray]
+        Closed points that define the polygon.
+        First and last points need to be the same.
+    num_cores : int, optional
+        Number of cores to use for the calculations, by default 1
+    orientation : str, optional
+        clockwise or anti-clockwise orientation of points specified above, by default 'anti-clockwise'
+    threshold : float, optional
+        Limit to which the sum of azimuth check to (-)360 degrees is permitted
+        to be defined as within the polygon, by default 1E-6
 
-    latitude,longitude: set of queried locations
+    Returns
+    -------
+    tp.Union[np.ndarray,bool]
+        Logical array of bool(s) containing the same number of elements as
+        latitude/longitude
 
-    polygon_latitude,polygon_longitude: closed points that define the polygon.
-                                First and last points need to be the same.
-
-    num_cores: Number of cores to use for the calculations
-
-    orientation: clockwise or anti-clockwise orientation of points specified above
-
-    threshold: limit to which the sum of azimuth check to (-)360 degrees is permitted
-               to be defined as within the polygon.
-
-    Output:
-    ------
-
-    within: logical array containing the same number of elements as latitude/longitude
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     # convert to numpy arrays. Various checks
     latitude = convert2nparray(latitude)
