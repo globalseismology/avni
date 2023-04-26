@@ -13,13 +13,13 @@ from numba import jit,int64
 from progressbar import progressbar
 import typing as tp
 
-####################### IMPORT AVNI LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  ###########################
 
 from avni.f2py import vbspl,dbsplrem,ylm,shold
 from .trigd import sind,cosd,acosd
 from .common import convert2nparray,makegrid
 
-#######################################################################################
+##########################################################################
 
 def eval_vbspl(radius: tp.Union[list,tuple,np.ndarray],
                knots: tp.Union[str,list,tuple,float,np.int64,np.ndarray,bool]):
@@ -392,7 +392,7 @@ def eval_ylm(latitude: tp.Union[list,tuple,np.ndarray],
     grid : bool, optional
         Create a grid based on a combination of latitudes and longitudes, by default False
     norm : str, optional
-        _description_, by default 'ylm'
+        Spherical harmonic normalization, by default 'ylm'
 
     Returns
     -------

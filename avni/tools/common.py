@@ -11,16 +11,19 @@ import os
 import codecs,json #printing output
 import numpy as np
 import re
-from configobj import ConfigObj
 from six import string_types # to check if variable is string using isinstance
 import ntpath
 import pint # For SI units
 import decimal
 from numba import jit
+import typing as tp
+import pandas as pd
 import pdb
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
+
 from .. import constants
+
 ##########################################################################
 
 def stage(file: str, overwrite: bool = False):
@@ -37,6 +40,11 @@ def stage(file: str, overwrite: bool = False):
     ------
     IOError
         File not found or a symlink already exists
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
     filedir = get_filedir() #AVNI file directory
@@ -54,13 +62,27 @@ def stage(file: str, overwrite: bool = False):
             raise IOError('A link to an actual file '+ntpath.basename(file)+' (not symlink) exists within AVNI. Delete the file '+outlink+' first before proceeding.')
     return
 
-def parse_line(line,rx_dict):
-    """
-    Function used to parse line with key word from rx_dict
+def parse_line(line: str,rx_dict: dict):
+    """Function used to parse line with key word from rx_dict
 
-    Do a regex search against all defined regexes and
-    return the key and match result of the first matching regex
+    Parameters
+    ----------
+    line : str
+        Line to search
+    rx_dict : dict
+        Do a regex search against all defined regexes
+
+    Returns
+    -------
+    key,match
+        Result of the first matching regex, None if not found
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
+
     for key, rx in rx_dict.items():
         match = rx.search(line)
         if match:
@@ -69,7 +91,28 @@ def parse_line(line,rx_dict):
     return None, None
 
 @jit(nopython=True)
-def ifwithindepth(start_depths,end_depths,depth_in_km):
+def ifwithindepth(start_depths: np.ndarray,end_depths: np.ndarray,depth_in_km: np.ndarray):
+    """Check if a set of depths are within a range of depths
+
+    Parameters
+    ----------
+    start_depths : np.ndarray
+        Starting depth for the range
+    end_depths : np.ndarray
+        End depth for the range
+    depth_in_km : np.ndarray
+        Depths to check for
+
+    Returns
+    -------
+    output
+        index of depth range that each `depth_in_km` belongs to
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     if depth_in_km.ndim != 1: raise ValueError('only 1-D array depth_in_km allowed')
     output = np.ones_like(depth_in_km,dtype=np.int64)
     output[:] = -1
@@ -81,11 +124,29 @@ def ifwithindepth(start_depths,end_depths,depth_in_km):
                 break
     return output
 
-def makegrid(latitude,longitude,depth_in_km=None):
-    """
-    Make a 2D or 3D grid out of input locations and depths.
+def makegrid(latitude: tp.Union[list,tuple,np.ndarray],
+             longitude: tp.Union[list,tuple,np.ndarray],
+             depth_in_km: tp.Union[None,list,tuple,np.ndarray] = None):
+    """Make a 2D or 3D grid out of input locations and depths.
 
-    grid: make a grid by unraveling (depth_in_km,latitude,longitude)
+    Parameters
+    ----------
+    latitude : tp.Union[list,tuple,np.ndarray]
+        Latitudes of locations queried
+    longitude : tp.Union[list,tuple,np.ndarray]
+        Longitudes of locations queried
+    depth_in_km : tp.Union[None,list,tuple,np.ndarray], optional
+        Depths of locations queried, by default None
+
+    Returns
+    -------
+    nrows,latitude,longitude,[optional: depth_in_km]
+        A 2D or 3D grid with `nrows` rows found by unraveling (depth_in_km,latitude,longitude)
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
     # convert to numpy arrays
@@ -117,14 +178,31 @@ def makegrid(latitude,longitude,depth_in_km=None):
         if not (len(latitude) == len(longitude) == len(depth_in_km)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
         return nrows,latitude,longitude,depth_in_km
 
-def convert2nparray(value,int2float = True,allowstrings=True):
-    """
-    Converts input value to a float numpy array. Boolean are returned as Boolean arrays.
+def convert2nparray(value: tp.Union[str,list,tuple,float,np.int64,np.ndarray,bool],
+                    int2float: bool = True,
+                    allowstrings: bool = True) -> np.ndarray:
+    """Converts input value to a float numpy array. Boolean are returned as Boolean arrays.
 
-    int2float: convert integer to floats, if true
+    Parameters
+    ----------
+    value : tp.Union[str,list,tuple,float,np.int64,np.ndarray,bool]
+        A single value or a set of values.
+    int2float : bool, optional
+        Convert integer to floats, by default True
+    allowstrings : bool, optional
+        Check if value has strings, by default True
 
-    stringallowed: check if value has strings
+    Returns
+    -------
+    np.ndarray
+        Output values as a numpy array.
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
+    # checks
     if isinstance(value, (list,tuple,np.ndarray)):
         outvalue = np.asarray(value)
     elif isinstance(value, bool):
@@ -144,11 +222,27 @@ def convert2nparray(value,int2float = True,allowstrings=True):
     return outvalue
 
 
-def precision_and_scale(x):
+def precision_and_scale(x: float, max_digits: int = 14) -> tp.Tuple[int, int]:
+    """Returns precision and scale of a float
+
+    Parameters
+    ----------
+    x : float
+        A floating point number
+    max_digits : int, optional
+        Maximum digits or magnitude, by default 14
+
+    Returns
+    -------
+    tp.Tuple[int, int]
+        Returns precision and scale of a float
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Returns precision and scale of a float
-    """
-    max_digits = 14
+
     int_part = np.int(abs(x))
     magnitude = 1 if int_part == 0 else np.int(np.log10(int_part)) + 1
     if magnitude >= max_digits:
@@ -161,55 +255,113 @@ def precision_and_scale(x):
     scale = np.int(np.log10(frac_digits))
     return (magnitude + scale, scale)
 
-def alphanum_key(s):
-    '''
-    helper tool to sort lists in ascending numerical order (natural sorting),
+def alphanum_key(s: str) -> list:
+    """Helper tool to sort lists in ascending numerical order (natural sorting),
     rather than lexicographic sorting
-    '''
+
+    Parameters
+    ----------
+    s : str
+        string to sort
+
+    Returns
+    -------
+    list
+        Sorted list
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     return [int(c) if c.isdigit() else c for c in re.split('([0-9]+)', s)]
 
-def diffdict(first_dict,second_dict):
-    '''helper tool to get difference in two dictionaries
-    '''
+def diffdict(first_dict: dict,second_dict: dict) -> dict:
+    """Helper tool to get difference in two dictionaries
+
+    Parameters
+    ----------
+    first_dict : dict
+        First dictionary
+    second_dict : dict
+        Second dictionary
+
+    Returns
+    -------
+    dict
+        Difference
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     return { k : second_dict[k] for k in set(second_dict) - set(first_dict) }
 
-def equaldict(first_dict,second_dict):
-    '''helper tool to check if two dictionaries are equal
-    '''
+#def equaldict(first_dict,second_dict):
+#    '''helper tool to check if two dictionaries are equal
+#    '''
     #checks=[]
     #for k in set(realization.metadata):
     #    checks.extend(convert2nparray(first_dict==second_dict))
     #return np.all(checks)
 
-def df2nparray(dataframe):
-    '''
-    helper tool to return the named numpy array of the pandas dataframe
-    '''
+def df2nparray(dataframe: pd.DataFrame) -> np.ndarray:
+    """Helper tool to return the named numpy array of the pandas dataframe
+
+    Parameters
+    ----------
+    dataframe : pd.DataFrame
+        Input Pandas Dataframe
+
+    Returns
+    -------
+    np.ndarray
+        Equivalent named numpy array
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     columns = {}
     for ii in range(dataframe.shape[1]): columns[ii] = str(ii)
     dataframe.rename(columns = columns,inplace=True)
     ra = dataframe.to_records(index=False)
     return np.asarray(ra)
 
-def krunge(n,x,h,y,f,m=0,phi=np.zeros(6),savey=np.zeros(6)):
-    """
-    some sort of integration or interpolation? x is
-    incremented on second and fourth calls. Resets itself after
-    5'th call.
+def krunge(n:int,x: float,
+           h: tp.Union[int,float],
+           y: tp.Union[list,tuple,np.ndarray],
+           f: tp.Union[list,tuple,np.ndarray],
+           m: int = 0,
+           phi: np.ndarray = np.zeros(6),
+           savey: np.ndarray = np.zeros(6)):
+    """Some sort of integration or interpolation?
+    x is incremented on second and fourth calls. Resets itself after 5'th call.
 
-    Input parameters:
-    ----------------
-    input: (these are guesses)
-    m = call number
-    n   = number of points
-    f() = function evaluated at each point
-    x   = independent variable
-    h   = step size
-
-    Output:
-    ------
-    y() =
+    Parameters
+    ----------
+    n : int
+        number of points
+    x : float
+        indepent variable for points
+    h : tp.Union[int,float]
+        step size
+    y : tp.Union[list,tuple,np.ndarray]
+        function evaluated at each point
+    f : tp.Union[list,tuple,np.ndarray]
+        function evaluated at each point
+    m : int, optional
+        call number, by default 0
+    phi : np.ndarray, optional
+        Intermediate variable, by default np.zeros(6)
+    savey : np.ndarray, optional
+        Intermediate variable, by default np.zeros(6)
     """
+
+    raise NotImplementedError('This function has not been tested against Fortran codes')
+
     if len(y) > 6 or len(f) > 6:
         raise ValueError ("len(y) > 6 or len(f) >  in krunge")
     m = m + 1
@@ -241,9 +393,23 @@ def krunge(n,x,h,y,f,m=0,phi=np.zeros(6),savey=np.zeros(6)):
     return krunge,y,f,m,phi,savey
 
 
-def firstnonspaceindex(string):
-    """
-    Gets the first non space index of a string
+def firstnonspaceindex(string: str) -> tp.Tuple[int,int]:
+    """Gets the first and last non-space index of a string
+
+    Parameters
+    ----------
+    string : str
+        String to search
+
+    Returns
+    -------
+    tp.Tuple[int,int]
+        First and last non-space index
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     ifst=0
     ilst=len(string.rstrip('\n'))
@@ -251,9 +417,23 @@ def firstnonspaceindex(string):
     if ilst-ifst <= 0: raise ValueError("error reading model")
     return ifst,ilst
 
-def get_fullpath(path):
-    """
-    Provides the full path by replacing . and ~ in path.
+def get_fullpath(path: str) -> str:
+    """Provides the full path by replacing . and ~ in path
+
+    Parameters
+    ----------
+    path : str
+        Input file or folder path
+
+    Returns
+    -------
+    str
+        Full path after replacing . and ~ in path
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     # Get the current directory
     if path[0]=='.': path = os.path.abspath(path)
@@ -266,17 +446,50 @@ def get_fullpath(path):
     if ntpath.basename(path) == path or path[0] != '/': path = os.path.abspath('./'+path)
     return path
 
-def listfolders(path):
-    """
-    Return a list of directories in a path
+def listfolders(path: str) -> list:
+    """Return a list of directories in a path
+
+    Parameters
+    ----------
+    path : str
+        Input file or folder path
+
+    Returns
+    -------
+    list
+        List of directories
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
     return dirs
 
-def get_installdir(module='avni',checkwrite=True,checkenv=True):
-    """
-    Get the installation directory for any module. checkwrite checks for write access to the files.
-    checkenv checks if the directory is specified as an environment variable.
+def get_installdir(module: str = 'avni',
+                   checkwrite: bool = True,
+                   checkenv: bool =True) -> str:
+    """Get the installation directory for any module in the current machine.
+
+    Parameters
+    ----------
+    module : str, optional
+        Module to search for, by default 'avni'
+    checkwrite : bool, optional
+        Checks for write access to the files, by default True
+    checkenv : bool, optional
+        Checks if the directory is specified as an environment variable, by default True
+
+    Returns
+    -------
+    str
+        Path to installation directory
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     installdir = None
     if checkenv:
@@ -299,9 +512,32 @@ def get_installdir(module='avni',checkwrite=True,checkenv=True):
 Specify "+module+"_dir environment variable or chdir to a different directory with I/O access.")
     return installdir
 
-def get_filedir(module='avni',subdirectory=None,checkwrite=True,makedir=True):
-    """
-    Get the local files directory. Make a new directory if doesn't exist (makedir==True)
+def get_filedir(module: str = 'avni',
+                subdirectory: tp.Union[None,str] = None,
+                checkwrite: bool = True,
+                makedir: bool = True) -> str:
+    """Get the local files directory for any module in the current machine.
+
+    Parameters
+    ----------
+    module : str, optional
+        Module to search for, by default 'avni'
+    subdirectory : tp.Union[None,str], optional
+        A directory inside the main directory, by default None
+    checkwrite : bool, optional
+        Checks for write access to the files, by default True
+    makedir : bool, optional
+        Make a new directory if it doesn't exist, by default True
+
+    Returns
+    -------
+    str
+        Path to local files directory
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     installdir = get_installdir(module=module,checkwrite=checkwrite)
     filedir = os.path.join(installdir,constants.localfilefolder)
@@ -311,17 +547,56 @@ def get_filedir(module='avni',subdirectory=None,checkwrite=True,makedir=True):
         if not os.path.exists(filedir): os.makedirs(filedir)
     return filedir
 
-def get_cptdir(module='avni',checkwrite=True,makedir=True):
-    """
-    Get the directory with color palettes. Make a new directory if doesn't exist (makedir==True)
+def get_cptdir(module: str = 'avni',
+               checkwrite: bool = True,
+               makedir: bool = True) -> str:
+    """Get the directory with color palettes for any module in the current machine.
+
+    Parameters
+    ----------
+    module : str, optional
+        Module to search for, by default 'avni'
+    checkwrite : bool, optional
+        Checks for write access to the files, by default True
+    makedir : bool, optional
+        Make a new directory if it doesn't exist, by default True
+
+    Returns
+    -------
+    str
+        Path to local CPT color palette directory
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     return get_filedir(module=module,subdirectory=constants.cptfolder,
                         checkwrite=checkwrite,makedir=makedir)
 
-def get_configdir(module='avni',checkwrite=True,makedir=True):
-    """
-    Get the directory containing configuration files.
-    Make a new directory if doesn't exist (makedir==True)
+def get_configdir(module: str = 'avni',
+                  checkwrite: bool = True,
+                  makedir: bool = True) -> str:
+    """Get the directory containing configuration files.
+
+    Parameters
+    ----------
+    module : str, optional
+        Module to search for, by default 'avni'
+    checkwrite : bool, optional
+        Checks for write access to the files, by default True
+    makedir : bool, optional
+        Make a new directory if it doesn't exist, by default True
+
+    Returns
+    -------
+    str
+        Path to local config directory as specified in :py:func:`constants.configfolder`
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     installdir = get_installdir(module=module,checkwrite=checkwrite)
     configdir = installdir+'/'+constants.configfolder
@@ -330,10 +605,30 @@ def get_configdir(module='avni',checkwrite=True,makedir=True):
             os.makedirs(configdir)
     return configdir
 
-def get_projections(checkwrite=True,makedir=True,types='radial'):
-    """
-    Get the file containing projection matrices.
-    Make a new directory if doesn't exist (makedir==True)
+def get_projections(checkwrite: bool = True,
+                    makedir: bool = True,
+                    types: str = 'radial') -> tp.Tuple[str,bool]:
+    """Get the file containing projection matrices.
+
+    Parameters
+    ----------
+    checkwrite : bool, optional
+        Checks for write access to the files, by default True
+    makedir : bool, optional
+        Make a new directory if doesn't exist, by default True
+    types : str, optional
+        Type can be radial or lateral, by default 'radial'
+
+    Returns
+    -------
+    tp.Tuple[str,bool]
+        First entry is location of projection file
+        Second end is whether this file already exists in the file system
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     if types != 'radial' and types != 'lateral':
         raise ValueError('types is undefined in get_projections')
@@ -342,36 +637,108 @@ def get_projections(checkwrite=True,makedir=True,types='radial'):
     exists = os.path.isfile(projections)
     return projections,exists
 
+def writejson(nparray: np.ndarray,
+              filename: str,
+              encoding: str = 'utf-8'):
+    """Writes a json file from a numpy array
 
-def writejson(nparray,filename,encoding='utf-8'):
-    """Writes a json file from a numpy array"""
+    Parameters
+    ----------
+    nparray : np.ndarray
+        Input numpy array to write to JSON
+    filename : str
+        Output JSON file name
+    encoding : str, optional
+        File encoding, by default 'utf-8'
 
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     listarray = nparray.tolist() # nested lists with same data, indices
     json.dump(listarray, codecs.open(filename, 'w', encoding=encoding), separators=(',', ':'), sort_keys=True, indent=4) ### this saves the array in .json format
     return
 
-def readjson(filename,encoding='utf-8'):
-    """Reading from a filename to a numpy array"""
+def readjson(filename: str,encoding: str = 'utf-8') -> np.ndarray:
+    """Reading from a JSON file to a numpy array
 
+    Parameters
+    ----------
+    filename : str
+        Input JSON file name
+    encoding : str, optional
+        File encoding, by default 'utf-8'
+
+    Returns
+    -------
+    np.ndarray
+        Output numpy array
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     obj_text = codecs.open(filename, 'r', encoding=encoding).read()
     listarray = json.loads(obj_text)
     nparray = np.array(listarray)
     return nparray
 
-def uniquenumpyrow(a):
-    """Gets the unique rows from a numpy array and the indices. e.g. to get unique lat-lon values"""
+def uniquenumpyrow(a: np.ndarray):
+    """Gets the unique rows from a numpy array and the indices. e.g. to get unique lat-lon values
+
+    Parameters
+    ----------
+    a : np.ndarray
+        A numpy aray with multiple rows that needs to searched
+
+    Returns
+    -------
+    unique_a,idx
+        Unique rows and their indices
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     b = np.ascontiguousarray(a).view(np.dtype((np.void, a.dtype.itemsize * a.shape[1])))
     _, idx = np.unique(b, return_index=True)
     unique_a = a[idx]
     return unique_a,idx
 
 
-def sanitised_input(prompt, type_=None, min_=None, max_=None, range_=None):
-    """Provide a user prompt with values between min-max or range of values e.g.
+def sanitised_input(prompt: str, type_=None, min_=None, max_=None, range_=None):
+    """Provide a user prompt with values between min-max or range of values
+
     For specific values:
     user_input = sanitised_input("Replace(r)/Ignore(i) this datum?", str.lower, range_=('r', 'i')
     For a range:
     age = sanitised_input("Enter your age: ", int, range_=xrange(100))
+
+    Parameters
+    ----------
+    prompt : str
+        Prompt to the user
+    type_ : _type_, optional
+        type of input needed, by default None
+    min_ : _type_, optional
+        Minimum value, by default None
+    max_ : _type_, optional
+        Maximum value, by default None
+    range_ : _type_, optional
+        Range of values, by default None
+
+    Returns
+    -------
+    ui
+        User input
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     if min_ is not None and max_ is not None and max_ < min_:
         raise ValueError("min_ must be less than or equal to max_.")
@@ -402,17 +769,24 @@ def sanitised_input(prompt, type_=None, min_=None, max_=None, range_=None):
         else:
             return ui
 
-def appendunits(ureg=constants.ureg,system='mks',unitsfile = get_configdir()+'/'+constants.customunits):
-    """
-    Append the custom units from unitsfile to ureg registry
+def appendunits(ureg=constants.ureg,
+                system: str = 'mks',
+                unitsfile: str = get_configdir()+'/'+constants.customunits):
+    """Append the custom units from unitsfile to `ureg` registry
 
-    Input parameters:
-    ----------------
-    ureg: input unit registry. If None, initialize within to system
+    Parameters
+    ----------
+    ureg : _type_, optional
+        Input unit registry, by default constants.ureg
+    system : str, optional
+        Default unit system; if not the same as ureg changes it, by default 'mks'
+    unitsfile : str, optional
+        additional definitions to add to `ureg`, by default get_configdir()+'/'+constants.customunits
 
-    system: default unit system. If not the same as ureg, change it.
-
-    unitsfile: additional definitions to add to ureg
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     if ureg is None:
         ureg = pint.UnitRegistry(system=system)
@@ -421,9 +795,23 @@ def appendunits(ureg=constants.ureg,system='mks',unitsfile = get_configdir()+'/'
     ureg.load_definitions(unitsfile)
     constants.ureg = ureg
 
-def convert2units(valstring):
-    """
-    Returns the value with units. Only space allowed is that between value and unit.
+def convert2units(valstring: str):
+    """Returns the value with units from a string that has units.
+
+    Parameters
+    ----------
+    valstring : str
+        A string to convert. Only space allowed is that between value and unit.
+
+    Returns
+    -------
+    vals
+        Value with units
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     vals = valstring.split()
     if len(vals) == 1: #if no unit is provided
@@ -433,9 +821,23 @@ def convert2units(valstring):
     else:
         raise ValueError('only space allowed is that between value and unit')
 
-def decimals(value):
-    """
-    Returns the number of decimals in a float
+def decimals(value: tp.Union[list,tuple,np.ndarray]) -> np.ndarray:
+    """Returns the number of decimals in a set of floating point numbers.
+
+    Parameters
+    ----------
+    value : tp.Union[list,tuple,np.ndarray]
+        Set of floating point numbers
+
+    Returns
+    -------
+    np.ndarray
+        Number of decimals in each float
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     value = convert2nparray(value)
     output = np.zeros(len(value), dtype=int)

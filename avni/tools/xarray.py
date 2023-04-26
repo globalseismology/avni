@@ -15,20 +15,46 @@ import warnings
 import pdb
 import math
 from scipy import sparse
+import typing as tp
 #from mpl_toolkits.basemap import shiftgrid
 
-####################### IMPORT AVNI LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  ###########################
+
 from .trigd import sind
-from ..mapping import spher2cart,intersection,midpoint
+from ..mapping import spher2cart
 from .. import constants
 from .common import precision_and_scale,convert2nparray
-from ..tools import decimals,get_filedir
+from ..tools import get_filedir
 from ..data import update_file
-#######################################################################################
 
-def xarray_to_epix(data,latname = 'latitude', lonname = 'longitude'):
-    # check if it is a compatible dataarray
-    ierror,pix,shape = checkxarray(data,latname, lonname)
+##########################################################################
+
+def xarray_to_epix(data: tp.Union[xr.DataArray,xr.Dataset],
+                   latname: str = 'latitude',
+                   lonname: str = 'longitude') -> np.ndarray:
+    """Convert multi-dimensional pixel grid in xarray to extended pixel (.epix) format
+
+    Parameters
+    ----------
+    data : tp.Union[xr.DataArray,xr.Dataset]
+        Multi-dimensional pixel grid in xarray formats
+    latname : str, optional
+        Name to use for latitude column in named numpy array, by default 'latitude'
+    lonname : str, optional
+        Name to use for longitude column in named numpy array, by default 'longitude'
+
+    Returns
+    -------
+    np.ndarray
+        Array containing (`latitude`, `longitude`, `pixel_size`, `value`)
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+    # check if it is a compatible xarray
+    _,pix,_ = checkxarray(data,latname, lonname)
 
     if data.dims[0] == latname:
         values = data.T.data.ravel()
@@ -48,7 +74,30 @@ def xarray_to_epix(data,latname = 'latitude', lonname = 'longitude'):
     epixarr['value'] = values
     return epixarr
 
-def epix_to_xarray(epixarr,latname = 'latitude', lonname = 'longitude'):
+def epix_to_xarray(epixarr: np.ndarray,
+                   latname: str = 'latitude',
+                   lonname: str = 'longitude') -> xr.DataArray:
+    """Convert extended pixel (.epix) to multi-dimensional pixel grid in xarray format
+
+    Parameters
+    ----------
+    epixarr : np.ndarray
+        Array containing (`latitude`, `longitude`, `pixel_size`, `value`)
+    latname : str, optional
+        Name to use for latitude column in named numpy array, by default 'latitude'
+    lonname : str, optional
+        Name to use for longitude column in named numpy array, by default 'longitude'
+
+    Returns
+    -------
+    xr.DataArray
+        Multi-dimensional pixel grid in xarray formats
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     lonspace = np.setdiff1d(np.unique(np.ediff1d(np.sort(epixarr[lonname]))),[0.])
     latspace = np.setdiff1d(np.unique(np.ediff1d(np.sort(epixarr[latname]))),[0.])
     if not(len(lonspace) == len(lonspace) == 1): raise AssertionError('not(len(lonspace) == len(lonspace) == 1)')
@@ -65,7 +114,33 @@ def epix_to_xarray(epixarr,latname = 'latitude', lonname = 'longitude'):
         outarr.loc[dict(latitude=lat,longitude=lon)] = val
     return outarr
 
-def tree3D(treefile,latitude=None,longitude=None,radius_in_km=None):
+def tree3D(treefile: str,
+           latitude: tp.Union[None,list,tuple,np.ndarray] = None,
+           longitude: tp.Union[None,list,tuple,np.ndarray] = None,
+           radius_in_km: tp.Union[None,list,tuple,np.ndarray] = None):
+    """Build a KD-tree at specific locations
+
+    Parameters
+    ----------
+    treefile : str
+        Name of the file where tree is (or will be) stored
+    latitude : tp.Union[list,tuple,np.ndarray], optional
+        Latitudes of locations queried, by default None
+    longitude : tp.Union[list,tuple,np.ndarray], optional
+        Longitudes of locations queried, by default None
+    radius_in_km : tp.Union[list,tuple,np.ndarray], optional
+        Radii of locations queried, by default None
+
+    Returns
+    -------
+    tree
+        A scipy.spatial.cKDTree
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     #Build the tree if none is provided
     if os.path.isfile(treefile):
         print('... Reading KDtree file '+treefile)
@@ -83,7 +158,42 @@ def tree3D(treefile,latitude=None,longitude=None,radius_in_km=None):
         pickle.dump(tree,open(treefile,'wb'))
     return tree
 
-def querytree3D(tree,latitude,longitude,radius_in_km,values=None,nearest=1):
+def querytree3D(tree,
+                latitude: tp.Union[list,tuple,np.ndarray],
+                longitude: tp.Union[list,tuple,np.ndarray],
+                radius_in_km: tp.Union[list,tuple,np.ndarray],
+                values: tp.Union[None,sparse.csc_matrix,sparse.csr_matrix,list,tuple,np.ndarray] = None,
+                nearest: int = 1):
+    """Query a KD-tree for values at specific locations
+
+    Parameters
+    ----------
+    tree
+        A scipy.spatial.cKDTree
+    latitude : tp.Union[list,tuple,np.ndarray], optional
+        Latitudes of locations queried, by default None
+    longitude : tp.Union[list,tuple,np.ndarray], optional
+        Longitudes of locations queried, by default None
+    radius_in_km : tp.Union[list,tuple,np.ndarray], optional
+        Radii of locations queried, by default None
+    values : tp.Union[None,sparse.csc_matrix,sparse.csr_matrix,list,tuple,np.ndarray], optional
+        Values at each KD-tree point, by default None
+    nearest : int, optional
+        Number of nearest values in the KD-tree to interpolated from, by default
+        1 so nearest
+
+    Returns
+    -------
+    inds or interp, inds
+        indices of the nearest points in te KD-tree and the interporlated value
+        (if values is not None)
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+    # checks
     latitude = convert2nparray(latitude)
     longitude = convert2nparray(longitude)
     radius_in_km = convert2nparray(radius_in_km)
@@ -118,10 +228,25 @@ def querytree3D(tree,latitude,longitude,radius_in_km,values=None,nearest=1):
             interp = sparse.csc_matrix(val_temp)
         return interp,inds
 
-def get_stride(resolution):
-    """
-    resolution: of boundary database to use like in Basemap.
-                Can be c (crude), l (low), i (intermediate), h (high), f (full)
+def get_stride(resolution: str) -> int:
+    """Get the stride to use for various resolution of plotting. This dictates
+    downsampling before interpolation.
+
+    Parameters
+    ----------
+    resolution : str
+        Resolution of boundary database to use in Basemap.
+        Can be c (crude), l (low), i (intermediate), h (high), f (full)
+
+    Returns
+    -------
+    int
+        stride to use for resolution
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     if resolution.lower() == 'c' or resolution.lower() == 'crude':
         stride = 20
@@ -137,25 +262,35 @@ def get_stride(resolution):
         raise KeyError('resolution can only be low, medium, high')
     return stride
 
-def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,resolution='h', radius_in_km = None):
+def ncfile2tree3D(ncfile: str,treefile: str,
+                  lonlatdepth: list = ['longitude','latitude','depth'],
+                  resolution: str = 'h',
+                  radius_in_km: tp.Union[None,list,tuple,np.ndarray] = None):
+    """Read or write a pickle interpolant with KD-tree
+
+    Parameters
+    ----------
+    ncfile : str
+        Name of the topography file in NETCDF4 format
+    treefile : str
+        Name of the file where tree is (or will be) stored
+    lonlatdepth : list, optional
+        A list of variable names of the longitude, latitude, depth (in km) arrays, by default ['longitude','latitude','depth']
+    resolution : str, optional
+        Dictates downsampling before interpolation, by default 'h'
+    radius_in_km : tp.Union[None,list,tuple,np.ndarray], optional
+        Radius in kilometer when a 2D surface. Ignores the 3rd field in `lonlatdepth`, by default None
+
+    Returns
+    -------
+    tree
+        A scipy.spatial.cKDTree
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Read or write a pickle interpolant with KDTree
-
-    Input Parameters:
-    ----------------
-
-    ncfile: netcdf format file e.g. topography
-
-    stride: is the downsampling before interpolation.
-
-    radius_in_km: radius in kilometer when a 2D surface is valid. Ignores the
-                    3rd field in lonlatdepth.Typically 6371km for Earth
-
-    lonlatdepth: variable name of the longitude, latitude, depth (in km) arrays
-                 default: ['longitude','latitude','depth']
-    """
-    #defaults
-    if lonlatdepth is None: lonlatdepth = ['longitude','latitude','depth']
 
     #read topography file
     stride = get_stride(resolution)
@@ -184,9 +319,44 @@ def ncfile2tree3D(ncfile,treefile,lonlatdepth = None,resolution='h', radius_in_k
     tree = tree3D(treefile,gridlat,gridlon,gridrad)
     return tree
 
-def readtopography(model=constants.topography,resolution='h',field = 'z',latitude='lat',longitude='lon',latitude_limits=[-90,90],longitude_limits=[-180,180], dbs_path=None):
-    """
-    resolution: stride is 1 for high, 10 for low
+def readtopography(model: str = constants.topography,
+                   resolution: str = 'h',
+                   field: str = 'z',
+                   latitude: str = 'lat',
+                   longitude: str = 'lon',
+                   latitude_limits: list = [-90,90],
+                   longitude_limits: list = [-180,180],
+                   dbs_path: tp.Union[None,str] = None):
+    """Read standard topography file in NETCDF4 format specified in :py:func:`constants`
+
+    Parameters
+    ----------
+    model : str, optional
+        Name of the topography file in NETCDF4 format, by default constants.topography
+    resolution : str, optional
+        Dictates downsampling before interpolation, by default 'h'
+    field : str, optional
+        Field name in the NETCDF4 file to use, by default 'z'
+    latitude : str, optional
+        Name to use for latitude column in named numpy array, by default 'lat'
+    longitude : str, optional
+        Name to use for longitude column in named numpy array, by default 'lon'
+    latitude_limits : list, optional
+        Limit for restricting the domain for reading topography, by default [-90,90]
+    longitude_limits : list, optional
+        Limit for restricting the domain for reading topography, by default [-180,180]
+    dbs_path : tp.Union[None,str], optional
+        Database path to the folder contianing topography file, by default None so takes the value in :py:func:`constants.topofolder`
+
+    Returns
+    -------
+    xr.Dataset
+        Multi-dimensional pixel grid in xarray formats
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
     # Get the directory location where CPT files are kep
@@ -215,23 +385,38 @@ def readtopography(model=constants.topography,resolution='h',field = 'z',latitud
     f.close() #close netcdf file
     return model
 
-def checkxarray(data,latname = 'latitude', lonname = 'longitude', Dataset = True):
-    """
-    checks whether the data input is a DataArray and the coordinates are compatible
+def checkxarray(data: tp.Union[xr.DataArray,xr.Dataset],
+                latname: str = 'latitude',
+                lonname: str = 'longitude',
+                Dataset = True) -> tp.Tuple[list,float,tuple]:
+    """Checks whether the data input is a DataArray and the coordinates are compatible
 
     Parameters
     ----------
-    data : Dataset or DataArray
-        the xray object to average over
-
-    Dataset : allow Dataset or not
+    data : tp.Union[xr.DataArray,xr.Dataset]
+        Multi-dimensional pixel grid in xarray formats
+    latname : str, optional
+        Name to use for latitude column in named numpy array, by default 'latitude'
+    lonname : str, optional
+        Name to use for longitude column in named numpy array, by default 'longitude'
+    Dataset : bool, optional
+        Allow Dataset or not, by default True
 
     Returns
     -------
+    tp.Tuple[list,float,tuple]
+        First element is a list of error warnings while performing checks
 
-    pix: size of the uniform pixel
+        Second element is size of the uniform pixel.
 
+        Third element is a tuple containing the shape of the grid
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
+
     if not isinstance(data, (xr.DataArray,xr.Dataset)): raise ValueError("date must be an xarray DataArray or Dataset")
     if not Dataset and isinstance(data, xr.Dataset): raise ValueError("date must be an xarray Dataset if True")
 
@@ -260,22 +445,33 @@ def checkxarray(data,latname = 'latitude', lonname = 'longitude', Dataset = True
     return ierror,pix_width,shape
 
 
-def areaxarray(data,latname = 'latitude', lonname = 'longitude',pix_width=None):
-    """
-    weighted average for xray data geographically averaged
+def areaxarray(data: tp.Union[xr.DataArray,xr.Dataset],
+               latname: str = 'latitude',
+               lonname: str = 'longitude',
+               pix_width: tp.Union[None,np.ndarray] = None) -> xr.DataArray:
+    """Calculate area for multi-dimensional pixel grid in xarray formats
 
     Parameters
     ----------
-    data : Dataset or DataArray
-        the xray object to average over
-
-    pix_width: width of pixels if not the default derived from data
+    data : tp.Union[xr.DataArray,xr.Dataset]
+        Multi-dimensional pixel grid in xarray formats
+    latname : str, optional
+        Name to use for latitude column, by default 'latitude'
+    lonname : str, optional
+        Name to use for longitude column, by default 'longitude'
+    pix_width : tp.Union[None,np.ndarray], optional
+        Width of pixels if not the default derived from data, by default None so
+        is derived
 
     Returns
     -------
+    xr.DataArray
+        A DataArray object with area of each pixel
 
-    area: a DataArray object with area of each pixel
-
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
     # check if it is a compatible dataarray
@@ -323,29 +519,40 @@ def areaxarray(data,latname = 'latitude', lonname = 'longitude',pix_width=None):
     if lat_index is not 0: area = area.T
     return area
 
-def meanxarray(data,area=None,latname = 'latitude', lonname = 'longitude', pix_width=None):
-    """
-    weighted average for xray data geographically averaged
+def meanxarray(data: tp.Union[xr.DataArray,xr.Dataset],
+               area: tp.Union[None,xr.DataArray] = None,
+               latname: str = 'latitude',
+               lonname: str = 'longitude',
+               pix_width: tp.Union[None,np.ndarray] = None) -> tp.Tuple[float,xr.DataArray,float]:
+    """Calculate geographically weighted average of a multi-dimensional pixel grid in xarray formats
 
     Parameters
     ----------
-    data : DataArray
-        the xray object to average over
-
-    area: DataArray containing area weights. Obtained from areaxarray.
-          If None, calculate again.
-
-    pix_width: width of pixels if not the default derived from data
+    data : tp.Union[xr.DataArray,xr.Dataset]
+        Multi-dimensional pixel grid in xarray formats to average over
+    area : tp.Union[None,xr.DataArray], optional
+        Area of each pixel, by default None so calculated on the fly
+    latname : str, optional
+        Name to use for latitude column, by default 'latitude'
+    lonname : str, optional
+        Name to use for longitude column, by default 'longitude'
+    pix_width : tp.Union[None,np.ndarray], optional
+        Width of pixels if not the default derived from data, by default None so
+        is derived
 
     Returns
     -------
+    tp.Tuple[float,xr.DataArray,float]
+        First element is the global average
 
-    globalav: global average
+        Second element is a DataArray containing area weights for each pixel
 
-    area : DataArray containing area weights
+        Third element is the percentage of global area covered by this basis set
 
-    percentglobal: percentage of global area covered by this basis set
-
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     # check if it is a compatible dataarray
     ierror,pix,shape = checkxarray(data,latname, lonname)
@@ -360,10 +567,12 @@ def meanxarray(data,area=None,latname = 'latitude', lonname = 'longitude', pix_w
     totarea = np.sum(area.values)
     percentglobal = np.round(totarea/(4.*np.pi)*100.,3)
     weighted = area*data
+
     # find the precision of data to round the average to
     max_precision = 0
     for val in data.drop(drops).values.flatten():
         _ , precision = precision_and_scale(val)
         if precision > max_precision: max_precision = precision
     average = np.round(np.sum(weighted.values)/totarea,decimals=max_precision)
+
     return average,area,percentglobal

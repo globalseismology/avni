@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""
+This module has several constants that are accessed by AVNI functions.
+These include locations of databases and default options for
+certain calculations and files.
+"""
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 
