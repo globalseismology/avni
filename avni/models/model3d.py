@@ -364,7 +364,7 @@ class Model3D(object):
             if not(len(latitude)==len(latitude)): raise AssertionError('latitude and longitude need to be of same size')
             checks = (latitude <= lat_max) & (latitude >= lat_min) & \
                  (longitude <= lon_max) & (longitude >= lon_min) & \
-                 (depth <= dep_max) & (depth_in_km >= dep_min)
+                 (depth_in_km <= dep_max) & (depth_in_km >= dep_min)
         else:
             depth_in_km = tools.convert2nparray(depth_in_km)
             if not(len(latitude)==len(latitude)==len(depth_in_km)): raise AssertionError('latitude, longitude and depth need to be of same size')

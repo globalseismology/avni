@@ -136,7 +136,7 @@ def tree3D(treefile: str,
     Returns
     -------
     tree
-        A scipy.spatial.cKDTree
+        A :py:func:`scipy.spatial.cKDTree`
 
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)
@@ -171,7 +171,7 @@ def querytree3D(tree,
     Parameters
     ----------
     tree
-        A scipy.spatial.cKDTree
+        A :py:func:`scipy.spatial.cKDTree`
     latitude : tp.Union[list,tuple,np.ndarray], optional
         Latitudes of locations queried, by default None
     longitude : tp.Union[list,tuple,np.ndarray], optional
@@ -286,7 +286,7 @@ def ncfile2tree3D(ncfile: str,treefile: str,
     Returns
     -------
     tree
-        A scipy.spatial.cKDTree
+        A :py:func:`scipy.spatial.cKDTree`
 
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)
@@ -321,7 +321,7 @@ def ncfile2tree3D(ncfile: str,treefile: str,
     tree = tree3D(treefile,gridlat,gridlon,gridrad)
     return tree
 
-def readtopography(model: str = constants.topography,
+def readtopography(model: tp.Union[None,str] = None,
                    resolution: str = 'h',
                    field: str = 'z',
                    latitude: str = 'lat',
@@ -334,7 +334,7 @@ def readtopography(model: str = constants.topography,
     Parameters
     ----------
     model : str, optional
-        Name of the topography file in NETCDF4 format, by default constants.topography
+        Name of the topography file in NETCDF4 format, by default :py:func:`constants.topography`
     resolution : str, optional
         Dictates downsampling before interpolation, by default 'h'
     field : str, optional
@@ -363,6 +363,7 @@ def readtopography(model: str = constants.topography,
 
     # Get the directory location where CPT files are kep
     if dbs_path is None: dbs_path = get_filedir(subdirectory=constants.topofolder)
+    if model is None: model = constants.topography
 
     # Download file if possible
     ncfile = os.path.join(dbs_path,model)
