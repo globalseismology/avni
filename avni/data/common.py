@@ -63,7 +63,7 @@ def update_file(file,folder = None, baseurl = None, subdirectory = None):
     baseurl: str
         public URL from where the public downloads can take place, by default as specified as `downloadpage` in `constants.py`
     subdirectory: str
-        subdirectory inside the baseurl and folder where the file should be synced
+        subdirectory inside the baseurl where the file should be synced
 
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)
@@ -74,10 +74,7 @@ def update_file(file,folder = None, baseurl = None, subdirectory = None):
     # Get the correct default paths
     if folder is None: folder = tools.get_filedir()
     if baseurl is None: baseurl = constants.downloadpage
-    if subdirectory is not None:
-        folder = folder+'/'+subdirectory
-        baseurl = baseurl+'/'+subdirectory
-        if not os.path.exists(folder): os.makedirs(folder)
+    if subdirectory is not None: baseurl = baseurl+'/'+subdirectory
 
     # Figure out internal-external path links
     localfile = os.path.join(folder,file)

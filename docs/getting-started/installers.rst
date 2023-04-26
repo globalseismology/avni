@@ -5,10 +5,9 @@
 AVNI installers
 =====================
 
-AVNI installers are the easiest way to install AVNI and
-all dependencies. They also provide many additional
-Python packages and tools, including the `Spyder`_ development environment.
-Got any questions? Let us know on the `AVNI Forum`_!
+AVNI installers are the easiest way to install AVNI and all dependencies. They
+also provide many additional Python packages and tools, including the `Spyder`_
+development environment. Got any questions? Let us know on the `AVNI Forum`_!
 
 .. tab-set::
     :class: platform-selector-tabset
@@ -46,8 +45,7 @@ Got any questions? Let us know on the `AVNI Forum`_!
 
             |cloud-arrow-down| Download for macOS (Intel)
 
-        **Supported platforms:**
-        macOS 10.15 (Catalina) and newer
+        **Supported platforms:** macOS 10.15 (Catalina) and newer
 
 
     .. tab-item:: macOS (Apple Silicon)
@@ -63,8 +61,7 @@ Got any questions? Let us know on the `AVNI Forum`_!
             |cloud-arrow-down| Download for macOS (Apple Silicon)
 
 
-        **Supported platforms:**
-        macOS 10.15 (Catalina) and newer
+        **Supported platforms:** macOS 10.15 (Catalina) and newer
 
     .. tab-item:: Windows
         :class-content: text-center
@@ -92,13 +89,16 @@ bundles to the ``Applications`` folder on macOS.
 .. rst-class:: mt-4
 .. rst-class:: mb-5
 
-- |code| Use **Spyder** to start writing your own analysis scripts right away, or to run one of our examples from this website.
+- |code| Use **Spyder** to start writing your own analysis scripts right away,
+  or to run one of our examples from this website.
 
   .. rst-class:: mt-3
-- |desktop| With **System Info**, list the versions of all installed AVNI-related packages.
+- |desktop| With **System Info**, list the versions of all installed
+  AVNI-related packages.
 
   .. rst-class:: mt-3
-- |terminal| The **Prompt** drops you into a command line interface with a properly activated AVNI environment.
+- |terminal| The **Prompt** drops you into a command line interface with a
+  properly activated AVNI environment.
 
 
 .. note::
@@ -111,10 +111,10 @@ bundles to the ``Applications`` folder on macOS.
 VS Code Setup
 ^^^^^^^^^^^^^
 
-If you want to use AVNI with `Visual Studio Code`_, you need to tell the
-VS Code Python extension where to find the respective Python executable. To do
-so, simply start the **Prompt**. It will display several lines of
-information, including a line that will read something like:
+If you want to use AVNI with `Visual Studio Code`_, you need to tell the VS Code
+Python extension where to find the respective Python executable. To do so,
+simply start the **Prompt**. It will display several lines of information,
+including a line that will read something like:
 
 .. code-block::
 
@@ -130,14 +130,12 @@ interpreter.
 .. raw:: html
 
     <script type="text/javascript">
-      var platform = "linux";
-      if (navigator.userAgent.indexOf("Win") !== -1) {
+      var platform = "linux"; if (navigator.userAgent.indexOf("Win") !== -1) {
         platform = "windows";
-      }
-      if (navigator.userAgent.indexOf("Mac") !== -1) {
-        // there's no good way to distinguish intel vs M1 in javascript so we
-        // just default to showing the first of the 2 macOS tabs
-        platform = "macos-intel";
+      } if (navigator.userAgent.indexOf("Mac") !== -1) {
+        // there's no good way to distinguish intel vs M1 in javascript so we //
+        just default to showing the first of the 2 macOS tabs platform =
+        "macos-intel";
       }
      $(document).ready(function(){
          let all_tab_nodes = document.querySelectorAll(
@@ -146,11 +144,10 @@ interpreter.
              child => child.nodeName === "INPUT");
          let tab_label_nodes = [...document.querySelectorAll('.sd-tab-label')];
          let correct_label = tab_label_nodes.filter(
-             // label.id is drawn from :name: property in the rST, which must
-             // be unique across the whole site (*sigh*)
-             label => label.id.startsWith(platform))[0];
-         let input_id = correct_label.getAttribute('for');
-         let correct_input = input_nodes.filter(node => node.id === input_id)[0];
+             // label.id is drawn from :name: property in the rST, which must //
+             be unique across the whole site (*sigh*) label =>
+             label.id.startsWith(platform))[0];
+         let input_id = correct_label.getAttribute('for'); let correct_input =
+         input_nodes.filter(node => node.id === input_id)[0];
          correct_input.checked = true;
-     });
-     </script>
+     }); </script>

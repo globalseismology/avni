@@ -21,8 +21,8 @@ There are several ways to contribute:
 
 - |computer-mouse| Use the software, and when you find bugs, tell us about them!
 - |bug-slash| Fix bugs on your own.
-- |comment| Tell `AVNI Forum`_ about parts of the documentation that you find confusing or
-  unclear.
+- |comment| Tell `AVNI Forum`_ about parts of the documentation that you find
+  confusing or unclear.
 - |hand-sparkles| Tell `AVNI Forum`_ about things you wish AVNI could do.
 - |discourse| Answer questions on the `AVNI Forum`_.
 - |text-slash| Fix mistakes or add notes in our function documentation strings.
@@ -30,19 +30,19 @@ There are several ways to contribute:
 - |wand-magic-sparkles| Implement new features.
 
 In order to *report* bugs, *request* new features, or *ask about* confusing
-documentation, it's best to open a new issue on the `AVNI Forum`_.
-You will get help fastest that way, and it helps keep our `GitHub issues page`_
-focused on things that we *know* will require changes to our
-software (as opposed to problems that can be fixed in the user's code). We may
-ultimately ask you to open an issue on the `GitHub issues page`_ too, but starting on the forum
-helps us keep things organized. For fastest results, be sure to include
-information about your operating system and AVNI version, and (if
-applicable) include a reproducible code sample that is as short as possible.
+documentation, it's best to open a new issue on the `AVNI Forum`_. You will get
+help fastest that way, and it helps keep our `GitHub issues page`_ focused on
+things that we *know* will require changes to our software (as opposed to
+problems that can be fixed in the user's code). We may ultimately ask you to
+open an issue on the `GitHub issues page`_ too, but starting on the forum helps
+us keep things organized. For fastest results, be sure to include information
+about your operating system and AVNI version, and (if applicable) include a
+reproducible code sample that is as short as possible.
 
 If you want to *fix* bugs, *add* new features, or *improve* our
-docstrings/tutorials/website, those kinds of contributions are made through
-`our GitHub repository <AVNI GitHub_>`_. The rest of this page explains
-how to set up your workflow to make contributing via GitHub seamless.
+docstrings/tutorials/website, those kinds of contributions are made through `our
+GitHub repository <AVNI GitHub_>`_. The rest of this page explains how to set up
+your workflow to make contributing via GitHub seamless.
 
 
 .. dropdown:: Want an example to work through?
@@ -50,9 +50,9 @@ how to set up your workflow to make contributing via GitHub seamless.
     :icon: rocket
 
     Feel free to just read through the rest of the page, but if you find it
-    easier to "learn by doing", take a look at our
-    `GitHub issues marked "easy"`_, pick one that looks interesting, and work
-    through it while reading this guide!
+    easier to "learn by doing", take a look at our `GitHub issues marked
+    "easy"`_, pick one that looks interesting, and work through it while reading
+    this guide!
 
 
 Overview of the contribution process
@@ -61,18 +61,18 @@ Overview of the contribution process
 .. warning:: Reminder: all contributors are expected to follow our
           `code of conduct <CODE_OF_CONDUCT.html>`_.
 
-Changes to AVNI are typically made by `forking`_ the `AVNI GitHub`_
-repository, making changes to your fork (usually by `cloning`_ it to your
-personal computer, making the changes locally, and then `pushing`_ the local
-changes up to your fork on GitHub), and finally creating a `pull request`_ to incorporate
-your changes back into the shared "upstream" version of the codebase.
+Changes to AVNI are typically made by `forking`_ the `AVNI GitHub`_ repository,
+making changes to your fork (usually by `cloning`_ it to your personal computer,
+making the changes locally, and then `pushing`_ the local changes up to your
+fork on GitHub), and finally creating a `pull request`_ to incorporate your
+changes back into the shared "upstream" version of the codebase.
 
-In general you'll be working with three different copies of the AVNI
-codebase: the official remote copy at https://github.com/globalseismology/avni
-(usually called ``upstream``), your remote `fork`_ of the upstream repository
-(similar URL, but with your username in place of ``globalseismology``, and usually
-called ``origin``), and the local copy of the codebase on your computer. The
-typical contribution process is to:
+In general you'll be working with three different copies of the AVNI codebase:
+the official remote copy at https://github.com/globalseismology/avni (usually
+called ``upstream``), your remote `fork`_ of the upstream repository (similar
+URL, but with your username in place of ``globalseismology``, and usually called
+``origin``), and the local copy of the codebase on your computer. The typical
+contribution process is to:
 
 1. synchronize your local copy with ``upstream``
 
@@ -107,12 +107,14 @@ computer:
 - On MacOS, download `the .dmg installer`_; Atlassian also provides `more
   detailed instructions and alternatives`_ such as using MacPorts or Homebrew.
 
-- On Windows, download and install `git for Windows`_. With Git BASH it provides its own shell that
-  includes many Linux-equivalent command line programs that are useful for development.
+- On Windows, download and install `git for Windows`_. With Git BASH it provides
+  its own shell that includes many Linux-equivalent command line programs that
+  are useful for development.
 
-  *Windows 10 also offers the* `Windows subsystem for Linux`_ *that offers similar
-  functionality to git BASH, but has not been widely tested by AVNI
-  developers yet and may still pose problems with graphical output (e.g. building the documentation)*
+  *Windows 10 also offers the* `Windows subsystem for Linux`_ *that offers
+  similar functionality to git BASH, but has not been widely tested by AVNI
+  developers yet and may still pose problems with graphical output (e.g.
+  building the documentation)*
 
 
 Once git is installed, the only absolutely necessary configuration step is
@@ -121,10 +123,10 @@ identifying yourself and your contact info::
    $ git config --global user.name "Your Name"
    $ git config --global user.email you@yourdomain.example.com
 
-Make sure that the same email address is associated with your GitHub account
-and with your local git configuration. It is possible to associate multiple
-emails with a GitHub account, so if you initially set them up with different
-emails, you can add the local email to the GitHub account.
+Make sure that the same email address is associated with your GitHub account and
+with your local git configuration. It is possible to associate multiple emails
+with a GitHub account, so if you initially set them up with different emails,
+you can add the local email to the GitHub account.
 
 Sooner or later, git is going to ask you what text editor you want it to use
 when writing commit messages, so you might as well configure that now too::
@@ -138,17 +140,17 @@ Forking the AVNI repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once you have git installed and configured, and before creating your local copy
-of the codebase, go to the `AVNI GitHub`_ page and create a `fork`_ into
-your GitHub user account.
+of the codebase, go to the `AVNI GitHub`_ page and create a `fork`_ into your
+GitHub user account.
 
 .. image:: https://docs.github.com/assets/cb-28613/images/help/repository/fork_button.png
 
-This will create a copy of the AVNI codebase inside your GitHub user
-account (this is called "your fork"). Changes you make to AVNI will
-eventually get "pushed" to your fork, and will be incorporated into the
-official version of AVNI (often called the "upstream version") through a
-"pull request". This process will be described in detail below; a summary
-of how that structure is set up is given here:
+This will create a copy of the AVNI codebase inside your GitHub user account
+(this is called "your fork"). Changes you make to AVNI will eventually get
+"pushed" to your fork, and will be incorporated into the official version of
+AVNI (often called the "upstream version") through a "pull request". This
+process will be described in detail below; a summary of how that structure is
+set up is given here:
 
 .. image:: ../_static/diagrams/git_setup_AVNI.png
    :alt: Diagram of recommended git setup
@@ -163,36 +165,35 @@ Creating the virtual environment
 
     We strongly recommend the `Anaconda`_ or `Miniconda`_ environment managers
     for Python. Other setups are possible but are not officially supported by
-    the AVNI development team; see discussion :ref:`here
-    <other-py-distros>`. These instructions use  ``conda`` where possible;
-    experts may replace those lines with some combination of ``git`` and
-    ``pip``.
+    the AVNI development team; see discussion :ref:`here <other-py-distros>`.
+    These instructions use  ``conda`` where possible; experts may replace those
+    lines with some combination of ``git`` and ``pip``.
 
 These instructions will set up a Python environment that is separated from your
 system-level Python and any other managed Python environments on your computer.
-This lets you switch between different versions of Python (AVNI version |version|
-requires Python version |min_python_version| or higher) and also switch between
-the stable and development versions of AVNI (so you can, for example, use the same computer to
-analyze your data with the stable release, and also work with the latest
-development version to fix bugs or add new features). Even if you've already
-followed the :ref:`installation instructions <install-python>` for the stable
-version of AVNI, you should now repeat that process to create a new,
-separate environment for AVNI development (here we'll give it the name
-``avni-dev``)::
+This lets you switch between different versions of Python (AVNI version
+|version| requires Python version |min_python_version| or higher) and also
+switch between the stable and development versions of AVNI (so you can, for
+example, use the same computer to analyze your data with the stable release, and
+also work with the latest development version to fix bugs or add new features).
+Even if you've already followed the :ref:`installation instructions
+<install-python>` for the stable version of AVNI, you should now repeat that
+process to create a new, separate environment for AVNI development (here we'll
+give it the name ``avni-dev``)::
 
     $ curl --remote-name https://raw.githubusercontent.com/globalseismology/avni/main/environment.yml
     $ conda env create --file environment.yml --name avni-dev
     $ conda activate avni-dev
 
-Now you'll have *two* AVNI environments: ``avni`` (or whatever custom
-name you used when installing the stable version of AVNI) and ``avni-dev``
-that we just created. At this point ``avni-dev`` also has the stable version of
-AVNI (that's what the :file:`environment.yml` file installs), but we're
-about to remove the stable version from ``avni-dev`` and replace it with the
-development version. To do that, we'll `clone`_ the AVNI repository from
-your remote fork, and also connect the local copy to the ``upstream`` version
-of the codebase, so you can stay up-to-date with changes from other
-contributors. First, edit these two variables for your situation::
+Now you'll have *two* AVNI environments: ``avni`` (or whatever custom name you
+used when installing the stable version of AVNI) and ``avni-dev`` that we just
+created. At this point ``avni-dev`` also has the stable version of AVNI (that's
+what the :file:`environment.yml` file installs), but we're about to remove the
+stable version from ``avni-dev`` and replace it with the development version. To
+do that, we'll `clone`_ the AVNI repository from your remote fork, and also
+connect the local copy to the ``upstream`` version of the codebase, so you can
+stay up-to-date with changes from other contributors. First, edit these two
+variables for your situation::
 
     $ GITHUB_USERNAME="insert_your_actual_GitHub_username_here"
     $ # pick where to put your local copy of AVNI development version:
@@ -224,12 +225,12 @@ the correct environment first (``conda activate avni-dev``), and then do::
 The command ``pip install -e .`` installs a python module into the current
 environment by creating a link to the source code directory (instead of copying
 the code to pip's :file:`site_packages` directory, which is what normally
-happens). This means that any edits you make to the AVNI source code will
-be reflected the next time you open a Python interpreter and ``import avni``
-(the ``-e`` flag of ``pip`` stands for an "editable" installation).
+happens). This means that any edits you make to the AVNI source code will be
+reflected the next time you open a Python interpreter and ``import avni`` (the
+``-e`` flag of ``pip`` stands for an "editable" installation).
 
-Finally, we'll add a few dependencies that are not needed for running
-AVNI, but are needed for locally running our test suite::
+Finally, we'll add a few dependencies that are not needed for running AVNI, but
+are needed for locally running our test suite::
 
     $ pip install -r requirements_testing.txt
 
@@ -241,7 +242,8 @@ And for building our documentation::
 .. note::
    On Windows, if you installed graphviz using the conda command above but still get an error like this::
 
-      WARNING: dot command 'dot' cannot be run (needed for graphviz output), check the graphviz_dot setting
+      WARNING: dot command 'dot' cannot be run (needed for graphviz output),
+      check the graphviz_dot setting
 
    try adding the graphviz folder to path::
 
@@ -267,10 +269,9 @@ Basic git commands
 ~~~~~~~~~~~~~~~~~~
 
 Learning to work with git can take a long time, because it is a complex and
-powerful tool for managing versions of files across multiple users, each of
-whom have multiple copies of the codebase. We've already seen in the setup
-commands above a few of the basic git commands useful to an AVNI
-developer:
+powerful tool for managing versions of files across multiple users, each of whom
+have multiple copies of the codebase. We've already seen in the setup commands
+above a few of the basic git commands useful to an AVNI developer:
 
 - :samp:`git clone {<URL_OF_REMOTE_REPO>}` (make a local copy of a repository)
 
@@ -280,16 +281,16 @@ developer:
 - ``git fetch --all`` (get the current state of connected remote repos)
 
 Other commands that you will undoubtedly need relate to `branches`_. Branches
-represent multiple copies of the codebase *within a local clone or remote
-repo*. Branches are typically used to experiment with new features while still
-keeping a clean, working copy of the original codebase that you can switch back
-to at any time. The default branch of any repo is called ``main``, and
-it is recommended that you reserve the ``main`` branch to be that clean copy
-of the working ``upstream`` codebase. Therefore, if you want to add a new
-feature, you should first synchronize your local ``main`` branch with the
-``upstream`` repository, then create a new branch based off of ``main`` and
-`check it out`_ so that any changes you make will exist on that new branch
-(instead of on ``main``)::
+represent multiple copies of the codebase *within a local clone or remote repo*.
+Branches are typically used to experiment with new features while still keeping
+a clean, working copy of the original codebase that you can switch back to at
+any time. The default branch of any repo is called ``main``, and it is
+recommended that you reserve the ``main`` branch to be that clean copy of the
+working ``upstream`` codebase. Therefore, if you want to add a new feature, you
+should first synchronize your local ``main`` branch with the ``upstream``
+repository, then create a new branch based off of ``main`` and `check it out`_
+so that any changes you make will exist on that new branch (instead of on
+``main``)::
 
     $ git checkout main            # switch to local main branch
     $ git fetch upstream             # get the current state of the remote upstream repo
@@ -299,14 +300,14 @@ feature, you should first synchronize your local ``main`` branch with the
 .. note:: Alternative
     :class: sidebar
 
-    You can save some typing by using ``git pull upstream/main`` to replace
-    the ``fetch`` and ``merge`` lines above.
+    You can save some typing by using ``git pull upstream/main`` to replace the
+    ``fetch`` and ``merge`` lines above.
 
 Now that you're on a new branch, you can fix a bug or add a new feature, add a
 test, update the documentation, etc. When you're done, it's time to organize
 your changes into a series of `commits`_. Commits are like snapshots of the
-repository — actually, more like a description of what has to change to get
-from the most recent snapshot to the current snapshot.
+repository — actually, more like a description of what has to change to get from
+the most recent snapshot to the current snapshot.
 
 Git knows that people often work on multiple changes in multiple files all at
 once, but that ultimately they should separate those changes into sets of
@@ -314,16 +315,14 @@ related changes that are grouped together based on common goals (so that it's
 easier for their colleagues to understand and review the changes). For example,
 you might want to group all the code changes together in one commit, put new
 unit tests in another commit, and changes to the documentation in a third
-commit.  Git makes this possible with something called the `stage`_ (or
-*staging area*). After you've made some changes to the codebase, you'll have
-what git calls "unstaged changes", which will show up with the `status`_
-command::
+commit.  Git makes this possible with something called the `stage`_ (or *staging
+area*). After you've made some changes to the codebase, you'll have what git
+calls "unstaged changes", which will show up with the `status`_ command::
 
     $ git status    # see what state the local copy of the codebase is in
 
-Those unstaged changes can be `added`_ to the stage one by one, by either
-adding a whole file's worth of changes, or by adding only certain lines
-interactively::
+Those unstaged changes can be `added`_ to the stage one by one, by either adding
+a whole file's worth of changes, or by adding only certain lines interactively::
 
     $ git add avni/some_file.py      # add all the changes you made to this file
     $ git add avni/some_new_file.py  # add a completely new file in its entirety
@@ -333,11 +332,11 @@ interactively::
 Once you've collected all the related changes together on the stage, the ``git
 status`` command will now refer to them as "changes staged for commit". You can
 commit them to the current branch with the `commit`_ command. If you just type
-``git commit`` by itself, git will open the text editor you configured it to
-use so that you can write a *commit message* — a short description of the
-changes you've grouped together in this commit. You can bypass the text editor
-by passing a commit message on the command line with the ``-m`` flag. For
-example, if your first commit adds a new feature, your commit message might be::
+``git commit`` by itself, git will open the text editor you configured it to use
+so that you can write a *commit message* — a short description of the changes
+you've grouped together in this commit. You can bypass the text editor by
+passing a commit message on the command line with the ``-m`` flag. For example,
+if your first commit adds a new feature, your commit message might be::
 
     $ git commit -m 'ENH: adds feature X to the Epochs class'
 
@@ -352,23 +351,22 @@ cycle, adding the unit tests and documentation changes::
     $ git commit -m 'DOC: adds new tutorial about feature X'
 
 When you're done, it's time to run the test suite to make sure your changes
-haven't broken any existing functionality, and to make sure your new test
-covers the lines of code you've added (see :ref:`build-docs`, below).
-Once everything looks good, it's time to push your
-changes to your fork::
+haven't broken any existing functionality, and to make sure your new test covers
+the lines of code you've added (see :ref:`build-docs`, below). Once everything
+looks good, it's time to push your changes to your fork::
 
     $ # push local changes to remote branch origin/new-feature-x
     $ # (this will create the remote branch if it doesn't already exist)
     $ git push origin new-feature-x
 
-Finally, go to the `AVNI GitHub`_ page, click on the pull requests tab,
-click the "new pull request" button, and choose "compare across forks" to
-select your new branch (``new-feature-x``) as the "head repository".  See the
-GitHub help page on `creating a PR from a fork`_ for more information about
-opening pull requests.
+Finally, go to the `AVNI GitHub`_ page, click on the pull requests tab, click
+the "new pull request" button, and choose "compare across forks" to select your
+new branch (``new-feature-x``) as the "head repository".  See the GitHub help
+page on `creating a PR from a fork`_ for more information about opening pull
+requests.
 
-If any of the tests failed before you pushed your changes, try to fix them,
-then add and commit the changes that fixed the tests, and push to your fork. If
+If any of the tests failed before you pushed your changes, try to fix them, then
+add and commit the changes that fixed the tests, and push to your fork. If
 you're stuck and can't figure out how to fix the tests, go ahead and push your
 commits to your fork anyway and open a pull request (as described above), then
 in the pull request you should describe how the tests are failing and ask for
@@ -389,63 +387,59 @@ your local machine:
 
        $ git pull
 
--  if you get conflicts when doing so (i.e. if local changes you have
-   made conflict with changes made by others on the same line of the
-   same file of the source code), a powerful way of resolving them is to
-   type this: (*meld* needs to be installed on your system; if it is
-   not, you can install it with *apt-get install meld* or similar)::
+-  if you get conflicts when doing so (i.e. if local changes you have made
+   conflict with changes made by others on the same line of the same file of the
+   source code), a powerful way of resolving them is to type this: (*meld* needs
+   to be installed on your system; if it is not, you can install it with
+   *apt-get install meld* or similar)::
 
        $ git mergetool --tool=meld
 
--  make some changes to any file you want using your favorite editor (in
-   the line below we use ``vi`` as an example)::
+-  make some changes to any file you want using your favorite editor (in the
+   line below we use ``vi`` as an example)::
 
        $ vim some_file.f90
 
 -  commit your changes locally, adding a very short message (one line)
-   explaining what you have changed; it is recommended to do a git pull
-   right before that in order to make sure that your local copy is
-   up-to-date::
+   explaining what you have changed; it is recommended to do a git pull right
+   before that in order to make sure that your local copy is up-to-date::
 
        $ git pull ; git commit -a -m "Explain your commit"
 
--  if you get conflicts when committing your changes (i.e. if your
-   changes conflict with changes made by others on the same line of the
-   same file of the source code), a powerful way of resolving them is to
-   type this: (`meld <http://meldmerge.org>`__ needs to be installed on
-   your system; if it is not, you can install it with *yum install meld*
-   in Linux, download MacOS version from `this webpage <https://yousseb.github.io/meld>`__.
-   )::
+-  if you get conflicts when committing your changes (i.e. if your changes
+   conflict with changes made by others on the same line of the same file of the
+   source code), a powerful way of resolving them is to type this: (`meld
+   <http://meldmerge.org>`__ needs to be installed on your system; if it is not,
+   you can install it with *yum install meld* in Linux, download MacOS version
+   from `this webpage <https://yousseb.github.io/meld>`__. )::
 
        $ git mergetool --tool=meld
 
--  (optional) if you want to check what has changed (and thus what will
-   be committed) before typing the ``git commit`` above, you can type
-   one or both of these two commands::
+-  (optional) if you want to check what has changed (and thus what will be
+   committed) before typing the ``git commit`` above, you can type one or both
+   of these two commands::
 
        $ git status -s
        $ git diff
 
--  push your changes to your GitHub fork; it is recommended to do a git
-   pull right before that in order to make sure that your local copy is
-   up-to-date::
+-  push your changes to your GitHub fork; it is recommended to do a git pull
+   right before that in order to make sure that your local copy is up-to-date::
 
        $ git pull ; git push
 
--  Create a pull-request to get your changes into the main repository
-   (this is needed only once for each change; if you are fixing an
-   existing change after receiving an error message from our BuildBot
-   code-consistency checking system, you need the "git push" above again
-   but you do NOT need to create a pull request a second time); it is
-   recommended to do a git pull right before that in order to make sure
-   that your local copy is up-to-date::
+-  Create a pull-request to get your changes into the main repository (this is
+   needed only once for each change; if you are fixing an existing change after
+   receiving an error message from our BuildBot code-consistency checking
+   system, you need the "git push" above again but you do NOT need to create a
+   pull request a second time); it is recommended to do a git pull right before
+   that in order to make sure that your local copy is up-to-date::
 
        $ git pull ; git pull-request
 
-*Note (optional):* It is not strictly necessary to create a pull request
-for *every* commit you make if you do not want to, you can safely submit
-pull requests after making a few commits instead if you prefer. However,
-it also does not hurt to do so.
+*Note (optional):* It is not strictly necessary to create a pull request for
+*every* commit you make if you do not want to, you can safely submit pull
+requests after making a few commits instead if you prefer. However, it also does
+not hurt to do so.
 
 
 .. _github-ssh:
@@ -456,16 +450,15 @@ Connecting to GitHub with SSH (optional)
 One easy way to speed up development is to reduce the number of times you have
 to type your password. SSH (secure shell) allows authentication with pre-shared
 key pairs. The private half of your key pair is kept secret on your computer,
-while the public half of your key pair is added to your GitHub account; when
-you connect to GitHub from your computer, the local git client checks the
-remote (public) key against your local (private) key, and grants access your
-account only if the keys fit. GitHub has `several help pages`_ that guide you
-through the process. As of the date of writing this document,
+while the public half of your key pair is added to your GitHub account; when you
+connect to GitHub from your computer, the local git client checks the remote
+(public) key against your local (private) key, and grants access your account
+only if the keys fit. GitHub has `several help pages`_ that guide you through
+the process. As of the date of writing this document,
 
 Once you have set up GitHub to use SSH authentication, you should change the
-addresses of your AVNI GitHub remotes, from ``https://`` addresses to
-``git@`` addresses, so that git knows to connect via SSH instead of HTTPS. For
-example::
+addresses of your AVNI GitHub remotes, from ``https://`` addresses to ``git@``
+addresses, so that git knows to connect via SSH instead of HTTPS. For example::
 
     $ git remote -v  # show existing remote addresses
     $ git remote set-url origin git@github.com:$GITHUB_USERNAME/avni.git
@@ -492,14 +485,13 @@ Avoid API changes when possible
 -------------------------------
 
 Changes to the public API (e.g., class/function/method names and signatures)
-should not be made lightly, as they can break existing user scripts.
-Bug fixes (when something isn't doing what it says it will do) do
-not require a deprecation cycle.
+should not be made lightly, as they can break existing user scripts. Bug fixes
+(when something isn't doing what it says it will do) do not require a
+deprecation cycle.
 
-Note that any new API elements should be added to the main reference;
-classes, functions, methods, and attributes cannot be cross-referenced unless
-they are included in the :ref:`api_reference`
-(:file:`doc/python_reference.rst`).
+Note that any new API elements should be added to the main reference; classes,
+functions, methods, and attributes cannot be cross-referenced unless they are
+included in the :ref:`api_reference` (:file:`doc/python_reference.rst`).
 
 
 Describe your changes in the changelog
@@ -513,16 +505,15 @@ There are different sections of the changelog for each release, and separate
 **subsections for bugfixes, new features, and changes to the public API.**
 Please be sure to add your entry to the appropriate subsection.
 
-The styling and positioning of the entry depends on whether you are a
-first-time contributor or have been mentioned in the changelog before.
+The styling and positioning of the entry depends on whether you are a first-time
+contributor or have been mentioned in the changelog before.
 
 First-time contributors
 """""""""""""""""""""""
 
-Welcome to AVNI! We're very happy to have you here. And to ensure you
-get proper credit for your work, please add a changelog entry with the
-following pattern **at the top** of the respective subsection (bugs,
-enhancements, etc.):
+Welcome to AVNI! We're very happy to have you here. And to ensure you get proper
+credit for your work, please add a changelog entry with the following pattern
+**at the top** of the respective subsection (bugs, enhancements, etc.):
 
 .. code-block:: rst
 
@@ -530,7 +521,8 @@ enhancements, etc.):
   Bugs
   ----
 
-  - Short description of the changes (:gh:`0000` by :newcontrib:`Firstname Lastname`)
+  - Short description of the changes (:gh:`0000` by :newcontrib:`Firstname
+    Lastname`)
 
   - ...
 
@@ -538,20 +530,20 @@ where ``0000`` must be replaced with the respective GitHub pull request (PR)
 number, and ``Firstname Lastname`` must be replaced with your full name.
 
 It is usually best to wait to add a line to the changelog until your PR is
-finalized, to avoid merge conflicts (since the changelog is updated with
-almost every PR).
+finalized, to avoid merge conflicts (since the changelog is updated with almost
+every PR).
 
 Lastly, make sure that your name is included in the list of authors in
-:file:`doc/changes/names.inc`, otherwise the documentation build will fail.
-To add an author name, append a line with the following pattern (note
-how the syntax is different from that used in the changelog):
+:file:`doc/changes/names.inc`, otherwise the documentation build will fail. To
+add an author name, append a line with the following pattern (note how the
+syntax is different from that used in the changelog):
 
 .. code-block:: rst
 
   .. _Your Name: https://www.your-website.com/
 
-Many contributors opt to link to their GitHub profile that way. Have a look
-at the existing entries in the file to get some inspiration.
+Many contributors opt to link to their GitHub profile that way. Have a look at
+the existing entries in the file to get some inspiration.
 
 Recurring contributors
 """"""""""""""""""""""
@@ -560,31 +552,34 @@ The changelog entry should follow the following patterns:
 
 .. code-block:: rst
 
-    - Short description of the changes from one contributor (:gh:`0000` by `Contributor Name`_)
-    - Short description of the changes from several contributors (:gh:`0000` by `Contributor Name`_, `Second Contributor`_, and `Third Contributor`_)
+    - Short description of the changes from one contributor (:gh:`0000` by
+      `Contributor Name`_)
+    - Short description of the changes from several contributors (:gh:`0000` by
+      `Contributor Name`_, `Second Contributor`_, and `Third Contributor`_)
 
 where ``0000`` must be replaced with the respective GitHub pull request (PR)
 number. Mind the Oxford comma in the case of multiple contributors.
 
 Sometimes, changes that shall appear as a single changelog entry are spread out
-across multiple PRs. In this case, name all relevant PRs, separated by
-commas:
+across multiple PRs. In this case, name all relevant PRs, separated by commas:
 
 .. code-block:: rst
 
-    - Short description of the changes from one contributor in multiple PRs (:gh:`0000`, :gh:`1111` by `Contributor Name`_)
-    - Short description of the changes from several contributors in multiple PRs (:gh:`0000`, :gh:`1111` by `Contributor Name`_, `Second Contributor`_, and `Third Contributor`_)
+    - Short description of the changes from one contributor in multiple PRs
+      (:gh:`0000`, :gh:`1111` by `Contributor Name`_)
+    - Short description of the changes from several contributors in multiple PRs
+      (:gh:`0000`, :gh:`1111` by `Contributor Name`_, `Second Contributor`_, and
+      `Third Contributor`_)
 
 Test locally before opening pull requests (PRs)
 -----------------------------------------------
 
-AVNI uses `continuous integration`_ (CI) to ensure code quality and
-test across multiple installation targets. However, the CIs are often slower
-than testing locally, especially when other contributors also have open PRs
-(which is basically always the case). Therefore, do not rely on the CIs to
-catch bugs and style errors for you; run the tests locally
-instead before opening a new PR and before each time you push additional
-changes to an already-open PR.
+AVNI uses `continuous integration`_ (CI) to ensure code quality and test across
+multiple installation targets. However, the CIs are often slower than testing
+locally, especially when other contributors also have open PRs (which is
+basically always the case). Therefore, do not rely on the CIs to catch bugs and
+style errors for you; run the tests locally instead before opening a new PR and
+before each time you push additional changes to an already-open PR.
 
 
 Code style
@@ -593,16 +588,15 @@ Code style
 Adhere to standard Python style guidelines
 ------------------------------------------
 
-All contributions to AVNI are checked against style guidelines described
-in `PEP 8`_. We also check for common coding errors (such as variables that are
-defined but never used). We allow very few exceptions to these guidelines, and
-use tools such as pep8_, pyflakes_, and flake8_ to check code style
-automatically.
+All contributions to AVNI are checked against style guidelines described in `PEP
+8`_. We also check for common coding errors (such as variables that are defined
+but never used). We allow very few exceptions to these guidelines, and use tools
+such as pep8_, pyflakes_, and flake8_ to check code style automatically.
 
-When modifying an existing file, try to maintain consistency with its
-original style. If the code you add looks drastically different from the
-original code, it may be difficult for readers to follow. Try to avoid
-this. Please give space for breathing by use 4 spaces instead of tabs:
+When modifying an existing file, try to maintain consistency with its original
+style. If the code you add looks drastically different from the original code,
+it may be difficult for readers to follow. Try to avoid this. Please give space
+for breathing by use 4 spaces instead of tabs:
 
 
 .. code-block:: python
@@ -628,21 +622,19 @@ comprehension>` or :ref:`generator <tut-generators>`.
 We (mostly) follow NumPy style for docstrings
 ---------------------------------------------
 
-In most cases you can look at existing AVNI docstrings to figure out how
-yours should be formatted. If you can't find a relevant example, consult the
-`Numpy docstring style guidelines`_ for examples of more complicated formatting
-such as embedding example code, citing references, or including rendered
-mathematics.
+In most cases you can look at existing AVNI docstrings to figure out how yours
+should be formatted. If you can't find a relevant example, consult the `Numpy
+docstring style guidelines`_ for examples of more complicated formatting such as
+embedding example code, citing references, or including rendered mathematics.
 
-Note that we diverge from the NumPy docstring standard in a few
-ways:
+Note that we diverge from the NumPy docstring standard in a few ways:
 
 1. We use a module called ``sphinxcontrib-bibtex`` to render citations. Search
    our source code (``git grep footcite`` and ``git grep footbibliography``) to
-   see examples of how to add in-text citations and formatted references to
-   your docstrings, examples, or tutorials. The structured bibliographic data
-   lives in :file:`doc/references.bib`; please follow the existing key scheme
-   when adding new references (e.g., ``Singleauthor2019``,
+   see examples of how to add in-text citations and formatted references to your
+   docstrings, examples, or tutorials. The structured bibliographic data lives
+   in :file:`doc/references.bib`; please follow the existing key scheme when
+   adding new references (e.g., ``Singleauthor2019``,
    ``AuthoroneAuthortwo2020``, ``FirstauthorEtAl2021a``,
    ``FirstauthorEtAl2021b``).
 2. We don't explicitly say "optional" for optional keyword parameters (because
@@ -650,19 +642,20 @@ ways:
    default values).
 3. For parameters that may take multiple types, we use pipe characters instead
    of the word "or", like this: ``param_name : str | None``.
-4. We don't include a ``Raises`` or ``Warns`` section describing
-   errors/warnings that might occur.
+4. We don't **always** include a ``Raises`` or ``Warns`` section describing
+   errors/warnings that might occur. Whenever we do, these are only for errors
+   that are non-obvious or have a large chance of getting raised.
 
 Other style guidance
 --------------------
 
-- Guidelines for formatting in Fortran is provided in the :ref:`Fortran Guidelines <fortran>` page.
+- Guidelines for formatting in Fortran is provided in the :ref:`Fortran
+  Guidelines <fortran>` page.
 
 - Use single quotes whenever possible.
 
-- Prefer :ref:`generators <tut-generators>` or
-  :term:`comprehensions <list comprehension>` over :func:`filter`, :func:`map`
-  and other functional idioms.
+- Prefer :ref:`generators <tut-generators>` or :term:`comprehensions <list
+  comprehension>` over :func:`filter`, :func:`map` and other functional idioms.
 
 - Use explicit functional constructors for builtin containers to improve
   readability (e.g., :ref:`list() <func-list>`, :ref:`dict() <func-dict>`,
@@ -699,9 +692,9 @@ Return types
 ------------
 
 Methods should modify inplace and return ``self``, functions should return
-copies (where applicable). Docstrings should always give an informative name
-for the return value, even if the function or method's return value is never
-stored under that name in the code.
+copies (where applicable). Docstrings should always give an informative name for
+the return value, even if the function or method's return value is never stored
+under that name in the code.
 
 
 .. _build-docs:
@@ -716,10 +709,12 @@ Building the documentation
   ``pandoc --from=rst --to=markdown --output=README.md README.rst``
 
 
-Our documentation (including docstrings in code files) is in two formats that are built using Sphinx_:
+Our documentation (including docstrings in code files) is in two formats that
+are built using Sphinx_:
 
 1. reStructuredText_ format that is built using `Sphinx-Gallery`_
-2. MyST_ format, a rich and extensible flavour of Markdown_ format, that is built using `myst_parser`_
+2. MyST_ format, a rich and extensible flavour of Markdown_ format, that is
+   built using `myst_parser`_
 
 The easiest way to ensure that your contributions to the documentation are
 properly formatted is to follow the style guidelines on this page, imitate
@@ -736,11 +731,10 @@ formatting and linking by running::
 
 This will build the documentation *except* it will format (but not execute) the
 tutorial and example files. If you have created or modified an example or
-tutorial, you should instead run
-:samp:`PATTERN={<REGEX_TO_SELECT_MY_TUTORIAL>} make html_dev-pattern` to render
-all the documentation and additionally execute just your example or tutorial
-(so you can make sure it runs successfully and generates the output / figures
-you expect).
+tutorial, you should instead run :samp:`PATTERN={<REGEX_TO_SELECT_MY_TUTORIAL>}
+make html_dev-pattern` to render all the documentation and additionally execute
+just your example or tutorial (so you can make sure it runs successfully and
+generates the output / figures you expect).
 
 .. note::
    If you are using a *Windows command shell*, to use the pattern approach,
@@ -748,8 +742,7 @@ you expect).
 
    .. code-block:: doscon
 
-      > set PATTERN=<REGEX_TO_SELECT_MY_TUTORIAL>
-      > make html_dev-pattern
+      > set PATTERN=<REGEX_TO_SELECT_MY_TUTORIAL> > make html_dev-pattern
 
    If you are on Windows but using the `git BASH`_ shell, use the same two
    commands but replace ``set`` with ``export``.
@@ -757,38 +750,37 @@ you expect).
 After either of these commands completes, ``make show`` will open the
 locally-rendered documentation site in your browser. If you see many warnings
 that seem unrelated to your contributions, it might be that your output folder
-for the documentation build contains old, now irrelevant, files. Running
-``make clean`` will clean those up. Additional ``make`` recipes are available;
-run ``make help`` from the :file:`doc` directory or consult the
-`Sphinx-Gallery`_ documentation for additional details.
+for the documentation build contains old, now irrelevant, files. Running ``make
+clean`` will clean those up. Additional ``make`` recipes are available; run
+``make help`` from the :file:`doc` directory or consult the `Sphinx-Gallery`_
+documentation for additional details.
 
 GitHub workflow
 ~~~~~~~~~~~~~~~
 
-Nearly everyone in the community of AVNI contributors and maintainers is
-a working scientist, engineer, or student who contributes to AVNI in
-their spare time. For that reason, a set of best practices have been adopted to
-streamline the collaboration and review process. Most of these practices are
-common to many open-source software projects, so learning to follow them while
-working on AVNI will bear fruit when you contribute to other projects
-down the road. Here are the guidelines:
+Nearly everyone in the community of AVNI contributors and maintainers is a
+working scientist, engineer, or student who contributes to AVNI in their spare
+time. For that reason, a set of best practices have been adopted to streamline
+the collaboration and review process. Most of these practices are common to many
+open-source software projects, so learning to follow them while working on AVNI
+will bear fruit when you contribute to other projects down the road. Here are
+the guidelines:
 
-- Search the `GitHub issues page`_ (both open and closed issues) in case
-  someone else has already started work on the same bugfix or feature. If you
-  don't find anything, open a new issue to discuss changes with maintainers
-  before starting work on your proposed changes.
+- Search the `GitHub issues page`_ (both open and closed issues) in case someone
+  else has already started work on the same bugfix or feature. If you don't find
+  anything, open a new issue to discuss changes with maintainers before starting
+  work on your proposed changes.
 
 - Implement only one new feature or bugfix per pull request (PR). Occasionally
-  it may make sense to fix a few related bugs at once, but this makes PRs
-  harder to review and test, so check with AVNI maintainers first before
-  doing this. Avoid purely cosmetic changes to the code; they make PRs harder
-  to review.
+  it may make sense to fix a few related bugs at once, but this makes PRs harder
+  to review and test, so check with AVNI maintainers first before doing this.
+  Avoid purely cosmetic changes to the code; they make PRs harder to review.
 
-- It is usually better to make PRs *from* branches other than your main
-  branch, so that you can use your main branch to easily get back to a
-  working state of the code if needed (e.g., if you're working on multiple
-  changes at once, or need to pull in recent changes from someone else to get
-  your new feature to work properly).
+- It is usually better to make PRs *from* branches other than your main branch,
+  so that you can use your main branch to easily get back to a working state of
+  the code if needed (e.g., if you're working on multiple changes at once, or
+  need to pull in recent changes from someone else to get your new feature to
+  work properly).
 
 - In most cases you should make PRs *into* the upstream's main branch, unless
   you are specifically asked by a maintainer to PR into another branch (e.g.,
@@ -802,26 +794,25 @@ down the road. Here are the guidelines:
   - Work-in-progress PRs should be created as `draft PRs`_ and the PR title
     should begin with ``WIP``.
 
-  - When you believe a PR is ready to be reviewed and merged, `convert it
-    from a draft PR to a normal PR`_, change its title to begin with ``MRG``,
-    and add a comment to the PR asking for reviews (changing the title does not
+  - When you believe a PR is ready to be reviewed and merged, `convert it from a
+    draft PR to a normal PR`_, change its title to begin with ``MRG``, and add a
+    comment to the PR asking for reviews (changing the title does not
     automatically notify maintainers).
 
-  - PRs that only affect documentation should additionally be labelled
-    ``DOC``, bugfixes should be labelled ``FIX``, and new features should be
-    labelled ``ENH`` (for "enhancement"). ``STY`` is used for style changes
-    (i.e., improving docstring consistency or formatting without changing its
-    content).
+  - PRs that only affect documentation should additionally be labelled ``DOC``,
+    bugfixes should be labelled ``FIX``, and new features should be labelled
+    ``ENH`` (for "enhancement"). ``STY`` is used for style changes (i.e.,
+    improving docstring consistency or formatting without changing its content).
 
-  - the following commit tags are used to interact with our
-    `continuous integration`_ (CI) providers. Use them judiciously; *do not
-    skip tests simply because they are failing*:
+  - the following commit tags are used to interact with our `continuous
+    integration`_ (CI) providers. Use them judiciously; *do not skip tests
+    simply because they are failing*:
 
-    - ``[skip circle]`` Skip `CircleCI`_, which tests successful building of
-      our documentation.
+    - ``[skip circle]`` Skip `CircleCI`_, which tests successful building of our
+      documentation.
 
-    - ``[skip actions]`` Skip our `GitHub Actions`_, which test installation
-      and execution on Linux and macOS systems.
+    - ``[skip actions]`` Skip our `GitHub Actions`_, which test installation and
+      execution on Linux and macOS systems.
 
     - ``[skip azp]`` Skip `azure`_ which tests installation and execution on
       Windows systems.
@@ -829,7 +820,7 @@ down the road. Here are the guidelines:
     - ``[ci skip]`` is an alias for ``[skip actions][skip azp][skip circle]``.
       Notice that ``[skip ci]`` is not a valid tag.
 
-    - ``[circle full]`` triggers a "full" documentation build, i.e., all code
-      in tutorials and how-to examples will be *executed* (instead of just
-      nicely formatted) and the resulting output and figures will be rendered
-      as part of the tutorial/example.
+    - ``[circle full]`` triggers a "full" documentation build, i.e., all code in
+      tutorials and how-to examples will be *executed* (instead of just nicely
+      formatted) and the resulting output and figures will be rendered as part
+      of the tutorial/example.

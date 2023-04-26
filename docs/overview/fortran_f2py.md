@@ -5,7 +5,10 @@
 
 ## Coding style
 
-When modifying an existing file, try to maintain consistency with its original style.  If the code you add looks drastically different from the original code, it may be difficult for readers to follow. Try to avoid this. As a general guideline, we recommend the following code formatting style:
+When modifying an existing file, try to maintain consistency with its original
+style.  If the code you add looks drastically different from the original code,
+it may be difficult for readers to follow. Try to avoid this. As a general
+guideline, we recommend the following code formatting style:
 
 **give space for breathing:**
 
@@ -19,7 +22,8 @@ bad
   dx=1/2*fac*(a-b)
 ~~~
 
-Note that in performance critical sections, please use multiplication by 0.5 rather than divide by 2 for floating-points.
+Note that in performance critical sections, please use multiplication by 0.5
+rather than divide by 2 for floating-points.
 
 **use consistent 2-space indents:**
 
@@ -53,8 +57,10 @@ subroutine vbspl
   ..
 ~~~
 
-The line beginning should only be used for *very important* sections, as it makes the line *very prominent* to read.
-For example, only use it for function descriptions, important comments, or file headers. For comments, see also next point...
+The line beginning should only be used for *very important* sections, as it
+makes the line *very prominent* to read. For example, only use it for function
+descriptions, important comments, or file headers. For comments, see also next
+point...
 
 *exception, module definitions start at beginning:*
 
@@ -88,7 +94,9 @@ bad
   fg = vbspl(4,2)
 ~~~
 
-Note we prefer indenting the comments as well to make it easier for reading the code, e.g., when inside multiple if-then statements. Putting the comment at the beginning breaks the flow.
+Note we prefer indenting the comments as well to make it easier for reading the
+code, e.g., when inside multiple if-then statements. Putting the comment at the
+beginning breaks the flow.
 
 **comment, comment, comment your functions:**
 
@@ -117,7 +125,8 @@ bad
   ..
 ~~~
 
-Note that we haven't been very strict in adopting a doxygen-readable function declaration.
+Note that we haven't been very strict in adopting a doxygen-readable function
+declaration.
 
 **use double-colons for parameter declarations:**
 
@@ -157,17 +166,31 @@ subroutine get_color(icolor)
 
 ## F2PY Troubleshooting
 
-:::{warning}
-AVNI used [F2PY](https://numpy.org/doc/stable/f2py/) to wrap legacy Python code by building from source code using the `numpy.distutils`. This requires restricting the versions to `numpy<=1.22` and `setuptools<60.0` in `setup.py` following [this link](https://numpy.org/doc/stable/reference/distutils_status_migration.html#moving-to-setuptools). Ultimately, AVNI will be migrated to use the latest version of the `setuptools` package.
-:::
+:::{warning} AVNI used [F2PY](https://numpy.org/doc/stable/f2py/) to wrap legacy
+Python code by building from source code using the `numpy.distutils`. This
+requires restricting the versions to `numpy<=1.22` and `setuptools<60.0` in
+`setup.py` following [this
+link](https://numpy.org/doc/stable/reference/distutils_status_migration.html#moving-to-setuptools).
+Ultimately, AVNI will be migrated to use the latest version of the `setuptools`
+package. :::
 
-The purpose of the `F2PY` – Fortran to Python interface generator– utility is to provide a connection between Python and Fortran. `F2PY` is a part of NumPy (`numpy.f2py`) and also available as a standalone command line tool. We store legacy Fortran code in the `avni/f2py` folder. A way to troubleshoot `F2PY` issues involves the following steps:
+The purpose of the `F2PY` – Fortran to Python interface generator– utility is to
+provide a connection between Python and Fortran. `F2PY` is a part of NumPy
+(`numpy.f2py`) and also available as a standalone command line tool. We store
+legacy Fortran code in the `avni/f2py` folder. A way to troubleshoot `F2PY`
+issues involves the following steps:
 
 1. Copy all of the source code to a single directory
-2. Make sure that the code will actually compile without f2py (either with a makefile or with a simple script)
+2. Make sure that the code will actually compile without f2py (either with a
+   makefile or with a simple script)
 3. Use f2py to create a python signature file (`.pyf` file).
 
-See the makefile attached below which will compile all of the code, and generate the file `avni_forward.pyf`. The `.pyf` file can be used to figure out what problems are going on. In our case, there were a number of subroutines that were not being properly translated to the signature file. These subroutines are called "unknown_subroutine" in the signature file. For example, the signature file complained about a subroutine in `rayseq.f`:
+See the makefile attached below which will compile all of the code, and generate
+the file `avni_forward.pyf`. The `.pyf` file can be used to figure out what
+problems are going on. In our case, there were a number of subroutines that were
+not being properly translated to the signature file. These subroutines are
+called "unknown_subroutine" in the signature file. For example, the signature
+file complained about a subroutine in `rayseq.f`:
 
 ```{code-block}
 ---
@@ -179,7 +202,11 @@ subroutine unknown_subroutine ! in rayseq.f
 end subroutine unknown_subroutine
 ```
 
-Since it wasn't really giving us any reasons why the subroutine was unknown, it was a little hard to figure out how to fix. It turns out the problem (in this case) was that the subroutine definition in rayseq.f exceeded the fortran character limit of 72. So to fix it, we just added a continuation line to the source code:
+Since it wasn't really giving us any reasons why the subroutine was unknown, it
+was a little hard to figure out how to fix. It turns out the problem (in this
+case) was that the subroutine definition in rayseq.f exceeded the fortran
+character limit of 72. So to fix it, we just added a continuation line to the
+source code:
 
 ```{code-block}
 diff rayseq.f ../ALLCODES/rayseq.f
@@ -190,7 +217,12 @@ diff rayseq.f ../ALLCODES/rayseq.f
 >      #idirseg,NSEG)
 ```
 
-There were a number of other source files that we had to modify, but as far as we remember, the only changes we made were to fix character limit issues. Once there were no more problems in the python signature file, we copied the source codes back to their respective directories, and everything worked fine with `pip`. We can't say that this method will work for troubleshooting other `F2PY` issues.
+There were a number of other source files that we had to modify, but as far as
+we remember, the only changes we made were to fix character limit issues. Once
+there were no more problems in the python signature file, we copied the source
+codes back to their respective directories, and everything worked fine with
+`pip`. We can't say that this method will work for troubleshooting other `F2PY`
+issues.
 
 ```{code-block}
 # makefile
