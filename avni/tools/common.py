@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+#####################  IMPORT STANDARD MODULES   #########################
+
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 import sys
@@ -721,13 +723,13 @@ def sanitised_input(prompt: str, type_=None, min_=None, max_=None, range_=None):
     ----------
     prompt : str
         Prompt to the user
-    type_ : _type_, optional
+    type_ : optional
         type of input needed, by default None
-    min_ : _type_, optional
+    min_ : optional
         Minimum value, by default None
-    max_ : _type_, optional
+    max_ : optional
         Maximum value, by default None
-    range_ : _type_, optional
+    range_ : optional
         Range of values, by default None
 
     Returns

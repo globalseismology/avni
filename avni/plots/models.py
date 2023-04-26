@@ -3,7 +3,7 @@
 This module contains the various subroutines used for plotting
 Usage import
 """
-#####################  IMPORT STANDARD MODULES   ######################################
+#####################  IMPORT STANDARD MODULES   #########################
 
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
@@ -40,14 +40,17 @@ from mpl_toolkits.axisartist.grid_finder import DictFormatter,FixedLocator
 from matplotlib import gridspec # Relative size of subplots
 import pandas as pd
 import pdb
-####################       IMPORT OWN MODULES     ######################################
+
+####################### IMPORT AVNI LIBRARIES  ###########################
+
 from .. import mapping
 from .. import tools
 from .. import data
 from .. import constants
 from .common import initializecolor,updatefont
 
-############################### PLOTTING ROUTINES ################################
+##########################################################################
+
 def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
     """
     Plots great-circle paths from lon lat arrays.

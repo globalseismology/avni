@@ -2,9 +2,12 @@
 This module has several trogonometric routines in degrees.
 Typically used to interface with fortran codes.
 """
+#####################  IMPORT STANDARD MODULES   #########################
 
 from math import cos, sin, tan, acos, asin, atan, atan2, degrees, radians
 from numba import jit
+
+##########################################################################
 
 @jit
 def cosd(x):

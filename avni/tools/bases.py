@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+#####################  IMPORT STANDARD MODULES   #########################
+
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 from builtins import *
@@ -39,7 +41,6 @@ def eval_vbspl(radius: tp.Union[list,tuple,np.ndarray],
     vercof, dvercof: float or np.ndarray
         value of the polynomial coefficients at each depth and derivative.
         Both arrays have size (Nradius, Nsplines).
-
 
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)

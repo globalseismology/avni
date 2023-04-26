@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
 This module contains the various subroutines used for plotting
-Usage import
 """
-#####################  IMPORT STANDARD MODULES   ######################################
+
+#####################  IMPORT STANDARD MODULES   #########################
 
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
@@ -18,30 +18,38 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
 import traceback
+import typing as tp
 import pdb
 
-####################       IMPORT OWN MODULES     ######################################
+####################### IMPORT AVNI LIBRARIES  ###########################
+
 from .. import tools
 from .. import data
 from .. import constants
-########################      GENERIC   ################################################
 
-def updatefont(fontsize=15,fontname='sans-serif',ax=None):
-    """
-    Updates the font type and sizes globally or for a particular axis handle
+##########################################################################
+
+def updatefont(fontsize: int = 15, fontname: str = 'sans-serif', ax = None):
+    """Updates the font type and sizes globally or for a particular axis handle
 
     Parameters
     ----------
+    fontsize : int, optional
+        Size of font, by default 15
+    fontname : str, optional
+        Name of font, by default 'sans-serif'
+    ax : matplotlib.axes.Axes, optional
+        Axes handle, by default None
 
-    ax :  figure axis handle
+    Returns
+    -------
+    ax
+        Updated axes handle if ax is not None
 
-    fontsize,fontname : font parameters
-
-    Return:
-    ----------
-
-    ax : updated axis handle if ax is not None
-
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     if ax is None:
         plt.rcParams["font.family"] = fontname
@@ -57,15 +65,32 @@ def updatefont(fontsize=15,fontname='sans-serif',ax=None):
         ax.title.set_fontname(fontname)
     return ax if ax is not None else None
 
-def initializecolor(name,**kwargs):
-    """
-    Initialize a color palette instance from standard Python, constants.py or downloadable from server
+def initializecolor(name: str, **kwargs):
+    """Initialize a color palette instance.
 
-    name : name of color palette.Can have _r appended to standard ones
-                    for reversed color scales
+    This can be from standard Python palettes (e.g. jet), those in
+    :py:func:`constants` or downloadable from server.
 
-    kwargs : optional arguments for Basemap
+    Parameters
+    ----------
+    name : str
+        Name of color palette. Can have `_r` appended to standard ones
+        for reversed color scales e.g. `jet_r`.
+
+    **kwargs : dict
+        Optional arguments for Basemap
+
+    Returns
+    -------
+    cpalette
+        Output color palette
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
+
     success1 = True; success2 = True; success3 = True # assume colorscale is read somehow
     try:
         cpalette = plt.get_cmap(name)
@@ -94,17 +119,24 @@ def initializecolor(name,**kwargs):
         raise IOError('unable to read color palette '+name+' from standard Python, constants.py or downloadable from server.')
     return cpalette
 
-def standardcolorpalette(name='avni'):
-    """
-    Get a custom AVNI color palette from constants.py
+def standardcolorpalette(name: str = 'avni'):
+    """Register a custom AVNI color palette from :py:func:`constants`
 
     Parameters
     ----------
+    name : str, optional
+        Color palette name that will be used elsewhere, by default 'avni'.
+        If name ends in '_r', uses the reversed color scale
 
-    name : color palette name that will be used elsewhere
-           if name ends in '_r', use the reversed color scale.
-    reverse: if the colors need to be reversed from those provided.
+    Returns
+    -------
+    cpalette
+        Output color palette
 
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     if name.endswith('_r'):
         RGBoption = name.split('_r')[0]
@@ -116,8 +148,32 @@ def standardcolorpalette(name='avni'):
     cmx.register_cmap(name=custom_cmap.name, cmap=custom_cmap)
     return custom_cmap
 
-def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm',colorcontour=20):
-    """gets the value of color for a given palette"""
+def get_colors(val: float, xmin: float = -1.,xmax: float = 1.,palette: str = 'coolwarm',colorcontour: int = 20) -> tuple:
+    """Gets the value of color for a given palette
+
+    Parameters
+    ----------
+    val : float
+        Value to query
+    xmin : float, optional
+        Minimum value or the color scale, by default -1.
+    xmax : float, optional
+        Maximum value or the color scale, by default 1.
+    palette : str, optional
+        Color palette to query, by default 'coolwarm'
+    colorcontour : int, optional
+        Number of color contours to use in dividing up the color palette, by default 20
+
+    Returns
+    -------
+    tuple
+        Tuple of (r, g, b, a) scalars.
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     cm = cmx.get_cmap(palette)
     #cNorm  = mcolors.Normalize(vmin=xmin, vmax=xmax)
     bounds = np.linspace(xmin,xmax,colorcontour+1)
@@ -127,8 +183,24 @@ def get_colors(val,xmin=-1.,xmax=1.,palette='coolwarm',colorcontour=20):
     return colorVal
 
 def grayify_cmap(cmap):
-    """Return a grayscale version of the colormap"""
-    cmap = get_cmap(cmap)
+    """Return a grayscale version of the colormap
+
+    Parameters
+    ----------
+    cmap
+        Input color palette
+
+    Returns
+    -------
+    cpalette
+        Output color palette
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+    cmap = cmx.get_cmap(cmap)
     colors = cmap(np.arange(cmap.N))
 
     # convert RGBA to perceived greyscale luminance
@@ -139,11 +211,27 @@ def grayify_cmap(cmap):
 
     return cmap.from_list(cmap.name + "_gray", colors, cmap.N)
 
-def make_colormap(seq,name='CustomMap'):
-    """Return a LinearSegmentedColormap
-    seq: a sequence of floats and RGB-tuples. The floats should be increasing
-    and in the interval (0,1).
+def make_colormap(seq, name: str = 'CustomMap'):
+    """Return a LinearSegmentedColormap for a sequence of colors
+
+    Parameters
+    ----------
+    seq
+        A sequence of floats and RGB-tuples. The floats should be increasing and in the interval (0,1).
+    name : str, optional
+        Name to give to this color palette, by default 'CustomMap'
+
+    Returns
+    -------
+    cpalette
+        Output color palette
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
+
     seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
     cdict = {'red': [], 'green': [], 'blue': []}
     for i, item in enumerate(seq):
@@ -155,8 +243,26 @@ def make_colormap(seq,name='CustomMap'):
             cdict['blue'].append([item, b1, b2])
     return mcolors.LinearSegmentedColormap(name, cdict)
 
-def getcolorlist(cptfile,type='avni'):
-    """Get a tuple for colorlist from a cptfile"""
+def getcolorlist(cptfile: str,type='avni') -> list:
+    """Get a list of color tuples from a color palette (.cpt) file
+
+    Parameters
+    ----------
+    cptfile : str
+        A color palette file
+    type : str, optional
+        Either avni format or standard per GMT project, by default 'avni'
+
+    Returns
+    -------
+    list
+        A list of colors tuples (r, g, b)
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
 
     if not os.path.isfile(cptfile): raise IOError("File ("+cptfile+") does not exist.")
     colorlist=[]
@@ -178,18 +284,30 @@ def getcolorlist(cptfile,type='avni'):
     elif type=='standard':
         colorlist = readstandardcpt(cptfile)
 
+    else:
+        raise ValueError('Only avni and standard options are allowed')
+
     return colorlist
 
-def readstandardcpt(cptfile):
-    """Read a GMT color map from an OPEN cpt file
+def readstandardcpt(cptfile: str) -> list:
+    """Read a GMT color map from a color palette (.cpt) file
+
     Parameters
     ----------
-    cptf : open file or url handle
-        path to .cpt file
-    name : str, optional
-        name for color map
-        if not provided, the file name will be used
+    cptfile : str
+        color palette file
+
+    Returns
+    -------
+    list
+        A list of colors tuples (r, g, b)
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
+
     if not os.path.isfile(cptfile): raise IOError("File ("+cptfile+") does not exist.")
 
     # process file
@@ -255,9 +373,38 @@ def readstandardcpt(cptfile):
     # return colormap
     return colorlist
 
-def customcolorpalette(name='bk',cptfolder=None,colorlist=None,
-                       colormax=2.,middlelimit=0.5,ifgraytest=0):
-    """Used to return preset color palettes from cptfolder. ifgraytest test how the figure looks in gray scale. (-colormax,colormax) are the limits of the colorbar. zerolimit is the limit to which the middle color (e.g. grey) will extend on either side of colorttmax mid. """
+def customcolorpalette(name: str = 'bk',
+                       cptfolder: tp.Union[None, str] = None,
+                       colormax: float = 2.,
+                       middlelimit: float = 0.5,
+                       ifgraytest: int = 0):
+    """Used to return preset color palettes from :py:func:`constants.cptfolder`
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of the color palette, by default 'bk'
+    cptfolder : tp.Union[None, str], optional
+        Location of the color palette (.cpt) files, by default None so uses :py:func:`constants.cptfolder`
+    colormax : float, optional
+        Limits of the colorbar (-colormax,colormax), by default 2.
+    middlelimit : float, optional
+        Limit to which the middle color (e.g. grey) will extend on either side
+        of color mid point, by default 0.5
+    ifgraytest : int, optional
+        Tests how the figure looks in gray scale, by default 0
+
+    Returns
+    -------
+    cpalette
+        Output color palette
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+
     # Get the directory location where CPT files are kep
     if cptfolder is None: cptfolder = tools.get_filedir(subdirectory=constants.cptfolder)
 
