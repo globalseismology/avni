@@ -23,7 +23,8 @@ from ..tools import convert2units,get_configdir,get_fullpath
 ##########################################################################
 
 def getplanetconstants(planet: tp.Union[None,str] = None, configfile: tp.Union[None,str] = None, option = None):
-    """_summary_
+    """Load the astronomic-geodetic constraints for a planet from a
+    configuration file.
 
     Parameters
     ----------
@@ -43,7 +44,7 @@ def getplanetconstants(planet: tp.Union[None,str] = None, configfile: tp.Union[N
 
     # defaults
     if planet is None: planet = constants.planetpreferred
-    if configfile is None: configfile = get_fullpath(get_configdir()+'/'+planet)
+    if configfile is None: configfile = get_fullpath(get_configdir()+'/'+constants.planetconstants)
 
     if not os.path.isfile(configfile):
         raise IOError('No configuration file found: '+configfile)
@@ -120,7 +121,7 @@ def evaluate_grs(GM: tp.Union[None,float] = None,
     """Calculate geopotential constants in a reference earth model.
 
     All the following page numbers and equation numbers refer to the
-    book 'Physical Geodesy' by Hofmann-wellenhof and Moritz + 2006
+    book Physical Geodesy by Hofmann-wellenhof and Moritz :cite:p:`hofmann2006physical`
 
     Parameters
     ----------
@@ -164,6 +165,7 @@ def evaluate_grs(GM: tp.Union[None,float] = None,
         Linear eccentricity
     c
         Polar radius of curvature
+
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)
     :Last Modified:
