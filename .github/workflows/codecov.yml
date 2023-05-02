@@ -74,6 +74,7 @@ jobs:
       - run: |
           conda info
           conda list
+          conda init bash
           conda config --show-sources
           conda config --show
 
