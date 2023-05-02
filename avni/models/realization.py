@@ -37,7 +37,7 @@ class Realization(object):
         self._type = None
         self._refmodel = None
         self._infile = None
-        if file is not None:  success = self.read(file)
+        if file is not None:  self.read(file)
 
     def __str__(self):
         if self._name is not None:
@@ -110,9 +110,9 @@ class Realization(object):
             self.decode_scaling()
             self.scale_coefficients()
         except:
+            warnings.warn('Warning: kernel_set could not be initialized in realization instance for '+file)
             pass
             #print(traceback.format_exc())
-            #print('Warning: kernel_set could not be initialized in realization instance for '+file)
 
     def decode_units(self):
         if 'attrs' not in self.keys: self['attrs']={}
@@ -439,7 +439,7 @@ class Realization(object):
             lat = pd.unique(arr['lat'])
             pxw = pd.unique(arr['pxw'])
 
-        if not len(pxw)==1: raise warnings.warn('more than 1 pixel size in variable '+variable, pxw)
+        if not len(pxw)==1: warnings.warn('more than 1 pixel size in '+self._name)
 
         # Get all depths
         kernel = self['kernel_set']

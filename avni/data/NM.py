@@ -12,11 +12,12 @@ import h5py
 import struct
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from avni.models import Reference1D
 from avni import constants,tools
 import pint
-import pdb
+import warnings
+#import pdb
 
 if sys.version_info[0] >= 3: unicode = str
 
@@ -264,8 +265,8 @@ def write_modes_hdf(infile,table_name,absorption_band='None'):
                 disp_curve_dict['radial'][str(nn)]['omega'] = []
                 disp_curve_dict['radial'][str(nn)]['gvel'] = []
                 disp_curve_dict['radial'][str(nn)]['pvel'] = []
-
             except:
+                warnings.warn('Could not create group for radial modes')
                 pass
 
             ds['radial'][str(nn)].create_group(mode_name)
@@ -290,6 +291,7 @@ def write_modes_hdf(infile,table_name,absorption_band='None'):
                 disp_curve_dict['toroidal'][str(nn)]['gvel'] = []
                 disp_curve_dict['toroidal'][str(nn)]['pvel'] = []
             except:
+                warnings.warn('Could not create group for toroidal modes')
                 pass
 
             ds['toroidal'][str(nn)].create_group(mode_name)
@@ -314,6 +316,7 @@ def write_modes_hdf(infile,table_name,absorption_band='None'):
                 disp_curve_dict['spheroidal'][str(nn)]['gvel'] = []
                 disp_curve_dict['spheroidal'][str(nn)]['pvel'] = []
             except:
+                warnings.warn('Could not create group for spheroidal modes')
                 pass
 
             ds['spheroidal'][str(nn)].create_group(mode_name)

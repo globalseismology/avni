@@ -21,16 +21,16 @@ keep track of all open issues related to AVNI
 
 Please follow these simple instructions before opening a new bug report:
 
-- Do a quick search in the list of open and closed issues for a duplicate of
+  - Do a quick search in the list of open and closed issues for a duplicate of
   your issue.
-- If you did not find an answer, open a new
+  - If you did not find an answer, open a new
   [issue](https://github.com/globalseismology/avni/issues/new) and explain your
   problem in as much detail as possible.
-- Attach as much as possible of the following information to your issue:
-  - a minimal setup that reproduces the issue,
-  - the model output that was created during the model run,
-  - the error message you saw on your screen,
-  - any information that helps us understand why you think this is a bug, and
+  - Attach as much as possible of the following information to your issue:
+    - a minimal setup that reproduces the issue,
+    - the model output that was created during the model run,
+    - the error message you saw on your screen,
+    - any information that helps us understand why you think this is a bug, and
     how to reproduce it.
 
 ## Making AVNI better
@@ -46,11 +46,11 @@ early feedback and prevents you from spending much time on a project that might
 already be planned, or that conflicts with other plans.
 
 To make a change to AVNI you should:
-- Create a [fork](https://guides.github.com/activities/forking/#fork) (through
+  - Create a [fork](https://guides.github.com/activities/forking/#fork) (through
 GitHub) of the code base.
-- Create a separate [branch](https://guides.github.com/introduction/flow/)
+  - Create a separate [branch](https://guides.github.com/introduction/flow/)
 (sometimes called a feature branch) on which you do your modifications.
-- You can propose that your branch be merged into the AVNI code by opening a
+  - You can propose that your branch be merged into the AVNI code by opening a
 [pull request](https://guides.github.com/introduction/flow/). This will give
 others a chance to review your code.
 
@@ -77,12 +77,12 @@ road block if you would like to contribute some code.
 ## Acknowledgment of contributions
 While we are grateful for every contribution, there are also several official
 ways your contribution will be acknowledged by the AVNI community:
-- Every commit that was merged into the AVNI repository will make you part of
+  - Every commit that was merged into the AVNI repository will make you part of
   the growing group of AVNI
   [contributors](https://github.com/globalseismology/avni/graphs/contributors).
-- Mention through any other kind of attribution the project provides (e.g.
+  - Mention through any other kind of attribution the project provides (e.g.
   newsletters, release papers, manual authorship).
-- Regularly, the *Principal Developers* of AVNI come together and discuss based
+  - Regularly, the *Principal Developers* of AVNI come together and discuss based
   on the contributions of the last years who should be invited to join the group
   of Principal Developers. Criteria that *Principal Developers* should match
   are:
@@ -99,7 +99,7 @@ ways your contribution will be acknowledged by the AVNI community:
 
 ## Further reading
 
-- [Contributing
+  - [Contributing
   guide](https://avni.globalseismology.org/stable/overview/contributing.html):
   The standard way of contributing to AVNI development is described here. To
   create a product that is maintainable over the long term, it is important that
@@ -108,7 +108,7 @@ ways your contribution will be acknowledged by the AVNI community:
   adequate for contributing to AVNI, but we recommend that all new users to Git
   attempt the tutorial below for more complete understanding of the workflow.
 
-- [Software Carpentry Git
+  - [Software Carpentry Git
   Tutorial](https://swcarpentry.github.io/git-novice/index.html): For those who
   are not familiar with Git, we recommend attempting this tutorial, or even
   better, attending an in-person tutorial session if available in your area.
