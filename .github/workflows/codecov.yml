@@ -1,7 +1,7 @@
 name: github-codecov
 
-on: 
-  push: 
+on:
+  push:
     branches:
       - 'main'
       - 'docs'
@@ -16,8 +16,8 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.7"]
-        
-    steps:  
+
+    steps:
 #     Cache npm modules
       - name: Cache node modules
         id: cache-npm
@@ -74,16 +74,12 @@ jobs:
       - run: |
           conda info
           conda list
-          conda init bash
           conda config --show-sources
           conda config --show
 
-      - name: Conda Requirements
-        run: conda activate avni-docs
-         && pip install -e .
-
       - name: Generate coverage report
         run: |
+          pip install -e .
           pip install pytest
           pip install pytest-cov
           pytest --cov=./ --cov-report=xml
