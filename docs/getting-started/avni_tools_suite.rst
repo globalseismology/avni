@@ -27,8 +27,6 @@ AVNI, including packages for:
     If you know of a package that is related but not listed here, feel free to
     :ref:`make a pull request <contributing>` to add it to this list.
 
-- automatic bad channel detection and interpolation (`autoreject`_)
-
 
 What should I install?
 ^^^^^^^^^^^^^^^^^^^^^^

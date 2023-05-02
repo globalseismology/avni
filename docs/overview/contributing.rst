@@ -808,14 +808,8 @@ the guidelines:
     integration`_ (CI) providers. Use them judiciously; *do not skip tests
     simply because they are failing*:
 
-    - ``[skip circle]`` Skip `CircleCI`_, which tests successful building of our
-      documentation.
-
     - ``[skip actions]`` Skip our `GitHub Actions`_, which test installation and
       execution on Linux and macOS systems.
-
-    - ``[skip azp]`` Skip `azure`_ which tests installation and execution on
-      Windows systems.
 
     - ``[ci skip]`` is an alias for ``[skip actions][skip azp][skip circle]``.
       Notice that ``[skip ci]`` is not a valid tag.

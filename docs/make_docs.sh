@@ -15,14 +15,14 @@ sphinx-apidoc -o api/ ../avni --force --separate --module-first --no-toc
 #Make the html and pdf versions in local /docs/_build directory
 make clean
 make html
-make latexpdf
-cd _build/latex/
-make
-cd ../..
+#make latexpdf
+#cd _build/latex/
+#make
+#cd ../..
 
 # Move files
 set version = ` python -c "exec(open('../avni/version.py').read()); print(short_version)" `
-rsync -rv _build/latex/manual_AVNI.pdf pm5113@dwar.princeton.edu:~/web/docs/avni/v$version/
+#rsync -rv _build/latex/manual_AVNI.pdf pm5113@dwar.princeton.edu:~/web/docs/avni/v$version/
 rsync -rv _build/html/* pm5113@dwar.princeton.edu:~/web/docs/avni/v$version
 
 # Copy soft links
