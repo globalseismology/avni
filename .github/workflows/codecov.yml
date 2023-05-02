@@ -41,7 +41,7 @@ jobs:
       - name: Conda Requirements
         run: conda config --append channels conda-forge
          && conda config --set channel_priority flexible
-         && conda env --name avni-docs create --file docs/conda/environment_docs.yml
+         && conda env create -f docs/conda/environment_docs.yml
          && conda activate avni-docs
          && pip install -e .
 
