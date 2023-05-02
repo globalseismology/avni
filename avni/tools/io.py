@@ -10,6 +10,7 @@ if (sys.version_info[:2] < (3, 0)):
 
 import numpy as np
 import gc
+import warnings
 from scipy import sparse
 import h5py
 
@@ -28,6 +29,7 @@ def close_h5py():
             try:
                 obj.close()
             except:
+                warnings.warn('Warning: HDF5 files already closed')
                 pass # Was already closed
 
 def store_sparse_hdf(h5f,varname: str,mat,compression: str = "gzip"):

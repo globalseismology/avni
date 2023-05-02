@@ -5,8 +5,7 @@ if (sys.version_info[:2] < (3, 0)):
     from builtins import *
 
 # imports for client:
-import json,requests,os
-import pandas as pd
+import json,os
 import numpy as np
 from configobj import ConfigObj
 from .. import tools

@@ -124,8 +124,8 @@ class Model3D(object):
 
     def read(self,file,**kwargs):
         if (not os.path.isfile(file)): raise IOError("Filename ("+file+") does not exist")
+        success = False
         try:# try hdf5 for the whole ensemble
-            success1 = True
             hf = h5py.File(file, 'r')
             if kwargs:
                 self.readhdf5(hf,**kwargs)
@@ -134,13 +134,12 @@ class Model3D(object):
             self._description = "Read from "+file
             self._infile = file
             hf.close()
+            success = True
         except: # try netcdf or ascii for a single model
             try: #first close the hdf5 if opened with h5py above
                 hf.close()
             except NameError:
                 hf = None
-            success1 = False
-            success2 = True
             var1 = traceback.format_exc()
             try:
                 realization = Realization(file)
@@ -151,13 +150,13 @@ class Model3D(object):
                 self._type = realization._type
                 self._refmodel = realization._refmodel
                 self._infile = file
+                success = True
             except:
-                success1 = False
                 print('############    Tried reading as hdf5   ############')
                 print(var1)
                 print('############    Tried reading as ascii   ############')
                 print(traceback.format_exc())
-        if not success1 and not success2: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
+        if not success: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
 
     def add_realization(self,coef=None,name=None,resolution=None):
         """
@@ -1298,7 +1297,7 @@ class Model3D(object):
             try:
                 selfmeta['kernel_set'] = Kernel_set(selfmeta.copy())
             except:
-                #warnings.warn('Warning: kernel_set could not initialized for '+str(resolution))
+                warnings.warn('Warning: kernel_set could not initialized for '+str(resolution))
                 pass
 
             # make a model3D instance and store coef panda dataframe

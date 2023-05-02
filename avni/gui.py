@@ -5,11 +5,11 @@ import numpy as np
 from matplotlib.widgets import LassoSelector
 from matplotlib.path import Path
 
-try:
-    raw_input
-except NameError:
-    # Python 3
-    raw_input = input
+#try:
+#    raw_input
+#except NameError:
+#    # Python 3
+#    raw_input = input
 
 class SelectFromCollection(object):
     """Select indices from a matplotlib collection using `LassoSelector`.

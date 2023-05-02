@@ -1107,7 +1107,7 @@ def ascii2xarray(asciioutput,outfile = None, model_dir: str = '.',
             lat = pd.unique(arr['lat'])
             pxw = pd.unique(arr['pxw'])
 
-        if not len(pxw)==1: raise warnings.warn('more than 1 pixel size in variable '+variable, pxw)
+        if not len(pxw)==1: warnings.warn('more than 1 pixel size in variable '+variable)
         print(variable,': PXW', pxw)
 
         #create dims arrays
