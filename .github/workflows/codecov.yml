@@ -16,6 +16,11 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.7"]
+    # Shell needs to use login mode, which can be set globally within a job
+    # https://github.com/marketplace/actions/setup-miniconda#important
+    defaults:
+      run:
+        shell: bash -l {0}
 
     steps:
 #     Cache npm modules
@@ -70,6 +75,7 @@ jobs:
           allow-softlinks: true
           show-channel-urls: true
           environment-file: docs/conda/environment_docs.yml
+          auto-activate-base: false
           use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
       - run: |
           conda info
