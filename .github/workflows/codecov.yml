@@ -9,7 +9,7 @@ on:
     types: [created]
 
 jobs:
-  build-docker:
+  build-codecov:
     runs-on: ubuntu-latest
     if: github.repository == 'globalseismology/avni'
     steps:    
