@@ -18,7 +18,7 @@ The Project
 The AVNI software ecosystem (The Project) is designed to be an open source
 software project. The goal of The Project is to develop open source software for
 analysis of geoscience data in Python. The Project is released under the GNU GPL
-v3 (or similar) `license <LICENSE_>`_, developed openly and is hosted publicly
+v3 (or similar) `license <LICENSE_>`_, and is hosted publicly
 under the ``globalseismology`` `GitHub organization <AVNI Github_>`_.
 
 The Project is developed by a team of distributed developers, called
@@ -43,9 +43,9 @@ Community Effort
 
 AVNI software ecosystem (The Project) is part of the wider community effort to
 create a three-dimensional reference Earth model `REM3D <REM3D_>`_. The Project
-aims to provide tools that reduce to the barrier of entry for the adoption of
+aims to provide tools that reduce the barrier of entry for the adoption of
 Earth models and datasets. A description of the REM3D project is provided in
-:footcite:`MoulikEtAl2021`, and a complete list of relevant papers is provided
+:footcite:`MoulikEtAl2021,REM3D_AGU_2022`, and a complete list of relevant papers is provided
 below:
 
 .. footbibliography::

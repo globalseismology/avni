@@ -54,8 +54,6 @@ To install this package with ``conda`` run::
 
     conda install -c conda-forge avni
 
-.. asciinema:: 507565
-
 
 
 Source / Developers
@@ -69,8 +67,7 @@ GitHub`_, and downloading the source (cloning) by running::
     python -m pip install -e .
 
 
-The latest documentation for the ``main`` branch of AVNI can be found at `AVNI
-Docs`_.
+The latest documentation for the ``main`` branch of AVNI can be found at `AVNI`_.
 
 .. note::
 

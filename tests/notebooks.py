@@ -29,7 +29,7 @@ def _notebook_run(path):
 
 def test_ipynb():
     os.chdir(avni.tools.get_installdir())
-    os.chdir('../examples/Notebooks/')
+    os.chdir('../docs/')
     for root, dirs, files in os.walk("."):
         for file in files:
             if file.endswith(".ipynb"):

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+#####################  IMPORT STANDARD MODULES   #########################
+
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 import sys
@@ -10,27 +12,39 @@ import os
 import numpy as np
 from math import atan
 from configobj import ConfigObj
+import typing as tp
 import pdb
 
-####################### IMPORT AVNI LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  ###########################
+
 from .. import constants
-from ..tools import convert2units,get_configdir
-#######################################################################################
+from ..tools import convert2units,get_configdir,get_fullpath
 
-def getplanetconstants(planet = constants.planetpreferred, configfile = get_configdir()+'/'+constants.planetconstants,option= None):
+##########################################################################
+
+def getplanetconstants(planet: tp.Union[None,str] = None, configfile: tp.Union[None,str] = None, option = None):
+    """Load the astronomic-geodetic constraints for a planet from a
+    configuration file.
+
+    Parameters
+    ----------
+    planet : tp.Union[None,str], optional
+        _description_, by default None so :py:func:`constants.planetpreferred`
+    configfile : tp.Union[None,str], optional
+        all the planet configurations are in this file., by default None so
+        read from so :py:func:`get_configdir/constants.planetpreferred`
+    option
+        GRS option for constants, by default None so use the default one
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Read the constants from configfile relevant to a planet to constants.py
 
-    Input parameters:
-    ----------------
-    planet: planet option from configfile
-
-    configfile: all the planet configurations are in this file.
-                Default option means read from tools.get_configdir()
-
-    option: GRS option for constants. Use the default one if None.
-
-    """
+    # defaults
+    if planet is None: planet = constants.planetpreferred
+    if configfile is None: configfile = get_fullpath(get_configdir()+'/'+constants.planetconstants)
 
     if not os.path.isfile(configfile):
         raise IOError('No configuration file found: '+configfile)
@@ -97,40 +111,67 @@ def getplanetconstants(planet = constants.planetpreferred, configfile = get_conf
     constants.grs = option
 
 
-def evaluate_grs(GM=None,f=None,a_e=None,omega=None,R=None,nzo=10,store=False):
-    """
-    Calculate geopotential constants in a reference earth model.
+def evaluate_grs(GM: tp.Union[None,float] = None,
+                 f: tp.Union[None,float] = None,
+                 a_e: tp.Union[None,float] = None,
+                 omega: tp.Union[None,float] = None,
+                 R: tp.Union[None,float] = None,
+                 nzo: int = 10,
+                 store: bool = False):
+    """Calculate geopotential constants in a reference earth model.
+
     All the following page numbers and equation numbers refer to the
-    book 'Physical Geodesy' by Hofmann-wellenhof and Moritz + 2006
+    book Physical Geodesy by Hofmann-wellenhof and Moritz :cite:p:`hofmann2006physical`
 
-    Input Parameters:
-    ----------------
-    nzo        Number of zonal harmonics (2,4,... 2*nzo)
+    Parameters
+    ----------
+    GM : tp.Union[None,float], optional
+        Gravitational constant times mass reference, by default None
+    f : tp.Union[None,float], optional
+        Flattening, by default None
+    a_e : tp.Union[None,float], optional
+        Semi-major axis, by default None
+    omega : tp.Union[None,float], optional
+        Angular velocity, by default None
+    R : tp.Union[None,float], optional
+        _description_, by default None
+    nzo : int, optional
+        Number of zonal harmonics (2,4,... 2*nzo), by default 10
+    store : bool, optional
+        Store in constants or return as output if False, by default False
 
-    Others read from constants:
-    GM         Gravitational constant times mass reference
-    rf         Inverse flattening (1/f)
-    a_e        Semi-major axis
-    omega      Angular velocity
-    store     If True store in constants else return
+    Returns
+    -------
+    barC2n
+        Normalized even zonal harmonics of
+        the corresponding Somigliana-Pizzetti normal field.
+        barC2n(:,1): normalized zonal harmonics
+        barC2n(:,2): degree of the zonal harmonic [2 4 ... 2*nzo]
+    geqt
+        Normal gravity at the equator
+    gpol
+        Normal gravity at the pole
+    U0
+        Normal potential at the ellipsoid
+    m
+        omega^2*a^2*b/(GM)
+    ecc
+        First eccentricity
+    eccp
+        Second eccentricity
+    a_p
+        Semi-minor axis
+    E
+        Linear eccentricity
+    c
+        Polar radius of curvature
 
-    Output:
-    ------
-
-    barC2n     Normalized even zonal harmonics of
-               the corresponding Somigliana-Pizzetti normal field.
-               barC2n(:,1): normalized zonal harmonics
-               barC2n(:,2): degree of the zonal harmonic [2 4 ... 2*nzo]
-    geqt       Normal gravity at the equator
-    gpol       Normal gravity at the pole
-    U0         Normal potential at the ellipsoid
-    m          omega^2*a^2*b/(GM)
-    ecc        First eccentricity
-    eccp       Second eccentricity
-    a_p        Semi-minor axis
-    E          Linear eccentricity
-    c          Polar radius of curvature
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
+
     # defaults are from constants
     if GM == None: GM = constants.GM
     if f == None: f = constants.f

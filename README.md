@@ -41,8 +41,8 @@ Version](https://img.shields.io/pypi/pyversions/avni.svg?style=popout)
 ## Requirements
 
 AVNI needs the following python modules installed in the system.
-* The gfortran Fortran compiler
-* Python 3.6+
+  * The gfortran Fortran compiler
+  * Python 3.6+
 
 ## Getting Started
 
@@ -88,14 +88,14 @@ clarifications.
 
 ## Acknowledgments
 
-* Funded by the [National Science Foundation](http://nsf.gov) and the
+  * Funded by the [National Science Foundation](http://nsf.gov) and the
   [Computational Infrastructure for Geodynamics](http://geodynamics.org).
-* A project like this one is a culmination of feedback and input from several
+  * A project like this one is a culmination of feedback and input from several
   excellent [colleagues and
   organizations](https://globalseismology.princeton.edu/about/people). We thank
   members of the open source and Earth Science communities for their input and
   non-Github contributions.
-* Computational resources maintained by Princeton University accessible through
+  * Computational resources maintained by Princeton University accessible through
   the [AVNI website](http://avni.globalseismology.org). We thank the system
   administrators for assistance.
 

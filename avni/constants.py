@@ -2,7 +2,7 @@
 """
 This module has several constants that are accessed by AVNI functions.
 These include locations of databases and default options for
-certain calculations and files.
+certain calculations and file locations.
 """
 #####################  IMPORT STANDARD MODULES   #########################
 
