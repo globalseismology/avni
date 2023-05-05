@@ -49,7 +49,6 @@ Want to test-drive AVNI? Check out our live examples on Hubzero: |Hubzero|
    import avni
    print(avni.__version__)
 
-
 +----------------------+----------------+-------------+
 | Website              | |home|         |  |Github|   |
 +----------------------+----------------+-------------+
