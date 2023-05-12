@@ -132,7 +132,7 @@ The project support team can be reached at `avni@globalseismology.org`_.
 
 
 Citing AVNI
-==============
+===========
 
 
 If you are using AVNI in your scientific research, please help our scientific
