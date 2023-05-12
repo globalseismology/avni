@@ -84,7 +84,6 @@ extensions = [
     'sphinx.ext.ifconfig',
     'numpydoc',
     'sphinx.ext.inheritance_diagram',
-    'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
     'sphinxcontrib.inkscapeconverter',
     'sphinx_fontawesome',
@@ -93,6 +92,7 @@ extensions = [
     'sphinxcontrib.youtube',
     'gh_substitutions',
     'newcontrib_substitutions',
+    'sphinx.ext.viewcode', # for 'view source' on each page
     'gen_names'
 ]
 
@@ -285,13 +285,13 @@ html_theme_options = {
             "name": "Register",
         },
     ],
+    "use_edit_page_button": True,
     "github_url": "https://github.com/globalseismology/avni",
-    'use_edit_page_button': False,
-    'navigation_with_keys': False,
+    'navigation_with_keys': True,
     'show_toc_level': 1,
     'navbar_end': ['theme-switcher', 'version-switcher', 'navbar-icon-links'],
     'footer_items': ['copyright'],
-    'secondary_sidebar_items': ['page-toc'],
+    #'secondary_sidebar_items': ['page-toc'],
     'pygment_light_style': 'default',
     'pygment_dark_style': 'monokai',
     # "navbar_center": ["version-switcher", "navbar-nav"],
@@ -307,6 +307,8 @@ html_theme_options = {
     # "search_bar_position": "navbar",  # TODO: Deprecated - remove in future version
 
 }
+
+
 
 # accommodate different logo shapes (width values in rem)
 xs = '2'
@@ -388,6 +390,7 @@ html_sidebars = {
     'index': ['sidebar-quicklinks.html'],
 }
 
+
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
 #html_additional_pages = {}
@@ -402,7 +405,7 @@ html_sidebars = {
 #html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+html_show_sourcelink = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 #html_show_sphinx = True
