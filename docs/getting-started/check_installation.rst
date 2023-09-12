@@ -6,8 +6,8 @@
 Testing your installation
 =========================
 
-To make sure AVNI was installed correctly, type the following command in
-a terminal::
+To make sure AVNI was installed correctly, type the following command in a
+terminal::
 
     python -c "import avni; avni.sys_info()"
 
@@ -15,8 +15,8 @@ a terminal::
    If you installed AVNI using one of our installers, enter the above
    command in the **Prompt**.
 
-This should display some system information along with the versions of
-AVNI and its dependencies. Typical output looks like this::
+This should display some system information along with the versions of AVNI and
+its dependencies. Typical output looks like this::
 
     Platform:      Linux-5.0.0-1031-gcp-x86_64-with-glibc2.2.5
     Python:        3.8.1 (default, Dec 20 2019, 10:06:11)  [GCC 7.4.0]
@@ -52,12 +52,12 @@ AVNI and its dependencies. Typical output looks like this::
           File "<string>", line 1, in <module>
         ModuleNotFoundError: No module named 'avni'
 
-    This suggests that your environment containing AVNI is not active.
-    If you followed the setup for 3D plotting/source analysis (i.e., you
-    installed to a new ``avni`` environment instead of the ``base`` environment)
-    try running ``conda activate avni`` first, and try again. If this works,
-    you might want to set your terminal to automatically activate the
-    ``avni`` environment each time you open a terminal::
+    This suggests that your environment containing AVNI is not active. If you
+    followed the setup for 3D plotting/source analysis (i.e., you installed to a
+    new ``avni`` environment instead of the ``base`` environment) try running
+    ``conda activate avni`` first, and try again. If this works, you might want
+    to set your terminal to automatically activate the ``avni`` environment each
+    time you open a terminal::
 
         echo conda activate avni >> ~/.bashrc    # for bash shells
         echo conda activate avni >> ~/.zprofile  # for zsh shells

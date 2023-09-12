@@ -4,11 +4,12 @@ orphan: true
 (sec:myst-quickref)=
 # MyST Quick reference
 
-:::{note}
-Everything in this file will look like garbage in a regular markdown viewer, like if you're viewing this on github. Viewing it on readthedocs will render everything properly.
+:::{note} Everything in this file will look like garbage in a regular markdown
+viewer, like if you're viewing this on github. Viewing it on readthedocs will
+render everything properly.
 
-Also: numref will not work in this file since its not part of the main filetree. But it will work in anything thats a part of a toctree.
-:::
+Also: numref will not work in this file since its not part of the main filetree.
+But it will work in anything thats a part of a toctree. :::
 
 ## Text
 
@@ -16,7 +17,8 @@ Also: numref will not work in this file since its not part of the main filetree.
 Put single asterisks around text you *want to italicize*, but double asterisks around text you **want to bold**.
 ````
 
-Put single asterisks around text you *want to italicize*, but double asterisks around text you **want to bold**.
+Put single asterisks around text you *want to italicize*, but double asterisks
+around text you **want to bold**.
 
 ## Headings
 
@@ -33,7 +35,9 @@ becomes:
 ### Heading 3
 #### Heading 4
 
-All standalone .md files must start with a level 1 header, regardless of whether it is a chapter, section, or subsection. Subheaders within the same file can start with ## and so on.
+All standalone .md files must start with a level 1 header, regardless of whether
+it is a chapter, section, or subsection. Subheaders within the same file can
+start with ## and so on.
 
 For a section to be referenced, it must have a header tag like so:
 
@@ -100,49 +104,29 @@ This is a custom `TODO` admonition.
 
 Becomes:
 
-:::{admonition} General admonition as warning
-:class: warning
+:::{admonition} General admonition as warning :class: warning
 
-Text goes here.
-:::
+Text goes here. :::
 
-:::{attention}
-This is an `attention` admonition.
-:::
+:::{attention} This is an `attention` admonition. :::
 
-:::{danger}
-This is a `danger` admonition.
-:::
+:::{danger} This is a `danger` admonition. :::
 
-:::{error}
-This is an `error` admonition.
-:::
+:::{error} This is an `error` admonition. :::
 
-:::{important}
-This is an `important` admonition.
-:::
+:::{important} This is an `important` admonition. :::
 
-:::{note}
-This is a `note` admonition.
-:::
+:::{note} This is a `note` admonition. :::
 
-:::{tip}
-This is a `tip` admonition.
-:::
+:::{tip} This is a `tip` admonition. :::
 
-:::{warning}
-This is a `warning` admonition.
-:::
+:::{warning} This is a `warning` admonition. :::
 
-:::{seealso}
-This is a `seealso` admonition.
-:::
+:::{seealso} This is a `seealso` admonition. :::
 
-:::{admonition} TODO
-:class: error
+:::{admonition} TODO :class: error
 
-This is a custom `TODO` admonition.
-:::
+This is a custom `TODO` admonition. :::
 
 ## Lists
 
@@ -170,11 +154,9 @@ Term 2
 
 becomes:
 
-Term 1
-: Definition of term 1
+Term 1 : Definition of term 1
 
-Term 2
-: Definition of term 2
+Term 2 : Definition of term 2
 
 (sec:quickref:code-blocks)=
 ## Code blocks
@@ -336,12 +318,12 @@ Please see {numref}`tab:quickref`.
 
 Please see {numref}`tab:quickref`.
 
-Figure labels cannot contain more than one dash, so we use colons instead.
-This is likely a bug.
+Figure labels cannot contain more than one dash, so we use colons instead. This
+is likely a bug.
 
-:::{note}
-The numref command doesn't work in this particular file because its not a part of the main file structure. It does work in the manual, as long as the file is in a toctree.
-:::
+:::{note} The numref command doesn't work in this particular file because its
+not a part of the main file structure. It does work in the manual, as long as
+the file is in a toctree. :::
 
 ## Figures
 
@@ -360,7 +342,9 @@ to get this:
 
 This is the figure caption.
 ```
-Put the filename and relative path in "img src", but leave the file extension as `.*` instead of .png or whatever. Allowable formats for figures include SVGs, PNGs, and JPGs, but not PDFs unfortunately.
+Put the filename and relative path in "img src", but leave the file extension as
+`.*` instead of .png or whatever. Allowable formats for figures include SVGs,
+PNGs, and JPGs, but not PDFs unfortunately.
 
 Refer to it like:
 
@@ -370,13 +354,14 @@ Please see {numref}`fig:quickref`.
 Please see {numref}`fig:quickref`.
 
 
-Figure labels cannot contain more than one dash, so we use colons instead.
-This is likely a bug.
+Figure labels cannot contain more than one dash, so we use colons instead. This
+is likely a bug.
 
-Sphinx does not support the use of subfigures. Combine any sub-figures you want to include into one file. We recommend inkscape for this purpose.
+Sphinx does not support the use of subfigures. Combine any sub-figures you want
+to include into one file. We recommend inkscape for this purpose.
 
-Figures need to have a caption or they will not be rendered.
-If you want to include figures without captions you can instead do:
+Figures need to have a caption or they will not be rendered. If you want to
+include figures without captions you can instead do:
 
 ````md
 ```{image} ../_static/logos/logo_avni_color_withname.png
@@ -388,13 +373,16 @@ If you want to include figures without captions you can instead do:
 
 ## Math
 
-Inline math works just like in latex. Use dollar signs to put stuff like $\eta_r(z)$ in a sentence. That's:
+Inline math works just like in latex. Use dollar signs to put stuff like
+$\eta_r(z)$ in a sentence. That's:
 
 ```md
 Use dollar signs to put stuff like $\eta_r(z)$ in a sentence.
 ```
 
-Be aware that not all latex packages are known by Sphinx, so some commands will need to be reformatted (i.e., \num{4e5} needs to be rewritten as 4\times 10^{5}.)
+Be aware that not all latex packages are known by Sphinx, so some commands will
+need to be reformatted (i.e., \num{4e5} needs to be rewritten as 4\times
+10^{5}.)
 
 For math blocks:
 
@@ -412,15 +400,17 @@ F = m a
 ````md
 Refer to the labeled equation like {math:numref}`eqn:one:two`.
 ````
-Refer to the labeled equation like {math:numref}`eqn:one:two`.
-(The label is not necessary if the equation doesn't have one, in which case it would be formatted like):
+Refer to the labeled equation like {math:numref}`eqn:one:two`. (The label is not
+necessary if the equation doesn't have one, in which case it would be formatted
+like):
 ````md
 ```{math}
 F = ma
 ```
 ````
 
-The split environment is built into the math directive; which allows you to use one align operator (`&`).
+The split environment is built into the math directive; which allows you to use
+one align operator (`&`).
 
 ````md
 ```{math}
@@ -441,7 +431,9 @@ becomes:
   \nabla \cdot (\bar\rho \mathbf u) &= 0  \qquad \textrm{in $\Omega$}.
 ```
 
-If you require more than one alignment character you need to start and end an additional `aligned` environment. Be sure to add the same number of align operators (`&`) to each line and use `\\` to denote a new line.
+If you require more than one alignment character you need to start and end an
+additional `aligned` environment. Be sure to add the same number of align
+operators (`&`) to each line and use `\\` to denote a new line.
 
 ````md
 ```{math}
@@ -475,8 +467,8 @@ becomes:
 
 becomes:
 
-[Put a link in text](https://en.wikipedia.org/wiki/Gibbs_free_energy) or just post the full link:
-<https://en.wikipedia.org/wiki/Gibbs_free_energy>
+[Put a link in text](https://en.wikipedia.org/wiki/Gibbs_free_energy) or just
+post the full link: <https://en.wikipedia.org/wiki/Gibbs_free_energy>
 
 
 ## Citations
@@ -489,11 +481,13 @@ Use a comma for multiple, like {cite:t}`Moulik:2014cr,MoulikEtAl2021`.
 
 becomes
 
-Traditional citation {cite}`Moulik:2014cr`.
-Citation as noun {cite:t}`Moulik:2014cr`.
-Use a comma for multiple, like {cite:t}`Moulik:2014cr,MoulikEtAl2021`.
+Traditional citation {cite}`Moulik:2014cr`. Citation as noun
+{cite:t}`Moulik:2014cr`. Use a comma for multiple, like
+{cite:t}`Moulik:2014cr,MoulikEtAl2021`.
 
-If the paper you wish to cite is not already in [references.bib](https://github.com/globalseismology/avni/blob/main/doc/references.bib), you will need to add its bibtex entry. Please format the citation tag as:
+If the paper you wish to cite is not already in
+[references.bib](https://github.com/globalseismology/avni/blob/main/doc/references.bib),
+you will need to add its bibtex entry. Please format the citation tag as:
 
 - `firstauthor:year` for one author
 - `firstauthor:secondauthor:year` for two authors
@@ -506,14 +500,14 @@ where `firstauthor` and `secondauthor` refer to the *last* names of the authors.
 Here's how you put a footnote[^footnote1] in a sentence.
 ```
 
-Here's how you put a footnote[^footnote1] in a sentence (see the bottom of this file).
+Here's how you put a footnote[^footnote1] in a sentence (see the bottom of this
+file).
 
 
 
 ## See here for more
 
-<https://myst-parser.readthedocs.io/en/latest/syntax/syntax.html>
-or
+<https://myst-parser.readthedocs.io/en/latest/syntax/syntax.html> or
 <https://jupyterbook.org/en/stable/reference/cheatsheet.html>
 
 ## footnote (again)
@@ -522,7 +516,5 @@ or
 [^footnote1]: And here's what the footnote says (put this at the very bottom of the document)
 ```
 
-[^footnote1]: And here's what the footnote says (put this at the very bottom of the document)
-
-```{bibliography}
-```
+[^footnote1]: And here's what the footnote says (put this at the very bottom of
+    the document)

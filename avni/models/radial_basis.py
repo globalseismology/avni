@@ -15,24 +15,24 @@ from .. import constants
 # Vertical basis parameter class that defines an unique combination of functions, their radial parameterization
 
 class Radial_basis(object):
-    '''
-    A class for radial bases that defines a unique combination of parameters,
+    """A class for radial bases that defines a unique combination of parameters,
     their radial parameterization and any scaling that is used.
 
-    Structure:
-    ---------
-
-    object.data: Contains the following fields that describe the radial basis.
+    Parameters
+    ----------
+    object : _type_
+        object.data - Contains the following fields that describe
+        the radial basis.
         depths_in_km: depth array in km
         vercof: value of the bases evaluated at those depths
         dvercof: gradient of the bases evaluated at those depths
-
-    object.metadata: Contains metadata for various calculations.
+        object.metadata: Contains metadata for various calculations.
         name: to store a name for the radial_basis
         type: type of radial basis e.g. vbspl
         attributes: a dictionary containing variables used to define this particular type
                     e.g. knots for vbspl. Checked that these are defined using self.check.
-    '''
+    """
+
     #########################       magic       ##########################
 
     def __init__(self,name,types,metadata=None):

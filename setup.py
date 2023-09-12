@@ -88,7 +88,7 @@ else:
 #---------------------------------------------------------------------------
 
 f90_dir='avni/f2py'
-packagelist=['avni','avni.api','avni.data','avni.models','avni.tools',
+packagelist=['avni','avni.data','avni.models','avni.tools',
              'avni.mapping','avni.plots']
 for module in os.listdir(f90_dir): packagelist.append('avni.f2py.'+module)
 

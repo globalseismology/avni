@@ -8,8 +8,6 @@
         <h2>Analysis and Visualization toolkit for plaNetary Inferences</h2>
     </div>
 
-.. frontpage gallery is added by a conditional in _templates/layout.html
-
 .. toctree::
    :hidden:
 
@@ -19,9 +17,11 @@
    Get help <overview/get_help>
    Development <overview/development>
 
+**Want to test-drive AVNI?** Check out our live examples on Hubzero: |Hubzero|
+
 AVNI is a software ecosystem for analyzing and interpreting planetary models and data sets that were initially
-designed or the three-dimensional reference Earth model project |REM3D|.
-The codes are primary written in Python with interfaces to legacy routines in C and Fortran.
+designed for the three-dimensional reference Earth model project |REM3D|.
+The codes are primarily written in Python with interfaces to legacy routines in C and Fortran.
 Some installation files as well as applets and API access require registration on the |register| link.
 
 * Open-source Python package with APIs to handle intensive queries |GNU GPL|
@@ -29,9 +29,7 @@ Some installation files as well as applets and API access require registration o
 * Interactive web-based visualization tools for data and model exploration
 * Formulate and benchmark solvers for rapid data validation of models
 
-Share this project on Twitter: |tweet|
-
-Want to test-drive AVNI? Check out our live examples on Hubzero: |Hubzero|
+*Share this project on Twitter*: |tweet|
 
 .. grid::
 
@@ -49,6 +47,8 @@ Want to test-drive AVNI? Check out our live examples on Hubzero: |Hubzero|
    import avni
    print(avni.__version__)
 
+Links
+^^^^^
 
 +----------------------+----------------+-------------+
 | Website              | |home|         |  |Github|   |
@@ -59,3 +59,8 @@ Want to test-drive AVNI? Check out our live examples on Hubzero: |Hubzero|
 +----------------------+----------------+-------------+
 | Community            | |discuss|      |  |issues|   |
 +----------------------+----------------+-------------+
+
+Applications
+^^^^^^^^^^^^
+
+.. frontpage gallery is added by a conditional in _templates/layout.html

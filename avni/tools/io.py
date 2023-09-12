@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-#####################  IMPORT STANDARD MODULES   ######################################
+#####################  IMPORT STANDARD MODULES   #########################
+
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
@@ -9,32 +10,48 @@ if (sys.version_info[:2] < (3, 0)):
 
 import numpy as np
 import gc
+import warnings
 from scipy import sparse
 import h5py
+
 #######################################################################################
 
 def close_h5py():
+    """Close all h5py files
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     for obj in gc.get_objects():   # Browse through ALL objects
         if isinstance(obj, h5py.File):   # Just HDF5 files
             try:
                 obj.close()
             except:
+                warnings.warn('Warning: HDF5 files already closed')
                 pass # Was already closed
 
-def store_sparse_hdf(h5f,varname,mat,compression="gzip"):
-    """
-    Store a csr matrix in HDF5
+def store_sparse_hdf(h5f,varname: str,mat,compression: str = "gzip"):
+    """Store a `csr` matrix in HDF5
 
     Parameters
     ----------
-    M : scipy.sparse.csr.csr_matrix
-        sparse matrix to be stored
-
-    name: str
+    h5f
+        HDF5 file handle
+    varname : str
         node prefix in HDF5 hierarchy
+    mat : scipy.sparse.csr.csr_matrix
+        sparse matrix to be stored
+    compression : str, optional
+        Compression type in HDF5, by default "gzip"
 
-    h5f: HDF5 file handle
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
+
     # Check the vector type
     msg = "This code only works for csr matrices"
     if not mat.__class__ == sparse.csr.csr_matrix: raise AssertionError(msg)
@@ -51,17 +68,25 @@ def store_sparse_hdf(h5f,varname,mat,compression="gzip"):
         h5f.create_dataset(varname+'/'+par, data=arr, compression=compression)
 
 
-def load_sparse_hdf(h5f,varname):
-    """
-    Load a csr matrix from HDF5
+def load_sparse_hdf(h5f,varname: str):
+    """Load a `csr` matrix from HDF5 file
 
     Parameters
     ----------
-
-    name: str
+    h5f
+        HDF5 file handle
+    varname : str
         node prefix in HDF5 hierarchy
 
-    h5f: HDF5 file handle
+    Returns
+    -------
+    scipy.sparse.csr.csr_matrix
+        A sparse `csr` matrix
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     # Check the vector type
     pars = []
@@ -70,19 +95,28 @@ def load_sparse_hdf(h5f,varname):
     m = sparse.csr_matrix(tuple(pars[:3]), shape=pars[3])
     return m
 
-def store_numpy_hdf(h5f,varname,array,compression="gzip", compression_opts=9):
-    """
-    Store a named numpy array in HDF5
+def store_numpy_hdf(h5f,varname: str,array: np.ndarray,compression: str = "gzip", compression_opts: int = 9):
+    """Store a named numpy array in HDF5 file
 
     Parameters
     ----------
-    array : numpy array
-
-    name: str
+    h5f
+        HDF5 file handle
+    varname : str
         node prefix in HDF5 hierarchy
+    array : np.ndarray
+        Named numpy array
+    compression : str, optional
+        Compression type in HDF5, by default "gzip"
+    compression_opts : int, optional
+        Compression level opts, by default 9
 
-    h5f: hdf5 file handle
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
+    # Check if it is a named numpy array
     if not isinstance(array, np.ndarray) : raise ValueError('Only numpy arrays can be stored with store_numpy_hdf')
     if array.dtype.names is None:
         raise ValueError('Only named numpy arrays are allowed')
@@ -107,20 +141,25 @@ def store_numpy_hdf(h5f,varname,array,compression="gzip", compression_opts=9):
         else:
             h5f.create_dataset(varname+'/columns/'+field, data=arr_write[field], compression=compression, compression_opts=compression_opts)
 
-def load_numpy_hdf(h5f,varname):
-    """
-    Read a named numpy array from HDF5
+def load_numpy_hdf(h5f,varname: str) -> np.ndarray:
+    """Read a named numpy array from HDF5 file
 
     Parameters
     ----------
+    h5f
+        HDF5 file handle
     varname : str
         node prefix in HDF5 hierarchy
 
-    h5f: hdf5 file handle
+    Returns
+    -------
+    np.ndarray
+        Named numpy array
 
-    Return
-    ----------
-    output : named numpy array
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     if (sys.version_info[:2] > (3, 0)):
         names = h5f[varname]['fields'].value

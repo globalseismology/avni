@@ -4,7 +4,7 @@ jobs:
   build-html-and-preview:
    runs-on: self-hosted
 #   Use the following if you want to run only on devel
-#   if: github.ref == 'refs/heads/devel'
+   if: github.ref == 'refs/heads/devel'
    steps:
 #   The following installs the repo and cd's to it
       - name: Checkout repo

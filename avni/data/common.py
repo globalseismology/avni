@@ -33,15 +33,11 @@ def creation_date(path_to_file: str):
 
     Returns
     -------
-    _type_
+    datetime
         datetime stamp in UTC as AVNI server stores datetime in UTC
-
-    Notes
-    -----
 
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)
-
     :Last Modified:
         2020.01.06 11.00
     """
@@ -56,23 +52,29 @@ def creation_date(path_to_file: str):
     return datetime.utcfromtimestamp(stat.st_mtime)
 
 def update_file(file,folder = None, baseurl = None, subdirectory = None):
-    """
-    If the AVNI server contain a downloadable resource that is newer,
-    download it locally.
+    """If the AVNI server contain a downloadable resource that is newer, download it locally.
 
     Parameters
     ----------
+    file : str
+        full path and name of the file to sync with AVNI servers
+    folder : str
+        folder where local files are store, by default as output from tools.get_filedir()
+    baseurl: str
+        public URL from where the public downloads can take place, by default as specified as `downloadpage` in `constants.py`
+    subdirectory: str
+        subdirectory inside the baseurl where the file should be synced
 
-    file: full path and name of the file to sync with AVNI servers
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.01.06 11.00
     """
 
     # Get the correct default paths
     if folder is None: folder = tools.get_filedir()
     if baseurl is None: baseurl = constants.downloadpage
-    if subdirectory is not None:
-        folder = folder+'/'+subdirectory
-        baseurl = baseurl+'/'+subdirectory
-        if not os.path.exists(folder): os.makedirs(folder)
+    if subdirectory is not None: baseurl = baseurl+'/'+subdirectory
 
     # Figure out internal-external path links
     localfile = os.path.join(folder,file)

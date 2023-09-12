@@ -1,0 +1,103 @@
+name: github-codecov
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'docs'
+  release:
+    types: [created]
+
+jobs:
+  build-codecov:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.7"]
+    # Shell needs to use login mode, which can be set globally within a job
+    # https://github.com/marketplace/actions/setup-miniconda#important
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+#     Cache npm modules
+      - name: Cache node modules
+        id: cache-npm
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-${{ env.cache-name }}-
+            ${{ runner.os }}-npm-
+
+#   The following installs the repo and cd's to it
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+#     Install System Requirements
+     # install requirements for docs, pyshtools
+      - name: System Requirements
+        run: ifconfig -a
+         && sudo apt-get install doxygen python3-sphinx
+         && sudo apt-get install libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+
+#     Install Conda Requirements
+      - name: Cache conda
+        uses: actions/cache@v2
+        env:
+          # Increase this value to reset cache if etc/example-environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{
+            hashFiles('docs/conda/environment_docs.yml') }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          activate-environment: avni-docs
+          channel-priority: flexible
+          channels: conda-forge
+          allow-softlinks: true
+          show-channel-urls: true
+          environment-file: docs/conda/environment_docs.yml
+          auto-activate-base: false
+          use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+      - run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+
+      - name: Generate coverage report
+        run: |
+          pip install -e .
+          pip install pytest
+          pip install pytest-cov
+          pytest --cov=./ --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./coverage/reports/
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true
+          files: ./coverage.xml,!./cache
+          flags: unittests
+          name: codecov-umbrella
+          verbose: true

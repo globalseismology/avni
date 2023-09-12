@@ -36,17 +36,19 @@ jobs:
         if: contains(github.event_name, 'push')
         uses: docker/build-push-action@v3
         with:
-          context: ./contrib/docker/docker/
+          context: ./docker/avni/
           cache-to: type=inline
-          push: false
-          tags: globalseismology/avni:latest
+          push: true
+          tags: |
+            globalseismology/avni:latest
 
       - name: Build and push Docker image for release
         if: contains(github.event_name, 'release')
         uses: docker/build-push-action@v3
         with:
-          context: ./contrib/docker/docker/
+          context: ./docker/avni/
           cache-to: type=inline
-          push: false
-          tags: globalseismology/avni:${{github.ref_name}}
+          push: true
+          tags: |
+            globalseismology/avni:${{github.ref_name}}
 

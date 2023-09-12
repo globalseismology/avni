@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+#####################  IMPORT STANDARD MODULES   #########################
+
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 from builtins import *
@@ -11,31 +13,41 @@ import pdb
 from timeit import default_timer as timer
 from numba import jit,int64
 from progressbar import progressbar
+import typing as tp
 
-####################### IMPORT AVNI LIBRARIES  #######################################
+####################### IMPORT AVNI LIBRARIES  ###########################
+
 from avni.f2py import vbspl,dbsplrem,ylm,shold
 from .trigd import sind,cosd,acosd
 from .common import convert2nparray,makegrid
-#######################################################################################
 
-def eval_vbspl(radius,knots):
+##########################################################################
+
+def eval_vbspl(radius: tp.Union[list,tuple,np.ndarray],
+               knots: tp.Union[str,list,tuple,float,np.int64,np.ndarray,bool]):
+    """Evaluate the cubic spline knot with second derivative as 0 at end points.
+       In contrast to :py:func:`eval_splrem`, this function distributes the
+       spline knots unevenly at the specified depths or radii.
+
+    Parameters
+    ----------
+    radius : tp.Union[list,tuple,np.ndarray]
+        A radius value or array of radii (or alternatively depths) queried in km
+    knots : tp.Union[str,list,tuple,float,np.int64,np.ndarray,bool]
+        A numpy array or list of radii (or depths) of spline knots in km
+
+    Returns
+    -------
+    vercof, dvercof: float or np.ndarray
+        value of the polynomial coefficients at each depth and derivative.
+        Both arrays have size (Nradius, Nsplines).
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Evaluate the cubic spline know with second derivative as 0 at end points.
 
-    Input parameters:
-    ----------------
-
-    radius: value or array of radii (or depths) queried in km
-
-    knots: numpy array or list of radii (or depths) of spline knots
-
-    Output:
-    ------
-
-    vercof, dvercof: value of the spline coefficients at each radius (or depth)
-                     and its derivative.
-                     Both arrays have size (Ndepth, Nknots).
-    """
     if isinstance(knots, (list,tuple,np.ndarray)):
         knots = np.asarray(knots)
         knots = np.sort(knots)
@@ -50,7 +62,8 @@ def eval_vbspl(radius,knots):
     repeats_gt_2= [item for item, count in Counter(knots).items() if count > 2]
     if len(repeats_gt_2) != 0: raise ValueError('Cannot have more than 2 repetitions in knots')
 
-    if len(repeats) > 0: # if there are repeated knots, splits it
+    # if there are repeated knots, splits it
+    if len(repeats) > 0:
         split_at = []
         for index,value in enumerate(repeats):
             split_at.append(np.where(knots==value)[0][1])
@@ -80,6 +93,8 @@ def eval_vbspl(radius,knots):
             else:
                 vercof = np.vstack([vercof,vercof_temp])
                 dvercof = np.vstack([dvercof,dvercof_temp])
+
+    # when there are no repeated knots
     else:
         if len(knots) < 4:
             raise ValueError('Atleast 4 knots need to be defined at or between '+str(min(knots))+' and '+str(max(knots)))
@@ -96,27 +111,37 @@ def eval_vbspl(radius,knots):
                 (vercof_temp, dvercof_temp) = vbspl(query,len(splpts),splpts)
             vercof[idep]=vercof_temp
             dvercof[idep]=dvercof_temp
+
     return vercof, dvercof
 
 
-def eval_splrem(radius, radius_range, nsplines):
-    """
-    Evaluate the cubic spline know with second derivative as 0 at end points.
+def eval_splrem(radius: tp.Union[list,tuple,np.ndarray],
+                radius_range: tp.Union[list,tuple,np.ndarray],
+                nsplines: int):
+    """Evaluate the cubic spline knot with second derivative as 0 at end points.
+       In contrast to :py:func:`eval_vbspl`, this function distributes the
+       spline knots evenly within the radius range.
 
-    Input parameters:
-    ----------------
 
-    radius: value or array of radii (or depths) queried
+    Parameters
+    ----------
+    radius : tp.Union[list,tuple,np.ndarray]
+        A radius value or array of radii (or alternatively depths) queried in km
+    radius_range : tp.Union[list,tuple,np.ndarray]
+        Limits of the radius (or depths) limits of the region
+    nsplines : int
+        number of splines within the range
 
-    radius_range: limits of the radius (or depths) limits of the region
+    Returns
+    -------
+    vercof, dvercof: float or np.ndarray
+        value of the polynomial coefficients at each depth and derivative.
+        Both arrays have size (Nradius, Nsplines).
 
-    nsplines: number of splines within the range
-
-    Output:
-    ------
-
-    vercof, dvercof: value of the polynomial coefficients at each depth and derivative.
-                      Both arrays have size (Nradius, Nsplines).
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
     # convert to numpy arrays
@@ -136,34 +161,38 @@ def eval_splrem(radius, radius_range, nsplines):
         else:
             vercof = np.vstack([vercof,temp1])
             dvercof = np.vstack([dvercof,temp2])
+
     return vercof, dvercof
 
 
-def eval_polynomial(radius, radius_range, rnorm, types = None):
+def eval_polynomial(radius: tp.Union[list,tuple,np.ndarray],
+                    radius_range: tp.Union[list,tuple,np.ndarray],
+                    rnorm: float,
+                    types: list = ['CONSTANT','LINEAR']):
+    """Evaluate a set of polynomial functions within a range of radii.
+
+    Parameters
+    ----------
+    radius : tp.Union[list,tuple,np.ndarray]
+        A radius value or array of radii queried in km
+    radius_range : tp.Union[list,tuple,np.ndarray]
+        Limits of the radius limits of the region
+    rnorm : float
+        normalization for radius, usually the radius of the planet
+    types : list, optional
+        polynomial coefficients to be used for calculation.
+        Options are : TOP,BOTTOM, CONSTANT, LINEAR, QUADRATIC, CUBIC, by default ['CONSTANT','LINEAR']
+
+    Returns
+    -------
+    vercof, dvercof: float or np.ndarray
+        value of the polynomial coefficients and derivative at each depth size (Nradius)
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Evaluate the cubic spline know with second derivative as 0 at end points.
-
-    Input parameters:
-    ----------------
-
-    radius: value or array of radii queried
-
-    radius_range: limits of the radius limits of the region
-
-    types: polynomial coefficients to be used for calculation. Options are : TOP,
-                  TOP, BOTTOM, CONSTANT, LINEAR, QUADRATIC, CUBIC.
-                  default: ['CONSTANT','LINEAR']
-
-    rnorm: normalization for radius, usually the radius of the planet
-
-    Output:
-    ------
-
-    vercof : value of the polynomial coefficients and derivative at each depth
-             size (Nradius).
-    """
-    #defaults
-    if types is None: types= ['CONSTANT','LINEAR']
 
     # convert to numpy arrays
     radiusin = convert2nparray(radius)
@@ -190,6 +219,7 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
     findconstantlinear = np.any([key in ['CONSTANT','LINEAR'] for key in types])
     if findtopbot and findconstantlinear: raise ValueError('Cannot have both BOTTOM/TOP and CONSTANT/LINEAR as types in eval_polynomial')
 
+    # loop through each depth and get the polynomial values and derivatives
     for irad,_ in enumerate(radiusin):
         temp = np.zeros(npoly)
         dtemp = np.zeros(npoly)
@@ -238,24 +268,35 @@ def eval_polynomial(radius, radius_range, rnorm, types = None):
         else:
             vercof = np.vstack([vercof,temp])
             dvercof = np.vstack([dvercof,dtemp])
+
     return vercof,dvercof
 
-def eval_splcon(latitude,longitude,xlaspl,xlospl,xraspl):
-    """
-    Evaluate the continuous lateral splines.
+def eval_splcon(latitude: tp.Union[list,tuple,np.ndarray],
+                longitude: tp.Union[list,tuple,np.ndarray],
+                xlaspl: np.ndarray,
+                xlospl: np.ndarray,
+                xraspl: np.ndarray):
+    """Evaluate spherical splines at a set of locations.
 
-    Input parameters:
-    ----------------
+    Parameters
+    ----------
+    latitude : tp.Union[list,tuple,np.ndarray]
+        Latitudes of locations queried
+    longitude : tp.Union[list,tuple,np.ndarray]
+        Longitudes of locations queried
+    xlaspl : np.ndarray
+        Latitude locations of splines
+    xlospl : np.ndarray
+        Longitude locations of splines
+    xraspl : np.ndarray
+        Radius of splines
 
-    latitude,longitude: location queried
+    Returns
+    -------
+    horcof : np.ndarray
+        Value of the horizontal coefficents at each location.
+        Size of numpy array is [len(latitude) X ncoefhor]
 
-    xlaspl,xlospl,xraspl: loocation and radius of splines
-
-    Output:
-    ------
-
-    horcof : value of the horizontal coefficents at each location.
-             Size of numpy array is [len(latitude) X ncoefhor]
     """
 
     latitude = convert2nparray(latitude)
@@ -280,7 +321,35 @@ def eval_splcon(latitude,longitude,xlaspl,xlospl,xraspl):
     return values
 
 @jit(nopython=True)
-def splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl):
+def splcon(lat:float,lon:float,ncoefhor:int,xlaspl:np.ndarray,xlospl:np.ndarray,xraspl:np.ndarray):
+    """Evaluate spherical splines at a given location. Modified from the Fortran code
+    splcon.f that is based on Wang and Dahlen (1995) :cite:`Wang:1995fn`.
+
+    Parameters
+    ----------
+    lat : float
+        latitude query
+    lon : float
+        longitude query
+    ncoefhor : int
+        number of splines
+    xlaspl : np.ndarray
+        spline latitudes
+    xlospl : np.ndarray
+        spline longitudes
+    xraspl : np.ndarray
+        spline radii
+
+    Returns
+    -------
+    ncon,icon,con
+        number of splines, spline index, and value at each location
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     ncon=0
     con=np.zeros(ncoefhor)
     icon=np.zeros(ncoefhor,dtype=int64)
@@ -303,26 +372,40 @@ def splcon(lat,lon,ncoefhor,xlaspl,xlospl,xraspl):
                     ncon=ncon+1
     return ncon,icon[:ncon],con[:ncon]
 
-def eval_ylm(latitude,longitude,lmaxhor,weights=None,grid=False,norm='ylm'):
+def eval_ylm(latitude: tp.Union[list,tuple,np.ndarray],
+             longitude: tp.Union[list,tuple,np.ndarray],
+             lmaxhor: int,
+             weights: tp.Union[None,list,tuple,np.ndarray] = None,
+             grid: bool = False,
+             norm: str = 'ylm'):
+    """Evaluate spherical harmonics with a specific normalization.
+
+    Parameters
+    ----------
+    latitude : tp.Union[list,tuple,np.ndarray]
+        Latitudes of locations queried
+    longitude : tp.Union[list,tuple,np.ndarray]
+        Longitudes of locations queried
+    lmaxhor : int
+        Maximum spherical harmonic degree
+    weights : tp.Union[None,list,tuple,np.ndarray], optional
+        Weights to multiply the bases with i.e. coefficients, by default None
+    grid : bool, optional
+        Create a grid based on a combination of latitudes and longitudes, by default False
+    norm : str, optional
+        Spherical harmonic normalization, by default 'ylm'
+
+    Returns
+    -------
+    horcof
+        Value of the horizontal coefficents at each location.
+        Size of numpy array is [len(latitude) X ((lmaxhor+1)^2)]
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Evaluate spherical harmonics.
-
-    Input parameters:
-    ----------------
-
-    latitude,longitude: location queried
-
-    lmaxhor: maximum spherical harmonic degree
-
-    weights: weights to multiply the bases with i.e. coefficients
-
-    Output:
-    ------
-
-    horcof : value of the horizontal coefficents at each location.
-             Size of numpy array is [len(latitude) X ((lmaxhor+1)^2)]
-    """
-
     # convert to numpy arrays
     latitude = convert2nparray(latitude)
     longitude = convert2nparray(longitude)
@@ -363,26 +446,40 @@ def eval_ylm(latitude,longitude,lmaxhor,weights=None,grid=False,norm='ylm'):
             horcof = horcof + sparse.csr_matrix((ylmcof, (rowind, colind)), shape=(nrows,ncoefhor))
         else:
             values[iloc] = np.sum(ylmcof*weights)
+
     return horcof if np.any(weights == None) else values
 
-def eval_pixel(latitude,longitude,xlapix,xlopix,xsipix):
+def eval_pixel(latitude: tp.Union[list,tuple,np.ndarray],
+               longitude: tp.Union[list,tuple,np.ndarray],
+               xlapix: tp.Union[list,tuple,np.ndarray],
+               xlopix: tp.Union[list,tuple,np.ndarray],
+               xsipix: tp.Union[list,tuple,np.ndarray]):
+    """Evaluate pixel values at a set of locations.
+
+    Parameters
+    ----------
+    latitude : tp.Union[list,tuple,np.ndarray]
+        Latitudes of locations queried
+    longitude : tp.Union[list,tuple,np.ndarray]
+        Longitudes of locations queried
+    xlapix : tp.Union[list,tuple,np.ndarray]
+        Pixel center latitudes
+    xlopix : tp.Union[list,tuple,np.ndarray]
+        Pixel center longitudes
+    xsipix : tp.Union[list,tuple,np.ndarray]
+        Pixel sizes in degrees
+
+    Returns
+    -------
+    horcof
+        Value of the horizontal coefficents at each location.
+        Size of numpy array is [len(latitude) X len(xsipix)]
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Evaluate spherical harmonics.
-
-    Input parameters:
-    ----------------
-
-    latitude,longitude: location queried
-
-    xlapix,xlopix,xsipix: loocation and size of pixels
-
-    Output:
-    ------
-
-    horcof : value of the horizontal coefficents at each location.
-             Size of numpy array is [len(latitude) X len(xsipix)]
-    """
-
     latitude = convert2nparray(latitude)
     longitude = convert2nparray(longitude)
 

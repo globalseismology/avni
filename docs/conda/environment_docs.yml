@@ -266,13 +266,16 @@ dependencies:
     - beautifulsoup4==4.11.2
     - bleach==6.0.0
     - configobj==5.0.6
+    - coverage==7.2.5
     - debugpy==1.6.6
     - defusedxml==0.7.1
     - entrypoints==0.4
+    - exceptiongroup==1.1.1
     - fastjsonschema==2.16.2
     - fortranformat==1.2.0
     - h5py==3.8.0
     - importlib-resources==5.10.2
+    - iniconfig==2.0.0
     - ipykernel==6.16.2
     - ipywidgets==8.0.4
     - joblib==1.1.0
@@ -298,11 +301,14 @@ dependencies:
     - pandocfilters==1.5.0
     - pint==0.18
     - pkgutil-resolve-name==1.3.10
+    - pluggy==1.0.0
     - progressbar2==4.0.0
     - psutil==5.9.4
     - pydata-sphinx-theme==0.12.0
     - pygeodesy==23.1.9
     - pyrsistent==0.19.3
+    - pytest==7.3.1
+    - pytest-cov==4.0.0
     - python-utils==3.3.3
     - pyzmq==25.0.0
     - soupsieve==2.4
@@ -310,8 +316,10 @@ dependencies:
     - sphinx-design==0.3.0
     - sphinx-fontawesome==0.0.6
     - sphinx-gallery==0.11.1
+    - sphinxcontrib-svg2pdfconverter==1.2.0
     - sphinxcontrib-youtube==1.2.0
     - tinycss2==1.2.1
+    - tomli==2.0.1
     - tornado==6.2
     - webencodings==0.5.1
     - widgetsnbextension==4.0.5

@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-"""
-This module contains the various subroutines used for plotting
-Usage import
-"""
-#####################  IMPORT STANDARD MODULES   ######################################
+
+#####################  IMPORT STANDARD MODULES   #########################
 
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
@@ -39,31 +36,51 @@ from matplotlib.projections import PolarAxes
 from mpl_toolkits.axisartist.grid_finder import DictFormatter,FixedLocator
 from matplotlib import gridspec # Relative size of subplots
 import pandas as pd
+import typing as tp
 import pdb
-####################       IMPORT OWN MODULES     ######################################
+
+####################### IMPORT AVNI LIBRARIES  ###########################
+
 from .. import mapping
 from .. import tools
 from .. import data
 from .. import constants
 from .common import initializecolor,updatefont
 
-############################### PLOTTING ROUTINES ################################
-def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
-    """
-    Plots great-circle paths from lon lat arrays.
+##########################################################################
+
+def plot_gcpaths(m,
+                 stlon: tp.Union[float,np.ndarray],stlat: tp.Union[float,np.ndarray],
+                 eplon: tp.Union[float,np.ndarray],eplat: tp.Union[float,np.ndarray],
+                 ifglobal: bool = False,**kwargs):
+    """Plots great-circle paths from longitude and latitude arrays.
 
     Parameters
     ----------
-    m : figure axis handle
+    m
+        An instance of `mpl_toolkits.basemap` Class
+    stlon : tp.Union[float,np.ndarray]
+        Longitudes of station location(s)
+    stlat : tp.Union[float,np.ndarray]
+        Latitudes of station location(s)
+    eplon : tp.Union[float,np.ndarray]
+        Longitudes of station location(s)
+    eplat : tp.Union[float,np.ndarray]
+        Latitudes of station location(s)
+    ifglobal : bool, optional
+        Set extent to be global, by default False
+    **kwargs : dict
+        Optional arguments for Basemap
 
-    stlon,stlat : station location
+    Returns
+    -------
+    m
+        Updated instance of `mpl_toolkits.basemap` Class
 
-    eplon,eplat : earthquake location
-
-    ifglobal :  set global extent
-
-    kwargs : denotes the arguments, if any, for scatter
-
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
     if kwargs:
         m.drawgreatcircle(eplon,eplat,stlon,stlat, **kwargs)
@@ -77,9 +94,10 @@ def plot_gcpaths(m,stlon,stlat,eplon,eplat,ifglobal=False,**kwargs):
     if ifglobal: m.set_global()    # set global extent
     return m
 
-def plot_hotspots(m, dbs_path = None, lon360 = False, **kwargs):
-    """
-    Reads hotspots.pkl from dbs_path and plots on to map index m
+def plot_hotspots(m,
+                  dbs_path: tp.Union[None,str] = None,
+                  lon360: bool = False, **kwargs):
+    """Reads hotspots.pkl from `dbs_path` and plots on to map instance
 
     Earlier, the data was in pickle format, cross-platform compatibility required json
     # hotspots = pickle.load(open('%s/hotspots.pkl' % (dbs_path), 'rb'))
@@ -87,16 +105,25 @@ def plot_hotspots(m, dbs_path = None, lon360 = False, **kwargs):
 
     Parameters
     ----------
+    m
+        An instance of `mpl_toolkits.basemap` Class
+    dbs_path : tp.Union[None,str], optional
+        path specified by user where hotspots.json is located. If not found,
+        defaults to downloading the file from the  AVNI server, by default None
+    lon360 : bool, optional
+        False if the no longitude above 180 is permitted and is wrapped around, by default False
+    **kwargs : dict
+        Optional arguments for Basemap
 
-    m : figure axis handle
+    Returns
+    -------
+    m
+        Updated instance of `mpl_toolkits.basemap` Class
 
-    dbs_path: path specified by user where hotspots.json is located. If not found,
-              defaults to downloading the file from the  AVNI server.
-
-    lon360 : is False if the no longitude above 180 is permitted and is wrapped around.
-
-    kwargs : denotes the arguments, if any, for scatter
-
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
     # Get the correct path
@@ -121,33 +148,40 @@ def plot_hotspots(m, dbs_path = None, lon360 = False, **kwargs):
         m.scatter(x, y)
     return
 
-def plot_plates(m, dbs_path = None, lon360 = False, boundtypes = None,**kwargs):
-    """
-    Plots different types of tectonic plates
+def plot_plates(m,
+                dbs_path: tp.Union[None,str] = None,
+                lon360: bool = False,
+                boundtypes: list = ['ridge', 'transform', 'trench'],**kwargs):
+    """Plots different types of tectonic plates on to a map object
 
     Parameters
     ----------
+    m
+        An instance of `mpl_toolkits.basemap` Class
+    dbs_path : tp.Union[None,str], optional
+        path specified by user where hotspots.json is located. If not found,
+        defaults to downloading the file from the  AVNI server, by default None
+    lon360 : bool, optional
+        False if the no longitude above 180 is permitted and is wrapped around, by default False
+    boundtypes : list, optional
+        Types of boundaries to plot, by default ['ridge', 'transform', 'trench']
+    **kwargs : dict
+        Optional arguments for Basemap
 
-    m : figure axis handle
+    Returns
+    -------
+    m
+        Updated instance of `mpl_toolkits.basemap` Class
 
-    dbs_path : path specified by user where hotspots.json is located. If not found,
-              defaults to downloading the file from the  AVNI server.
-
-    boundtypes : plate boundary types that will be plotted. Default are ridge, transform
-                 and trench
-
-    lon360 : is False if the no longitude above 180 is permitted and is wrapped around.
-
-    kwargs : denotes the arguments, if any, for scatter
-
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
     # Get the correct path
     if dbs_path is None:
         dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
-
-    #defaults
-    if boundtypes is None: boundtypes = ['ridge', 'transform', 'trench']
 
     # Earlier was in pickle format, cross-platform compatibility required json
     # ridge,ridgeloc=pickle.load(open('%s/ridge.pkl' % (dbs_path),'rb'))
@@ -182,51 +216,80 @@ def plot_plates(m, dbs_path = None, lon360 = False, boundtypes = None,**kwargs):
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path=None,colorlabel=None,colorticks=True,ticklabels=None,colorpalette='avni',colorcontour=21,hotspots=False,grid=None,gridwidth=0, shading= False,model=constants.topography,resolution='l',field='z', **kwargs):
-    """
-    Plots a 2-D cross-section of a 3D model on a predefined axis ax.
+def globalmap(ax,
+              valarray: tp.Union[list,np.ndarray],
+              vmin: tp.Union[float,int],vmax: tp.Union[float,int],
+              dbs_path: tp.Union[None,str] = None,
+              colorlabel: tp.Union[None,str] = None, colorticks: bool = True,
+              ticklabels: tp.Union[None,list,np.ndarray] = None, colorpalette: str = 'avni',
+              colorcontour=21, hotspots: bool = False,
+              grid: tp.Union[list,np.ndarray] = [30.,90.], gridwidth: int = 0,
+              shading: bool = False, model: tp.Union[None,str] = None,
+              resolution: str = 'l', field: str = 'z', **kwargs):
+    """Plots a 2-D cross-section of a 3D model on a predefined axis
 
     Parameters
     ----------
+    ax
+        Axis handle number
+    valarray : tp.Union[list,np.ndarray]
+               a named numpy array containing latitudes (lat), longitudes (lon)
+               and values (val). Can be initialized from three numpy arrays lat, lon and val
+               $ data = np.vstack((lat,lon,val)).transpose()
+               $ dt = {'names':['latitude', 'longitude', 'value'], 'formats':[np.float, np.float, np.float]}
+               $ valarray = np.zeros(len(data), dtype=dt)
+               $ valarray['latitude'] = data[:,0]; valarray['longitude'] = data[:,1]; valarray['value'] = data[:,2]
+    vmin,vmax : tp.Union[float,int]
+        Minimum and maximum value of the color scale
+    dbs_path : tp.Union[None,str], optional
+        Path specified by user where database containing hotpot locations,
+        coastlines  is located. If not found, defaults to downloading the files
+        from the  AVNI server, by default None so uses :py:func:`tools.get_filedir()`.
+    colorlabel : tp.Union[None,str], optional
+        Label to use for the colorbar. If None, no colorbar is plotted, by default None
+    colorticks : bool, optional
+        Label and draw the ticks in the colorbar, by default True
+    ticklabels : tp.Union[None,list,np.ndarray], optional
+        Labels for ticks on the colorbar, by default None
+    colorpalette : str, optional
+        Matplotlib color scales or the AVNI one, by default 'avni'
+    colorcontour : int, optional
+        Number of contours for colors in the plot. Maximum is 520 and odd values
+        are preferred so that mid value is at white/yellow or other neutral colors, by default 21
+    hotspots : bool, optional
+        Plot hotspots, by default False
+    grid : tp.Union[list,np.ndarray], optional
+        Grid spacing in latitude and longitude, by default [30.,90.]
+    gridwidth : int, optional
+        Width of the grid lines, by default 0
+    shading : bool, optional
+        Shade the plot based on topography, by default False
+    model : tp.Union[None,str], optional
+        Name of the topography file in NETCDF4 format, by default None so use :py:func:`constants.topography`
+    resolution : str, optional
+        Resolution of boundary database to use in Basemap.
+        Can be c (crude), l (low), i (intermediate), h (high), f (full), by default 'l'
+    field : str, optional
+        Field name in the NETCDF4 file to use, by default 'z'
+    **kwargs : dict
+        Optional arguments for Basemap
 
-    valarray :  a named numpy array containing latitudes (lat), longitudes (lon)
-                and values (val). Can be initialized from three numpy arrays lat, lon and val
-                $ data = np.vstack((lat,lon,val)).transpose()
-                $ dt = {'names':['latitude', 'longitude', 'value'], 'formats':[np.float, np.float, np.float]}
-                $ valarray = np.zeros(len(data), dtype=dt)
-                $ valarray['latitude'] = data[:,0]; valarray['longitude'] = data[:,1]; valarray['value'] = data[:,2]
+    Returns
+    -------
+    m
+        Updated instance of :py:func:`mpl_toolkits.basemap` Class
 
-    vmin, vmax : minimum and maximum value of the color scale
-
-    dbs_path : database path containing hotpot locations, coastlines etc.
-
-    colorpalette : matploblib color scales or the AVNI one (default)
-
-    colorcontour :  the number of contours for colors in the plot. Maximum is 520 and odd values
-                    are preferred so that mid value is at white/yellow or other neutral colors.
-
-    colorticks : Label and draw the ticks in the colorbar if True (default)
-
-    projection : map projection for the global plot
-
-    colorlabel : label to use for the colorbar. If None, no colorbar is plotted.
-
-    lat_0, lon_0 : center latitude and longitude for the plot
-
-    outformat : format of the output file
-
-    resolution: of boundary database to use like in Basemap.
-                Can be c (crude), l (low), i (intermediate), h (high), f (full)
-
-    kwargs : optional arguments for Basemap
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
 
-    # Get the correct path
-    if dbs_path is None:
-        dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
-        
+    # Get the default path
+    if dbs_path is None: dbs_path = tools.get_filedir()
+    if model is None: model = constants.topography
+
     # defaults
-    if grid is None: grid=[30.,90.]
     parallels = np.arange(-90.,90.,grid[0])
     meridians = np.arange(-180.,180.,grid[1])
 
@@ -401,13 +464,54 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=None,colorlabel=None,colorticks=Tru
             plt.setp(cbarytks, visible=False)
     return m
 
+<<<<<<< HEAD
 def backgroundmap(ax,dbs_path=None,plates='r',oceans='w',continents='darkgray', boundary='k',**kwargs):
     """plots a background map of a 3D model on axis ax. kwargs are arguments for Basemap"""
+=======
+def backgroundmap(ax,
+                  dbs_path: tp.Union[None,str] = None,
+                  plates: str = 'r',oceans: str = 'w',
+                  continents: str = 'darkgray', boundary: str = 'k',**kwargs):
+    """Plots a background map of a 3D model on an axis handle.
+
+    Parameters
+    ----------
+    ax
+        Axis handle number
+    dbs_path : tp.Union[None,str], optional
+        Path specified by user where database containing hotpot locations,
+        coastlines  is located. If not found, defaults to downloading the files
+        from the  AVNI server, by default None so uses :py:func:`tools.get_filedir()`.
+    plates : str, optional
+        Color of tectonic plates, by default 'r'
+    oceans : str, optional
+        Color of oceans, by default 'w'
+    continents : str, optional
+        Color of continents, by default 'darkgray'
+    boundary : str, optional
+        Color of background around the map, by default 'k'
+    **kwargs : dict
+        Optional arguments for Basemap
+
+    Returns
+    -------
+    m
+        Updated instance of :py:func:`mpl_toolkits.basemap` Class
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+
+    # Get the default path
+    if dbs_path is None: dbs_path = tools.get_filedir()
+>>>>>>> 195ce1952c1f79c98cd00333d2093a2a293d1987
 
     # Get the correct path
     if dbs_path is None:
         dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
-        
+
     # set up map
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
@@ -428,8 +532,56 @@ def backgroundmap(ax,dbs_path=None,plates='r',oceans='w',continents='darkgray', 
     plot_plates(m, dbs_path=dbs_path, color=plates, linewidth=1.)
     return m
 
-def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,height=50.,dbs_path=None,platescolor='r',numdegticks=7,hotspots=False):
-    """plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
+def insetgcpathmap(ax,
+                   lat1: tp.Union[int,float], lon1: tp.Union[int,float],
+                   azimuth: tp.Union[int,float], gcdelta: tp.Union[int,float],
+                   projection: str = 'ortho', width: float = 50.,height: float = 50.,
+                   dbs_path: tp.Union[None,str] = None,
+                   numdegticks: int = 7, hotspots: bool = False):
+    """Plots the great-circle path based on azimuth and delta from initial location.
+
+    Takes width/heght arguments in degrees if projection is Mercator, etc.
+
+    Parameters
+    ----------
+    ax
+        Axis handle number
+    lat1 : tp.Union[int,float]
+        Initial location latitude
+    lon1 : tp.Union[int,float]
+        Initial location longitude
+    azimuth : tp.Union[int,float]
+        Azimuth to final location
+    gcdelta : tp.Union[int,float]
+        Distance in degrees to final location
+    projection : str, optional
+        Map projection, by default 'ortho'
+    width : float, optional
+        Width of the inset map, by default 50.
+    height : float, optional
+        Height of the inset map, by default 50.
+    dbs_path : tp.Union[None,str], optional
+        Path specified by user where database containing hotpot locations,
+        coastlines  is located. If not found, defaults to downloading the files
+        from the  AVNI server, by default None so uses :py:func:`tools.get_filedir()`.
+    numdegticks : int, optional
+        Number of ticks along great-circle path, by default 7
+    hotspots : bool, optional
+        Plot hotspots, by default False
+
+    Returns
+    -------
+    m
+        Updated instance of :py:func:`mpl_toolkits.basemap` Class
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+
+    # Get the default path
+    if dbs_path is None: dbs_path = tools.get_filedir()
 
     # Get the correct path
     if dbs_path is None:
@@ -495,11 +647,45 @@ def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,hei
             m.plot(lonextent,latextent,color='k',linewidth=3.)
     return m
 
-def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = None,r_labels = None, fontsize=12):
-    """Setup the polar axis for section plot. numdegticks is the number of grids in theta. rect is the 3-digit number for axis on a plot. (theta, radius) are array for the range."""
-    #defaults
-    if r_labels is None: r_labels = ['CMB',' ','2000',' ','1000',' ','Moho']
-    if r_locs is None: r_locs = [3480.,3871.,4371.,4871.,5371.,5871.,6346.6]
+def setup_axes(fig,
+               rect, theta: tp.Union[list,np.ndarray], radius: tp.Union[list,np.ndarray],
+               numdegticks: int = 7,
+               r_locs: list = [3480.,3871.,4371.,4871.,5371.,5871.,6346.6],
+               r_labels: list = ['CMB',' ','2000',' ','1000',' ','Moho'], fontsize: int = 12):
+    """Setup the polar axis for a section plot
+
+    Parameters
+    ----------
+    fig
+        A figure hand from :py:func:`plt.figure`
+    rect
+        A 3-digit number for axis on a plot. Obtained as
+        axis handle from :py:func:`gridspec.GridSpec` instance.
+        $gs = gridspec.GridSpec(1, 2)
+        $rect = gs[1]
+    theta : tp.Union[list,np.ndarray]
+        Range of degrees to plot
+    radius : tp.Union[list,np.ndarray]
+        Range of radius to plot
+    numdegticks : int, optional
+        Number of ticks along great-circle path, by default 7
+    r_locs : list, optional
+        Radius locations to plot as curves, by default [3480.,3871.,4371.,4871.,5371.,5871.,6346.6]
+    r_labels : list, optional
+        Labels for the radius locations, by default ['CMB',' ','2000',' ','1000',' ','Moho']
+    fontsize : int, optional
+        Tick font size, by default 12
+
+    Returns
+    -------
+    ax1, aux_ax
+        Axis and auxillary axis where the polar axis plot has been made
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
 
     # PolarAxes.PolarTransform takes radian. However, we want our coordinate
     # system in degree
@@ -611,30 +797,60 @@ def setup_axes(fig, rect, theta, radius, numdegticks=7,r_locs = None,r_labels = 
     return ax1, aux_ax
 
 
-def gettopotransect(lat1,lng1,azimuth,gcdelta,model=constants.topography, tree=None,dbs_path=tools.get_filedir(),numeval=50,resolution='l',nearest=1):
+def gettopotransect(lat1: tp.Union[int,float], lon1: tp.Union[int,float],
+                    azimuth: tp.Union[int,float], gcdelta: tp.Union[int,float],
+                    model: tp.Union[None,str] = None,
+                    tree = None, dbs_path: tp.Union[None,str] = None,
+                    numeval: int = 50, resolution: str = 'l',nearest: int = 1):
+    """Get the topography transect based on azimuth and delta from initial location.
+
+    Parameters
+    ----------
+    lat1 : tp.Union[int,float]
+        Initial location latitude
+    lon1 : tp.Union[int,float]
+        Initial location longitude
+    azimuth : tp.Union[int,float]
+        Azimuth to final location
+    gcdelta : tp.Union[int,float]
+        Distance in degrees to final location
+    model : tp.Union[None,str], optional
+        Name of the topography file in NETCDF4 format, by default None so :py:func:`constants.topography`
+    tree
+        A :py:func:`scipy.spatial.cKDTree` read from an earlier run, by default None
+    dbs_path : tp.Union[None,str], optional
+        Path specified by user where database containing hotpot locations,
+        coastlines  is located. If not found, defaults to downloading the files
+        from the  AVNI server, by default None so uses :py:func:`tools.get_filedir()`.
+    numeval : int, optional
+        Number of evaluations of topo/bathymetry along the transect, by default 50
+    resolution : str, optional
+        Resolution of boundary database to use in Basemap.
+        Can be c (crude), l (low), i (intermediate), h (high), f (full), by default 'l'
+    nearest : int, optional
+        Number of nearest values in the KD-tree to interpolated from, by default
+        1 so nearest
+
+    Returns
+    -------
+    valselect,model,tree
+        Values along selected transect, topography model values, and a :py:func:`scipy.spatial.cKDTree`
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    Get the topography transect.
 
-    Input Parameters:
-    ----------------
-    dbs_path: directory to location of filename.
-
-    tree: tree read from an earlier run.
-
-    numeval: is number of evaluations of topo/bathymetry along the transect.
-
-    stride: is the downsampling before interpolation.
-
-    nearest: 1 returns the nearest point
-    """
     #read topography file
-    dbs_path=tools.get_fullpath(dbs_path)
+    if dbs_path is None: dbs_path = tools.get_fullpath(dbs_path)
+    if model is None: model = constants.topography
 
     # Get KD tree
     if tree == None and isinstance(model,string_types):
         treefile = dbs_path+'/'+'.'.join(model.split('.')[:-1])+'.KDTree.'+resolution+'.pkl'
         ncfile = dbs_path+'/'+model
-        if not os.path.isfile(ncfile): data.update_file(model)
+        if not os.path.isfile(ncfile): data.update_file(model,subdirectory=constants.topofolder)
         tree = tools.ncfile2tree3D(ncfile,treefile,lonlatdepth = ['lon','lat',None],resolution=resolution,radius_in_km=constants.R.to('km').magnitude)
         #read values
         model = tools.readtopography(model=model,resolution=resolution,field = 'z', dbs_path=dbs_path)
@@ -647,9 +863,9 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model=constants.topography, tree=N
             raise ValueError('model in gettopotransect not a string or xarray')
 
     #find destination point
-    lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude)
+    lat2,lng2=mapping.getDestination(lat1,lon1,azimuth,gcdelta*constants.deg2m.magnitude)
     interval=gcdelta*constants.deg2m.magnitude/(numeval-1) # interval in m
-    coords=np.array(mapping.getIntermediate(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude,interval))
+    coords=np.array(mapping.getIntermediate(lat1,lon1,azimuth,gcdelta*constants.deg2m.magnitude,interval))
 
     #query tree for topography
     evalpoints=np.column_stack((constants.R.to('km').magnitude*np.ones_like(coords[:,1]),coords[:,0],coords[:,1]))
@@ -660,8 +876,32 @@ def gettopotransect(lat1,lng1,azimuth,gcdelta,model=constants.topography, tree=N
     #print 'THE SHAPE OF qpts_rlatlon is', qpts_rlatlon.shape
     return valselect,model,tree
 
-def plottopotransect(ax,theta_range,elev,vexaggerate=150):
-    """Plot a section on the axis ax. """
+def plottopotransect(ax,
+                     theta_range: np.ndarray, elev,
+                     vexaggerate: int = 150):
+    """Plot a topographic transect on an axis
+
+    Parameters
+    ----------
+    ax
+        Axis handle number
+    theta_range : np.ndarray
+        Range of angles
+    elev : _type_
+        Elevation from topgraphy file, usually in :py:func:`sparse.csc_matrix` format.
+    vexaggerate : int, optional
+        Vertical exxageration to make the plot visible, by default 150
+
+    Returns
+    -------
+    ax
+        Axis handle where the plot has been made
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     elevplot1=elev.toarray().ravel()
     elevplot2=elev.toarray().ravel()
     # Blue for areas below sea level
@@ -681,11 +921,60 @@ def plottopotransect(ax,theta_range,elev,vexaggerate=150):
 #     title(phase, fontsize=20,loc='left')
     return ax
 
-def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.avni.nc4',tree=None,parameter='vs',radii=None,dbs_path=tools.get_filedir(),numevalx=200,numevalz=200,distnearthreshold=500.,nearest=10):
-    """Get the tomography slice. numevalx is number of evaluations in the horizontal, numevalz is the number of evaluations in the vertical. """
-    #defaults
-    if radii is None: radii=[3480.,6346.6]
+def getmodeltransect(lat1: tp.Union[int,float], lon1: tp.Union[int,float],
+                     azimuth: tp.Union[int,float], gcdelta: tp.Union[int,float],
+                     model: str = 'S362ANI+M.BOX25km_PIX1X1.avni.nc4',
+                     tree = None, parameter: str = 'vs',
+                     radii: list = [3480.,6346.6], dbs_path: tp.Union[None,str] = None,
+                     numevalx: int = 200, numevalz: int = 200,
+                     distnearthreshold: float = 500., nearest: int = 10):
+    """Get the tomography slice from a AVNI NETCDF4 file
 
+    Parameters
+    ----------
+    lat1 : tp.Union[int,float]
+        Initial location latitude
+    lon1 : tp.Union[int,float]
+        Initial location longitude
+    azimuth : tp.Union[int,float]
+        Azimuth to final location
+    gcdelta : tp.Union[int,float]
+        Distance in degrees to final location
+    model : str, optional
+        Name of the tomographic model file in NETCDF4 format, by default 'S362ANI+M.BOX25km_PIX1X1.avni.nc4'
+    tree
+        A :py:func:`scipy.spatial.cKDTree` read from an earlier run, by default None
+    parameter : str, optional
+        Physical parameter field in the NETCDF4 file, by default 'vs'
+    radii : list, optional
+        Range of radius to plot on the slice, by default [3480.,6346.6]
+    dbs_path : tp.Union[None,str], optional
+        Path specified by user where database containing hotpot locations,
+        coastlines  is located. If not found, defaults to downloading the files
+        from the  AVNI server, by default None so uses :py:func:`tools.get_filedir()`.
+    numevalx : int, optional
+        Number of model evaluations along the horizontal direction, by default 200
+    numevalz : int, optional
+        Number of model evaluations along the vertical direction, by default 200
+    distnearthreshold : float, optional
+        Threshold points that are up to a distance away [NOT IMPLEMENTED], by default 500.
+    nearest : int, optional
+        Number of nearest values in the KD-tree to interpolated from, by default
+        10 so averages nearest 10 points
+
+    Returns
+    -------
+    xsec,model,tree
+        Values along selected section, toography model values, and a :py:func:`scipy.spatial.cKDTree`
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+
+    #defaults
+    if dbs_path is None: dbs_path = tools.get_filedir()
     #get full path
     dbs_path=tools.get_fullpath(dbs_path)
 
@@ -712,10 +1001,10 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.a
             vals = model.data.flatten(order='C')
         except:
             raise ValueError('model in gettopotransect not a string or xarray')
-    #lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude)
+    #lat2,lng2=mapping.getDestination(lat1,lon1,azimuth,gcdelta*constants.deg2m.magnitude)
     interval=gcdelta*constants.deg2m.magnitude/(numevalx-1) # interval in km
     radevalarr=np.linspace(radii[0],radii[1],numevalz) #radius arr in km
-    coords=np.array(mapping.getIntermediate(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude,interval))
+    coords=np.array(mapping.getIntermediate(lat1,lon1,azimuth,gcdelta*constants.deg2m.magnitude,interval))
 
     if(len(coords) != numevalx):
         raise ValueError("Error: The number of intermediate points is not accurate. Decrease it?")
@@ -731,20 +1020,100 @@ def getmodeltransect(lat1,lng1,azimuth,gcdelta,model='S362ANI+M.BOX25km_PIX1X1.a
 
     return xsec.T,model,tree
 
-def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_filedir(),
-            modeltree=None,vmin=None,vmax=None,colorlabel=None,colorpalette='avni',
-            colorcontour=20,nelevinter=100,radii=None,n3dmodelinter=50,vexaggerate=50,
-            width_ratios=None,numevalx=200,numevalz=300,nearest=10,
-            topo=constants.topography,resolution='l',topotree=None,hotspots=False,
-            plates=False, xsec_data = None):
-    """Plot one section through the Earth through a pair of points."""
+def section(fig,
+            lat1: tp.Union[int,float], lon1: tp.Union[int,float],
+            azimuth: tp.Union[int,float], gcdelta: tp.Union[int,float],
+            model: str, parameter: str,
+            vmin: tp.Union[float,int], vmax: tp.Union[float,int],
+            dbs_path: tp.Union[None,str] = None,
+            modeltree = None ,
+            colorlabel: tp.Union[None,str] = None, colorpalette: str = 'avni',
+            colorcontour: int = 20, nelevinter : int = 100,
+            radii: list = [3480.,6346.6],vexaggerate: int = 50,
+            width_ratios: list = [1,3],
+            numevalx: int = 200, numevalz: int = 300, nearest: int = 10,
+            topo: tp.Union[None,str] = None, resolution: str = 'l', topotree = None,
+            hotspots: bool = False, xsec_data = None):
+    """Plot one section across a pair of points based on azimuth and delta from initial location.
+
+    Parameters
+    ----------
+    fig
+        A figure hand from :py:func:`plt.figure`
+    lat1 : tp.Union[int,float]
+        Initial location latitude
+    lon1 : tp.Union[int,float]
+        Initial location longitude
+    azimuth : tp.Union[int,float]
+        Azimuth to final location
+    gcdelta : tp.Union[int,float]
+        Distance in degrees to final location
+    model : str
+        Name of the tomographic model file in NETCDF4 format e.g. 'S362ANI+M.BOX25km_PIX1X1.avni.nc4'
+    parameter : str
+        Physical parameter field in the NETCDF4 file, by default 'vs'
+    vmin,vmax : tp.Union[float,int]
+        Minimum and maximum value of the color scale
+    dbs_path : tp.Union[None,str], optional
+        Path specified by user where database containing hotpot locations,
+        coastlines  is located. If not found, defaults to downloading the files
+        from the  AVNI server, by default None so uses :py:func:`tools.get_filedir()`.
+    modeltree, optional
+        A :py:func:`scipy.spatial.cKDTree` of tomograhic model read from an earlier run, by default None
+    colorlabel : tp.Union[None,str], optional
+        Label to use for the colorbar. If None, no colorbar is plotted, by default None
+    colorpalette : str, optional
+        Matplotlib color scales or the AVNI one, by default 'avni'
+    colorcontour : int, optional
+        Number of contours for colors in the plot. Maximum is 520 and odd values
+        are preferred so that mid value is at white/yellow or other neutral colors, by default 20
+    nelevinter : int, optional
+        Number of evaluations of topo/bathymetry along the transect, by default 100
+    radii : list, optional
+        Range of radius to plot on the slice, by default [3480.,6346.6]
+    vexaggerate : int, optional
+        Vertical exxageration to make the plot visible, by default 50
+    width_ratios : list, optional
+        Width ratios of the great circle and section subplots, by default [1,3]
+    numevalx : int, optional
+        Number of model evaluations along the horizontal direction, by default 200
+    numevalz : int, optional
+        Number of model evaluations along the vertical direction, by default 300
+    nearest : int, optional
+        Number of nearest values in the KD-tree to interpolated from, by default
+        10 so averages nearest 10 points
+    topo : tp.Union[None,str], optional
+        Name of the topography file in NETCDF4 format, by default None so :py:func:`constants.topography`
+    resolution : str, optional
+        Resolution of boundary database to use in Basemap.
+        Can be c (crude), l (low), i (intermediate), h (high), f (full), by default 'l'
+    topotree : _type_, optional
+        A :py:func:`scipy.spatial.cKDTree` of topography read from an earlier run, by default None
+    hotspots : bool, optional
+        Plot hotspots on top of the plot [NOT IMPLEMENTED], by default False
+    xsec_data, optional
+        Interpolated data along a section found from an earlier run, by default None
+
+    Returns
+    -------
+    fig,topo,topotree,model,modeltree
+        Figure handle, topography values, tomographic model values and the corresponding :py:func:`scipy.spatial.cKDTree`
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+
     #defaults
-    if radii is None: radii=[3480.,6346.6]
-    if width_ratios is None: width_ratios=[1,3]
+    if dbs_path is None: dbs_path = tools.get_filedir()
+    if topo is None: topo = constants.topography
+    #get full path
+    dbs_path=tools.get_fullpath(dbs_path)
 
     # only sample the data if it's not here.
     if xsec_data is None:
-        interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
+        interp_values,model,modeltree = getmodeltransect(lat1,lon1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
     else:
         interp_values = xsec_data
         numevalx = interp_values.shape[0]
@@ -758,12 +1127,12 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
         vmax = interp_values.max()
 
     # Specify theta such that it is symmetric
-    #lat2,lng2=mapping.getDestination(lat1,lng1,azimuth,gcdelta*constants.deg2m.magnitude)
+    #lat2,lng2=mapping.getDestination(lat1,lon1,azimuth,gcdelta*constants.deg2m.magnitude)
     if gcdelta==180.:
         theta=[0.,gcdelta]
     elif gcdelta==360.:
         # if the start point in (0,0), ortho plot decides orientation based on quadrant
-        if lat1==0 and lng1==0:
+        if lat1==0 and lon1==0:
             if azimuth < 0.: azimuth = 360. + azimuth
             if azimuth < 90 or azimuth == 360.:
                 quadrant = 0
@@ -775,27 +1144,27 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
                 quadrant = 3
             delta = quadrant*90.
         else:
-            intersection,antipode = mapping.intersection([lat1,lng1],azimuth,[0.,0.],90.)
+            intersection,antipode = mapping.intersection([lat1,lon1],azimuth,[0.,0.],90.)
             # shift the plot by the distance between equator and antipode
             # This shift is needed to sync with the inset figure in ortho projection
-            delta_i,_,_  = mapping.get_distaz(lat1,lng1,intersection[0],intersection[1])
-            delta_a,_,_ = mapping.get_distaz(lat1,lng1,antipode[0],antipode[1])
+            delta_i,_,_  = mapping.get_distaz(lat1,lon1,intersection[0],intersection[1])
+            delta_a,_,_ = mapping.get_distaz(lat1,lon1,antipode[0],antipode[1])
             # ortho projection usually takes the nearest point as the rightmost point
             delta = min(delta_i,delta_a)
         theta=[delta,gcdelta+delta]
     else:
         theta=[90.-gcdelta/2.,90.+gcdelta/2.]
     theta_range=np.linspace(theta[0],theta[1],nelevinter)
-    
+
     # default is not to extend radius unless vexaggerate!=0
     extend_radius=0.
     if vexaggerate != 0:
-        elev,topo,topotree=gettopotransect(lat1,lng1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,resolution=resolution,nearest=1)        
-        # hot fix: some combinations of gcdelta, lat,lon result in elev array being 
+        elev,topo,topotree=gettopotransect(lat1,lon1,azimuth,gcdelta,model=topo,tree=topotree, dbs_path=dbs_path,numeval=nelevinter,resolution=resolution,nearest=1)
+        # hot fix: some combinations of gcdelta, lat,lon result in elev array being
         # 1 element shorter. Not sure why.
         if theta_range.size - elev.size == 1:
             theta_range = theta_range[:-1]
-            
+
         if elev.min()< 0.:
             extend_radius=(elev.max()-elev.min())*vexaggerate/1000.
         else:
@@ -820,20 +1189,20 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     ####### Inset map
     if gcdelta == 360.:
         # do not plot ticks on a 360 degree plot,so numdegticks=0. But do so for main plot
-        insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=0)
+        insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=0)
         numdegticks=13
     else:
         if gcdelta > 270.:
             numdegticks=13
-            insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
+            insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
         elif gcdelta >= 30. and gcdelta <=270:
             numdegticks=7
-            insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
+            insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',dbs_path=dbs_path,numdegticks=numdegticks)
         else:
             numdegticks=7
             width=gcdelta*1.4
             height=gcdelta*1.4
-            insetgcpathmap(ax,lat1,lng1,azimuth,gcdelta,projection='aea',dbs_path=dbs_path,width=width,height=height,numdegticks=numdegticks)
+            insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='aea',dbs_path=dbs_path,width=width,height=height,numdegticks=numdegticks)
     ###### Actual cross-section
     if gcdelta < 360.0:
         ax1, aux_ax1 = setup_axes(fig, gs[1], theta, radius=[3480., 6371.+extend_radius],numdegticks=numdegticks)
@@ -859,12 +1228,12 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
     # Get the color map
     cpalette = initializecolor(colorpalette)
 
-    # interp_values,model,modeltree = getmodeltransect(lat1,lng1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
+    # interp_values,model,modeltree = getmodeltransect(lat1,lon1,azimuth,gcdelta,model=model,tree=modeltree,parameter=parameter,radii=radii,dbs_path=dbs_path,numevalx=numevalx,numevalz=numevalz,nearest=nearest)
 
     # define the 10 bins and normalize
     bounds = np.linspace(vmin,vmax,colorcontour+1)
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
-    
+
     if isinstance(interp_values,xr.DataArray):
         interp_values = interp_values.toarray()
     im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
@@ -907,10 +1276,47 @@ def section(fig,lat1,lng1,azimuth,gcdelta,model,parameter,dbs_path=tools.get_fil
 #         plt.setp(cbarytks, visible=False)
     return fig,topo,topotree,model,modeltree
 
-def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,vmin,vmax,figuresize=None,outfile=None,**kwargs):
-    """Plot one section through the Earth through a pair of points."""
-    #defaults
-    if figuresize is None: figuresize=[8,4]
+def plot1section(latitude: tp.Union[int,float], longitude: tp.Union[int,float],
+                 azimuth: tp.Union[int,float], gcdelta: tp.Union[int,float],
+                 model: str, parameter: str,
+                 vmin: tp.Union[float,int], vmax: tp.Union[float,int],
+                 figuresize: tp.Union[list, np.ndarray] = [8,4],
+                 outfile: str = None,**kwargs):
+    """Plot one section across a pair of points based on azimuth and delta from initial location..
+
+    Parameters
+    ----------
+    latitude : tp.Union[int,float]
+        Initial location latitude
+    longitude : tp.Union[int,float]
+        Initial location longitude
+    azimuth : tp.Union[int,float]
+        Azimuth to final location
+    gcdelta : tp.Union[int,float]
+        Distance in degrees to final location
+    model : str
+        Name of the tomographic model file in NETCDF4 format e.g. 'S362ANI+M.BOX25km_PIX1X1.avni.nc4'
+    parameter : str
+        Physical parameter field in the NETCDF4 file, by default 'vs'
+    vmin,vmax : tp.Union[float,int]
+        Minimum and maximum value of the color scale
+    figuresize : tp.Union[list, np.ndarray], optional
+        Figure size, by default [8,4]
+    outfile : str, optional
+        Output file to use in :py:func:`fig.savefig`, by default None
+    **kwargs : dict
+        Optional arguments for Basemap
+
+    Returns
+    -------
+    topo,topotree,model,modeltree
+        Topography values, tomographic model values and the corresponding :py:func:`scipy.spatial.cKDTree`
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
 
     fig = plt.figure(figsize=(figuresize[0],figuresize[1]))
     if kwargs:
@@ -924,8 +1330,43 @@ def plot1section(latitude,longitude,azimuth,gcdelta,model,parameter,vmin,vmax,fi
     plt.close('all')
     return topo,topotree,model,modeltree
 
-def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='rainbow2',projection='robin',colorlabel="Anomaly (%)",lat_0=0,lon_0=150,outfile=None,shading=False):
-    """Plot one global map"""
+def plot1globalmap(epixarr: np.ndarray,
+                   vmin: tp.Union[float,int], vmax: tp.Union[float,int],
+                   dbs_path: tp.Union[None,str] = None,
+                   colorpalette: str = 'rainbow2', projection: str = 'robin',
+                   colorlabel: str = "Anomaly (%)",
+                   lat_0: tp.Union[int,float] = 0,lon_0: tp.Union[int,float] = 150,
+                   outfile: str = None, shading: bool = False):
+    """Plot one global map
+
+    Parameters
+    ----------
+    epixarr : np.ndarray
+        Array containing (`latitude`, `longitude`, `pixel_size`, `value`)
+    vmin,vmax : tp.Union[float,int]
+        Minimum and maximum value of the color scale
+    dbs_path : tp.Union[None,str], optional
+        Path specified by user where database containing hotpot locations,
+        coastlines  is located. If not found, defaults to downloading the files
+        from the  AVNI server, by default None so uses :py:func:`tools.get_filedir()`.
+    colorpalette : str, optional
+        Matplotlib color scales or the AVNI one, by default 'rainbow2'
+    projection : str, optional
+        Map projection, by default 'robin'
+    colorlabel : str, optional
+        Label to use for the colorbar. If None, no colorbar is plotted, by default "Anomaly (%)"
+    lat_0 : tp.Union[int,float], optional
+        Center latitude for the plot, by default 0
+    lon_0 : tp.Union[int,float], optional
+        Center longitude for the plot, by default 150
+    outfile : str, optional
+        Output file to use in :py:func:`fig.savefig`, by default None
+    shading : bool, optional
+        Shade the plot based on topography, by default False
+    """
+    #defaults
+    if dbs_path is None: dbs_path = tools.get_fullpath(tools.get_filedir())
+
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
     if projection=='ortho':
@@ -938,10 +1379,42 @@ def plot1globalmap(epixarr,vmin,vmax,dbs_path=tools.get_filedir(),colorpalette='
         fig.savefig(outfile,dpi=300)
     return
 
-def plot1hitmap(hitfile,dbs_path=tools.get_filedir(),projection='robin',lat_0=0,lon_0=150,colorcontour = None,colorpalette='Blues',outformat='.pdf',ifshow=True):
-    """Plot one hitcount map"""
+def plot1hitmap(hitfile: str,
+                dbs_path: tp.Union[None,str] = None,
+                projection: str = 'robin',
+                lat_0: tp.Union[int,float] = 0,lon_0: tp.Union[int,float] = 150,
+                colorcontour: list = [0,25,100,250,400,600,800,1000,1500,2500,\
+                    5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000],
+                colorpalette: str = 'Blues',
+                outformat: str = '.pdf',ifshow: bool = True):
+    """Plot one hit count map
+
+    Parameters
+    ----------
+    hitfile : str
+        A file containg named columns - "latitude", "longitude", "value"
+    dbs_path : tp.Union[None,str], optional
+        Path specified by user where database containing hotpot locations,
+        coastlines  is located. If not found, defaults to downloading the files
+        from the  AVNI server, by default None so uses :py:func:`tools.get_filedir()`.
+    projection : str, optional
+        Map projection, by default 'robin'
+    lat_0 : tp.Union[int,float], optional
+        Center latitude for the plot, by default 0
+    lon_0 : tp.Union[int,float], optional
+        Center longitude for the plot, by default 150
+    colorcontour : list, optional
+        Number of contours for colors in the plot,
+        by default [0,25,100,250,400,600,800,1000,1500,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000]
+    colorpalette : str, optional
+        Matplotlib color scales or the AVNI one, by default 'Blues'
+    outformat : str, optional
+        Output file format, by default '.pdf'
+    ifshow : bool, optional
+        Display the plot before writing a file, by default True
+    """
     #defaults
-    if colorcontour is None: colorcontour=[0,25,100,250,400,600,800,1000,1500,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000]
+    if dbs_path is None: dbs_path = tools.get_fullpath(tools.get_filedir())
 
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
@@ -974,14 +1447,30 @@ def plot1hitmap(hitfile,dbs_path=tools.get_filedir(),projection='robin',lat_0=0,
     fig.savefig(hitfile+outformat,dpi=300)
     return
 
-def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format='.eps',isotropic=False,zoomdepth=None):
+def plotreference1d(ref1d,
+                    figuresize: list = [7,12],
+                    height_ratios: list = [2, 2, 1],
+                    ifshow: bool = True, format: str = '.eps',
+                    isotropic: bool = False, zoomdepth: list = [0.,1000.]):
+    """Plot the ref1d object array in a PREM like plot
+
+    Parameters
+    ----------
+    ref1d
+        An instance of the :py:class:`Reference1D` class.
+    figuresize : list, optional
+        Figure size, by default [7,12]
+    height_ratios : list, optional
+        Height ratios of the three subplots, by default [2, 2, 1]
+    ifshow : bool, optional
+        Display the plot before writing a file, by default True
+    format : str, optional
+        Output file format, by default '.eps'
+    isotropic : bool, optional
+        Whether model is isotropic so seperate curves for Vsh and Vsv, by default False
+    zoomdepth : list, optional
+        Zoom into a depth extent in km, by default [0.,1000.]
     """
-    Plot the ref1d object array in a PREM like plot
-    """
-    #defaults
-    if figuresize is None: figuresize=[7,12]
-    if height_ratios is None: height_ratios=[2, 2, 1]
-    if zoomdepth is None: zoomdepth=[0.,1000.]
 
     # extract values
     depthkmarr = (constants.R-ref1d.data['radius']).pint.to('km').values.quantity.magnitude
@@ -1113,20 +1602,39 @@ def plotreference1d(ref1d,figuresize=None,height_ratios=None,ifshow=True,format=
     else:
         plt.savefig(ref1d.name+format)
 
-def plotmodel3d(model3d,lateral_basis='pixel1',dbs_path=tools.get_filedir(),x=0,percent_or_km='%',colormin = -6.,colormax=6.,depth=None,resolution=0,realization=0):
-    """
-    Plots interactively a model slice of a variable at a given depth till an
-    invalid depth is input by the user
+def plotmodel3d(model3d,
+                dbs_path: tp.Union[None,str] = None,
+                x: int = 0,
+                percent_or_km: str = '%',
+                colormin: tp.Union[int,float] = -6.,colormax: tp.Union[int,float] = 6.,
+                depth: tp.Union[None,list,np.ndarray] = None,
+                resolution: int = 0,realization: int = 0):
+    """Plots interactively a model slice of a variable at a given depth till an invalid depth is input by the user
 
     Parameters
     ----------
-    model3d : the model dictionary read by read3dmodelfile
-
-    param : lateral parameterization dictionary read by readprojmatrix
-
-    x,percent_or_km, colormin,colormax,depth : plotting options for jupyter
-                                               instead of interactive input
+    model3d
+        An instance of the :py:class:`Model3D` class.
+    dbs_path : tp.Union[None,str], optional
+        Path specified by user where database containing hotpot locations,
+        coastlines  is located. If not found, defaults to downloading the files
+        from the  AVNI server, by default None so uses :py:func:`tools.get_filedir()`.
+    x : int, optional
+        Index for variable to plot, by default 0
+    percent_or_km : str, optional
+        Plot in percent (relative) or km/s (absolute) [NOT IMPLEMENTED], by default '%'
+    colormin, colormax : tp.Union[int,float], optional
+        Minimum and maximum value of the color scale, by default -6 and 6.
+    depth : tp.Union[None,list,np.ndarray], optional
+        Depth to plot, by default None
+    resolution : int, optional
+        Resolution index in the :py:class:`Model3D` instance, by default 0
+    realization : int, optional
+        Realization index in the :py:class:`Model3D` instance, by default 0
     """
+
+    #defaults
+    if dbs_path is None: dbs_path = tools.get_fullpath(tools.get_filedir())
     if not isinstance(resolution, int): raise TypeError('resolution must be an integer, not %s' % type(resolution))
     if not isinstance(realization, int): raise TypeError('realization must be an integer, not %s' % type(realization))
 
@@ -1141,8 +1649,6 @@ def plotmodel3d(model3d,lateral_basis='pixel1',dbs_path=tools.get_filedir(),x=0,
     refstrarr = model3d.metadata['resolution_'+str(resolution)]['varstr']
     # select models based on parameter and depth desired
     new_figure='y'  # flag for done
-    colormin = -6.
-    colormax = 6.
     while (new_figure =='y' or new_figure == 'Y'):
         plt.ion()
         fig=plt.figure()

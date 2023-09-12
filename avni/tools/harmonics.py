@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+#####################  IMPORT STANDARD MODULES   #########################
+
 # python 3 compatibility
 from __future__ import absolute_import, division, print_function
 import sys
@@ -15,17 +17,40 @@ import xarray as xr
 import pdb
 from math import radians
 from progressbar import progressbar
+import typing as tp
 
-############             input REM          modules ######
+####################### IMPORT AVNI LIBRARIES  ###########################
+
 from .common import get_fullpath
 from .bases import eval_ylm
 from .xarray import xarray_to_epix
 from .trigd import sind,cosd
 from ..f2py import legndr
-###########################  ANALYSIS SUBROUTINES ####################
 
-def getdepthsfolder(folder='.',extension='.epix',delimiter='.'):
-    """"Get list of depths from filenames to iterate through"""
+##########################################################################
+
+def getdepthsfolder(folder: str = '.',extension: str = '.epix',delimiter: str = '.') -> list:
+    """Get list of depths from filenames to iterate through
+
+    Parameters
+    ----------
+    folder : str, optional
+        Folder to search, by default '.'
+    extension : str, optional
+        File extension to search, by default '.epix'
+    delimiter : str, optional
+        delimiter in file names, by default '.'
+
+    Returns
+    -------
+    list
+        List of depths
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     depths = []
     folder = get_fullpath(folder)
     onlyfiles = glob.glob(folder+ '/*'+extension)
@@ -35,9 +60,34 @@ def getdepthsfolder(folder='.',extension='.epix',delimiter='.'):
     depths.sort()
     return depths
 
-def rdswpsh(filename):
-    """Code to get spherical harmonic coefficients in the ylm normalization. shmatrix is the linear array
-    with the ylm normalization like in PM's codes. """
+def rdswpsh(filename: str) -> tp.Tuple[np.ndarray, dict, list]:
+    """Code to get spherical harmonic coefficients in the `ylm` normalization.
+
+    Parameters
+    ----------
+    filename : str
+        Input file with spherical harmonic coefficients
+
+    Returns
+    -------
+    tp.Tuple[np.ndarray, dict, list]
+
+        First element is a numpy array with coefficients in the `ylm` normalization.
+
+        Second element are metadata from input fields if specified.
+
+        Third element are all other comments except lines containing metadata.
+
+    Raises
+    ------
+    IOError
+        File not found in the file system
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
 
     if (not os.path.isfile(filename)): raise IOError("Filename ("+filename+") does not exist")
 
@@ -71,30 +121,65 @@ def rdswpsh(filename):
     shmatrix = np.array([tuple(x) for x in shmatrix],dtype=dtype)
     return shmatrix, metadata, comments
 
-def swp_to_epix(infile, grid=1, lmax=None, outfile=None):
+def swp_to_epix(infile: str, grid: int = 1,
+                lmax: tp.Union[None,int] = None) -> tp.Tuple[np.ndarray, dict, list]:
+    """Convert spherical harmonics coefficients to extended pixel (.epix) format.
+
+    Parameters
+    ----------
+    infile : str
+        Input spherical harmonic coefficient file
+    grid : int, optional
+        Grid size for pixels, by default 1
+    lmax : tp.Union[None,int], optional
+        Maximum angular degree, by default None which results in the maximum
+        specified on file
+
+    Returns
+    -------
+    tp.Tuple[np.ndarray, dict, list]
+        First element is an array containing (`latitude`, `longitude`, `pixel_size`, `value`).
+
+        Second element are metadata from input fields if specified.
+
+        Third element are all other comments except lines containing metadata.
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     shmatrix, metadata, comments = rdswpsh(infile)
     outarr = swp_to_xarray(shmatrix=shmatrix,grid=grid,lmax=lmax)
     epixarr = xarray_to_epix(outarr)
     metadata['BASIS'] = 'PIX'; metadata['FORMAT']='50'
     return epixarr,metadata,comments
 
-def wrswpsh(filename,shmatrix,metadata=None,comments=None, lmax=None):
-    """Code to write spherical harmonic coefficients from the ylm normalization. shmatrix is the linear array
-    with the ylm normalization like in PM's codes.
+def wrswpsh(filename: str, shmatrix: np.ndarray,
+            metadata: dict = {'FORMAT':'0'},
+            comments: list = None,
+            lmax: tp.Union[None,int] = None):
+    """Write spherical harmonic coefficients from the ylm normalization to a file.
 
     Parameters
     ----------
+    filename : str
+        Output file name
+    shmatrix : np.ndarray
+        Numpy array with coefficients in the `ylm` normalization
+    metadata : _type_, optional
+        Metadata from input fields if specified., by default {'FORMAT':'0'}
+    comments : list, optional
+        All other comments except lines containing metadata., by default None
+    lmax : tp.Union[None,int], optional
+        Maximum angular degree, by default None which results in the maximum
+        specified on file
 
-    filename : Name of the file containing four columns
-              (degree, order, cosin, sin)
-
-    metadata: metadata fields from input fields if specified.
-              default : {'FORMAT':'0'}
-
-    comments: all other comments except lines containing metadata
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
     """
-    # default value
-    if metadata is None: metadata = {'FORMAT':'0'}
 
     #combine headers
     printstr=[]
@@ -121,7 +206,32 @@ def wrswpsh(filename,shmatrix,metadata=None,comments=None, lmax=None):
     print("..... written "+filename)
     return
 
-def get_coefficients(shmatrix,lmin=None,lmax=None):
+def get_coefficients(shmatrix: np.ndarray,
+                     lmin: tp.Union[None,int] = None,
+                     lmax: tp.Union[None,int] = None) -> np.ndarray:
+    """Read the spherical harmonic coefficients into a named numpy array
+
+    Parameters
+    ----------
+    shmatrix : np.ndarray
+        Numpy array with coefficients in the `ylm` normalization
+    lmin : tp.Union[None,int], optional
+        Minimum angular degree, by default None which results in the minimum
+        specified on file
+    lmax : tp.Union[None,int], optional
+        Maximum angular degree, by default None which results in the maximum
+        specified on file
+    Returns
+    -------
+    np.ndarray
+        Named numpy array of spherical harmonic coefficients
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+
     if lmin == None: lmin = min(shmatrix['l'])
     if lmax == None: lmax = max(shmatrix['l'])
     if lmin == 0:
@@ -141,7 +251,33 @@ def get_coefficients(shmatrix,lmin=None,lmax=None):
             iloop += 1
     return coeff
 
-def swp_to_xarray(shmatrix,grid=10,lmax=None):
+def swp_to_xarray(shmatrix: np.ndarray,
+                  grid: int = 10,
+                  lmax: tp.Union[None,int] = None) -> xr.DataArray:
+    """Convert from spherical harmonic coefficients in `ylm` normalization to a
+    multi-dimensional pixel grid.
+
+    Parameters
+    ----------
+    shmatrix : np.ndarray
+        Numpy array with coefficients in the `ylm` normalization
+    grid : int, optional
+        Grid size in degrees for pixels, by default 10
+    lmax : tp.Union[None,int], optional
+        Maximum angular degree, by default None which results in the maximum
+        specified on file
+
+    Returns
+    -------
+    xr.DataArray
+        A multi-dimensional xarray DataArray containing the pixel grid
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+    # get the center lat/lon based on grid
     latitude = np.arange(-90+grid/2., 90,grid)
     longitude = np.arange(0+grid/2., 360,grid)
     if lmax == None: lmax = max(shmatrix['l'])
@@ -158,7 +294,27 @@ def swp_to_xarray(shmatrix,grid=10,lmax=None):
                         coords = [latitude,longitude])
     return outarr
 
-def convert_to_swp(data,lmax):
+def convert_to_swp(data: tp.Union[np.ndarray,xr.DataArray],lmax: int) -> np.ndarray:
+    """Convert multi-dimensional pixel grid to spherical harmonic coefficients in `ylm` normalization.
+
+    Parameters
+    ----------
+    data : tp.Union[np.ndarray,xr.DataArray]
+        A multi-dimensional xarray DataArray or named numpy array containing the pixel grid
+    lmax : int
+        Maximum angular degree to evaluate coefficients to
+
+    Returns
+    -------
+    np.ndarray
+        Numpy array with coefficients in the `ylm` normalization
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+
     if isinstance(data, xr.DataArray):
         xlon = data['longitude'].data
         xlat = data['latitude'].data
@@ -230,8 +386,31 @@ def convert_to_swp(data,lmax):
     shmatrix['sin'][findindex] = 2.*shmatrix['sin'][findindex]
     return shmatrix
 
-def calcshpar2(shmatrix,lmax=None):
-    """This calculates the roughness and rms of a model file from shmatrix read using rdswpsh"""
+def calcshpar2(shmatrix: np.ndarray, lmax: tp.Union[None,int] = None) -> tp.Tuple[float,float,float,np.ndarray]:
+    """This calculates the mean, roughness, RMS and power of spherical harmonic coefficients in `ylm` normalization
+
+    Parameters
+    ----------
+    shmatrix : np.ndarray
+        Numpy array with coefficients in the `ylm` normalization
+    lmax : tp.Union[None,int], optional
+        Maximum angular degree, by default None which results in the maximum
+        specified on file
+
+    Returns
+    -------
+    tp.Tuple[float,float,float,np.ndarray]
+        First element the globally averaged value on the unit sphere.
+
+        Second and third elements are RMS and roughness values, respectively.
+
+        Fourth element is a numpy array containing the power at each degree.
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
 
     # convert from shmatrix to shmod
     if lmax==None: lmax = max(shmatrix['l'])
@@ -290,12 +469,44 @@ def calcshpar2(shmatrix,lmax=None):
 
     return average,rms,roughness,powerarr
 
-def swp_correlation(shmatrix1,shmatrix2,lmax=None):
+def swp_correlation(shmatrix1: np.ndarray,
+                    shmatrix2: np.ndarray,
+                    lmax: tp.Union[None,int] = None) -> tp.Tuple[float,float,np.ndarray,np.ndarray]:
+    """Calculate RMS and correlation between two sets of spherical harmonic coefficients.
 
+    Parameters
+    ----------
+    shmatrix1 : np.ndarray
+        First numpy array with coefficients in the `ylm` normalization
+    shmatrix2 : np.ndarray
+        Second numpy array with coefficients in the `ylm` normalization
+    lmax : tp.Union[None,int], optional
+        Maximum angular degree, by default None which results in the maximum
+        specified on file
+
+    Returns
+    -------
+    tp.Tuple[float,float,np.ndarray,np.ndarray]
+        First and second elements are the RMS values for the two sets of coefficients.
+
+        Third element is the numpy array containing the correlation at each
+        spherical harmonic degree.
+
+        Fourth element is a numpy array containing cumulative correlation up to each
+        spherical harmonic degree.
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
+
+    # initialize
     if lmax==None: lmax = min(max(shmatrix1['l']),max(shmatrix1['l']))
     power1 = np.zeros(lmax+1); power2 = np.zeros(lmax+1);corr12 = np.zeros(lmax+1)
     rms1 = np.zeros(lmax+1); rms2 = np.zeros(lmax+1)
 
+    # loop over each degree
     i=0
     for l in np.arange(0,lmax+1):
         for m in np.arange(0,l+1):
