@@ -182,7 +182,7 @@ def plot_plates(m, dbs_path = None, lon360 = False, boundtypes = None,**kwargs):
             m.plot(x, y, '-')
     return
 
-def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None,colorticks=True,ticklabels=None,colorpalette='avni',colorcontour=21,hotspots=False,grid=None,gridwidth=0, shading= False,model=constants.topography,resolution='l',field='z', **kwargs):
+def globalmap(ax,valarray,vmin,vmax,dbs_path=None,colorlabel=None,colorticks=True,ticklabels=None,colorpalette='avni',colorcontour=21,hotspots=False,grid=None,gridwidth=0, shading= False,model=constants.topography,resolution='l',field='z', **kwargs):
     """
     Plots a 2-D cross-section of a 3D model on a predefined axis ax.
 
@@ -220,6 +220,11 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
 
     kwargs : optional arguments for Basemap
     """
+
+    # Get the correct path
+    if dbs_path is None:
+        dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
+        
     # defaults
     if grid is None: grid=[30.,90.]
     parallels = np.arange(-90.,90.,grid[0])
@@ -396,9 +401,13 @@ def globalmap(ax,valarray,vmin,vmax,dbs_path=tools.get_filedir(),colorlabel=None
             plt.setp(cbarytks, visible=False)
     return m
 
-def backgroundmap(ax,dbs_path=tools.get_filedir(),plates='r',oceans='w',continents='darkgray', boundary='k',**kwargs):
+def backgroundmap(ax,dbs_path=None,plates='r',oceans='w',continents='darkgray', boundary='k',**kwargs):
     """plots a background map of a 3D model on axis ax. kwargs are arguments for Basemap"""
 
+    # Get the correct path
+    if dbs_path is None:
+        dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
+        
     # set up map
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
@@ -419,8 +428,12 @@ def backgroundmap(ax,dbs_path=tools.get_filedir(),plates='r',oceans='w',continen
     plot_plates(m, dbs_path=dbs_path, color=plates, linewidth=1.)
     return m
 
-def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,height=50.,dbs_path=tools.get_filedir(),platescolor='r',numdegticks=7,hotspots=False):
+def insetgcpathmap(ax,lat1,lon1,azimuth,gcdelta,projection='ortho',width=50.,height=50.,dbs_path=None,platescolor='r',numdegticks=7,hotspots=False):
     """plots the great-circle path between loc1-loc2. takes width/heght arguments in degrees if proj is merrcator,etc."""
+
+    # Get the correct path
+    if dbs_path is None:
+        dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
 
     # Calculate intermediate points
     lat2,lon2=mapping.getDestination(lat1,lon1,azimuth,gcdelta*constants.deg2m.magnitude)

@@ -9,8 +9,8 @@
    nipy, NIPY, Nipy, etc...
 
 .. avni
-.. _`Homepage`: https://globalseismology.org
-.. _`REM3D`: https://rem3d.org
+.. _`Homepage`: http://globalseismology.org
+.. _`REM3D`: http://rem3d.org
 .. _`AVNI`: https://avni.globalseismology.org
 .. _`Register AVNI`: https://dwar.princeton.edu:8443/realms/GlobalSeismology/protocol/openid-connect/auth?client_id=web_js&response_type=code&scope=openid&redirect_uri=https%3A//avni.globalseismology.org
 .. _`avni@globalseismology.org`: mailto:avni@globalseismology.org?subject=Query%20about%20AVNI

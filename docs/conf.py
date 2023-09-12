@@ -272,7 +272,7 @@ html_theme_options = {
         },
         {
             "name": "Global Seismology Website",
-            "url": "https://globalseismology.org",
+            "url": "http://globalseismology.org",
             "icon": "_static/logo_avni_bw.png",
             "type": "local",
             "attributes": {"target": "_blank"},
