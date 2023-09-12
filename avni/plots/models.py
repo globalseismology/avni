@@ -464,10 +464,6 @@ def globalmap(ax,
             plt.setp(cbarytks, visible=False)
     return m
 
-<<<<<<< HEAD
-def backgroundmap(ax,dbs_path=None,plates='r',oceans='w',continents='darkgray', boundary='k',**kwargs):
-    """plots a background map of a 3D model on axis ax. kwargs are arguments for Basemap"""
-=======
 def backgroundmap(ax,
                   dbs_path: tp.Union[None,str] = None,
                   plates: str = 'r',oceans: str = 'w',
@@ -506,7 +502,6 @@ def backgroundmap(ax,
 
     # Get the default path
     if dbs_path is None: dbs_path = tools.get_filedir()
->>>>>>> 195ce1952c1f79c98cd00333d2093a2a293d1987
 
     # Get the correct path
     if dbs_path is None:
