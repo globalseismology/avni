@@ -34,7 +34,7 @@ MANIFEST
 # Distribution / packaging
 .Python
 build/
-docs/api/
+#docs/api/ # this has to be removed if edit capability is needed on docs webpage
 develop-eggs/
 dist/
 downloads/
