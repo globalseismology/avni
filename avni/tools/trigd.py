@@ -4,35 +4,37 @@ Typically used to interface with fortran codes.
 """
 #####################  IMPORT STANDARD MODULES   #########################
 
-from math import cos, sin, tan, acos, asin, atan, atan2, degrees, radians
+from numpy import cos, sin, tan, arccos, arcsin, arctan, arctan2, degrees, radians
+import typing as tp
 from numba import jit
 
 ##########################################################################
 
 @jit
-def cosd(x):
+def cosd(x: tp.Union[float,int]) -> float:
   return cos(radians(x))
 
 @jit
-def sind(x):
+def sind(x: tp.Union[float,int]) -> float:
   return sin(radians(x))
 
 @jit
-def tand(x):
+def tand(x: tp.Union[float,int]) -> float:
   return tan(radians(x))
 
 @jit
-def acosd(x):
-  return degrees(acos(x))
+def acosd(x: tp.Union[float,int]) -> float:
+  return degrees(arccos(x))
 
 @jit
-def asind(x):
-  return degrees(asin(x))
+def asind(x: tp.Union[float,int]) -> float:
+  return degrees(arcsin(x))
 
 @jit
-def atand(x):
-  return degrees(atan(x))
+def atand(x: tp.Union[float,int]) -> float:
+  return degrees(arctan(x))
 
 @jit
-def atan2d(y, x):
-  return degrees(atan2(y, x))
+def atan2d(y: tp.Union[float,int],
+           x: tp.Union[float,int]) -> float:
+  return degrees(arctan2(y, x))
