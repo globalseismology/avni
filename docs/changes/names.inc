@@ -1,4 +1,4 @@
-.. _Raj Moulik: https://globalseismology.org
+.. _Raj Moulik: https://rajmoulik.com
 
 .. _Rene Gassmoeller: https://github.com/gassmoeller
 

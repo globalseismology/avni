@@ -463,6 +463,8 @@ class Reference1D(object):
         Bullen: Bullen's parameter
 
         pressure: pressure at each depth
+
+        poisson: Poisson's ratio
         '''
         if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
         # Operations between PintArrays of different unit registry will not work.
@@ -489,6 +491,13 @@ class Reference1D(object):
             for field in ['gravity','Brunt-Vaisala','Bullen','pressure']:
                 self.metadata['parameters'].append(field)
                 self.metadata['units'].append(str(self.data[field].pint.units))
+
+            # Poisson ratio
+            vsbyvp1d = np.divide(self.data['vs'].values.quantity.magnitude, self.data['vp'].values.quantity.magnitude,out=np.zeros(self._nlayers))
+            poisson = np.divide((1.-(2.*vsbyvp1d*vsbyvp1d)),(2.-(2.*vsbyvp1d*vsbyvp1d)))
+            self.data['poisson'] = PA_(poisson, dtype="pint[dimensionless]")
+            self.metadata['parameters'].append('poisson')
+            self.metadata['units'].append('dimensionless')
 
             # delete a file
             with contextlib.suppress(FileNotFoundError): os.remove(file)
@@ -607,6 +616,18 @@ class Reference1D(object):
                         self.data[parameters[ii]] = PA_(np.divide(self.data['vph'].values.quantity.magnitude - self.data['vpv'].values.quantity.magnitude,self.data['vp'].values.quantity.magnitude,out=np.zeros(self._nlayers), where= self.data['vp'] != 0.)*100., dtype="pint[percent]")
                         self.metadata['parameters'].append(parameters[ii])
                         self.metadata['units'].append('percent')
+                    elif 'vs' in parameters[ii]:
+                        self.data[parameters[ii]] = self.data['vs']
+                        self.metadata['parameters'].append(parameters[ii])
+                        self.metadata['units'].append('m/s')
+                    elif 'vp' in parameters[ii]:
+                        self.data[parameters[ii]] = self.data['vp']
+                        self.metadata['parameters'].append(parameters[ii])
+                        self.metadata['units'].append('m/s')
+                    elif 'rho' in parameters[ii]:
+                        self.data[parameters[ii]] = self.data['rho']
+                        self.metadata['parameters'].append(parameters[ii])
+                        self.metadata['units'].append('kg/m^3')
                     else:
                         raise NotImplementedError('parameter ',parameters[ii],' is not currently implemented in reference1D.get_custom_parameter')
         else:

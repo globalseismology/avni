@@ -236,8 +236,8 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-',writeheader=True,
         printstr.append(unicode('#'*len(metadata['FIELDS'])+'\n'))
         for comment in metadata['COMMENTS']: printstr.append(unicode(comment+'\n'))
         printstr.append(unicode('#'*len(metadata['FIELDS'])+'\n'))
-        for key in metadata.keys():
-            if key in ['FIELDS','WRITE']: printstr.append(unicode('#'+key+':'+metadata[key]+'\n'))
+        printstr.append(unicode('#WRITE:'+metadata['WRITE']+'\n'))
+        printstr.append(unicode('#FIELDS:'+metadata['FIELDS']+'\n'))
 
         with open(filename,'w') as f: f.writelines(printstr)
 
@@ -275,7 +275,7 @@ def writeSWascii(SWdata,filename,iflagthreshold=None,delim='-',writeheader=True,
     if verbose: print("....written "+str(len(data))+" observations to "+filename)
     return
 
-def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
+def SWasciitohdf5(files,hdffile = 'Summary.SW.data.h5',datatype='summary',delim='-'):
     """
     Read a list of files to hdf5 container format.
 
@@ -295,7 +295,7 @@ def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
     hf = h5py.File(hdffile, 'a')
     for _ , row in files.iterrows():
         file = row[0]
-        print("... adding "+file+" to "+hdffile+" in the "+datatype+" group")
+        print("... creating group folders based on "+file+" in "+hdffile+" with the "+datatype+" group")
         SWdata = readSWascii(file,delim=delim)
         metadata = SWdata['metadata']; data = SWdata['data']
         group = metadata['SHORTCITE']
@@ -330,18 +330,12 @@ def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
             #### store path ####
             g4 = g3.require_group('arrival/paths')
             g4.attrs['desc'] = 'ipath is the unique path in CMT_STATION-NETWORK format'
-            columns = ['distkm', 'path','delellphase']
-            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/arrival/paths'),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
 
             #### store source ####
             g4 = g3.require_group('source/'+metadata['EQTYPE'])
-            columns = ['cmtname', 'eplat', 'eplon', 'epdep']
-            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/source/'+metadata['EQTYPE']),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
 
             #### store station  ####
             g4 = g3.require_group('station/'+metadata['STATTYPE'])
-            columns = ['stlat', 'stlon','stat','net', 'chan', 'loc']
-            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/station/'+metadata['STATTYPE']),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
 
             #### store data and predictions  ####
             g4 = g3.require_group('arrival/observed')
@@ -350,30 +344,75 @@ def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
             g5 = g4.require_group(metadata['REFERENCE MODEL'])
             g5.attrs['pvel'] = float(metadata['PVEL'].split()[0])
             g5.attrs['pvel_units'] = metadata['PVEL'].split()[1]
-            columns = ['refphase', 'delobsphase']
-            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/arrival/observed/'+metadata['REFERENCE MODEL']),format='table', mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
 
             g4 = g3.require_group('arrival/predicted')
             g4.attrs['units']='s'
             g4.attrs['desc'] = 'predicted relative and absolute arrivals based on various 1D and 3D mantle and crustal models'
+
+            # store weights/uncertainties
+            g4 = g3.require_group('arrival/weight')
+            g4.attrs['desc'] = 'weight of the measurement to account fo uneven sampling etc.'
+            g4 = g3.require_group('arrival/sigma')
+            g4.attrs['desc'] = 'uncertainity of the measurement'
+
+            #### store flag ####
+            g4 = g3.require_group('arrival/others')
+            g4.attrs['desc'] = 'other fields relevant to the arrival e.g. iflag describes the processing scheme : 0 is raw'
+
+    hf.close()
+
+
+    ####################################################
+    # Now store relevant pandas Dataframe
+
+    for _ , row in files.iterrows():
+        file = row[0]
+        print("... adding "+file+" to "+hdffile+" in the "+datatype+" group")
+        SWdata = readSWascii(file,delim=delim)
+        metadata = SWdata['metadata']; data = SWdata['data']
+        group = metadata['SHORTCITE']
+        uniquefolders = ['overtone', 'period']
+        for ii in np.arange(len(uniquefolders)):
+            key = uniquefolders[ii]
+            if len(np.unique(data[key])) is not 1: raise ValueError('Number  of unique values of '+key+' should be 1 in '+file)
+            if ii == 0:
+                folder = str(np.unique(data[key])[0])
+            else:
+                folder = folder+'/'+str(np.unique(data[key])[0])
+
+        # Loop over every type or orbit and store values e.g. R1,R2,R3
+        for typeiorb in np.unique(data['typeiorb']):
+            folderorb = folder+'/'+typeiorb
+            subfolder = folderorb+'/'+group+'/data/'+datatype
+
+            #### store path ####
+            columns = ['distkm', 'path','delellphase']
+            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/arrival/paths'),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
+
+            #### store source ####
+            columns = ['cmtname', 'eplat', 'eplon', 'epdep']
+            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/source/'+metadata['EQTYPE']),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
+
+            #### store station  ####
+            columns = ['stlat', 'stlon','stat','net', 'chan', 'loc']
+            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/station/'+metadata['STATTYPE']),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
+
+            #### store data and predictions  ####
+            columns = ['refphase', 'delobsphase']
+            data.loc[data['typeiorb'] == typeiorb][columns].to_hdf(hdffile, key=unicode(subfolder+'/arrival/observed/'+metadata['REFERENCE MODEL']),format='table', mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
+
             if metadata['MODEL3D'] != 'None':
                 data.loc[data['typeiorb'] == typeiorb]['delpredphase'].to_hdf(hdffile, key=unicode(subfolder+'/arrival/predicted/'+metadata['REFERENCE MODEL']+'/'+metadata['MODEL3D']),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
             if metadata['CRUST'] != 'None':
                 data.loc[data['typeiorb'] == typeiorb]['delcruphase'].to_hdf(hdffile, key=unicode(subfolder+'/arrival/predicted/'+metadata['REFERENCE MODEL']+'/'+metadata['CRUST']),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
 
             # store weights/uncertainties
-            g4 = g3.require_group('arrival/weight')
-            g4.attrs['desc'] = 'weight of the measurement to account fo uneven sampling etc.'
             if metadata['WEITYPE'] != 'None':
                 data.loc[data['typeiorb'] == typeiorb]['delweight'].to_hdf(hdffile, key=unicode(subfolder+'/arrival/weight/'+metadata['WEITYPE']),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
-            g4 = g3.require_group('arrival/sigma')
-            g4.attrs['desc'] = 'uncertainity of the measurement'
             if metadata['SIGMATYPE'] != 'None':
                 data.loc[data['typeiorb'] == typeiorb]['delsigma'].to_hdf(hdffile, key=unicode(subfolder+'/arrival/sigma/'+metadata['SIGMATYPE']),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
 
             #### store flag ####
-            g4 = g3.require_group('arrival/others')
-            g4.attrs['desc'] = 'other fields relevant to the arrival e.g. iflag describes the processing scheme : 0 is raw'
             try:
                 data.loc[data['typeiorb'] == typeiorb]['iflag'].to_hdf(hdffile, key=unicode(subfolder+'/arrival/others'),format='table',mode='a',complib='bzip2',complevel=9,dropna=True,data_columns=True,append=True)
             except KeyError:
@@ -383,9 +422,8 @@ def SWasciitohdf5(files,hdffile = 'SW.rem3d.data.h5',datatype='raw',delim='-'):
                 else:
                     raise ValueError('iflag not defined for datatype ('+datatype+') unless specified for each measurement row in '+file)
 
-    hf.close()
 
-def SWhdf5toascii(query = '0/25.0/L1/GDM52',hdffile = 'SW.avni.data.h5',iflag=0,datatype='processed',delim='-', outfile=None,model3d = None, refmodel = None,crust=None,weitype=None, sigmatype= None,stattype =None,eqtype=None):
+def SWhdf5toascii(query = '0/25.0/L1/REM3D',hdffile = 'Summary.SW.data.h5',iflag=0,datatype='summary',delim='-', outfile=None,model3d = None, refmodel = None,crust=None,weitype=None, sigmatype= None,stattype =None,eqtype=None):
     """
     write hdf field to a file. None is the default i.e. the values in metadata
 
@@ -423,7 +461,7 @@ def SWhdf5toascii(query = '0/25.0/L1/GDM52',hdffile = 'SW.avni.data.h5',iflag=0,
     if outfile is None: filename = fields[3]+'_'+fields[0]+'_'+fields[1]+'_'+fields[2]+'.AVNI'
     writeSWascii(SWdata,filename,delim=delim)
 
-def readSWhdf5(query = '0/25.0/L1/GDM52',hdffile = 'SW.avni.data.h5',iflag=0,datatype='raw',delim='-',model3d=None, refmodel=None,crust=None,weitype=None, sigmatype= None,stattype =None,eqtype=None):
+def readSWhdf5(query = '0/25.0/L1/REM3D',hdffile = 'Summary.SW.data.h5',iflag=0,datatype='summary',delim='-',model3d=None, refmodel=None,crust=None,weitype=None, sigmatype= None,stattype =None,eqtype=None):
     """
     Read a list of files to hdf5 container format.
 
