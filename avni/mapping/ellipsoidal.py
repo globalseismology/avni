@@ -9,6 +9,7 @@ import multiprocessing
 from joblib import Parallel, delayed
 import numpy as np
 import typing as tp
+from math import cos, sin, tan, atan, atan2, degrees, radians
 import pdb
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
@@ -30,13 +31,13 @@ def get_distaz(eplat: tp.Union[float,list,tuple,np.ndarray],
     Parameters
     ----------
     eplat : tp.Union[float,list,tuple,np.ndarray]
-        Latitudes of source location(s)
+        Latitudes of source location(s) in Geographic Coordinates
     eplon : tp.Union[float,list,tuple,np.ndarray]
-        Longitudes of source location(s)
+        Longitudes of source location(s) in Geographic Coordinates
     stlat : tp.Union[float,list,tuple,np.ndarray]
-        Latitudes of station location(s)
+        Latitudes of station location(s) in Geographic Coordinates
     stlon : tp.Union[float,list,tuple,np.ndarray]
-        Longitudes of station location(s)
+        Longitudes of station location(s) in Geographic Coordinates
     num_cores : int, optional
         Number of cores to use in the calculation, by default 1
 
@@ -45,6 +46,24 @@ def get_distaz(eplat: tp.Union[float,list,tuple,np.ndarray],
     delta,azep,azst
         A tuple with elements as distance in degrees, azimuth from source(s), and
         backazimuth from station(s).
+
+    Notes
+    -----
+    This function first converts the provided station and source locations to
+    geocentric coordinates. In practice, we projects all points from an ellipsoid
+    of flatness (f) to a sphere of equatorial radius (a_e) though the geocentric
+    conversion factor (W or geoco below). This is also called the parametric or reduced
+    latitude conversion, introduced by Legendre and Bessel who solved problems
+    for geodesics on the ellipsoid by transforming them to an equivalent problem for
+    spherical geodesics by using this smaller geocentric latitude.
+
+    The spherical law of cosines formula is then used to calculate distances on this
+    spherical geodesic of radius a_e. This procedure stretches the angular distances
+    between adjacent geographic latitudes nearer to the poles, which imitates the
+    behavior in an ellipsoid where adjacent latitudes become finely spaced.
+    The equatorial radius is used instead of mean radius (R) for conversion of distances
+    to km since this conversion is strictly valid for a sphere of radius a_e
+    and in order to obtain accurate distances near the equator.
 
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)
@@ -89,7 +108,7 @@ def geographic_to_geocentric(latin: float):
     xlat=latin
     fac = constants.geoco.magnitude
     theta = radians(90.0-xlat)
-    theta = pi/2.-atan2(fac*cos(theta),sin(theta))
+    theta = np.pi/2.-atan2(fac*cos(theta),sin(theta))
     latout=90.0-degrees(theta)
 
     return latout
@@ -100,7 +119,7 @@ def geocentric_to_geographic(latin: float):
     fac = constants.geoco.magnitude
     if xlat != 0.:
         theta = radians(90.0-xlat)
-        theta = atan(fac/tan(pi/2.-theta))
+        theta = atan(fac/tan(np.pi/2.-theta))
         latout=90.0-degrees(theta)
     else:
         latout=xlat
@@ -119,7 +138,7 @@ def inpolygon(latitude: tp.Union[float,list,tuple,np.ndarray],
     Parameters
     ----------
     latitude,longitude : tp.Union[float,list,tuple,np.ndarray]
-        Set of queried locations
+        Set of queried locations in Geographic Coordinates
     polygon_latitude,polygon_longitude : tp.Union[list,tuple,np.ndarray]
         Closed points that define the polygon.
         First and last points need to be the same.

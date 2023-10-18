@@ -1062,6 +1062,8 @@ def ascii2xarray(asciioutput,outfile = None, model_dir: str = '.',
         if os.path.isfile(parser['metadata']['refmodel']):
             try: # try reading the 1D file in card format
                 ref1d = Reference1D(parser['metadata']['refmodel'])
+                # get derived parameters
+                ref1d.get_mineralogical()
                 ifread1D = True
             except:
                 ifread1D = False
@@ -1169,7 +1171,10 @@ def ascii2xarray(asciioutput,outfile = None, model_dir: str = '.',
 
             # calculate reference value if 1D model is read and absolute_unit is specified
             if ifread1D and 'absolute_unit' in av_attrs.keys():
+                # get custom parameters that share a name with existing variables
+                # e.g. vs_even6 for even degree variations up to degree 6
                 ref1d.get_custom_parameter(variable)
+
                 target_unit=av_attrs['absolute_unit']
                 refvalue = ref1d.evaluate_at_depth(av_depth,parameter=variable).to(target_unit).magnitude
                 av_attrs['refvalue'] = refvalue

@@ -503,6 +503,10 @@ def backgroundmap(ax,
     # Get the default path
     if dbs_path is None: dbs_path = tools.get_filedir()
 
+    # Get the correct path
+    if dbs_path is None:
+        dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
+
     # set up map
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
@@ -573,6 +577,10 @@ def insetgcpathmap(ax,
 
     # Get the default path
     if dbs_path is None: dbs_path = tools.get_filedir()
+
+    # Get the correct path
+    if dbs_path is None:
+        dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
 
     # Calculate intermediate points
     lat2,lon2=mapping.getDestination(lat1,lon1,azimuth,gcdelta*constants.deg2m.magnitude)
