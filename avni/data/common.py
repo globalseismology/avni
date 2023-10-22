@@ -14,6 +14,7 @@ import requests
 import platform
 from datetime import datetime
 import calendar
+import warnings
 
 ####################### IMPORT AVNI LIBRARIES  #######################################
 
@@ -85,7 +86,7 @@ def update_file(file,folder = None, baseurl = None, subdirectory = None):
     download=False
     success = False
     if h.status_code == 404:
-        print("Warning: File not found with status code ("+str(h.status_code)+") while querying "+file)
+        warnings.warn("Warning: File not found with status code ("+str(h.status_code)+") while querying "+url)
     elif h.status_code == 200:
         header = h.headers
 
@@ -105,7 +106,7 @@ def update_file(file,folder = None, baseurl = None, subdirectory = None):
         else:
             download = True
     else:
-        print("Warning: Unknown status code ("+str(h.status_code)+") while querying "+file)
+        warnings.warn("Warning: Unknown status code ("+str(h.status_code)+") while querying "+file)
 
     # download if needed
     if download:

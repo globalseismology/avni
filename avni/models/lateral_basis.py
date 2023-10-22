@@ -8,7 +8,6 @@ from __future__ import absolute_import, division, print_function
 
 import os
 import numpy as np #for numerical analysis
-import pdb    #for the debugger pdb.set_trace()
 
 ####################### IMPORT AVNI LIBRARIES  #######################################
 from .. import tools

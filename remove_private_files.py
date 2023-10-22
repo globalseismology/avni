@@ -4,7 +4,6 @@
 import argparse #parsing arguments
 import os
 import numpy as np
-import pdb
 import glob
 
 #########################################################

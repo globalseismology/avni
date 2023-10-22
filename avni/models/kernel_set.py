@@ -14,7 +14,6 @@ from scipy import sparse
 import warnings
 from configobj import ConfigObj
 import os
-import pdb
 
 ####################### IMPORT AVNI LIBRARIES  #######################################
 from .lateral_basis import Lateral_basis

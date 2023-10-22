@@ -10,7 +10,6 @@ from joblib import Parallel, delayed
 import numpy as np
 import typing as tp
 from math import cos, sin, tan, atan, atan2, degrees, radians
-import pdb
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
 
@@ -25,8 +24,25 @@ def get_distaz(eplat: tp.Union[float,list,tuple,np.ndarray],
                eplon: tp.Union[float,list,tuple,np.ndarray],
                stlat: tp.Union[float,list,tuple,np.ndarray],
                stlon: tp.Union[float,list,tuple,np.ndarray],
-               num_cores: int = 1):
-    """Get the distance and azimuths from positions in geographic coordinates
+               num_cores: int = 1) -> (tp.Union[np.ndarray,float],
+               tp.Union[np.ndarray,float],tp.Union[np.ndarray,float]):
+    """Get the distance and azimuths between pairs of positions in geographic coordinates
+
+    This function first converts the queried station and source locations to
+    geocentric coordinates. In practice, we projects all points from an ellipsoid
+    of flatness (f) to a sphere of equatorial radius (a_e) though the geocentric
+    conversion factor (W or geoco below). This is also called the parametric or reduced
+    latitude conversion, introduced by Legendre and Bessel who solved problems
+    for geodesics on the ellipsoid by transforming them to an equivalent problem for
+    spherical geodesics by using this smaller geocentric latitude.
+
+    The spherical law of cosines formula is then used to calculate distances on this
+    spherical geodesic of radius a_e. This procedure stretches the angular distances
+    between adjacent geographic latitudes nearer to the poles and equator, which imitates the
+    behavior in an ellipsoid where adjacent latitudes become finely spaced.
+    The equatorial radius is used instead of mean radius (R) for conversion of distances
+    to km since this conversion is strictly valid for a sphere of radius a_e
+    and in order to obtain accurate distances near the equator.
 
     Parameters
     ----------
@@ -46,24 +62,6 @@ def get_distaz(eplat: tp.Union[float,list,tuple,np.ndarray],
     delta,azep,azst
         A tuple with elements as distance in degrees, azimuth from source(s), and
         backazimuth from station(s).
-
-    Notes
-    -----
-    This function first converts the provided station and source locations to
-    geocentric coordinates. In practice, we projects all points from an ellipsoid
-    of flatness (f) to a sphere of equatorial radius (a_e) though the geocentric
-    conversion factor (W or geoco below). This is also called the parametric or reduced
-    latitude conversion, introduced by Legendre and Bessel who solved problems
-    for geodesics on the ellipsoid by transforming them to an equivalent problem for
-    spherical geodesics by using this smaller geocentric latitude.
-
-    The spherical law of cosines formula is then used to calculate distances on this
-    spherical geodesic of radius a_e. This procedure stretches the angular distances
-    between adjacent geographic latitudes nearer to the poles, which imitates the
-    behavior in an ellipsoid where adjacent latitudes become finely spaced.
-    The equatorial radius is used instead of mean radius (R) for conversion of distances
-    to km since this conversion is strictly valid for a sphere of radius a_e
-    and in order to obtain accurate distances near the equator.
 
     :Authors:
         Raj Moulik (moulik@caa.columbia.edu)
@@ -103,8 +101,24 @@ def delazgc_helper(args):
     """A helper function to parallelize ddelazgc"""
     return ddelazgc(*args)
 
-def geographic_to_geocentric(latin: float):
-    """Convert a geographic coordinate to geocentric coordinate"""
+def geographic_to_geocentric(latin: float) -> float:
+    """Convert a geographic latitude to geocentric latitude
+
+    Parameters
+    ----------
+    latin : float
+        Input latitude in geographic coordinate
+
+    Returns
+    -------
+    float
+        Output geocentric latitude
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     xlat=latin
     fac = constants.geoco.magnitude
     theta = radians(90.0-xlat)
@@ -113,8 +127,24 @@ def geographic_to_geocentric(latin: float):
 
     return latout
 
-def geocentric_to_geographic(latin: float):
-    """Convert a geocentric coordinate to geographic coordinate"""
+def geocentric_to_geographic(latin: float) -> float:
+    """Convert a geocentric coordinate to geographic coordinate
+
+    Parameters
+    ----------
+    latin : float
+        Input latitude in geocentric coordinate
+
+    Returns
+    -------
+    float
+        Output geographic latitude
+
+    :Authors:
+        Raj Moulik (moulik@caa.columbia.edu)
+    :Last Modified:
+        2023.02.16 5.00
+    """
     xlat=latin
     fac = constants.geoco.magnitude
     if xlat != 0.:
@@ -133,7 +163,7 @@ def inpolygon(latitude: tp.Union[float,list,tuple,np.ndarray],
               polygon_longitude: tp.Union[list,tuple,np.ndarray],
               num_cores: int = 1, orientation: str = 'anti-clockwise',
               threshold: float = 1E-6) -> tp.Union[np.ndarray,bool]:
-    """Finds whether a (set of) point(s) is within a closed polygon
+    """Finds whether a (set of) point(s) is(are) within a closed polygon
 
     Parameters
     ----------

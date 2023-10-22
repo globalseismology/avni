@@ -39,7 +39,7 @@ def main():
         ierror = stage(get_fullpath(arg.file),overwrite=True)
     except:
         # update the file from the server
-        update_file(arg.file,subdirectory='MODELS')
+        update_file(arg.file,subdirectory='MODELS/S362ANI+M')
 
     model3d = ntpath.basename(arg.file)
     prefix = model3d.split('avni.nc4')[0]

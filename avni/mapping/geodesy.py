@@ -13,7 +13,6 @@ import numpy as np
 from math import atan
 from configobj import ConfigObj
 import typing as tp
-import pdb
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
 

@@ -5,11 +5,12 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np #for numerical analysis
-import pdb
 
 ####################### IMPORT AVNI LIBRARIES  #######################################
+
 from .. import tools
 from .. import constants
+
 #######################################################################################
 
 # Vertical basis parameter class that defines an unique combination of functions, their radial parameterization

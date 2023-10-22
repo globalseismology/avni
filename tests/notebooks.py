@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 import nbformat
 import avni
-import pdb
+
 #########################################################
 
 def _notebook_run(path):

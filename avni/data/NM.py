@@ -17,7 +17,6 @@ from avni.models import Reference1D
 from avni import constants,tools
 import pint
 import warnings
-#import pdb
 
 if sys.version_info[0] >= 3: unicode = str
 

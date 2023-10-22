@@ -20,7 +20,7 @@ import decimal
 from numba import jit
 import typing as tp
 import pandas as pd
-import pdb
+import warnings
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
 
@@ -59,7 +59,7 @@ def stage(file: str, overwrite: bool = False):
         if overwrite and os.path.islink(outlink):
             os.unlink(outlink)
             os.symlink(stagedfile, outlink)
-            print('WARNING: overwriting an existing staged link named '+ntpath.basename(file))
+            warnings.warn('WARNING: overwriting an existing staged link named '+ntpath.basename(file))
         else:
             raise IOError('A link to an actual file '+ntpath.basename(file)+' (not symlink) exists within AVNI. Delete the file '+outlink+' first before proceeding.')
     return

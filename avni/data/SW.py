@@ -15,7 +15,6 @@ import h5py
 import progressbar
 import time
 import warnings
-import pdb
 from .. import constants
 
 if sys.version_info[0] >= 3: unicode = str

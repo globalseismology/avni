@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 """This module contains an example of plotting a map using avni codes"""
 
+import os
 import argparse #parsing arguments
 import matplotlib.pyplot as plt
 import ntpath
 import xarray as xr
 import numpy as np
-import pdb
 
 ########################### IMPORT AVNI MODULES   #####################################
+
 from avni.tools import stage,get_fullpath,get_filedir
 from avni.data import update_file
 from avni.models import readepixfile
 from avni.plots import globalmap
+
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
@@ -44,13 +46,18 @@ def main():
 
     try:
         # stage the file for plotting
+        if not os.path.isfile(get_fullpath(arg.file)):
+            raise IOError('File does not exist locally :'+arg.file)
         ierror = stage(get_fullpath(arg.file),overwrite=True)
     except:
         # update the file from the server
-        update_file(arg.file,subdirectory='MODELS')
-    model = ntpath.basename(arg.file)
+        localfile, success = update_file(arg.file,subdirectory='MODELS/S362ANI+M')
+        if success: print('....Downloaded file from AVNI server as '+localfile)
 
     # Read the file
+    model = ntpath.basename(arg.file)
+    if not os.path.isfile(get_filedir()+'/'+model):
+        raise IOError('File does not exist locally: '+get_filedir()+'/'+model)
     try:
         latlonval,metadata,_ = readepixfile(get_filedir()+'/'+model)
         try:

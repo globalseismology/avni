@@ -22,6 +22,7 @@ from matplotlib.colors import LightSource
 #from joblib import Parallel, delayed
 # from scipy.io import netcdf_file as netcdf #reading netcdf files
 import scipy.interpolate as spint
+from scipy.sparse import issparse
 #import itertools
 #import time
 #import progressbar
@@ -1229,8 +1230,10 @@ def section(fig,
     bounds = np.linspace(vmin,vmax,colorcontour+1)
     norm = mcolors.BoundaryNorm(bounds,cpalette.N)
 
-    if isinstance(interp_values,xr.DataArray):
-        interp_values = interp_values.toarray()
+    # conversion to numpy arrays to work with pcolormesh
+    if isinstance(interp_values,xr.DataArray): interp_values = interp_values.toarray()
+    if issparse(interp_values): interp_values = interp_values.todense()
+
     im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
     # add a colorbar
     #levels = MaxNLocator(nbins=colorcontour).tick_values(interp_values.min(), interp_values.max())

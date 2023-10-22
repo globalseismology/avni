@@ -19,7 +19,6 @@ import matplotlib.colors as mcolors
 import colorsys
 import traceback
 import typing as tp
-import pdb
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
 

@@ -4,9 +4,11 @@ Usage import """
 
 import argparse #parsing arguments
 import ntpath
-import pdb
+
 ####################### IMPORT AVNI MODULES   #####################################
+
 from avni.models.model3d import Model3D
+
 #########################################################
 def main():
     parser = argparse.ArgumentParser(description='plot map-view or cross-section plots of 3D Earth models')
