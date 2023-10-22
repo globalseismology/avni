@@ -6,7 +6,6 @@ from __future__ import absolute_import, division, print_function
 from os.path import dirname, basename, isfile
 import glob
 import pkgutil
-import pdb
 
 from .version import version as __version__
 

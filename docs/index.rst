@@ -17,9 +17,12 @@
    Get help <overview/get_help>
    Development <overview/development>
 
-**Want to test-drive AVNI?** Check out our live examples on Hubzero: |Hubzero|
+..
+   **Want to test-drive AVNI?** Check out our live examples on Hubzero: |Hubzero|
 
-AVNI is a software ecosystem for analyzing and interpreting planetary models and data sets that were initially
+AVNI provides free web-based and backend code access to tools, techniques, models and
+data related to global Earth sciences. It is a software ecosystem for analyzing
+and interpreting planetary models and data sets that were initially
 designed for the three-dimensional reference Earth model project |REM3D|.
 The codes are primarily written in Python with interfaces to legacy routines in C and Fortran.
 Some installation files as well as applets and API access require registration on the |register| link.
@@ -53,7 +56,7 @@ Links
 +----------------------+----------------+-------------+
 | Website              | |home|         |  |Github|   |
 +----------------------+----------------+-------------+
-| Deployment           | |pypi_button|  |  |Hubzero|  |
+| Deployment           | |pypi_button|  |             |
 +----------------------+----------------+-------------+
 | License              | |GNU GPL|      |             |
 +----------------------+----------------+-------------+

@@ -8,11 +8,11 @@ import numpy as np
 import pyshtools
 import matplotlib.pyplot as plt
 import xarray as xr
-import pdb
 
 ####################### IMPORT REM3D MODULES   #####################################
 
 from avni.tools import wrswpsh,eval_ylm
+
 ####################### IMPORT REM3D MODULES   #####################################
 
 

@@ -14,7 +14,6 @@ import xarray as xr
 from scipy.spatial import cKDTree
 import pickle
 import warnings
-import pdb
 import math
 from scipy import sparse
 import typing as tp
@@ -144,10 +143,17 @@ def tree3D(treefile: str,
         2023.02.16 5.00
     """
     #Build the tree if none is provided
+    build_tree = False
     if os.path.isfile(treefile):
         print('... Reading KDtree file '+treefile)
-        tree = pickle.load(open(treefile,'rb'))
+        try:
+            tree = pickle.load(open(treefile,'rb'))
+        except:
+            build_tree = True
     else:
+        build_tree = True
+
+    if build_tree:
         print('... KDtree file '+treefile+' not found for interpolations. Building it')
         if np.any(latitude == None) or np.any(longitude == None) or np.any(radius_in_km == None):
             raise IOError('latitude, longitude and radius_in_km are required')
@@ -506,13 +512,13 @@ def areaxarray(data: tp.Union[xr.DataArray,xr.Dataset],
             ifind = int((90.0-0.5*dlat-xlat)/dlat)
             if ifind not in area.keys():
                 nlon = int(360./pix)
-                area[ifind] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
+                area[ifind] = 2.*np.pi*(sind(xlat+0.5*dlat)-sind(xlat-0.5*dlat))/float(nlon)
             areaarray[ifind,:]=area[ifind]
         else:
             for icol in range(len(pix_width[lonname])):
                 nlon = int(360./pix_width[irow,icol])
                 dlat = dlon = pix_width[irow,icol].item()
-                areaarray[irow,icol] = 2.*np.pi*(sind(xlat+0.5*dlat)-             sind(xlat-0.5*dlat))/float(nlon)
+                areaarray[irow,icol] = 2.*np.pi*(sind(xlat+0.5*dlat)-sind(xlat-0.5*dlat))/float(nlon)
 
     # drop the variables for weights
     drops = [var for var in data.coords.keys() if var not in [latname,lonname]]
@@ -547,9 +553,7 @@ def meanxarray(data: tp.Union[xr.DataArray,xr.Dataset],
     -------
     tp.Tuple[float,xr.DataArray,float]
         First element is the global average
-
         Second element is a DataArray containing area weights for each pixel
-
         Third element is the percentage of global area covered by this basis set
 
     :Authors:

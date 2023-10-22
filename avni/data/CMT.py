@@ -10,9 +10,7 @@ import os
 import sys
 import glob
 import numpy as np
-import six
 from datetime import datetime
-import pdb
 
 if sys.version_info[0] >= 3: unicode = str
 

@@ -16,7 +16,6 @@ import pandas as pd
 from itertools import islice
 import fortranformat as ff #reading/writing fortran formatted text
 import progressbar
-import pdb
 
 if sys.version_info[0] >= 3: unicode = str
 
@@ -142,7 +141,6 @@ def writeTTascii(TTdata,filename,iflagthreshold=None,delim='-'):
         try:
             arow = header_line.write(line)
         except:
-            pdb.set_trace()
             raise IOError('No line to print')
         f.write(unicode(arow+'\n'))
     f.close()

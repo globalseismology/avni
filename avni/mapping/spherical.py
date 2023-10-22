@@ -11,7 +11,6 @@ if (sys.version_info[:2] < (3, 0)):
 import numpy as np #for numerical analysis
 from pygeodesy.sphericalNvector import LatLon
 import typing as tp
-import pdb
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
 

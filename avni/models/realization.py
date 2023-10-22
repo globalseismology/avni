@@ -10,7 +10,6 @@ if (sys.version_info[:2] < (3, 0)):
     from builtins import float,int,list,tuple
 
 import numpy as np #for numerical analysis
-import pdb    #for the debugger pdb.set_trace()
 import ntpath #Using os.path.split or os.path.basename as others suggest won't work in all cases
 from six import string_types # to check if variable is string using isinstance
 import warnings

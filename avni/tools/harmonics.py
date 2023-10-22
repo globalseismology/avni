@@ -14,7 +14,6 @@ import glob
 import fortranformat as ff #reading/writing fortran formatted text
 import numpy as np
 import xarray as xr
-import pdb
 from math import radians
 from progressbar import progressbar
 import typing as tp

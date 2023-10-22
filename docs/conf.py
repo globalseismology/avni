@@ -328,17 +328,17 @@ html_context = {
     'carousel': [
         dict(title='Data',
              text='Reconciliation of measurements and their predictions.',  # noqa E501
-             url='auto_tutorials/stats-source-space/index.html',
+             #url='auto_tutorials/stats-source-space/index.html',
              img='example_data.png',
              alt='Data'),
         dict(title='Models',
              text='Exploring and evaluating complex model descriptions.',  # noqa E501
-             url='auto_tutorials/inverse_label_connectivity.html',  # noqa E501
+             #url='auto_tutorials/inverse_label_connectivity.html',  # noqa E501
              img='example_model.png',  # noqa E501
              alt='Models'),
         dict(title='Inferences',
              text='Making thermo-chemical and other inferences.',
-             url='auto_tutorials/evoked/20_visualize_evoked.html',
+             #url='auto_tutorials/evoked/20_visualize_evoked.html',
              img='example_inference.png',
              alt='Inferences'),
     ]

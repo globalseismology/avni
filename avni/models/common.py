@@ -24,7 +24,6 @@ import struct
 import traceback
 from progressbar import progressbar
 import typing as tp
-import pdb
 
 ####################### IMPORT AVNI LIBRARIES  #######################################
 from .. import tools
