@@ -19,7 +19,6 @@ import struct
 import h5py
 import traceback
 import pandas as pd
-from progressbar import progressbar
 import copy
 import warnings
 from six import string_types # to check if variable is string using isinstance
@@ -766,7 +765,7 @@ class Model3D(object):
 
                     # update locations based on grid
                     depth_tmp= None
-                    if grid and ipar is 0:
+                    if grid and ipar == 0:
                         if depth_in_km is not None:
                             depth_tmp = np.zeros(nrows)
                             for indx,depth in enumerate(depth_in_km):
@@ -900,7 +899,7 @@ class Model3D(object):
 
                 if recalculate:
                     # if only a single parameterization, simply unravel
-                    if len(np.unique(self[resolution]['ihorpar'][radselect])) is 1:
+                    if len(np.unique(self[resolution]['ihorpar'][radselect])) == 1:
                         modelarr=coefficients.iloc[radselect].to_numpy().ravel()
                     else:
                         for irow,ihorpar in enumerate(self[resolution[ir]]['ihorpar']):
@@ -1101,7 +1100,7 @@ class Model3D(object):
         for idep in range(1 if dep is None else len(dep)):
             # loop over all radial kernels that belong to this parameter and add up
             for ii in np.arange(len(findrad)):
-                if vercof[idep,ii] is not 0.:
+                if vercof[idep,ii] != 0.:
                     row_start = idep*len(lat) if grid else idep
                     row_end = (idep+1)*len(lat) if grid else idep+1
                     column_start = ii*horcof.shape[1]
@@ -1344,7 +1343,7 @@ class Model3D(object):
                             ifselected[x] = True
                             ivarfind2.append(x)
                         except (ValueError,EOFError):
-                            if len(ivarfind2) is not 0: ifdone = True
+                            if len(ivarfind2) != 0: ifdone = True
 
                 # loop over selected variables
                 for ivar in ivarfind2:

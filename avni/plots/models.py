@@ -24,7 +24,6 @@ import scipy.interpolate as spint
 from scipy.sparse import issparse
 #import itertools
 #import time
-#import progressbar
 import xarray as xr
 from six import string_types # to check if variable is string using isinstance
 # For polar sectionplot
@@ -1235,7 +1234,7 @@ def section(fig,
     if isinstance(interp_values,xr.DataArray): interp_values = interp_values.toarray()
     if issparse(interp_values): interp_values = interp_values.todense()
 
-    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name, norm=norm)
     # add a colorbar
     #levels = MaxNLocator(nbins=colorcontour).tick_values(interp_values.min(), interp_values.max())
     #dx = (theta[1]-theta[0])/(numevalx-1); dy = (radii[1]-radii[0])/(numevalz-1)

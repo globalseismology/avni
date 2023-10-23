@@ -27,5 +27,6 @@ Submodules
 
    avni.constants
    avni.f2py
+   avni.f2py
    avni.gui
    avni.version

@@ -491,7 +491,7 @@ def areaxarray(data: tp.Union[xr.DataArray,xr.Dataset],
         uniq_pix = np.unique(pix_width)
         # if the pix_width array has only one value and that
         # is consistent with the one derived from data
-        if len(uniq_pix) is 1 and uniq_pix[0] is pix: pix_width = None
+        if len(uniq_pix) == 1 and uniq_pix[0] == pix: pix_width = None
 
     # now fill the areas
     area = {}
@@ -499,7 +499,7 @@ def areaxarray(data: tp.Union[xr.DataArray,xr.Dataset],
 
     # find the index of the latitude
     lat_index = np.argwhere(np.array(data.dims)==latname)[0].item()
-    if lat_index is not 0: # transpose to (lat,lon) for caculations
+    if lat_index != 0: # transpose to (lat,lon) for caculations
         data = data.T
         if pix_width is not None: pix_width = pix_width.T
 
@@ -525,7 +525,7 @@ def areaxarray(data: tp.Union[xr.DataArray,xr.Dataset],
     area  = xr.DataArray(areaarray,name='area',coords=data.drop(drops).coords)
 
     # transpose the area array if needed
-    if lat_index is not 0: area = area.T
+    if lat_index != 0: area = area.T
     return area
 
 def meanxarray(data: tp.Union[xr.DataArray,xr.Dataset],

@@ -16,6 +16,21 @@ For the best experience, please considering using Anaconda as a virtual environm
 package manager for Python (see :ref:`install-python`). Follow the instructions below to
 install AVNI with Anaconda.
 
+Quick Start
+~~~~~~~~~~~
+
+Installing dependencies and resolving the best combination of packages can take some
+time. If you have `gfortran Fortran compiler <https://gcc.gnu.org/wiki/GFortran>`_
+and Anaconda Python distribution installed, and are willing to work with Python version 3.7,
+there is a pre-packaged environment. Simply enter the following into a terminal:
+
+.. code-block:: console
+
+    $ curl --remote-name https://raw.githubusercontent.com/globalseismology/avni/main/docs/conda/environment.yml
+    $ conda env create -f environment.yml
+    $ conda activate avni
+    $ pip install "avni[all]"
+
 Dependencies
 ~~~~~~~~~~~~
 
@@ -59,23 +74,46 @@ Installing dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^
 We suggest to install AVNI into its own ``conda`` environment.
 
-The dependency stack is moderate but may take some time (several minutes)
-to resolve on some systems via the default ``conda`` solver.
+
+The dependency stack is moderate but may take a long time (several tens of minutes)
+to resolve on some systems via the default ``conda`` solver. We therefore highly
+recommend using `mamba <https://mamba.readthedocs.io/>`__ instead, a ``conda``
+replacement that is **much** faster.
 
 Run in your terminal:
 
 .. code-block:: console
 
+    $ conda install --channel=conda-forge --name=base mamba
     $ curl --remote-name https://raw.githubusercontent.com/globalseismology/avni/main/requirements_base.txt
-    $ conda create --channel conda-forge --file requirements_base.txt --name avni python==3.7
+    $ mamba create --override-channels --channel=conda-forge --file requirements_base.txt --name avni
     $ conda activate avni
 
-This will create a new ``conda`` environment called ``avni`` (you can adjust
+This will create a new ``conda`` environment in Python version |min_python_version| called ``avni`` (you can adjust
 this by passing a different name via ``--name``) and install all dependencies
 into it.
 
-
 Run the following installation commands to install AVNI into this environment.
+
+Optional Dependencies
+~~~~~~~~~~~~~~~~~~~~~
+AVNI includes several optional dependencies for visualization and reading a
+variety of additional file formats, including:
+
+* `PyGeodesy <https://pypi.org/project/PyGeodesy/>`_ - Geodesy tools for
+  various ellipsoidal and spherical earth models. Used for benchmarking.
+* `Basemap <https://matplotlib.org/basemap/>`_ - Basemap toolkit is a library for
+  plotting 2D data on maps in Python. Install with the following options to add
+  topography at all resolutions::
+* `pytables <https://www.pytables.org>`_ - PyTables is a package for managing
+  hierarchical datasets that AVNI uses to write HDF files.
+* `pyshtools <https://pypi.org/project/pyshtools/>`_ - Spherical harmonic transforms
+  are used by AVNI for testing purposes.
+
+.. code-block:: console
+
+    $ curl --remote-name https://raw.githubusercontent.com/globalseismology/avni/main/requirements_extra_conda.txt
+    $ mamba install --yes --file requirements_extra_conda.txt
 
 From PyPI
 ~~~~~~~~~
@@ -88,29 +126,11 @@ AVNI can be installed from `PyPI <https://pypi.org/project/avni/>`_ using
 
     $ pip install avni
 
-Optional Dependencies
-~~~~~~~~~~~~~~~~~~~~~
-AVNI includes several optional dependencies for visualization and reading a
-variety of additional file formats, including:
+To install all the additional packages that extend AVNI (recommended), install using ``pip`` with::
 
-* `PyGeodesy <https://pypi.org/project/PyGeodesy/>`_ - Geodesy tools for
-   various ellipsoidal and spherical earth models. Used for benchmarking.
-* `Basemap <https://matplotlib.org/basemap/>`_ - Basemap toolkit is a library for
-  plotting 2D data on maps in Python. Install with the following options to add
-  topography at all resolutions::
+    $ pip install "avni[all]"
 
-.. code-block:: console
-
-    $ curl --remote-name https://raw.githubusercontent.com/globalseismology/avni/main/requirements_extra_conda.txt
-    $ conda install --yes --file requirements_extra_conda.txt
-    $ curl --remote-name https://raw.githubusercontent.com/globalseismology/avni/main/requirements_extra_pip.txt
-    $ pip install -r requirements_extra_pip.txt
-
-To install all the additional packages that extend AVNI, install using ``pip`` with::
-
-    $ pip install "avni[all]""
-
-You will still need to first install the conda dependencies first.
+You will still need to first install the ``conda`` dependencies for this to work.
 
 .. From Anaconda
 .. ~~~~~~~~~~~~~

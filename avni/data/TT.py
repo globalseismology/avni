@@ -15,7 +15,6 @@ import six
 import pandas as pd
 from itertools import islice
 import fortranformat as ff #reading/writing fortran formatted text
-import progressbar
 
 if sys.version_info[0] >= 3: unicode = str
 
@@ -131,7 +130,7 @@ def writeTTascii(TTdata,filename,iflagthreshold=None,delim='-'):
 
     f = open(filename,'w')
     f.writelines(printstr)
-    for ii in progressbar.progressbar(range(len(data))):
+    for ii in range(len(data)):
         line=[]
         for val in data.values[ii]:
             if isinstance(val,six.string_types):

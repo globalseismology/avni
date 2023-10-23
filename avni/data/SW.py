@@ -12,7 +12,6 @@ import numpy as np #for numerical analysis
 import fortranformat as ff #reading/writing fortran formatted text
 import pandas as pd
 import h5py
-import progressbar
 import time
 import warnings
 from .. import constants
@@ -301,7 +300,7 @@ def SWasciitohdf5(files,hdffile = 'Summary.SW.data.h5',datatype='summary',delim=
         uniquefolders = ['overtone', 'period']
         for ii in np.arange(len(uniquefolders)):
             key = uniquefolders[ii]
-            if len(np.unique(data[key])) is not 1: raise ValueError('Number  of unique values of '+key+' should be 1 in '+file)
+            if len(np.unique(data[key])) != 1: raise ValueError('Number  of unique values of '+key+' should be 1 in '+file)
             if ii == 0:
                 folder = str(np.unique(data[key])[0])
             else:
@@ -360,7 +359,6 @@ def SWasciitohdf5(files,hdffile = 'Summary.SW.data.h5',datatype='summary',delim=
 
     hf.close()
 
-
     ####################################################
     # Now store relevant pandas Dataframe
 
@@ -373,7 +371,7 @@ def SWasciitohdf5(files,hdffile = 'Summary.SW.data.h5',datatype='summary',delim=
         uniquefolders = ['overtone', 'period']
         for ii in np.arange(len(uniquefolders)):
             key = uniquefolders[ii]
-            if len(np.unique(data[key])) is not 1: raise ValueError('Number  of unique values of '+key+' should be 1 in '+file)
+            if len(np.unique(data[key])) != 1: raise ValueError('Number  of unique values of '+key+' should be 1 in '+file)
             if ii == 0:
                 folder = str(np.unique(data[key])[0])
             else:

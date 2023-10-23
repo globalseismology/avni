@@ -28,7 +28,7 @@ rsync -rv _build/html/* pm5113@dwar.princeton.edu:~/web/docs/avni/v$version
 # Copy soft links
 if ($#argv<1) then
 	echo "Warning: uploading to dev folder by default"
-	if ($version =~ *dev0) ln -sf v$version dev; rsync -lv dev pm5113@dwar.princeton.edu:~/web/docs/avni/; rm dev
+	if ($version =~ *dev*) ln -sf v$version dev; rsync -lv dev pm5113@dwar.princeton.edu:~/web/docs/avni/; rm dev
 else
 	set TYPE = $1
 	echo "Warning: uploading to "$TYPE" folder by default"

@@ -17,7 +17,6 @@ import struct
 import xarray as xr
 import traceback
 import pandas as pd
-from progressbar import progressbar
 
 ####################### IMPORT AVNI LIBRARIES  #######################################
 from .common import read3dmodelfile
@@ -482,7 +481,7 @@ class Realization(object):
                 dep_indx = np.searchsorted(alldepths,deptemp)
 
                 values = self.data.iloc[kerind]
-                for idep in progressbar(range(values.shape[0])):
+                for idep in range(values.shape[0]):
                     if not sortbylon:
                         arr=pd.DataFrame(np.vstack([lon_temp,lat_temp,siz_temp,values.iloc[idep]]).T,columns =['lon', 'lat', 'pxw','values'])
                         arr = arr.sort_values(by=['lon','lat'])
