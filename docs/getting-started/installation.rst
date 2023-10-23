@@ -64,18 +64,17 @@ Installing AVNI with all dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We suggest to install AVNI into its own ``conda`` environment.
 
-The dependency stack is large and may take a long time (several tens of minutes)
-to resolve on some systems via the default ``conda`` solver. We therefore highly
-recommend using `mamba <https://mamba.readthedocs.io/>`__ instead, a ``conda``
-replacement that is **much** faster.
+The dependency stack is moderate but may take some time (several minutes)
+to resolve on some systems via the default ``conda`` solver.
 
 Run in your terminal:
 
 .. code-block:: console
 
-    $ conda install --channel=conda-forge --name=base mamba
-    $ mamba create --override-channels --channel=conda-forge --name=avni avni
-    $ mamba activate avni
+    $ conda create --channel conda-forge --name avni python==3.6
+    $ conda activate avni
+    $ curl --remote-name https://raw.githubusercontent.com/globalseismology/avni/main/requirements_base.txt
+    $ pip install --user -r requirements_base.txt
 
 This will create a new ``conda`` environment called ``avni`` (you can adjust
 this by passing a different name via ``--name``) and install all dependencies

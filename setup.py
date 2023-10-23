@@ -176,7 +176,7 @@ metadata = dict(name = 'avni',
                 ext_modules = extf,
                 # Notes on why numpy and setuptools version are needed
                 # https://numpy.org/devdocs/reference/distutils_status_migration.html
-                data_files=[('avni', ['README.md']),
+                data_files=[('avni', ['README.md','requirements_base.txt']),
                 ('avni/config',['avni/config/attributes.ini',
                 'avni/config/planets.ini','avni/config/units.ini'])],
                 keywords = ['earth-science','earth-observation','earthquake',
