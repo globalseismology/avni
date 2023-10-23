@@ -70,16 +70,16 @@ If you use another Python setup and you encounter some difficulties please
 report them on the `AVNI Forum`_ or on the `GitHub issues page`_ to get
 assistance.
 
-It is also possible to interact with the 3D plots without installing Qt by using
-the notebook 3d backend:
+.. It is also possible to interact with the 3D plots without installing Qt by using
+.. the notebook 3d backend:
 
-.. code-block:: ipython
+.. .. code-block:: ipython
 
-   In [1]: import avni In [2]: avni.viz.set_3d_backend("notebook")
+..    In [1]: import avni In [2]: avni.viz.set_3d_backend("notebook")
 
 
-The notebook 3d backend requires PyVista to be installed along with other
-packages, please follow :ref:`standard-instructions`.
+.. The notebook 3d backend requires PyVista to be installed along with other
+.. packages, please follow :ref:`standard-instructions`.
 
 Using the development version
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

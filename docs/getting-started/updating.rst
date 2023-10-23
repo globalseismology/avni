@@ -4,13 +4,14 @@ Updating AVNI
 If you want to update AVNI to a newer version, there are a few different
 options, depending on how you originally installed it.
 
-.. hint::
-   To update via the :ref:`AVNI installers <installers>`, simply
-   download and run the latest installer for your platform. AVNI will be
-   installed in parallel to your existing installation, which you may uninstall
-   or delete if you don't need it anymore.
+..
+    .. hint::
+..    To update via the :ref:`AVNI installers <installers>`, simply
+..    download and run the latest installer for your platform. AVNI will be
+..    installed in parallel to your existing installation, which you may uninstall
+..    or delete if you don't need it anymore.
 
-If you're not using the AVNI installers, keep reading.
+.. If you're not using the AVNI installers, keep reading.
 
 .. warning::
 

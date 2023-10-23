@@ -158,6 +158,10 @@ class Model3D(object):
                 print(traceback.format_exc())
         if not success: raise IOError('unable to read '+file+' as ascii, hdf5 or netcdf4')
 
+    def plot(self):
+        from ..plots import plotmodel3d
+        plotmodel3d(self)
+
     def add_realization(self,coef=None,name=None,resolution=None):
         """
         Added a set of realizations to the object. resolution is the tesselation level at

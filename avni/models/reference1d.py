@@ -113,6 +113,10 @@ class Reference1D(object):
                 print(traceback.format_exc())
                 raise NotImplementedError('model format is not currently implemented in reference1D.read')
 
+    def plot(self):
+        from ..plots import plotreference1d
+        plotreference1d(self)
+
     def read_bases_coefficients(self,file):
         # Use tools.eval_polynomial and tools.eval_splrem
         coef_names=['bottom','top','spline','constant','linear','quadratic','cubic']

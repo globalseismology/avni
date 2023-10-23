@@ -7,73 +7,77 @@ This guide is here to help you start creating interactive 3D plots with AVNI
 with the help of our examples and tutorials.
 
 
-.. tab-set::
+..
+    tab-set::
 
-   .. tab-item:: JupyterLab
+..    .. tab-item:: JupyterLab
 
-      Here's a quick demo of AVNI running within `JupyterLab
-      <https://jupyter.org/>`_.
+..       Here's a quick demo of AVNI running within `JupyterLab
+..       <https://jupyter.org/>`_.
 
-      .. raw:: html
+..       .. raw:: html
 
-         <video width="100%" height="auto" controls autoplay muted> <source
-           src="https://tutorial.avni.org/_static/avni_jupyterlab_demo.mp4"
-           type="video/mp4" style="margin-left: -220px; margin-right: -10.5%">
-           Your browser does not support the video tag.  </video>
+..          <video width="100%" height="auto" controls autoplay muted> <source
+..            src="https://tutorial.avni.org/_static/avni_jupyterlab_demo.mp4"
+..            type="video/mp4" style="margin-left: -220px; margin-right: -10.5%">
+..            Your browser does not support the video tag.  </video>
 
-   .. tab-item:: IPython
+..    .. tab-item:: IPython
 
-      Here's a quick demo of AVNI running within a terminal using `IPython
-      <https://ipython.org/>`_.
+..       Here's a quick demo of AVNI running within a terminal using `IPython
+..       <https://ipython.org/>`_.
 
-      .. raw:: html
+..       .. raw:: html
 
-         <video width="100%" height="auto" controls autoplay muted> <source
-           src="https://tutorial.avni.org/_static/avni_ipython_demo.mp4"
-           type="video/mp4"> Your browser does not support the video tag.
-           </video>
+..          <video width="100%" height="auto" controls autoplay muted> <source
+..            src="https://tutorial.avni.org/_static/avni_ipython_demo.mp4"
+..            type="video/mp4"> Your browser does not support the video tag.
+..            </video>
 
 
 .. toctree::
    :hidden:
 
-   why
    cite
    installation
-   installers
-   manual_install
    advanced
-   check_installation
-   updating
+
+  .. why
+  .. installers
+  .. updating
+  .. check_installation
 
 Installation
 ============
-The only prerequisite for installing AVNI is Python itself. If you don’t
+The first prerequisite for installing AVNI is Python itself. If you don’t
 have Python yet and want the simplest way to get started, we recommend you use
-the `Anaconda Distribution <https://www.anaconda.com/>`_.
+the `Anaconda Distribution <https://www.anaconda.com/>`_. The second
+prerequisite is the `gfortran Fortran compiler <https://gcc.gnu.org/wiki/GFortran>`_.
+Once Fortran is installed, please set the environment variable `F90` in your
+command line shell to `gfortran`.
 
-.. grid:: 2
+.. .. grid:: 2
 
-    .. grid-item-card:: Working with conda?
-       :class-title: avni-card-title
+..     .. grid-item-card:: Working with conda?
+..        :class-title: avni-card-title
 
-       AVNI is available on `conda-forge
-       <https://anaconda.org/conda-forge/avni>`_.
+..        AVNI is available on `conda-forge
+..        <https://anaconda.org/conda-forge/avni>`_.
 
-       .. code-block:: bash
+..        .. code-block:: bash
 
-          conda install -c conda-forge avni
+..           conda install -c conda-forge avni
 
 
-    .. grid-item-card:: Prefer pip?
-       :columns: auto
-       :class-title: avni-card-title
+..     .. grid-item-card:: Prefer pip?
+..        :columns: auto
+..        :class-title: avni-card-title
 
-       AVNI can be installed via pip from `PyPI`_.
+..        AVNI can be installed via pip from `PyPI`_.
 
-       .. code-block:: bash
+..        .. code-block:: bash
 
-          pip install avni
+..           pip install avni
 
 
 .. when https://github.com/executablebooks/sphinx-design/issues/66 is fixed,
@@ -88,7 +92,7 @@ the `Anaconda Distribution <https://www.anaconda.com/>`_.
 
         .. rst-class:: font-weight-bold mb-0
 
-            Install via ``pip`` or ``conda``
+            Install via ``pip``
 
         .. rst-class:: card-subtitle text-muted mt-0
 
@@ -99,10 +103,10 @@ the `Anaconda Distribution <https://www.anaconda.com/>`_.
            :alt: Terminal Window
 
         **Already familiar with Python?**
-        Follow our advanced setup instructions for ``pip`` and ``conda``!
+        Follow our advanced setup instructions for ``pip``!
         +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        .. button-ref:: manual-install
+        .. button-ref:: install_ref
             :ref-type: ref
             :color: primary
             :shadow:
@@ -110,15 +114,15 @@ the `Anaconda Distribution <https://www.anaconda.com/>`_.
 
             Setup Instructions
 
-.. grid::
+.. .. grid::
 
-   .. grid-item-card:: In-depth instructions?
-      :link: install_ref
-      :link-type: ref
-      :class-title: avni-card-title
+..    .. grid-item-card:: In-depth instructions?
+..       :link: install_ref
+..       :link-type: ref
+..       :class-title: avni-card-title
 
-      Installing a specific version? Installing from source? Check the
-      :ref:`install_ref` page.
+..       Installing a specific version? Installing from source? Check the
+..       :ref:`install_ref` page.
 
 
 

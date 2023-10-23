@@ -4,6 +4,7 @@
 import argparse #parsing arguments
 import numpy as np
 ################################ IMPORT AVNI MODULES   #####################################
+
 import avni
 
 #########################################################
@@ -15,7 +16,7 @@ def main():
         help='Lower bound for depth')
     parser.add_argument('-i', '--interval', type=float, default=50.,
         help='Depth interval in km')
-    parser.add_argument('-k','--knots', nargs='+', help='Knot locations in km. Can give multiple values', required=True)
+    parser.add_argument('-k','--knots', nargs='+', help='Knot locations in km. Can give multiple values e.g. 24.4 75. 150. 225. 300. 410. 530. 650. 650. 820. 1320. 1820. 2320. 2550. 2791. 2891.', required=True)
 
     arg = parser.parse_args()
 
@@ -31,7 +32,4 @@ def main():
 
 if __name__== "__main__":
     main()
-
-    # Example:
-    # -k 24.4 75. 150. 225. 300. 410. 530. 650. 650. 820. 1320. 1820. 2320. 2550. 2791. 2891.
 

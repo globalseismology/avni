@@ -141,9 +141,9 @@ class Profiles(object):
 
         #save profile data
         all_profiles = data_group.create_group('profiles')
-  
+
         #self.data['profiles'] is a dictionary
-        for i in self.data['profiles']: 
+        for i in self.data['profiles']:
             pf = self.data['profiles'][i]
             h5_profile = all_profiles.create_group('{}'.format(i)) #create profile group for current index
 
@@ -170,7 +170,7 @@ class Profiles(object):
 
                 elif key ==  'discontinuities':
                     for item_ in pf.metadata[key].keys():
-                    
+
                         if item_ == 'delta':
                             print('DELTA')
                             disc_delta['depth'] = pf.metadata[key][item_]['depth'].data
@@ -192,7 +192,7 @@ class Profiles(object):
                             disc_contrast['vs'] = pf.metadata[key][item_]['vs'].data
                         else:
                             disc[item_] = pf.metadata[key][item_]
-                
+
                         continue
 
                 elif isinstance(item,type(None)):
@@ -228,7 +228,7 @@ class Profiles(object):
         f = h5py.File(hf,'r')
         self._name = f['metadata']['name'].value
         self.data['profiles'] = {}
-        
+
         #read metadata
         for item in f['metadata'].keys():
             self.metadata[item] = f['metadata'][item].value
@@ -285,7 +285,7 @@ class Profiles(object):
 
                         else:
                             r1d.metadata['discontinuities'][disc_key] = f['data']['profiles'][item]['metadata'][key_][disc_key]
-                
+
                 else:
                     r1d.metadata[key_] = f['data']['profiles'][item]['metadata'][key_].value
 
