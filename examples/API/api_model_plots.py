@@ -32,30 +32,30 @@ def main():
 
     # get the cross section data
     args={'lat':42.2,'lon':232.0,'azimuth':80.0,'gcdelta':85.}
-    max_depth = 2900. 
-    min_depth = 50. 
+    max_depth = 2900.
+    min_depth = 50.
     args['radius_min_km']=6371-max_depth
     args['radius_max_km']=6371-min_depth
     args['quickInterp']=1
     xs=ModelInstance.crossSection(args)
 
-    # now pass the cross section data to plot1section 
+    # now pass the cross section data to plot1section
     xsec_data = xs['vs']
-    vmin = -3 
-    vmax = 3 
+    vmin = -3
+    vmax = 3
     sec = plot1section(args['lat'],args['lon'],args['azimuth'],args['gcdelta'],None,'vs',vmin,vmax,xsec_data = xsec_data)
 
-    # get the fixed depth values 
-    fixed_d = ModelInstance.fixedDepth({'depth':250.})    
+    # get the fixed depth values
+    fixed_d = ModelInstance.fixedDepth({'depth':250.})
 
-    # create the required named array 
-    lons =fixed_d['lon']- 180. 
+    # create the required named array
+    lons =fixed_d['lon']- 180.
     long,latg=np.meshgrid(lons,fixed_d['lat'])
     data = np.vstack((latg.ravel(),long.ravel(),fixed_d['vs'].ravel())).transpose()
-    dt = {'names':['latitude', 'longitude', 'value'], 'formats':[np.float, np.float, np.float]}
+    dt = {'names':['latitude', 'longitude', 'value'], 'formats':[float, float, float]}
     valarray = np.zeros(len(data), dtype=dt)
     valarray['latitude'] = data[:,0]; valarray['longitude'] = data[:,1]; valarray['value'] = data[:,2]
-    vmin = -5 
+    vmin = -5
     vmax = 5
     plot1globalmap(valarray,vmin,vmax,colorpalette='avni')
 if __name__== "__main__":

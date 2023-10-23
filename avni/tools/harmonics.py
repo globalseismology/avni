@@ -15,7 +15,6 @@ import fortranformat as ff #reading/writing fortran formatted text
 import numpy as np
 import xarray as xr
 from math import radians
-from progressbar import progressbar
 import typing as tp
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
@@ -356,7 +355,7 @@ def convert_to_swp(data: tp.Union[np.ndarray,xr.DataArray],lmax: int) -> np.ndar
     shmatrix = np.zeros((nrows),dtype=dtype)
 
     index = 0
-    for l in progressbar(range(lmax+1)):
+    for l in range(lmax+1):
         for m in np.arange(l+1):
             shmatrix['l'][index] = l
             shmatrix['m'][index] = m

@@ -22,7 +22,6 @@ import warnings
 import pandas as pd
 import struct
 import traceback
-from progressbar import progressbar
 import typing as tp
 
 ####################### IMPORT AVNI LIBRARIES  #######################################
@@ -600,9 +599,9 @@ def epix2ascii(model_dir: str = '.', setup_file: str = 'setup.cfg',
     f_out.write(u'KERNEL SET: {}\n'.format(kernel_set))
     f_out.write(u'INTERPOLANT: {}\n'.format(interpolant))
     f_out.write(u'CITE: {}\n'.format(cite))
-    if crust is not 'None': f_out.write(u'CRUST: {}\n'.format(crust))
-    if forward_modeling is not None: f_out.write(u'FORWARD MODELING: {}\n'.format(forward_modeling))
-    if null_model is not None: f_out.write(u'NULL_MODEL: {}\n'.format(null_model))
+    if crust != 'None': f_out.write(u'CRUST: {}\n'.format(crust))
+    if forward_modeling != 'None': f_out.write(u'FORWARD MODELING: {}\n'.format(forward_modeling))
+    if null_model != 'None': f_out.write(u'NULL_MODEL: {}\n'.format(null_model))
 
     #find the number radial kernels
     epix_lengths = []; string = []
@@ -688,15 +687,15 @@ def epix2ascii(model_dir: str = '.', setup_file: str = 'setup.cfg',
 
             # defaults if field not available in the epix file
             try:
-                ref_dict[parameter]['ifremav'].append(np.float(metadata['IFREMAV']))
+                ref_dict[parameter]['ifremav'].append(float(metadata['IFREMAV']))
             except:
                 ref_dict[parameter]['ifremav'].append(0.)
             try:
-                ref_dict[parameter]['refvalue'].append(np.float(metadata['REFVALUE']))
+                ref_dict[parameter]['refvalue'].append(float(metadata['REFVALUE']))
             except:
                 ref_dict[parameter]['refvalue'].append(-999.0)
             try:
-                ref_dict[parameter]['average'].append(np.float(metadata['AVERAGE']))
+                ref_dict[parameter]['average'].append(float(metadata['AVERAGE']))
             except:
                 ref_dict[parameter]['average'].append(0.)
             try:
@@ -708,7 +707,7 @@ def epix2ascii(model_dir: str = '.', setup_file: str = 'setup.cfg',
                 for line in head:
                     if 'DEPTH_RANGE' in line: depth_range = line.split(':')[1].split('\n')[0]
                 f_out.write(u'DESC  {:3.0f}: {}, boxcar, {} km\n'.format(k,parameter,depth_range))
-                ref_dict[parameter]['depth_in_km'].append( np.float(metadata['DEPTH_IN_KM']))
+                ref_dict[parameter]['depth_in_km'].append(float(metadata['DEPTH_IN_KM']))
             elif mod_type == 'topography':
                 if checks:
                     if not float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']):
@@ -806,7 +805,7 @@ def epix2ascii(model_dir: str = '.', setup_file: str = 'setup.cfg',
             #write model coefficients
             print('writing coefficients for '+parameter+' # '+str(k)+' - '+str(k+len(epix_files)-1)+' out of '+str(np.sum(epix_lengths))+' radial kernels/layers.')
             line = ff.FortranRecordWriter('(6E12.4)')
-            for j in progressbar(range(len(epix_files))):
+            for j in range(len(epix_files)):
                 f = np.loadtxt(epix_files[j])
                 coefs = f[:,3]
 
@@ -968,7 +967,7 @@ def ascii2xarray(asciioutput,outfile = None, model_dir: str = '.',
 
     # Now get rparindex
     for variable in variables:
-        if len(rpar[variable]) is not 0: # if it is an empty list like in discontinuity
+        if len(rpar[variable]) != 0: # if it is an empty list like in discontinuity
             if len(rpar[variable]) > 1:
                 if sorted(rpar[variable]) != rpar[variable]: raise AssertionError('depths not sorted',rpar[variable])
             if rpar[variable] not in rpar_list:
@@ -1313,7 +1312,7 @@ def readResCov(infile: str, onlymetadata: bool = False):
 
         if not onlymetadata:
             # Now start reading data
-            for jj in progressbar(range(ndtd)):
+            for jj in range(ndtd):
                 indexrad1[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
                 indexrad2[jj] = struct.unpack(ifswp+'i',f.read(4))[0]
                 indexhor1[jj] = struct.unpack(ifswp+'i',f.read(4))[0]

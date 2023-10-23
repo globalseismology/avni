@@ -11,7 +11,6 @@ from collections import Counter
 from scipy import sparse
 from timeit import default_timer as timer
 from numba import jit,int64
-from progressbar import progressbar
 import typing as tp
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
@@ -307,7 +306,7 @@ def eval_splcon(latitude: tp.Union[list,tuple,np.ndarray],
     ncoefhor = len(xlaspl)
     values = sparse.csr_matrix((len(latitude),ncoefhor)) # empty matrix
 
-    for iloc in progressbar(range(len(latitude))):
+    for iloc in range(len(latitude)):
         lat = latitude[iloc]
         lon = longitude[iloc]
         #--- make lon go from 0-360
@@ -427,7 +426,7 @@ def eval_ylm(latitude: tp.Union[list,tuple,np.ndarray],
         values = np.zeros_like(latitude)
 
     if not (len(latitude) == len(longitude)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
-    for iloc in progressbar(range(len(latitude))):
+    for iloc in range(len(latitude)):
         lat = latitude[iloc]
         lon = longitude[iloc]
         #--- make lon go from 0-360
@@ -514,7 +513,7 @@ def eval_pixel(latitude: tp.Union[list,tuple,np.ndarray],
         if len(findindex) != 1: raise ValueError('found '+str(len(findindex))+' pixels for the location ('+str(lat)+','+str(lon)+')')
 
         rowind = iloc*np.ones_like(findindex)
-        values = np.ones_like(findindex,dtype=np.float)
+        values = np.ones_like(findindex,dtype=float)
         colind = np.array(findindex)
         # update values
         horcof = horcof + sparse.csr_matrix((values, (rowind, colind)), shape=(len(latitude),len(xsipix)))

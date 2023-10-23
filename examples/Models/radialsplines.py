@@ -23,7 +23,7 @@ def main():
     # Get spline knots
     knots = [float(knot) for knot in arg.knots]
     #Get depths
-    start = np.float(arg.lower_bound);end=float(arg.upper_bound);inter=float(arg.interval)
+    start = float(arg.lower_bound);end=float(arg.upper_bound);inter=float(arg.interval)
     depths = np.arange(start,end,inter)
     vercof, _ = avni.tools.eval_vbspl(depths,knots)
     writearr = np.concatenate((depths.reshape((-1, 1)),vercof),1)

@@ -26,7 +26,7 @@ from ..mapping import spher2cart
 from .. import constants
 from .common import precision_and_scale,convert2nparray
 from ..tools import get_filedir
-from ..data import update_file
+from ..data import common
 
 ##########################################################################
 
@@ -67,7 +67,7 @@ def xarray_to_epix(data: tp.Union[xr.DataArray,xr.Dataset],
     lats = np.tile(data[latname].data,nlon)
     pixsize = pix*np.ones_like(lons)
     epixarr = np.vstack((lats,lons,pixsize,values)).T
-    dt = {'names':[latname, lonname,'pixel_size','value'], 'formats':[np.float, np.float,np.float,np.float]}
+    dt = {'names':[latname, lonname,'pixel_size','value'], 'formats':[float, float,float,float]}
     epixarr = np.zeros(len(lats),dtype=dt)
     epixarr[latname] = lats
     epixarr[lonname] = lons
@@ -375,7 +375,7 @@ def readtopography(model: tp.Union[None,str] = None,
     ncfile = os.path.join(dbs_path,model)
     if not os.path.isfile(ncfile):
         success = False
-        _,success = update_file(model,subdirectory=constants.topofolder)
+        _,success = common.update_file(model,subdirectory=constants.topofolder)
         if not success: ValueError("Could not find file "+model)
 
     f = xr.open_dataset(ncfile)
@@ -491,7 +491,7 @@ def areaxarray(data: tp.Union[xr.DataArray,xr.Dataset],
         uniq_pix = np.unique(pix_width)
         # if the pix_width array has only one value and that
         # is consistent with the one derived from data
-        if len(uniq_pix) is 1 and uniq_pix[0] is pix: pix_width = None
+        if len(uniq_pix) == 1 and uniq_pix[0] == pix: pix_width = None
 
     # now fill the areas
     area = {}
@@ -499,7 +499,7 @@ def areaxarray(data: tp.Union[xr.DataArray,xr.Dataset],
 
     # find the index of the latitude
     lat_index = np.argwhere(np.array(data.dims)==latname)[0].item()
-    if lat_index is not 0: # transpose to (lat,lon) for caculations
+    if lat_index != 0: # transpose to (lat,lon) for caculations
         data = data.T
         if pix_width is not None: pix_width = pix_width.T
 
@@ -525,7 +525,7 @@ def areaxarray(data: tp.Union[xr.DataArray,xr.Dataset],
     area  = xr.DataArray(areaarray,name='area',coords=data.drop(drops).coords)
 
     # transpose the area array if needed
-    if lat_index is not 0: area = area.T
+    if lat_index != 0: area = area.T
     return area
 
 def meanxarray(data: tp.Union[xr.DataArray,xr.Dataset],

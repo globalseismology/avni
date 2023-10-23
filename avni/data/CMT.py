@@ -79,13 +79,13 @@ def get_gcmt_info(cmtname, prefixes=['J','C']):
         elat,elon,edep,Mw,ierror = getcmtbyname(cmtname)
 
     icount=0
-    while ierror is not 0 and icount < len(prefixes):
+    while ierror != 0 and icount < len(prefixes):
         prefix = prefixes[icount]
         ievt,iyear,month,iday,ihour,minute,fsec, \
             elat,elon,edep,Mw,ierror = getcmtbyname(prefix+cmtname)
         icount += 1
 
-    if ierror is not 0:
+    if ierror != 0:
         raise IOError('No earthquakes found in Global CMT catalog in getcmtdate for '+cmtname)
     else:
         time = datetime(iyear,month,iday,ihour,minute, \

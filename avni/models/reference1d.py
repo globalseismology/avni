@@ -25,7 +25,6 @@ import uuid
 import contextlib
 import warnings
 import os
-from progressbar import progressbar
 
 if sys.version_info[0] >= 3: unicode = str
 
@@ -290,7 +289,8 @@ class Reference1D(object):
 
         base_units: convert from native units to base units in constants
         """
-        pint.PintType.ureg = constants.ureg
+        import pint_pandas
+        pint_pandas.PintType.ureg = constants.ureg
 
         # make an array of radii based on the first paramaterization that is read
         param_indx = 0
@@ -311,7 +311,7 @@ class Reference1D(object):
 
         # loop over names and call evaluate_at_depth
         # Create data array for converted to Panda array with units
-        PA_ = pint.PintArray; temp_dict = {}; temp_dict['radius'] = PA_(radii, dtype="pint[km]")
+        PA_ = pint_pandas.PintArray; temp_dict = {}; temp_dict['radius'] = PA_(radii, dtype="pint[km]")
         #self.evaluate_at_depth(24.4,'vsv')
         for paraindx,param in enumerate(names):
             val_temp = self.evaluate_at_depth(self.metadata['norm_radius']-radii,param)
@@ -338,14 +338,16 @@ class Reference1D(object):
         self._radius_max = max(self.data['radius'])
 
     def write_mineos_cards(self,file):
-        if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
+        import pint_pandas
+
+        if self.data is None or self._nlayers == 0: raise ValueError('reference1D data arrays are not allocated')
         names=['radius','rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
         units =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
 
         # check if the units are the same or conversion is needed and where
         convert_columns = []
         for indx,name in enumerate(names):
-            if pint.PintType.ureg.parse_expression(units[indx]).units != self.data[name].pint.units: convert_columns.append(name)
+            if pint_pandas.PintType.ureg.parse_expression(units[indx]).units != self.data[name].pint.units: convert_columns.append(name)
 
         disc = self.metadata['discontinuities']
         # first write the header
@@ -375,20 +377,21 @@ class Reference1D(object):
         # Operations between PintArrays of different unit registry will not work.
         # We can change the unit registry that will be used in creating new
         # PintArrays to prevent this issue.
-        pint.PintType.ureg = constants.ureg
+        import pint_pandas
+        pint_pandas.PintType.ureg = constants.ureg
 
         names=['radius','rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
         units =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
         fields=list(zip(names,units))
-        #formats=[np.float for ii in range(len(fields))]
+        #formats=[float for ii in range(len(fields))]
         # modelarr = np.genfromtxt(file,dtype=None,comments='#',skip_header=3,names=fields)
         modelarr = pd.read_csv(file,skiprows=header,comment='#',sep='\s+',names=fields)
         # read the punit units from last header
         modelarr_ = modelarr.pint.quantify(level=-1)
 
         # Create data array
-        PA_ = pint.PintArray
-        modelarr_['depth'] = PA_((constants.R.magnitude - modelarr_['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
+        PA_ = pint_pandas.PintArray
+        modelarr_['depth'] = constants.R - modelarr_['radius'].pint.to(constants.R.units)
         self.data = modelarr_
         self._radius_max = max(self.data['radius'])
         self.metadata['parameters'] = names[1:]
@@ -426,7 +429,7 @@ class Reference1D(object):
 
         Zs, Zp: S and P impedances
         '''
-        if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers == 0: raise ValueError('reference1D data arrays are not allocated')
 
         # Add data fields
         self.data['a'] = self.data['rho']*self.data['vph']**2
@@ -469,11 +472,12 @@ class Reference1D(object):
 
         poisson: Poisson's ratio
         '''
-        if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers == 0: raise ValueError('reference1D data arrays are not allocated')
         # Operations between PintArrays of different unit registry will not work.
         # We can change the unit registry that will be used in creating new
         # PintArrays to prevent this issue.
-        pint.PintType.ureg = constants.ureg
+        import pint_pandas
+        pint_pandas.PintType.ureg = constants.ureg
 
         if constants.planetpreferred == 'Earth':
             file = tools.get_filedir()+'/'+self._name+'.'+str(uuid.uuid4())
@@ -484,7 +488,7 @@ class Reference1D(object):
             grav,vaisala,bullen,pressure = getbullen(file,layers,constants.omega.to_base_units().magnitude,constants.G.to_base_units().magnitude)
 
             # Add data fields
-            PA_ = pint.PintArray
+            PA_ = pint_pandas.PintArray
             self.data['gravity'] = PA_(grav, dtype="pint[m/s^2]")
             self.data['Brunt-Vaisala'] = PA_(vaisala, dtype="pint[Hz]")
             self.data['Bullen'] = PA_(bullen, dtype="pint[dimensionless]")
@@ -534,7 +538,7 @@ class Reference1D(object):
 
         contrasts: containing contrast in parameters (in %)
         '''
-        if self.data is None or self._nlayers is 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers == 0: raise ValueError('reference1D data arrays are not allocated')
 
         disc_depths = [item.magnitude for item, count in Counter(self.data['depth']).items() if count > 1]
         disc = {}
@@ -551,7 +555,8 @@ class Reference1D(object):
         fields=list(zip(names,units))
 
         for icount,depth in enumerate(disc_depths):
-            sel = self.data[self.data['depth'].data==depth]
+            depth_ = constants.ureg.Quantity(depth,self.data['depth'].pint.units)
+            sel = self.data[self.data['depth']==depth_]
             for field in sel:
                 if field == 'radius' or field == 'depth':
                     disc['delta'][field][icount] = sel[field].iat[0]
@@ -604,8 +609,9 @@ class Reference1D(object):
         '''
         Get the arrays of custom parameters defined in various Earth models
         '''
+        import pint_pandas
         if self.data is not None and self._nlayers > 0:
-            PA_ = pint.PintArray
+            PA_ = pint_pandas.PintArray
             # convert to array for ease of looping
             if isinstance(parameters,string_types): parameters = np.array([parameters])
             for ii in np.arange(parameters.size):
@@ -645,7 +651,7 @@ class Reference1D(object):
         # need to update so it can deal with vectors
         if boundary not in ['+','-']: raise ValueError('boundary needs to be - or +')
         depth_in_km = tools.convert2nparray(depth_in_km)
-        values = np.zeros_like(depth_in_km,dtype=np.float)
+        values = np.zeros_like(depth_in_km,dtype=float)
         parameters = tools.convert2nparray(self.metadata['parameters'])
         findindx = np.where(parameters == parameter)[0]
         if len(findindx) == 0 : raise KeyError('parameter '+parameter+' cannot be evaluated from reference1d instance')
@@ -810,7 +816,7 @@ class Reference1D(object):
             line = ff.FortranRecordWriter('(f8.0,3f9.2,2f9.1,2f9.2,f9.5)')
 
             write = self.data[parameters]
-            for i in progressbar(range(self._nlayers)):
+            for i in range(self._nlayers):
                 eachline = []
                 for indx,param in enumerate(parameters):
                     eachline.append(write.iloc[i][param].to(units[indx]).magnitude)
@@ -837,7 +843,7 @@ class Reference1D(object):
             f.write('{} - P\n'.format(model_name))
             f.write('{} - S\n'.format(model_name))
 
-            for i in progressbar(range(self._nlayers)):
+            for i in range(self._nlayers):
                 d_idx = self._nlayers-i-1
                 f.write('{:2.4f}   {:2.4f}   {:2.4f}    {:2.4f}\n'.format(
                    (self._radius_max - self.data['radius'][d_idx]).to('km').magnitude,
@@ -882,7 +888,7 @@ class Reference1D(object):
             values =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
             units = dict(zip(keys, values))
 
-            for i in progressbar(range(self._nlayers)):
+            for i in range(self._nlayers):
 
                 f.write('{}    {}    {}    {}    {}    {}    {}    {}    {}\n'.format(
                 self.data['radius'][::-1][i].to(units['radius']).magnitude,

@@ -3,26 +3,27 @@
 #####################################################
 
 ###### Requirements without Version Specifiers ######
-fortranformat
 numba
-progressbar2
-requests
 future
-msgpack
-h5py
 matplotlib
-pygeodesy
-argparse
 xarray
 configobj
 joblib
 pandas
 scipy
-numpy
-pint
+requests
+netCDF4
+pint-pandas
 
 ######## Requirements with Version Specifiers #######
 # Notes on why numpy and setuptools version are needed
 # https://numpy.org/devdocs/reference/distutils_status_migration.html
 numpy<=1.22
 setuptools<60.0
+fortranformat>=1.2
+pint>=0.18
+#https://github.com/urllib3/urllib3/issues/3020#issuecomment-1557516332
+urllib3>=1.26,<2.0
+requests>=2.28.1
+#https://github.com/h5py/h5py/issues/1880#issuecomment-823241926
+h5py<3.2

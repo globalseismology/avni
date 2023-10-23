@@ -13,7 +13,6 @@ import numpy as np #for numerical analysis
 #import matplotlib.cm as cmx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from mpl_toolkits.basemap import Basemap
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
 from matplotlib.colors import LightSource
 #from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
@@ -25,7 +24,6 @@ import scipy.interpolate as spint
 from scipy.sparse import issparse
 #import itertools
 #import time
-#import progressbar
 import xarray as xr
 from six import string_types # to check if variable is string using isinstance
 # For polar sectionplot
@@ -237,7 +235,7 @@ def globalmap(ax,
                a named numpy array containing latitudes (lat), longitudes (lon)
                and values (val). Can be initialized from three numpy arrays lat, lon and val
                $ data = np.vstack((lat,lon,val)).transpose()
-               $ dt = {'names':['latitude', 'longitude', 'value'], 'formats':[np.float, np.float, np.float]}
+               $ dt = {'names':['latitude', 'longitude', 'value'], 'formats':[float, float, float]}
                $ valarray = np.zeros(len(data), dtype=dt)
                $ valarray['latitude'] = data[:,0]; valarray['longitude'] = data[:,1]; valarray['value'] = data[:,2]
     vmin,vmax : tp.Union[float,int]
@@ -295,6 +293,7 @@ def globalmap(ax,
     meridians = np.arange(-180.,180.,grid[1])
 
     # set up map
+    from mpl_toolkits.basemap import Basemap
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
     else:
@@ -509,6 +508,7 @@ def backgroundmap(ax,
         dbs_path = os.path.join(tools.get_filedir(),constants.dbsfolder)
 
     # set up map
+    from mpl_toolkits.basemap import Basemap
     if kwargs:
         m = Basemap(ax=ax, **kwargs)
     else:
@@ -1234,7 +1234,7 @@ def section(fig,
     if isinstance(interp_values,xr.DataArray): interp_values = interp_values.toarray()
     if issparse(interp_values): interp_values = interp_values.todense()
 
-    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name, vmin=vmin, vmax=vmax, norm=norm)
+    im=aux_ax1.pcolormesh(grid_x,grid_y,interp_values,cmap=cpalette.name, norm=norm)
     # add a colorbar
     #levels = MaxNLocator(nbins=colorcontour).tick_values(interp_values.min(), interp_values.max())
     #dx = (theta[1]-theta[0])/(numevalx-1); dy = (radii[1]-radii[0])/(numevalz-1)
@@ -1716,7 +1716,7 @@ def plotmodel3d(model3d,
 
                     # Plot the model
                     test = np.vstack((lat,lon,modelarray)).transpose()
-                    dt = {'names':['lat', 'lon', 'val'], 'formats':[np.float, np.float, np.float]}
+                    dt = {'names':['lat', 'lon', 'val'], 'formats':[float, float, float]}
                     plotmodel = np.zeros(len(test), dtype=dt)
                     plotmodel['lat'] = test[:,0]; plotmodel['lon'] = test[:,1]; plotmodel['val'] = test[:,2]
                     ax=fig.add_subplot(subploty,subplotx,flag)
