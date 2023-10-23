@@ -380,7 +380,7 @@ class Reference1D(object):
         names=['radius','rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
         units =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
         fields=list(zip(names,units))
-        #formats=[np.float for ii in range(len(fields))]
+        #formats=[float for ii in range(len(fields))]
         # modelarr = np.genfromtxt(file,dtype=None,comments='#',skip_header=3,names=fields)
         modelarr = pd.read_csv(file,skiprows=header,comment='#',sep='\s+',names=fields)
         # read the punit units from last header
@@ -645,7 +645,7 @@ class Reference1D(object):
         # need to update so it can deal with vectors
         if boundary not in ['+','-']: raise ValueError('boundary needs to be - or +')
         depth_in_km = tools.convert2nparray(depth_in_km)
-        values = np.zeros_like(depth_in_km,dtype=np.float)
+        values = np.zeros_like(depth_in_km,dtype=float)
         parameters = tools.convert2nparray(self.metadata['parameters'])
         findindx = np.where(parameters == parameter)[0]
         if len(findindx) == 0 : raise KeyError('parameter '+parameter+' cannot be evaluated from reference1d instance')

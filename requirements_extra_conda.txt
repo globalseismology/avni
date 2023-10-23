@@ -1,0 +1,8 @@
+#####################################################
+##### CONDA Dependencies for extra installations #####
+#####################################################
+
+###### Requirements without Version Specifiers ######
+basemap
+basemap-data-hire
+pytables

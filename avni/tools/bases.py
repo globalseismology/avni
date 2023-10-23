@@ -514,7 +514,7 @@ def eval_pixel(latitude: tp.Union[list,tuple,np.ndarray],
         if len(findindex) != 1: raise ValueError('found '+str(len(findindex))+' pixels for the location ('+str(lat)+','+str(lon)+')')
 
         rowind = iloc*np.ones_like(findindex)
-        values = np.ones_like(findindex,dtype=np.float)
+        values = np.ones_like(findindex,dtype=float)
         colind = np.array(findindex)
         # update values
         horcof = horcof + sparse.csr_matrix((values, (rowind, colind)), shape=(len(latitude),len(xsipix)))

@@ -26,7 +26,7 @@ from ..mapping import spher2cart
 from .. import constants
 from .common import precision_and_scale,convert2nparray
 from ..tools import get_filedir
-from ..data import update_file
+from ..data import common
 
 ##########################################################################
 
@@ -67,7 +67,7 @@ def xarray_to_epix(data: tp.Union[xr.DataArray,xr.Dataset],
     lats = np.tile(data[latname].data,nlon)
     pixsize = pix*np.ones_like(lons)
     epixarr = np.vstack((lats,lons,pixsize,values)).T
-    dt = {'names':[latname, lonname,'pixel_size','value'], 'formats':[np.float, np.float,np.float,np.float]}
+    dt = {'names':[latname, lonname,'pixel_size','value'], 'formats':[float, float,float,float]}
     epixarr = np.zeros(len(lats),dtype=dt)
     epixarr[latname] = lats
     epixarr[lonname] = lons
@@ -375,7 +375,7 @@ def readtopography(model: tp.Union[None,str] = None,
     ncfile = os.path.join(dbs_path,model)
     if not os.path.isfile(ncfile):
         success = False
-        _,success = update_file(model,subdirectory=constants.topofolder)
+        _,success = common.update_file(model,subdirectory=constants.topofolder)
         if not success: ValueError("Could not find file "+model)
 
     f = xr.open_dataset(ncfile)

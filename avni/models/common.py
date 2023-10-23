@@ -688,15 +688,15 @@ def epix2ascii(model_dir: str = '.', setup_file: str = 'setup.cfg',
 
             # defaults if field not available in the epix file
             try:
-                ref_dict[parameter]['ifremav'].append(np.float(metadata['IFREMAV']))
+                ref_dict[parameter]['ifremav'].append(float(metadata['IFREMAV']))
             except:
                 ref_dict[parameter]['ifremav'].append(0.)
             try:
-                ref_dict[parameter]['refvalue'].append(np.float(metadata['REFVALUE']))
+                ref_dict[parameter]['refvalue'].append(float(metadata['REFVALUE']))
             except:
                 ref_dict[parameter]['refvalue'].append(-999.0)
             try:
-                ref_dict[parameter]['average'].append(np.float(metadata['AVERAGE']))
+                ref_dict[parameter]['average'].append(float(metadata['AVERAGE']))
             except:
                 ref_dict[parameter]['average'].append(0.)
             try:
@@ -708,7 +708,7 @@ def epix2ascii(model_dir: str = '.', setup_file: str = 'setup.cfg',
                 for line in head:
                     if 'DEPTH_RANGE' in line: depth_range = line.split(':')[1].split('\n')[0]
                 f_out.write(u'DESC  {:3.0f}: {}, boxcar, {} km\n'.format(k,parameter,depth_range))
-                ref_dict[parameter]['depth_in_km'].append( np.float(metadata['DEPTH_IN_KM']))
+                ref_dict[parameter]['depth_in_km'].append(float(metadata['DEPTH_IN_KM']))
             elif mod_type == 'topography':
                 if checks:
                     if not float(parser['parameters'][parameter]['depth']) == float(metadata['REFVALUE']):

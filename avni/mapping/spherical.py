@@ -9,7 +9,6 @@ if (sys.version_info[:2] < (3, 0)):
     from builtins import float,int
 
 import numpy as np #for numerical analysis
-from pygeodesy.sphericalNvector import LatLon
 import typing as tp
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
@@ -172,8 +171,11 @@ def intersection(path1start: tp.Union[list,np.ndarray],
 def midpoint(lat1: tp.Union[int,float], lon1: tp.Union[int,float],
              lat2: tp.Union[int,float], lon2: tp.Union[int,float]):
     """Get the mid-point from positions in geographic coordinates. Input values as degrees"""
+    from pygeodesy.sphericalNvector import LatLon
+
     if lon1 > 180.: lon1 = lon1 - 360.
     if lon2 > 180.: lon2 = lon2 - 360.
+
     start = LatLon(lat1,lon1)
     end = LatLon(lat2,lon2)
     mid = start.midpointTo(end)
@@ -333,6 +335,8 @@ def getDestination(lat: tp.Union[int,float],lon: tp.Union[int,float],
         List containing latitude and longitude of destination point
     """
     ''''''
+    from pygeodesy.sphericalNvector import LatLon
+
     R = constants.R.to_base_units().magnitude #Radius of the Earth in m
     if not isinstance(distance, (float,int)): distance = distance.to_base_units().magnitude #Distance m
     if lon > 180.: lon = lon -360.
@@ -361,6 +365,8 @@ def calculateBearing(lat1: tp.Union[int,float], lon1: tp.Union[int,float],
     :Last Modified:
         2023.02.16 5.00
     """
+    from pygeodesy.sphericalNvector import LatLon
+
     if lon1 > 180.: lon1 = lon1 -360.
     start = LatLon(lat1,lon1)
     if lon2 > 180.: lon2 = lon2 -360.
@@ -418,6 +424,8 @@ def calculateDistance(lat1: tp.Union[int,float],lon1: tp.Union[int,float],
     float
         Distance between coordinate pairs in m, km or deg
     """
+    from pygeodesy.sphericalNvector import LatLon
+
     if lon1 > 180.: lon1 = lon1 -360.
     if lon2 > 180.: lon2 = lon2 -360.
     start = LatLon(lat1,lon1)

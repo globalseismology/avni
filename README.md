@@ -42,7 +42,7 @@ Version](https://img.shields.io/pypi/pyversions/avni.svg?style=popout)
 
 AVNI needs the following python modules installed in the system.
   * The gfortran Fortran compiler
-  * Python 3.6+
+  * Python 3.7+
 
 ## Getting Started
 

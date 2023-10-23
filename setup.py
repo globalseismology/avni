@@ -159,9 +159,9 @@ def parse_requirements_file(fname):
     return requirements
 
 # data_dependencies is empty, but let's leave them so that we don't break
-# people's workflows who did `pip install avni[data]`
+# people's workflows who did `pip install avni[all]`
 install_requires = parse_requirements_file('requirements_base.txt')
-data_requires = []
+all_requires = parse_requirements_file('requirements_extra_pip.txt')
 
 metadata = dict(name = 'avni',
                 version=versionstuff['version'],
@@ -176,9 +176,12 @@ metadata = dict(name = 'avni',
                 ext_modules = extf,
                 # Notes on why numpy and setuptools version are needed
                 # https://numpy.org/devdocs/reference/distutils_status_migration.html
-                data_files=[('avni', ['README.md','requirements_base.txt']),
+                data_files=[('avni', ['README.md','CODE_OF_CONDUCT.md','CONTRIBUTING.md',
+                                      'requirements_base.txt','requirements.txt',
+                                      'requirements_extra_pip.txt']),
                 ('avni/config',['avni/config/attributes.ini',
-                'avni/config/planets.ini','avni/config/units.ini'])],
+                'avni/config/planets.ini','avni/config/units.ini',
+                'avni/config/f2py.ini'])],
                 keywords = ['earth-science','earth-observation','earthquake',
                 'earth','earthquake-data','geology','geophysics',
                 'geophysical-inversions','seismology','seismic-inversion',
@@ -199,10 +202,10 @@ metadata = dict(name = 'avni',
                     'Tracker': 'https://github.com/globalseismology/avni/issues',
                 },
                 platforms='any',
-                python_requires='>=3.6',
+                python_requires='>=3.7',
                 install_requires=install_requires,
                 extras_require={
-                    'data': data_requires,
+                    'all': all_requires,
                 },
                 )
 
