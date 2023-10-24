@@ -16,21 +16,6 @@ For the best experience, please considering using Anaconda as a virtual environm
 package manager for Python (see :ref:`install-python`). Follow the instructions below to
 install AVNI with Anaconda.
 
-Quick Start
-~~~~~~~~~~~
-
-Installing dependencies and resolving the best combination of packages can take some
-time. If you have `gfortran Fortran compiler <https://gcc.gnu.org/wiki/GFortran>`_
-and Anaconda Python distribution installed, and are willing to work with Python version 3.7,
-there is a pre-packaged environment. Simply enter the following into a terminal:
-
-.. code-block:: console
-
-    $ curl --remote-name https://raw.githubusercontent.com/globalseismology/avni/main/docs/conda/environment.yml
-    $ conda env create -f environment.yml
-    $ conda activate avni
-    $ pip install "avni[all]"
-
 Dependencies
 ~~~~~~~~~~~~
 
