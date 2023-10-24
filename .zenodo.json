@@ -1,73 +1,72 @@
 {
-   "title":"AVNI: Analysis and Visualization toolkit for plaNetary Inferences",
-   "access_right":"open",
-   "communities":[
-      {
-         "identifier":"geodynamics"
-      },
-      {
-         "identifier":"globalseismology"
-      }
+   "title": "AVNI: Analysis and Visualization toolkit for plaNetary Inferences",
+   "access_right": "open",
+   "communities": [
+       {
+           "identifier": "geodynamics"
+       },
+       {
+           "identifier": "globalseismology"
+       }
    ],
-   "creators":[
-      {
-         "affiliation":"Department of Geosciences, Princeton University",
-         "name":"Pritwiraj Moulik",
-         "orcid":"0000-0002-9976-8938"
-      },
-      {
-         "affiliation":"University of Illinois, Urbana-Champaign",
-         "name":"Ross Maguire",
-         "orcid":"0000-0002-0822-8849"
-      },
-      {
-         "affiliation":"Department of Geological Sciences, University of Florida at Gainesville",
-         "name":"Rene Gassmoller",
-         "orcid":"0000-0001-7098-8198"
-      },
-      {
-         "affiliation":"University of Illinois, Urbana-Champaign",
-         "name":"Christopher Havlin",
-         "orcid":"0000-0003-0585-8236"
-      }
+   "creators": [
+       {
+           "affiliation": "Department of Geosciences, Princeton University",
+           "name": "Pritwiraj Moulik",
+           "orcid": "0000-0002-9976-8938"
+       },
+       {
+           "affiliation": "University of Illinois, Urbana-Champaign",
+           "name": "Ross Maguire",
+           "orcid": "0000-0002-0822-8849"
+       },
+       {
+           "affiliation": "Department of Geological Sciences, University of Florida at Gainesville",
+           "name": "Rene Gassmoller",
+           "orcid": "0000-0001-7098-8198"
+       },
+       {
+           "affiliation": "University of Illinois, Urbana-Champaign",
+           "name": "Christopher Havlin",
+           "orcid": "0000-0003-0585-8236"
+       }
    ],
-   "description":"<p><strong>AVNI</strong> : <strong>A</strong>nalysis and&nbsp;<strong>V</strong>isualization toolkit for pla<strong>N</strong>etary&nbsp;<strong>I</strong>nferences&nbsp;</strong></p>\n\n<p><strong>Documentation Website:</strong>&nbsp;<a href=\"https://avni.globalseismology.org\">avni.globalseismology.org</a></p><p><strong>Want to test-drive AVNI?</strong>&nbsp;Check out our live examples on Hubzero:&nbsp;<a href=\"https://geodynamics.org/tools/avninotebooks\">geodynamics.org/tools/avninotebooks</a></p>\n\n<p><strong>AVNI</strong> provides free web-based and backend code access to tools, techniques, models and data related to global Earth sciences. It is a software ecosystem for analyzing and interpreting planetary models and data sets that were initially designed for the three-dimensional reference Earth model project <strong>REM3D</strong> (<a href=\"http://rem3d.org">rem3d.org</a>). The codes are primarily written in Python with interfaces to legacy routines in C and Fortran.<ul class="simple"><li><p>Open-source Python package with APIs to handle intensive queries <a href="https://github.com/globalseismology/avni/blob/main/LICENSE">(License)</a></p></li><li><p>Introduce HDF5 storage formats for planetary models and processed seismic data</p></li><li><p>Interactive web-based visualization tools for data and model exploration</p></li><li><p>Formulate and benchmark solvers for rapid data validation of models</p></li></ul>\n\n<p><strong>Suggested Citation</strong></p>\n\n<p>If you find any of these resources useful, kindly cite this course package. Please cite both the canonical journal article reference and&nbsp;the course software archived on Zenodo.</p>\n\n<ul>\n\t<li>\n\t<p>Moulik, P. (2023), Web-based Model Prototyping and Data Analysis Workflows for Planetary Inferences.&nbsp;<em>Geochemistry, Geophysics, Geosystems</em>, in prep.</p>\n\t</li>\n\t<li>Moulik, P., Maguire, R., Gassmoller, R., Havlin, C. (2023), AVNI: Analysis and Visualization toolkit for plaNetary Inferences,&nbsp;<a href=\"https://doi.org/10.5281/zenodo.7876674\">https://doi.org/10.5281/zenodo.7876674</a></li>\n</ul>
-\"",
-   "keywords":[
-      "model",
-      "physics",
-      "modeling",
-      "earth",
-      "seismology",
-      "geophysics",
-      "geodesy",
-      "earth-science",
-      "geology",
-      "modeling-tool",
-      "earthquake-data",
-      "earthquake",
-      "earth-observation",
-      "geodynamics",
-      "geophysical-inversions",
-      "seismic-tomography",
-      "seismic-inversion",
-      "mineral",
-      "geochemistry",
-      "seismic-waves"
+   "description": "<p><strong>AVNI</strong> : <strong>A</strong>nalysis and&nbsp;<strong>V</strong>isualization toolkit for pla<strong>N</strong>etary&nbsp;<strong>I</strong>nferences&nbsp;</strong></p>\n\n<p><strong>Documentation Website:</strong>&nbsp;<a href=\"https://avni.globalseismology.org\">avni.globalseismology.org</a></p><p><strong>Want to test-drive AVNI?</strong>&nbsp;Check out our live examples on Hubzero:&nbsp;<a href=\"https://geodynamics.org/tools/avninotebooks\">geodynamics.org/tools/avninotebooks</a></p>\n\n<p><strong>AVNI</strong> provides free web-based and backend code access to tools, techniques, models and data related to global Earth sciences. It is a software ecosystem for analyzing and interpreting planetary models and data sets that were initially designed for the three-dimensional reference Earth model project <strong>REM3D</strong> (<a href=\"http://rem3d.org\">rem3d.org</a>. The codes are primarily written in Python with interfaces to legacy routines in C and Fortran.<ul><li><p>Open-source Python package with APIs to handle intensive queries <a href=\"https://github.com/globalseismology/avni/blob/main/LICENSE\">(License)</a></p></li><li><p>Introduce HDF5 storage formats for planetary models and processed seismic data</p></li><li><p>Interactive web-based visualization tools for data and model exploration</p></li><li><p>Formulate and benchmark solvers for rapid data validation of models</p></li></ul>\n\n<p><strong>Suggested Citation</strong></p>\n\n<p>If you find any of these resources useful, kindly cite this course package. Please cite both the canonical journal article reference and&nbsp;the course software archived on Zenodo.</p>\n\n<ul>\n\t<li>\n\t<p>Moulik, P. (2023), Web-based Model Prototyping and Data Analysis Workflows for Planetary Inferences.&nbsp;<em>Geochemistry, Geophysics, Geosystems</em>, in prep.</p>\n\t</li>\n\t<li>Moulik, P., Maguire, R., Gassmoller, R., Havlin, C. (2023), AVNI: Analysis and Visualization toolkit for plaNetary Inferences,&nbsp;<a href=\"https://doi.org/10.5281/zenodo.7876674\">https://doi.org/10.5281/zenodo.7876674</a></li>\n</ul>\"",
+   "keywords": [
+       "model",
+       "physics",
+       "modeling",
+       "earth",
+       "seismology",
+       "geophysics",
+       "geodesy",
+       "earth-science",
+       "geology",
+       "modeling-tool",
+       "earthquake-data",
+       "earthquake",
+       "earth-observation",
+       "geodynamics",
+       "geophysical-inversions",
+       "seismic-tomography",
+       "seismic-inversion",
+       "mineral",
+       "geochemistry",
+       "seismic-waves"
    ],
-   "publication_date":"2022-12-26",
-   "related_identifiers":[
-      {
-         "identifier":"https://github.com/globalseismology/avni",
-         "relation":"isSupplementTo",
-         "scheme":"url"
-      },
-      {
-         "identifier":"https://avni.globalseismology.org",
-         "relation":"isDescribedBy",
-         "scheme":"url"
-      }
+   "publication_date": "2022-12-26",
+   "related_identifiers": [
+       {
+           "identifier": "https://github.com/globalseismology/avni",
+           "relation": "isSupplementTo",
+           "scheme": "url"
+       },
+       {
+           "identifier": "https://avni.globalseismology.org",
+           "relation": "isDescribedBy",
+           "scheme": "url"
+       }
    ],
-   "license":"GPL-3.0-or-later",
-   "upload_type":"software"
+   "license": "GPL-3.0-or-later",
+   "upload_type": "software"
 }
