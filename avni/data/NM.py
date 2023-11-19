@@ -12,6 +12,7 @@ import h5py
 import struct
 import numpy as np
 import pandas as pd
+import typing as tp
 #import matplotlib.pyplot as plt
 from avni.models import Reference1D
 from avni import constants,tools
@@ -346,7 +347,52 @@ def write_modes_hdf(infile,table_name,absorption_band='None'):
 
     #TODO write model attributes and max degree / overtone for S and T modes
 
-def get_mode_attribute(table,mode_type,radial_order,angular_order,attribute):
+def expand_mode_type(mode_type: str) -> str:
+    if mode_type.upper()=='S':
+        return 'spheroidal'
+    elif mode_type.upper()=='T':
+        return 'toroidal'
+    elif mode_type.upper()=='R':
+        return 'radial'
+
+def get_mode_name(mode_type: str, radial_order: int, angular_order: int) -> str:
+    if mode_type == 'radial':
+        mode_name = '{}S{}'.format(radial_order,angular_order)
+    elif mode_type == 'toroidal':
+        mode_name = '{}T{}'.format(radial_order,angular_order)
+    elif mode_type == 'spheroidal':
+        mode_name = '{}S{}'.format(radial_order,angular_order)
+    return mode_name
+
+def get_dispersion_table(table: str,mode_type: str,
+                         freq_mhz_cutoff: tp.Union[int,float,None] = None):
+
+    table = h5py.File(table,'r')
+    mode_type = expand_mode_type(mode_type)
+
+    outtable = []
+    for radial_order in table[mode_type].keys():
+        for mode_name in table[mode_type][radial_order].keys():
+            omega = table[mode_type][radial_order][mode_name]['omega'][()]
+            freq = (omega/(2.*np.pi)) * 1000. # in mHz
+            pvel = table[mode_type][radial_order][mode_name]['pvel'][()]
+            gvel = table[mode_type][radial_order][mode_name]['gvel'][()]
+            if mode_type == 'toroidal':
+                angular_order = int(mode_name.split('T')[1])
+            else:
+                angular_order = int(mode_name.split('S')[1])
+
+            if freq_mhz_cutoff == None:
+                outtable.append([mode_name,radial_order,angular_order,freq,pvel,gvel])
+            else:
+                if freq <= freq_mhz_cutoff:
+                    outtable.append([mode_name,radial_order,angular_order,freq,pvel,gvel])
+    df = pd.DataFrame(outtable, columns = ['mode','n','l','freq','pvel','gvel'])
+    return df
+
+def get_mode_attribute(table: str,mode_type: str,
+                       radial_order: int, angular_order: int,
+                       attribute: str) -> float:
     '''
     returns the eigenfrequency of a single mode
 
@@ -362,27 +408,15 @@ def get_mode_attribute(table,mode_type,radial_order,angular_order,attribute):
     '''
 
     table = h5py.File(table,'r')
-
-    if mode_type=='S':
-        mode_type='spheroidal'
-    elif mode_type=='T':
-        mode_type='toroidal'
-    elif mode_type=='R':
-        mode_type='radial'
-
-    if mode_type == 'radial':
-        mode_name = '{}R{}'.format(radial_order,angular_order)
-    elif mode_type == 'toroidal':
-        mode_name = '{}T{}'.format(radial_order,angular_order)
-    elif mode_type == 'spheroidal':
-        mode_name = '{}S{}'.format(radial_order,angular_order)
-
+    mode_type = expand_mode_type(mode_type)
+    mode_name = get_mode_name(mode_type, radial_order,angular_order)
     value = table[mode_type][str(radial_order)][mode_name][attribute][()]
-
     return value
 
 
-def get_mode_freq(table,mode_type,radial_order,angular_order,freq_units='mhz'):
+def get_mode_freq(table: str,mode_type: str,
+                       radial_order: int, angular_order: int,
+                       freq_units: str = 'mhz') -> float:
     '''
     returns the eigenfrequency of a single mode
 
