@@ -114,7 +114,8 @@ command line shell to `gfortran`.
 
             Setup Instructions
 
-.. .. grid::
+..
+    .. grid::
 
 ..    .. grid-item-card:: In-depth instructions?
 ..       :link: install_ref

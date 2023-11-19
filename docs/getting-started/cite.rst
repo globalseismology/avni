@@ -19,8 +19,8 @@ Citing the software
 -------------------
 
 To cite specific version numbers of the software, you can use the DOIs provided
-by `Zenodo <https://doi.org>`_. Additionally, we request that when citing the
-AVNI package, you cite the canonical journal article reference
+by `Zenodo <https://zenodo.org/doi/10.5281/zenodo.10035731>`_. Additionally, we request that when citing the
+AVNI package, you cite the AVNI Zenodo software page :footcite:`AVNI_Zenodo` and the canonical journal article reference
 :footcite:`MoulikEtAl2023`:
 
 .. footbibliography::

@@ -143,7 +143,7 @@ Once you have git installed and configured, and before creating your local copy
 of the codebase, go to the `AVNI GitHub`_ page and create a `fork`_ into your
 GitHub user account.
 
-.. image:: https://docs.github.com/assets/cb-28613/images/help/repository/fork_button.png
+.. image:: https://upload.wikimedia.org/wikipedia/commons/3/38/GitHub_Fork_Button.png
 
 This will create a copy of the AVNI codebase inside your GitHub user account
 (this is called "your fork"). Changes you make to AVNI will eventually get
