@@ -16,7 +16,7 @@ import typing as tp
 #import matplotlib.pyplot as plt
 from avni.models import Reference1D
 from avni import constants,tools
-import pint
+import pint_pandas
 import warnings
 
 if sys.version_info[0] >= 3: unicode = str
@@ -40,7 +40,7 @@ def read_rts_catalog(infile, base_units = True):
     ilev_flag = []
 
     # reference1D instance and the units class
-    pint.PintType.ureg = constants.ureg
+    pint_pandas.PintType.ureg = constants.ureg
     ref1d = Reference1D()
 
     #open buffer
@@ -95,7 +95,7 @@ def read_rts_catalog(infile, base_units = True):
 
     # loop over names and call evaluate_at_depth
     # Create data array for converted to Panda array with units
-    PA_ = pint.PintArray; temp_dict = {}
+    PA_ = pint_pandas.PintArray; temp_dict = {}
     for paraindx,param in enumerate(names):
         print(paraindx,param)
 
@@ -111,7 +111,8 @@ def read_rts_catalog(infile, base_units = True):
     modelarr = pd.DataFrame(temp_dict)
     if base_units: # convert to base units
         for col in modelarr.columns: modelarr[col] = modelarr[col].pint.to_base_units()
-    modelarr['depth'] = PA_((constants.R.magnitude - modelarr['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
+
+    modelarr['depth'] = PA_(constants.R.magnitude - modelarr['radius'].pint.to(constants.R.units).values.quantity.magnitude, dtype = constants.R.units)
 
     # number of layers
     nlev_out=struct.unpack(ifswp+'i',f.read(4))[0]; cc += 4

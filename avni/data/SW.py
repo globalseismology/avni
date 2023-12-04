@@ -14,6 +14,7 @@ import pandas as pd
 import h5py
 import time
 import warnings
+import pdb
 from .. import constants
 
 if sys.version_info[0] >= 3: unicode = str
@@ -102,7 +103,7 @@ def get_velocity(table,period,overtone,mode_type,output='pvel'):
     vel = table[mode_type][str(overtone)].attrs[output]
 
     if omega_query < np.min(omega) or omega_query > np.max(omega):
-        raise ValueError('period {} doesnt exist in table for requested mode'.format(period))
+        warnings.warn('period {} doesnt exist in table bounds for requested mode [{},{}]. Extroplating...'.format(period,(2.*np.pi)/np.max(omega),(2.*np.pi)/np.min(omega)))
 
     # Perform interpolation to get velocity for requested period
     vel_i = np.interp(omega_query,omega,vel)
