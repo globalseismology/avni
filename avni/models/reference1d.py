@@ -13,7 +13,7 @@ import numpy as np #for numerical analysis
 import fortranformat as ff #reading/writing fortran formatted text
 from six import string_types # to check if variable is string using isinstance
 from numpy.lib.recfunctions import append_fields # for appending named columns to named numpy arrays
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata,splrep,splev
 import copy
 from collections import Counter
 import traceback
@@ -94,16 +94,24 @@ class Reference1D(object):
             self.get_Love_elastic()
             self.get_discontinuity()
 
-    def read(self,file):
+    def read(self,file: str):
         '''
         Read a card deck file used in OBANI. Other formats not ready yet
         '''
+        if os.path.isfile(file):
+            listfile = [file]
+        elif os.path.isfile(file+'.elas') and os.path.isfile(file+'.anelas'):
+            warnings.warn('Reading seperate elas and anelas files as Reference1D')
+            listfile = [file+'.elas', file+'.anelas']
+        else:
+            raise ValueError('Input Reference1D file or seperate constituent files do not exist : '+file)
+
         try:
             self.read_mineos_cards(file)
         except:
             var1 = traceback.format_exc()
             try:
-                self.read_bases_coefficients(file)
+                for file in listfile: self.read_bases_coefficients(file)
             except:
                 var2 = traceback.format_exc()
                 print('############    Tried reading as mineos cards   ############')
@@ -116,10 +124,7 @@ class Reference1D(object):
         from ..plots import plotreference1d
         plotreference1d(self)
 
-    def read_bases_coefficients(self,file):
-        # Use tools.eval_polynomial and tools.eval_splrem
-        coef_names=['bottom','top','spline','constant','linear','quadratic','cubic']
-
+    def read_bases_coefficients(self,file: str):
         # regex dict for common metadata info
         rx_dict_common = {
             'model': re.compile(r'EARTH MODEL\s*:\s*(?P<model>.*)\n'),
@@ -128,6 +133,7 @@ class Reference1D(object):
             'parameters': re.compile(r'#PARAMETERS\s*:\s*(?P<parameters>.*)\n'),
             'num_region': re.compile(r'NUMBER OF REGIONS\s*:\s*(?P<num_region>.*)\n'),
             'regions': re.compile(r'REGION\s*:\s*(?P<regions>.*)\n'),
+            'reg_codes': re.compile(r'REG CODE\s*:\s*(?P<reg_codes>.*)\n'),
             'units': re.compile(r'#UNITS\s*:\s*(?P<units>.*)\n'),
         }
 
@@ -138,7 +144,7 @@ class Reference1D(object):
             self.metadata['parameterization'] = [[]]
             # make parameters list of dicts, PARAMETERS should not be the same
             self.metadata['attributes'] = {}
-            regions = []
+            regions = []; reg_codes = []
             # loop through lines in file, extract info
             with open(file,'r') as f:
                 line = f.readline()
@@ -166,11 +172,13 @@ class Reference1D(object):
                         num_region = int(nr_temp)
                     if key == 'regions':
                         regions.append(match.group('regions').strip().lower())
+                    if key == 'reg_codes':
+                        reg_codes.append(match.group('reg_codes').strip().upper())
                     line = f.readline()
         else:
             # append a new parameterization
             self.metadata['parameterization'].append([])
-            regions = []
+            regions = []; reg_codes = []
             with open(file,'r') as f:
                 line = f.readline()
                 while line:
@@ -203,6 +211,8 @@ class Reference1D(object):
                         num_region = int(nr_temp)
                     if key == 'regions':
                         regions.append(match.group('regions').strip().lower())
+                    if key == 'reg_codes':
+                        reg_codes.append(match.group('reg_codes').strip().upper())
                     line = f.readline()
         # Now start read parameterization from the file
         rx_dict_para = {
@@ -235,24 +245,28 @@ class Reference1D(object):
                 if key == 'bot_dep':
                     bd_temp=match.group('bot_dep')
                     bot_rads.append(self.metadata['norm_radius']-float(bd_temp))
+                    bot_deps.append(float(bd_temp))
                 if key == 'top_dep':
                     td_temp=match.group('top_dep')
                     top_rads.append(self.metadata['norm_radius']-float(td_temp))
+                    top_deps.append(float(td_temp))
                 if key == 'bot_rad':
                     br_temp=match.group('bot_rad')
                     bot_rads.append(float(br_temp))
+                    bot_deps.append(self.metadata['norm_radius']-float(br_temp))
                     radius_flag = 1
                 if key == 'top_rad':
                     tr_temp=match.group('top_rad')
                     top_rads.append(float(tr_temp))
+                    top_deps.append(self.metadata['norm_radius']-float(tr_temp))
                 line = f.readline()
-            bot_rads = np.array(bot_rads)
-            top_rads = np.array(top_rads)
+            bot_rads = np.array(bot_rads); top_rads = np.array(top_rads)
+            bot_deps = np.array(bot_deps); top_deps = np.array(top_deps)
         # assign the num of regions to the n th parameterization
         iparam = len(self.metadata['parameterization']) - 1
         self.metadata['parameterization'][iparam] = {'num_regions':num_region,'filename':file,'description':'read from '+file}
-        for idx,(region,poly,level,bot_rad,top_rad) in enumerate(zip(regions,polys,levels,bot_rads,top_rads)):
-            self.metadata['parameterization'][iparam].update({region:{'polynomial':poly,'levels':level,'top_radius':top_rad,'bottom_radius':bot_rad}})
+        for idx,(region,reg_code,poly,level,bot_rad,top_rad,bot_dep,top_dep) in enumerate(zip(regions,reg_codes,polys,levels,bot_rads,top_rads,bot_deps,top_deps)):
+            self.metadata['parameterization'][iparam].update({region:{'polynomial':poly,'reg_codes':reg_code,'levels':level,'top_radius':top_rad,'bottom_radius':bot_rad,'top_depth':top_dep,'bottom_depth':bot_dep}})
 
         # Now start to read parameter coefficient from the file
         # regex for model coefficient info
@@ -284,6 +298,80 @@ class Reference1D(object):
                 line = f.readline()
         self.metadata['filename'] = file
 
+    def write_bases_coefficients(self,file: str):
+        parameterization = self.metadata['parameterization']
+        attributes = self.metadata['attributes']
+        parameters = self.metadata['parameters']
+        units = self.metadata['units']
+        npar = len(parameterization)
+        if npar > 2 : raise NotImplementedError('More than two parameterizations not availabe for write_bases_coefficients')
+
+        for ipar in range(npar):
+            listvar = [key for key in attributes if attributes[key]['param_index']==ipar]
+            listunits = [key for ii,key in enumerate(units) if parameters[ii] in listvar]
+            if npar > 1:
+                if 'vsh' in listvar or 'vs' in listvar:
+                    outfile = file+'.elas'
+                else:
+                    outfile = file+'.anelas'
+            else:
+                outfile = file
+
+            # Write Header
+            f = open(outfile,'w')
+            f.write('EARTH MODEL        :{}\n'.format(self._name))
+            f.write('REFERENCE PERIOD   :{}\n'.format(self.metadata['ref_period']))
+            f.write('NORMALIZING RADIUS :{}\n'.format(self.metadata['norm_radius']))
+            f.write('NUMBER OF REGIONS  :{}\n'.format(parameterization[ipar]['num_regions']))
+
+            f.write('#-----------------------------------------------\n')
+            strout1 = '#PARAMETERS:'
+            strout2 = '#UNITS:     '
+            for ii,temp in enumerate(listunits):
+                if len(temp) > 10:
+                    strout1 += '{:<14}'.format(listvar[ii].strip().upper())
+                    strout2 += '{:<14}'.format(temp)
+                else:
+                    strout1 += '{:<9}'.format(listvar[ii].strip().upper())
+                    strout2 += '{:<9}'.format(temp)
+            f.write(strout1+'\n')
+            f.write(strout2+'\n')
+            f.write('#-----------------------------------------------\n')
+
+            # Loop over regions
+            listreg = [key for key in parameterization[ipar].keys() if type(parameterization[ipar][key])==dict]
+            for reg in listreg:
+                f.write('REGION    :{}\n'.format(reg.strip().upper()))
+                meta = parameterization[ipar][reg]
+                f.write('REG CODE  :{}\n'.format(meta['reg_codes'].strip().upper()))
+                if meta['bottom_depth'] > 771:
+                    f.write('BOT RADIUS:{}\n'.format(meta['bottom_radius']))
+                else:
+                    f.write('BOT DEPTH :{}\n'.format(meta['bottom_depth']))
+                if meta['top_depth'] > 771:
+                    f.write('TOP RADIUS:{}\n'.format(meta['top_radius']))
+                else:
+                    f.write('TOP DEPTH :{}\n'.format(meta['top_depth']))
+                f.write('LEVELS    :{}\n'.format(meta['levels']))
+                f.write('POLYNOMIAL:{}\n'.format(meta['polynomial']))
+
+                # Loop over variables
+                basis = attributes[listvar[0]][reg].keys()
+                for bas in basis:
+                    strout = '{:<10}:'.format(bas.strip().upper())
+                    for var in listvar:
+                        if var.strip().lower() in ['qkappa','qmu']:
+                            temp = '{:7.1f}'.format(attributes[var][reg][bas])
+                        else:
+                            temp = '{:7.5f}'.format(attributes[var][reg][bas])
+                        strout += '{:>10}'.format(temp)
+                    f.write(strout+'\n')
+                f.write('#-----------------------------------------------\n')
+            f.close()
+            print("... written basis coefficient file to disk "+outfile)
+        return
+
+
     def coefficients_to_cards(self, base_units = True):
         """evaluates bases coefficients at prescribed depth levels to get a card deck file
 
@@ -305,8 +393,12 @@ class Reference1D(object):
         radii.sort() # sort from center to surface
         #names=['rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
         #use units from the elas/anelas file
-        names = tools.convert2nparray(self.metadata['parameters'])
-        units = tools.convert2nparray(self.metadata['units'])
+        #names = tools.convert2nparray(self.metadata['parameters'])
+        #units = tools.convert2nparray(self.metadata['units'])
+        names=['rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
+        units =['kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
+
+
         fields=list(zip(names,units))
 
         # loop over names and call evaluate_at_depth
@@ -331,7 +423,7 @@ class Reference1D(object):
         modelarr = pd.DataFrame(temp_dict)
         if base_units: # convert to base units
             for col in modelarr.columns: modelarr[col] = modelarr[col].pint.to_base_units()
-        modelarr['depth'] = PA_((constants.R.magnitude - modelarr['radius'].pint.to(constants.R.units).data).tolist(), dtype = constants.R.units)
+        modelarr['depth'] = PA_((constants.R.magnitude - modelarr['radius'].pint.to(constants.R.units).values.quantity.magnitude).tolist(), dtype = constants.R.units)
 
         self._nlayers = len(modelarr['radius'])
         self.data = modelarr
@@ -349,6 +441,7 @@ class Reference1D(object):
         for indx,name in enumerate(names):
             if pint_pandas.PintType.ureg.parse_expression(units[indx]).units != self.data[name].pint.units: convert_columns.append(name)
 
+        if 'discontinuities' not in self.metadata.keys(): self.get_discontinuity()
         disc = self.metadata['discontinuities']
         # first write the header
         printstr  =  [unicode(self._name+"\n")]
@@ -427,6 +520,8 @@ class Reference1D(object):
 
         phi: P anisotropy ratio
 
+        lambda: A Lame constant = kappa-2/3mu
+
         Zs, Zp: S and P impedances
         '''
         if self.data is None or self._nlayers == 0: raise ValueError('reference1D data arrays are not allocated')
@@ -444,6 +539,7 @@ class Reference1D(object):
         self.data['vp'] = ((self.data['kappa']+4.*self.data['mu']/3.)/self.data['rho']).pow(0.5)
         self.data['vs'] = (self.data['mu']/self.data['rho']).pow(0.5)
         self.data['vphi'] = (self.data['kappa']/self.data['rho']).pow(0.5)
+        self.data['lambda'] = self.data['kappa']-2./3.*self.data['mu']
 
         # anisotropy
         self.data['xi'] = (self.data['vsh'].div(self.data['vsv'])).pow(2)
@@ -472,7 +568,10 @@ class Reference1D(object):
 
         poisson: Poisson's ratio
         '''
-        if self.data is None or self._nlayers == 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers == 0:
+            warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within get_mineralogical')
+            self.coefficients_to_cards()
+
         # Operations between PintArrays of different unit registry will not work.
         # We can change the unit registry that will be used in creating new
         # PintArrays to prevent this issue.
@@ -546,13 +645,9 @@ class Reference1D(object):
 
         for field in ['delta','average','contrast']: disc[field] = 0. * self.data.copy().drop(range(len(np.unique(disc_depths)),len(self.data)))
         # convert units to percent in contrast
-        for param in self.metadata['parameters']:
-            disc['contrast'][param] = (0.*disc['contrast'][param]/disc['contrast'][param][0]).pint.to('percent')
-
-        # default names and units as percent
-        names = self.data.columns.tolist()
-        units = ['percent' for name in names]
-        fields=list(zip(names,units))
+        for param in self.data.columns:
+            if param != 'radius' and param != 'depth':
+                disc['contrast'][param] = (0.*disc['contrast'][param]/disc['contrast'][param][0]).pint.to('percent')
 
         for icount,depth in enumerate(disc_depths):
             depth_ = constants.ureg.Quantity(depth,self.data['depth'].pint.units)
@@ -568,9 +663,9 @@ class Reference1D(object):
                     ## contrasts need to be in %
                     disc['contrast'][field][icount] = (abs(disc['delta'][field][icount]) / disc['average'][field][icount]).to('percent')
 
-
         #---- try to find discontinuities
         discradii = disc['delta']['radius'].pint.to('km').values.quantity.magnitude
+        if 'vp' not in self.data.keys() or 'vs' not in self.data.keys(): self.get_Love_elastic()
         vp = self.data['vp'].pint.to('km/s').values.quantity.magnitude
         vs = self.data['vs'].pint.to('km/s').values.quantity.magnitude
         radii = self.data['radius'].pint.to('km').values.quantity.magnitude
@@ -580,7 +675,7 @@ class Reference1D(object):
             warnings.warn(" itopic not found")
         elif len(discfind) > 1: raise ValueError('get_discontinuity: multiple values within discontinuity limits')
         else:
-            disc['itopic'] = np.where(radii==discfind[0])[0][1]
+            disc['itopic'] = np.where(radii==discfind[0])[0][0]
 
         discfind = disc['delta']['radius'][np.abs(3480.0-discradii)<25.].pint.to('km').values.quantity.magnitude
         if len(discfind) <= 0: # not found
@@ -588,7 +683,7 @@ class Reference1D(object):
         elif len(discfind) > 1:
             raise ValueError('get_discontinuity: multiple values within discontinuity limits')
         else:
-            disc['itopoc'] = np.where(radii == discfind[0])[0][1]
+            disc['itopoc'] = np.where(radii == discfind[0])[0][0]
 
         ###   Top of crust
         discfind = np.where(np.logical_and(vp < 7.5,vs > 0.))[0]
@@ -653,12 +748,17 @@ class Reference1D(object):
         depth_in_km = tools.convert2nparray(depth_in_km)
         values = np.zeros_like(depth_in_km,dtype=float)
         parameters = tools.convert2nparray(self.metadata['parameters'])
-        findindx = np.where(parameters == parameter)[0]
-        if len(findindx) == 0 : raise KeyError('parameter '+parameter+' cannot be evaluated from reference1d instance')
-        findparam = findindx.item()
-        unit = self.metadata['units'][findparam]
+        matching = [(indx,s) for indx,s in enumerate(parameters) if parameter in s]
+        if len(matching) == 0 : raise KeyError('parameter '+parameter+' cannot be evaluated from reference1d instance')
+        unit = self.metadata['units'][matching[0][0]]
+
+        # check for 1000/qmu or 1000/qkappa
+        divide1000=False
+        if (matching[0][1] != parameter) and matching[0][1].startswith('1000/') and (parameter in ['qkappa','qmu']): divide1000 = True
+
         uniqueregions = {}
         target_region = np.empty_like(depth_in_km,dtype="U40"); target_region[:] = ''
+
         # detailed information about the native parameterization which went into the
         # inversion is available
         if self.metadata['attributes'] is not None:
@@ -666,7 +766,7 @@ class Reference1D(object):
             if not 0.98*constants.R.to('km').magnitude <= self.metadata['norm_radius'] <= 1.02*constants.R.to('km').magnitude :
                 raise ValueError('Normalizing radius not compatible')
             radius_in_km = self.metadata['norm_radius'] - depth_in_km
-            param_indx = self.metadata['attributes'][parameter]['param_index']
+            param_indx = self.metadata['attributes'][matching[0][1]]['param_index']
             # finding target region in depth
             for region in self.metadata['parameterization'][param_indx]:
                 if region not in ['num_regions','filename','description']:
@@ -695,7 +795,7 @@ class Reference1D(object):
                                 uniqueregions[region] = {'radius_range':
                                 [self.metadata['parameterization'][param_indx][region]['bottom_radius'],
                                 self.metadata['parameterization'][param_indx][region]['top_radius']],
-                                'types': [*self.metadata['attributes'][parameter][region]]}
+                                'types': [*self.metadata['attributes'][matching[0][1]][region]]}
             if np.any(target_region == ''): raise ValueError('target regions not found')
             # create arguments for bases evaluations
             rnorm = self.metadata['norm_radius']
@@ -705,7 +805,7 @@ class Reference1D(object):
                 indx = np.where(target_region==region)[0]
                 radial_splines = False # assume that no splines are included
                 choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
-                if not np.all([key in choices for key in uniqueregions[region]['types']]): radial_splines = True
+                if not np.all([(key in choices or key.startswith('DEGREE')) for key in uniqueregions[region]['types']]): radial_splines = True
                 if not radial_splines:
                     # evaluate value of the polynomial coefficients and derivative at each depth
                     vercof,dvercof = tools.bases.eval_polynomial(radius_in_km[indx],
@@ -743,13 +843,15 @@ class Reference1D(object):
                 # build up the coefficient array
                 coef = []
                 for key in uniqueregions[region]['types']:
-                    coef.append(self.metadata['attributes'][parameter][region][key])
+                    coef.append(self.metadata['attributes'][matching[0][1]][region][key])
                 temp = np.dot(vercof,np.array([coef]).T)
                 for key, val in enumerate(indx):
                     if temp.ndim == 1:
                         values[val] = temp[key]
                     else:
                         values[val] = temp[key][0]
+                    if divide1000 and values[val]!= 0.: values[val]=1000./values[val]
+
         # If detailed metadata regarding the basis parameterization is not available
         # interpolated based on the card deck file
         else:
@@ -792,6 +894,103 @@ class Reference1D(object):
             else:
                 raise ValueError('data in reference1D object is not allocated')
         return values*constants.ureg(unit)
+
+    def apply_adams_williamson(self, OCO=True, ICO=False, rhotopOC=9.90344, jumprhoIC=0.6, step_km=1.):
+
+        if ICO and not OCO: raise ValueERROR('Cannot apply Adams Wiliamson realtionship for density to inner core wihout first')
+        if self.data is None or self._nlayers == 0:
+            warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within apply_adams_williamson')
+            self.coefficients_to_cards()
+        if not set(['gravity', 'kappa']).issubset(self.data.keys()) :
+            warnings.warn('Derived elastic parameters not allocated. Trying to apply get_mineralogical from within apply_adams_williamson')
+            self.get_mineralogical()
+
+        itopic = self.metadata['discontinuities']['itopic']
+        itopoc = self.metadata['discontinuities']['itopoc']
+        rr = self.data['radius'].pint.to('km').values.quantity.magnitude
+        dr=self.data['radius'].pint.to('km').diff(periods=-1).values.quantity.magnitude
+        g = self.data['gravity'].pint.to('m/s^2').values.quantity.magnitude
+        rho = self.data['rho'].pint.to('g/cc').values.quantity.magnitude
+        phi = (self.data['kappa']/self.data['rho']).pint.to('meter ** 2 / second ** 2').values.quantity.magnitude
+        rnorm = self.metadata['norm_radius']
+
+        logicOC = (rr<=rr[itopoc]) & \
+                (rr >= rr[itopic]) & \
+                (self.data['vsh'].values.quantity.magnitude == 0)
+        logicIC = (rr <= rr[itopic]) & \
+                (self.data['vsh'].values.quantity.magnitude != 0)
+
+        if OCO:
+            parameter='rho'
+            region='outer core'
+
+            attributes = self.metadata['attributes'][parameter][region]
+            types = list(attributes.keys())
+            param_indx = self.metadata['attributes'][parameter]['param_index']
+            meta_region = self.metadata['parameterization'][param_indx][region]
+            radius_range = [meta_region['bottom_radius'],meta_region['top_radius']]
+
+            # # prescribe density at top of outer core
+            rho_list=[rhotopOC]
+            rhotopOC = constants.ureg(str(rhotopOC)+' g / cc')
+            self.data['rho'].iloc[itopoc] = rhotopOC
+
+            radii_list = np.linspace(rr[itopoc],rr[itopic],int((rr[itopoc]-rr[itopic])/step_km+1))
+            vercof,dvercof = tools.bases.eval_polynomial(radii_list, radius_range, rnorm, types)
+
+            tck_rho = splrep(rr[logicOC], rho[logicOC])
+            tck_g = splrep(rr[logicOC], g[logicOC])
+            tck_phi = splrep(rr[logicOC], phi[logicOC])
+            for radius_query in radii_list[:-1]:
+                rho_query=splev(radius_query, tck_rho)
+                g_query=splev(radius_query, tck_g)
+                phi_query=splev(radius_query, tck_phi)
+                drhodr=-rho_query*g_query/phi_query
+                rho_list.append(rho_list[-1]-drhodr*step_km*1000)
+
+            # find best fitting coeffients
+            ATA = np.dot(vercof.T, vercof)
+            solution = np.dot(np.linalg.inv(ATA),np.dot(vercof.T, rho_list))
+
+            for ii,key in enumerate(types): attributes[key] = np.round(solution[ii],5)
+
+        if ICO:
+            parameter='rho'
+            region='inner core'
+
+            attributes = self.metadata['attributes'][parameter][region]
+            types = list(attributes.keys())
+            param_indx = self.metadata['attributes'][parameter]['param_index']
+            meta_region = self.metadata['parameterization'][param_indx][region]
+            radius_range = [meta_region['bottom_radius'],meta_region['top_radius']]
+
+            rhotopIC = self.data['rho'].iloc[itopic+1]+constants.ureg(str(jumprhoIC)+' g / cc')
+            # first calculate the values at every step
+            rho_list=[rhotopIC.to('g/cc').magnitude]
+            self.data['rho'].iloc[itopoc] = rhotopIC
+
+            radii_list = np.linspace(rr[itopic],0,int(rr[itopic]/step_km+1))
+            vercof,dvercof = tools.bases.eval_polynomial(radii_list, radius_range, rnorm, types)
+
+            tck_rho = splrep(rr[logicIC], rho[logicIC])
+            tck_g = splrep(rr[logicIC], g[logicIC])
+            tck_phi = splrep(rr[logicIC], phi[logicIC])
+            for radius_query in radii_list[:-1]:
+                rho_query=splev(radius_query, tck_rho)
+                g_query=splev(radius_query, tck_g)
+                phi_query=splev(radius_query, tck_phi)
+                drhodr=-rho_query*g_query/phi_query
+                rho_list.append(rho_list[-1]-drhodr*step_km*1000)
+
+            # find best fitting coeffients
+            ATA = np.dot(vercof.T, vercof)
+            solution = np.dot(np.linalg.inv(ATA),np.dot(vercof.T, rho_list))
+
+            for ii,key in enumerate(types): attributes[key] = np.round(solution[ii],5)
+
+        # redo come calculations
+        self.coefficients_to_cards()
+        self.derive()
 
     def to_mineoscards(self,directory='.',fmt='cards'):
         '''

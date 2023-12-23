@@ -2,7 +2,7 @@
 c
       common /empar1/ emtitle
 c
-      parameter (maxlev=1000)
+      parameter (maxlev=1500)
       real*8 radlev(maxlev)
       real*8 rholev(maxlev)
       real*8 vpvlev(maxlev)
@@ -33,7 +33,7 @@ c
       real*8 gravspl(3,maxlev)
 c
       real*8 work(3,maxlev)
-c      
+c
       common /empar2/ radlev,
      #       rholev,rhospl,
      #       vpvlev,vpvspl,
@@ -61,4 +61,4 @@ c
      #       itoplev,
      #       ibotlev,
      #       numemreg
-     
+

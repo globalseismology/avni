@@ -206,7 +206,7 @@ def eval_polynomial(radius: tp.Union[list,tuple,np.ndarray],
 
     # keys in coefficients should be acceptable
     choices = ['TOP', 'BOTTOM', 'CONSTANT', 'LINEAR', 'QUADRATIC', 'CUBIC']
-    if not np.all([key in choices for key in types]): raise AssertionError('Only polynomial bases can be used')
+    if not np.all([(key in choices or key.startswith('DEGREE')) for key in types]): raise AssertionError('Only polynomial bases can be used')
     npoly = len(radius_range)*len(types)
     # first find whether CONSTANT/LINEAR or TOP/BOTTOM
     for radii in radius_range:
@@ -233,6 +233,7 @@ def eval_polynomial(radius: tp.Union[list,tuple,np.ndarray],
                     dtemp[ii]=0.
             else:
                 rn=radiusin[irad]/rnorm
+                rat=(rtop-rn)/(rtop-rbot)
                 for itype,_ in enumerate(types):
                     ii = irange*len(types)+itype
                     if findconstantlinear:
@@ -248,6 +249,10 @@ def eval_polynomial(radius: tp.Union[list,tuple,np.ndarray],
                         elif types[itype]=='CUBIC':
                             temp[ii]=rn**3
                             dtemp[ii]=3.*rn**2
+                        elif types[itype].startswith('DEGREE'):
+                            ideg=int(key.strip().split('DEGREE')[1])
+                            temp[ii] = rn**ideg
+                            dtemp[ii]= ideg*rn**(ideg-1)
                     elif findtopbot:
                         if types[itype]=='TOP':
                             temp[ii] = 1.-(rn-rtop)/(rbot-rtop)
@@ -257,10 +262,22 @@ def eval_polynomial(radius: tp.Union[list,tuple,np.ndarray],
                             dtemp[ii]= 1./(rbot-rtop)
                         elif types[itype]=='QUADRATIC':
                             temp[ii] = rn**2-rtop**2-(rn-rtop)*(rbot+rtop)
-                            dtemp[ii]=2.*rn - 1./(rbot+rtop)
+                            #Same as: temp[ii] = (rat*(rtop**2-rbot**2))-(rtop**2-rn**2)
+                            dtemp[ii]=2.*rn - (rbot+rtop)
+                            #Second term above is (rbot**2-rtop**2)/(rbot-rtop)
                         elif types[itype]=='CUBIC':
-                            temp[ii]=rn**3-rtop**3-(rn-rtop)*(rbot**3-rtop**3)/(rbot-rtop)
-                            dtemp[ii]=3.*rn**2 - 1.*(rbot**3-rtop**3)/(rbot-rtop)
+                            temp[ii] = rn**3-rtop**3-(rn-rtop)*(rbot**2+rbot*rtop+rtop**2)
+                            #Same as: temp[ii] = (rat*(rtop**3-rbot**3))-(rtop**3-rn**3)
+                            dtemp[ii]=3.*rn**2 - (rbot**2+rbot*rtop+rtop**2)
+                            #Second term above is (rbot**3-rtop**3)/(rbot-rtop)
+                        elif types[itype].startswith('DEGREE'):
+                            ideg=int(types[itype].strip().split('DEGREE')[1])
+                            temp[ii] = rn**ideg-rtop**ideg
+                            dtemp[ii] = ideg*rn**(ideg-1)
+                            for k in range(ideg):
+                                factor =  rbot**(ideg-1-k)*rtop**k
+                                temp[ii] -= (rn-rtop)*factor
+                                dtemp[ii] -= factor
         if irad == 0:
             vercof = temp; dvercof = dtemp
         else:
