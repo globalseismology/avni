@@ -37,6 +37,7 @@ from matplotlib import gridspec # Relative size of subplots
 import pandas as pd
 import typing as tp
 import pdb
+import warnings
 
 ####################### IMPORT AVNI LIBRARIES  ###########################
 
@@ -1469,6 +1470,13 @@ def plotreference1d(ref1d,
     zoomdepth : list, optional
         Zoom into a depth extent in km, by default [0.,1000.]
     """
+    if ref1d.data is None or ref1d._nlayers == 0:
+        warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within plotreference1d')
+        ref1d.coefficients_to_cards()
+
+    if not set(['vs', 'vp']).issubset(ref1d.data.keys()) :
+        warnings.warn('Derived elastic parameters not allocated. Trying to apply get_Love_elastic from within plotreference1d')
+        ref1d.get_Love_elastic()
 
     # extract values
     depthkmarr = (constants.R-ref1d.data['radius']).pint.to('km').values.quantity.magnitude

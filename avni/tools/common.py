@@ -180,7 +180,7 @@ def makegrid(latitude: tp.Union[list,tuple,np.ndarray],
         if not (len(latitude) == len(longitude) == len(depth_in_km)): raise ValueError("latitude, longitude or depth_in_km should be of same length if not making grid = False")
         return nrows,latitude,longitude,depth_in_km
 
-def convert2nparray(value: tp.Union[str,list,tuple,float,np.int64,np.ndarray,bool],
+def convert2nparray(value: tp.Union[str,list,tuple,float,np.int64,np.float32,np.ndarray,bool],
                     int2float: bool = True,
                     allowstrings: bool = True) -> np.ndarray:
     """Converts input value to a float numpy array. Boolean are returned as Boolean arrays.
@@ -209,7 +209,7 @@ def convert2nparray(value: tp.Union[str,list,tuple,float,np.int64,np.ndarray,boo
         outvalue = np.asarray(value)
     elif isinstance(value, bool):
         outvalue = np.asarray([value])
-    elif isinstance(value, float):
+    elif isinstance(value, (float,np.float32)):
         outvalue = np.asarray([value])
     elif isinstance(value, (int,np.int64)):
         if int2float:

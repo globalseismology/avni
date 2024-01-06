@@ -93,31 +93,34 @@ class Reference1D(object):
         if self.data is not None and self._nlayers > 0:
             self.get_Love_elastic()
             self.get_discontinuity()
+            self.get_custom_parameter(['as','ap'])
 
     def read(self,file: str):
         '''
         Read a card deck file used in OBANI. Other formats not ready yet
         '''
-        if os.path.isfile(file):
-            listfile = [file]
-        elif os.path.isfile(file+'.elas') and os.path.isfile(file+'.anelas'):
-            warnings.warn('Reading seperate elas and anelas files as Reference1D')
+        if os.path.isfile(file+'.elas') and os.path.isfile(file+'.anelas'):
+            warnings.warn('Reading seperate elas and anelas files as Reference1D. This is preferred since derivatives needed for mineralogical parameters have lower numerical precisions.')
             listfile = [file+'.elas', file+'.anelas']
+            for file in listfile: self.read_bases_coefficients(file)
+        elif os.path.isfile(file):
+            listfile = [file]
         else:
             raise ValueError('Input Reference1D file or seperate constituent files do not exist : '+file)
 
         try:
-            self.read_mineos_cards(file)
+            for file in listfile: self.read_bases_coefficients(file)
         except:
             var1 = traceback.format_exc()
             try:
-                for file in listfile: self.read_bases_coefficients(file)
+                self.read_mineos_cards(file)
+                warnings.warn('Reading as a card file into Reference1D')
             except:
                 var2 = traceback.format_exc()
-                print('############    Tried reading as mineos cards   ############')
+                print('############    Tried reading as basis coefficients   ############')
                 print(var1)
-                print('############    Tried reading as bases coefficients   ############')
-                print(traceback.format_exc())
+                print('############    Tried reading as mineos cards   ############')
+                print(var2)
                 raise NotImplementedError('model format is not currently implemented in reference1D.read')
 
     def plot(self):
@@ -239,7 +242,7 @@ class Reference1D(object):
                 if key == 'poly':
                     polys.append(match.group('poly'))
                 if key == 'spln':
-                    polys.append('SPLINEPNTS : ' + match.group('spln'))
+                    polys.append('SPLINEPNTS: ' + match.group('spln'))
                 if key == 'lvl':
                     levels.append(int(match.group('lvl')))
                 if key == 'bot_dep':
@@ -298,7 +301,7 @@ class Reference1D(object):
                 line = f.readline()
         self.metadata['filename'] = file
 
-    def write_bases_coefficients(self,file: str):
+    def write_bases_coefficients(self,file: str, verbose: bool = False):
         parameterization = self.metadata['parameterization']
         attributes = self.metadata['attributes']
         parameters = self.metadata['parameters']
@@ -353,7 +356,10 @@ class Reference1D(object):
                 else:
                     f.write('TOP DEPTH :{}\n'.format(meta['top_depth']))
                 f.write('LEVELS    :{}\n'.format(meta['levels']))
-                f.write('POLYNOMIAL:{}\n'.format(meta['polynomial']))
+                if meta['polynomial'].lower().startswith('splinepnts'):
+                    f.write('{}\n'.format(meta['polynomial']))
+                else:
+                    f.write('POLYNOMIAL:{}\n'.format(meta['polynomial']))
 
                 # Loop over variables
                 basis = attributes[listvar[0]][reg].keys()
@@ -368,7 +374,7 @@ class Reference1D(object):
                     f.write(strout+'\n')
                 f.write('#-----------------------------------------------\n')
             f.close()
-            print("... written basis coefficient file to disk "+outfile)
+            if verbose: print("... written basis coefficient file to disk "+outfile)
         return
 
 
@@ -446,7 +452,7 @@ class Reference1D(object):
         # first write the header
         printstr  =  [unicode(self._name+"\n")]
         printstr.append(unicode("1 %.1f 1 1\n" % (self.metadata['ref_period'])))
-        printstr.append(unicode("  %d  %d  %d  %d  %d\n" % (self._nlayers,disc['itopic'],disc['itopoc'],disc['itopmantle'],disc['itopcrust'])))
+        printstr.append(unicode("  %d  %d  %d  %d  %d\n" % (self._nlayers,disc['itopic']+1,disc['itopoc']+1,disc['itopmantle']+1,disc['itopcrust']+1)))
 
         shape = self.data[names].shape
         output = np.zeros(shape)
@@ -545,12 +551,15 @@ class Reference1D(object):
         self.data['xi'] = (self.data['vsh'].div(self.data['vsv'])).pow(2)
         self.data['phi'] = (self.data['vpv'].div(self.data['vph'])).pow(2)
 
+        self.data['as'] = ((self.data['vsh']-self.data['vsv']).div((self.data['vsh']+self.data['vsv'])/2.).replace(np.nan, 0)).pint.to('percent')
+        self.data['ap'] = ((self.data['vph']-self.data['vpv']).div((self.data['vsh']+self.data['vsv'])/2.).replace(np.nan, 0)).pint.to('percent')
+
         # impedance contrasts
         self.data['Zp'] = self.data['vp']*self.data['rho']
         self.data['Zs'] = self.data['vs']*self.data['rho']
 
         # Add metadata
-        for field in ['a','c','n','l','f','vp','vs','vphi','xi','phi','Zp', 'Zs','kappa','mu']:
+        for field in ['a','c','n','l','f','vp','vs','vphi','xi','phi','Zp', 'Zs','kappa','mu','as','ap']:
             self.metadata['parameters'].append(field)
             self.metadata['units'].append(str(self.data[field].pint.units))
 
@@ -571,6 +580,10 @@ class Reference1D(object):
         if self.data is None or self._nlayers == 0:
             warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within get_mineralogical')
             self.coefficients_to_cards()
+
+        if not set(['vs', 'vp']).issubset(self.data.keys()) :
+            warnings.warn('Derived elastic parameters not allocated. Trying to apply get_Love_elastic from within get_mineralogical')
+            self.get_Love_elastic()
 
         # Operations between PintArrays of different unit registry will not work.
         # We can change the unit registry that will be used in creating new
@@ -599,9 +612,8 @@ class Reference1D(object):
                 self.metadata['units'].append(str(self.data[field].pint.units))
 
             # Poisson ratio
-            vsbyvp1d = np.divide(self.data['vs'].values.quantity.magnitude, self.data['vp'].values.quantity.magnitude,out=np.zeros(self._nlayers))
-            poisson = np.divide((1.-(2.*vsbyvp1d*vsbyvp1d)),(2.-(2.*vsbyvp1d*vsbyvp1d)))
-            self.data['poisson'] = PA_(poisson, dtype="pint[dimensionless]")
+            vsbyvp1d = self.data['vs'].div(self.data['vp'])
+            self.data['poisson2'] = np.divide((1.-(2.*vsbyvp1d*vsbyvp1d)),(2.-(2.*vsbyvp1d*vsbyvp1d)))
             self.metadata['parameters'].append('poisson')
             self.metadata['units'].append('dimensionless')
 
@@ -687,7 +699,7 @@ class Reference1D(object):
 
         ###   Top of crust
         discfind = np.where(np.logical_and(vp < 7.5,vs > 0.))[0]
-        if len(discfind) > 0: disc['itopcrust'] = max(discfind) + 1
+        if len(discfind) > 0: disc['itopcrust'] = max(discfind)
         #discfind = disc['delta']['radius'][np.abs(6368.0-disc['delta']['radius']/1000.)<0.1]
 #         if len(discfind) <= 0: # not found
 #             warnings.warn(" itopcrust not found")
@@ -697,7 +709,7 @@ class Reference1D(object):
             #disc['itopcrust'] = np.where(self.data['radius']==discfind[0])[0][1]
 
         itopmantle = min(np.where(vp < 7.5)[0])
-        if itopmantle >0: disc['itopmantle'] = itopmantle
+        if itopmantle >0: disc['itopmantle'] = itopmantle-1
         self.metadata['discontinuities'] = disc
 
     def get_custom_parameter(self,parameters):
@@ -709,15 +721,16 @@ class Reference1D(object):
             PA_ = pint_pandas.PintArray
             # convert to array for ease of looping
             if isinstance(parameters,string_types): parameters = np.array([parameters])
+            if isinstance(parameters,list): parameters = np.array(parameters)
             for ii in np.arange(parameters.size):
                 if parameters[ii] not in self.metadata['parameters']:
                     if 'as' in parameters[ii]:
                         # Add data fields
-                        self.data[parameters[ii]] = PA_(np.divide(self.data['vsh'].values.quantity.magnitude - self.data['vsv'].values.quantity.magnitude,self.data['vs'].values.quantity.magnitude,out=np.zeros(self._nlayers), where= self.data['vs'] != 0.)*100., dtype="pint[percent]")
+                        self.data[parameters[ii]] = self.data['as']
                         self.metadata['parameters'].append(parameters[ii])
                         self.metadata['units'].append('percent')
                     elif 'ap' in parameters[ii]:
-                        self.data[parameters[ii]] = PA_(np.divide(self.data['vph'].values.quantity.magnitude - self.data['vpv'].values.quantity.magnitude,self.data['vp'].values.quantity.magnitude,out=np.zeros(self._nlayers), where= self.data['vp'] != 0.)*100., dtype="pint[percent]")
+                        self.data[parameters[ii]] = self.data['ap']
                         self.metadata['parameters'].append(parameters[ii])
                         self.metadata['units'].append('percent')
                     elif 'vs' in parameters[ii]:
@@ -897,7 +910,7 @@ class Reference1D(object):
 
     def apply_adams_williamson(self, OCO=True, ICO=False, rhotopOC=9.90344, jumprhoIC=0.6, step_km=1.):
 
-        if ICO and not OCO: raise ValueERROR('Cannot apply Adams Wiliamson realtionship for density to inner core wihout first')
+        if ICO and not OCO: raise ValueERROR('Cannot apply Adams Wiliamson relationship for density to inner core without first applying to inner core')
         if self.data is None or self._nlayers == 0:
             warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within apply_adams_williamson')
             self.coefficients_to_cards()
@@ -952,7 +965,11 @@ class Reference1D(object):
             ATA = np.dot(vercof.T, vercof)
             solution = np.dot(np.linalg.inv(ATA),np.dot(vercof.T, rho_list))
 
-            for ii,key in enumerate(types): attributes[key] = np.round(solution[ii],5)
+            for ii,key in enumerate(types):
+                try:
+                    attributes[key] = np.round(solution[ii][0],5)
+                except:
+                    attributes[key] = np.round(solution[ii],5)
 
         if ICO:
             parameter='rho'
@@ -986,7 +1003,11 @@ class Reference1D(object):
             ATA = np.dot(vercof.T, vercof)
             solution = np.dot(np.linalg.inv(ATA),np.dot(vercof.T, rho_list))
 
-            for ii,key in enumerate(types): attributes[key] = np.round(solution[ii],5)
+            for ii,key in enumerate(types):
+                try:
+                    attributes[key] = np.round(solution[ii][0],5)
+                except:
+                    attributes[key] = np.round(solution[ii],5)
 
         # redo come calculations
         self.coefficients_to_cards()
@@ -1001,10 +1022,10 @@ class Reference1D(object):
         if self.data is not None and self._nlayers > 0:
             model_name = self._name
             ntotlev = self._nlayers
-            itopic = self.metadata['discontinuities']['itopic']
-            itopoc = self.metadata['discontinuities']['itopoc']
-            itopmantle = self.metadata['discontinuities']['itopmantle']
-            itopcrust = self.metadata['discontinuities']['itopcrust']
+            itopic = self.metadata['discontinuities']['itopic']+1
+            itopoc = self.metadata['discontinuities']['itopoc']+1
+            itopmantle = self.metadata['discontinuities']['itopmantle']+1
+            itopcrust = self.metadata['discontinuities']['itopcrust']+1
 
             outfile = directory+'/'+model_name+'.'+fmt
             f = open(outfile,'w')
