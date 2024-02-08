@@ -1474,7 +1474,7 @@ def plotreference1d(ref1d,
         warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within plotreference1d')
         ref1d.coefficients_to_cards()
 
-    if not set(['vs', 'vp']).issubset(ref1d.data.keys()) :
+    if not set(['vs', 'vp','as','ap']).issubset(ref1d.data.keys()) :
         warnings.warn('Derived elastic parameters not allocated. Trying to apply get_Love_elastic from within plotreference1d')
         ref1d.get_Love_elastic()
 
@@ -1483,6 +1483,8 @@ def plotreference1d(ref1d,
     rho = ref1d.data['rho'].pint.to('g/cm^3').values.quantity.magnitude
     vs = ref1d.data['vs'].pint.to('km/s').values.quantity.magnitude
     vp = ref1d.data['vp'].pint.to('km/s').values.quantity.magnitude
+    anisoVs = ref1d.data['as'].values.quantity.magnitude
+    anisoVp = ref1d.data['ap'].values.quantity.magnitude
     vsv = ref1d.data['vsv'].pint.to('km/s').values.quantity.magnitude
     vsh = ref1d.data['vsh'].pint.to('km/s').values.quantity.magnitude
     vpv = ref1d.data['vpv'].pint.to('km/s').values.quantity.magnitude
@@ -1568,9 +1570,6 @@ def plotreference1d(ref1d,
 
 
     ax21=plt.subplot(gs[2], sharex=ax11)
-    with np.errstate(divide='ignore', invalid='ignore'): # Ignore warning about dividing by zero
-        anisoVs=(vsh-vsv)*200./(vsh+vsv)
-    anisoVp=(vph-vpv)*200./(vph+vpv)
     ax21.plot(depthkmarr[depthselect],anisoVs[depthselect],'b')
     ax21.plot(depthkmarr[depthselect],anisoVp[depthselect],'r')
     ax21.set_ylim([0, 5])
@@ -1582,7 +1581,7 @@ def plotreference1d(ref1d,
     ax21.yaxis.set_major_formatter(majorFormatter)
     # for the minor ticks, use no labels; default NullFormatter
     ax21.yaxis.set_minor_locator(minorLocator)
-    for para,color,xloc,yloc in [('Q'+'$_{\mu}$','k',400.,2.5),("$a_{S}$",'b',150.,3.7),("$a_{P}$",'r',100.,1.8)]:
+    for para,color,xloc,yloc in [('Q'+'$_{\mu}$','k',400.,2.5),("$a_{S}$",'b',150.,3.7),("$a_{P}$",'r',50.,3.5)]:
         ax21.annotate(para,color=color,
         xy=(3, 1), xycoords='data',
         xytext=(xloc/1000., yloc/4.), textcoords='axes fraction',

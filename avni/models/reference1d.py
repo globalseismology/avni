@@ -25,6 +25,7 @@ import uuid
 import contextlib
 import warnings
 import os
+import pdb
 
 if sys.version_info[0] >= 3: unicode = str
 
@@ -93,7 +94,6 @@ class Reference1D(object):
         if self.data is not None and self._nlayers > 0:
             self.get_Love_elastic()
             self.get_discontinuity()
-            self.get_custom_parameter(['as','ap'])
 
     def read(self,file: str):
         '''
@@ -102,7 +102,6 @@ class Reference1D(object):
         if os.path.isfile(file+'.elas') and os.path.isfile(file+'.anelas'):
             warnings.warn('Reading seperate elas and anelas files as Reference1D. This is preferred since derivatives needed for mineralogical parameters have lower numerical precisions.')
             listfile = [file+'.elas', file+'.anelas']
-            for file in listfile: self.read_bases_coefficients(file)
         elif os.path.isfile(file):
             listfile = [file]
         else:
@@ -438,7 +437,9 @@ class Reference1D(object):
     def write_mineos_cards(self,file):
         import pint_pandas
 
-        if self.data is None or self._nlayers == 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers == 0:
+            warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within get_mineralogical')
+            self.coefficients_to_cards()
         names=['radius','rho','vpv','vsv','qkappa','qmu','vph','vsh','eta']
         units =['m','kg/m^3','m/s','m/s','dimensionless','dimensionless','m/s','m/s','dimensionless']
 
@@ -464,7 +465,8 @@ class Reference1D(object):
                     output[ii,jj] = self.data[names].iloc[ii,jj].magnitude
         # write the string in the fortran format
         header_line  =  ff.FortranRecordWriter('f8.0,3f9.2,2f9.1,2f9.2,f9.5')
-        for ii in range(shape[0]): printstr.append(unicode(header_line.write(output[ii,:])+'\n'))
+        for ii in range(shape[0]):
+            printstr.append(unicode(header_line.write(output[ii,:])+'\n'))
         printstr[-1] = printstr[-1].split('\n')[0]
         # write the file
         f= open(file,"w")
@@ -530,7 +532,9 @@ class Reference1D(object):
 
         Zs, Zp: S and P impedances
         '''
-        if self.data is None or self._nlayers == 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers == 0:
+            warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within get_mineralogical')
+            self.coefficients_to_cards()
 
         # Add data fields
         self.data['a'] = self.data['rho']*self.data['vph']**2
@@ -552,7 +556,7 @@ class Reference1D(object):
         self.data['phi'] = (self.data['vpv'].div(self.data['vph'])).pow(2)
 
         self.data['as'] = ((self.data['vsh']-self.data['vsv']).div((self.data['vsh']+self.data['vsv'])/2.).replace(np.nan, 0)).pint.to('percent')
-        self.data['ap'] = ((self.data['vph']-self.data['vpv']).div((self.data['vsh']+self.data['vsv'])/2.).replace(np.nan, 0)).pint.to('percent')
+        self.data['ap'] = ((self.data['vph']-self.data['vpv']).div((self.data['vph']+self.data['vpv'])/2.).replace(np.nan, 0)).pint.to('percent')
 
         # impedance contrasts
         self.data['Zp'] = self.data['vp']*self.data['rho']
@@ -649,7 +653,9 @@ class Reference1D(object):
 
         contrasts: containing contrast in parameters (in %)
         '''
-        if self.data is None or self._nlayers == 0: raise ValueError('reference1D data arrays are not allocated')
+        if self.data is None or self._nlayers == 0:
+            warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within get_mineralogical')
+            self.coefficients_to_cards()
 
         disc_depths = [item.magnitude for item, count in Counter(self.data['depth']).items() if count > 1]
         disc = {}
@@ -876,9 +882,6 @@ class Reference1D(object):
                     # Only select the region to interpolate
                     disc_depth = self.metadata['discontinuities']['delta']['depth'].pint.to('km').values.quantity.magnitude
                     disc_depth.sort()
-                    # append a depth to get the index of discontinuity below
-                    disc_depth = np.append(disc_depth,constants.R.to('km').magnitude)
-                    disc_depth = np.append(0.,disc_depth)
 
                     for idep,depth in enumerate(depth_in_km):
                         # is it a discontinity
@@ -889,18 +892,25 @@ class Reference1D(object):
                             elif boundary == '-':
                                 values[idep] = modelval[findindices[0]]
                         else: # not a boundary
-                            # this is the bottom of the region under consideration
-                            indxdisc = np.where(disc_depth-depth>=0.)[0][0]
-                            if indxdisc == 0: indxdisc += 1 # surface is queried, so use the region below for interpolation
-                            end=np.where(np.isclose(depth_array-disc_depth[indxdisc-1],0))[0][0]
-                            if indxdisc != 1:
-                                # leave the first and last since these are other regions
-                                start=np.where(np.isclose(depth_array-disc_depth[indxdisc],0))[0][1]
-                                indxdeps = np.arange(start,end+1)
+                            if depth <= disc_depth[0]:
+                                # topmost layer is queried
+                                start = np.where(np.isclose(depth_array,disc_depth[0]))[0][1]
+                                end = len(depth_array)
+                            elif depth >= disc_depth[-1]:
+                                # deepest layer is queried
+                                start =0
+                                end = np.where(np.isclose(depth_array,disc_depth[-1]))[0][1]
                             else:
-                                start=0
-                                indxdeps = np.arange(start,end+1)
-                            values[idep] = griddata(depth_array[indxdeps],modelval[indxdeps],depth,method=interpolation)
+                                # find the bottom of the region under consideration
+                                checkdisc = np.where(depth >= disc_depth)[0]
+                                # this is the discontinuity that is right
+                                # above the queried depth
+                                indxregion=checkdisc[-1]
+                                start = np.where(np.isclose(depth_array,disc_depth[indxregion+1]))[0][1]
+                                end = np.where(np.isclose(depth_array,disc_depth[indxregion]))[0][1]
+
+                            # now interpolate in the chosen region
+                            values[idep] = griddata(depth_array[start:end],modelval[start:end],depth,method=interpolation)
 
                 else:
                     raise ValueError('parameter '+parameter+' not defined in array')
@@ -908,7 +918,7 @@ class Reference1D(object):
                 raise ValueError('data in reference1D object is not allocated')
         return values*constants.ureg(unit)
 
-    def apply_adams_williamson(self, OCO=True, ICO=False, rhotopOC=9.90344, jumprhoIC=0.6, step_km=1.):
+    def apply_adams_williamson(self, OCO=True, ICO=False, CLM = False, rhotopOC=9.90344, jumprhoIC=0.6, rhobotCLM = 5.49145, step_km=1.,optimize_Bullen=False):
 
         if ICO and not OCO: raise ValueERROR('Cannot apply Adams Wiliamson relationship for density to inner core without first applying to inner core')
         if self.data is None or self._nlayers == 0:
@@ -927,12 +937,24 @@ class Reference1D(object):
         phi = (self.data['kappa']/self.data['rho']).pint.to('meter ** 2 / second ** 2').values.quantity.magnitude
         rnorm = self.metadata['norm_radius']
 
+        no_contrast=np.where(np.round(self.metadata['discontinuities']['contrast']['rho'].pint.to('percent').values.quantity.magnitude,1)==0)[0]
+        no_contrast_radii = self.metadata['discontinuities']['contrast']['radius'][no_contrast].pint.to('km').values.quantity.magnitude
+
         logicOC = (rr<=rr[itopoc]) & \
                 (rr >= rr[itopic]) & \
                 (self.data['vsh'].values.quantity.magnitude == 0)
         logicIC = (rr <= rr[itopic]) & \
                 (self.data['vsh'].values.quantity.magnitude != 0)
+        logicCLM = (rr>=rr[itopoc]) & \
+                (self.data['vsh'].values.quantity.magnitude != 0) & \
+                (rr>=no_contrast_radii[0]) & \
+                (rr<=no_contrast_radii[1])
+        ibotCLM = logicCLM.nonzero()[0][1]
+        itopCLM = logicCLM.nonzero()[0][-2]
+        logicCLM[ibotCLM-1]=False;logicCLM[itopCLM+1]=False # repeated discontinuity
 
+        ########################################################
+        #First optimize outer core
         if OCO:
             parameter='rho'
             region='outer core'
@@ -971,6 +993,8 @@ class Reference1D(object):
                 except:
                     attributes[key] = np.round(solution[ii],5)
 
+        ########################################################
+        # Now optimize inner core
         if ICO:
             parameter='rho'
             region='inner core'
@@ -998,6 +1022,75 @@ class Reference1D(object):
                 phi_query=splev(radius_query, tck_phi)
                 drhodr=-rho_query*g_query/phi_query
                 rho_list.append(rho_list[-1]-drhodr*step_km*1000)
+
+            # find best fitting coeffients
+            ATA = np.dot(vercof.T, vercof)
+            solution = np.dot(np.linalg.inv(ATA),np.dot(vercof.T, rho_list))
+
+            # At COE, might have large values of Bullen's parameter if large velocity grad
+            if optimize_Bullen:
+                import scipy.optimize as optimize
+                def objective_function(params):
+                    TRIAL = copy.deepcopy(self)
+                    attributes2 = TRIAL.metadata['attributes'][parameter][region]
+                    for ii,key in enumerate(list(attributes2.keys())):
+                        attributes2[key] = np.round(params[ii],5)
+                    TRIAL.coefficients_to_cards()
+                    TRIAL.get_Love_elastic()
+                    TRIAL.get_mineralogical()
+                    logicIC =                        (TRIAL.data['radius'].pint.to('km').values.quantity.magnitude <= 1215) & \
+                            (TRIAL.data['vsh'].values.quantity.magnitude !=0)
+                    chisqr = np.sum((TRIAL.data['Bullen']-1)[logicIC].values.quantity.magnitude**2)
+                    return chisqr
+
+                initial_guess = solution
+                print('Initial ICO Rho :',initial_guess)
+                result = optimize.minimize(objective_function, initial_guess, method='Nelder-Mead',options={'return_all':True, 'disp':True, 'maxfev': 200})
+                if result.success:
+                    fitted_params = result.x
+                    print('Final ICO Rho :',fitted_params)
+                    solution=fitted_params
+                else:
+                    raise ValueError(result.message)
+
+            #pred = np.matmul(vercof,solution)
+            #import matplotlib.pyplot as plt
+            #plt.figure()
+            #plt.plot(rho_list-pred)
+            #plt.show()
+
+            for ii,key in enumerate(types):
+                try:
+                    attributes[key] = np.round(solution[ii][0],5)
+                except:
+                    attributes[key] = np.round(solution[ii],5)
+
+        ########################################################
+        # Last optimize CLM
+        if CLM:
+            parameter='rho'
+            region='central lower mantle'
+
+            attributes = self.metadata['attributes'][parameter][region]
+            types = list(attributes.keys())
+            param_indx = self.metadata['attributes'][parameter]['param_index']
+            meta_region = self.metadata['parameterization'][param_indx][region]
+            radius_range = [meta_region['bottom_radius'],meta_region['top_radius']]
+
+            # # prescribe density at bottom of CLM and work your way up shallower
+            rho_list=[rhobotCLM]
+            radii_list = np.linspace(rr[ibotCLM],rr[itopCLM],int((rr[itopCLM]-rr[ibotCLM])/step_km+1))
+            vercof,dvercof = tools.bases.eval_polynomial(radii_list, radius_range, rnorm, types)
+
+            tck_rho = splrep(rr[logicCLM], rho[logicCLM])
+            tck_g = splrep(rr[logicCLM], g[logicCLM])
+            tck_phi = splrep(rr[logicCLM], phi[logicCLM])
+            for radius_query in radii_list[1:]:
+                rho_query=splev(radius_query, tck_rho)
+                g_query=splev(radius_query, tck_g)
+                phi_query=splev(radius_query, tck_phi)
+                drhodr=-rho_query*g_query/phi_query
+                rho_list.append(rho_list[-1]+drhodr*step_km*1000)
 
             # find best fitting coeffients
             ATA = np.dot(vercof.T, vercof)
