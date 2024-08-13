@@ -45,6 +45,7 @@ from .. import mapping
 from .. import tools
 from .. import data
 from .. import constants
+from ..constants import colors
 from .common import initializecolor,updatefont
 
 ##########################################################################
@@ -1498,13 +1499,13 @@ def plotreference1d(ref1d,
     gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios)
     fig.patch.set_facecolor('white')
     ax01=plt.subplot(gs[0])
-    ax01.plot(depthkmarr,rho,'k')
-    ax01.plot(depthkmarr,vsv,'b')
-    ax01.plot(depthkmarr,vsh,'b:')
-    ax01.plot(depthkmarr,vpv,'r')
-    ax01.plot(depthkmarr,vph,'r:')
+    ax01.plot(depthkmarr,rho,'-',color=colors['black'])
+    ax01.plot(depthkmarr,vsv,'-',color=colors['blue'])
+    ax01.plot(depthkmarr,vsh,':',color=colors['blue'])
+    ax01.plot(depthkmarr,vpv,'-',color=colors['red'])
+    ax01.plot(depthkmarr,vph,':',color=colors['red'])
     mantle=np.where( depthkmarr < 2891.)
-    ax01.plot(depthkmarr[mantle],eta[mantle],'g')
+    ax01.plot(depthkmarr[mantle],eta[mantle],colors['yellow'])
     ax01.set_xlim([0., constants.R.to('km').magnitude])
     ax01.set_ylim([0, 14])
 
@@ -1525,7 +1526,7 @@ def plotreference1d(ref1d,
     ax01.xaxis.set_minor_locator(minorLocator)
     ax01.set_ylabel('Velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
 
-    for para,color,xloc,yloc in [("$\eta$",'g',1500.,2.),("$V_S$",'b',1500.,7.8),("$V_P$",'r',1500.,13.5),("$\\rho$",'k',1500.,4.5),("$V_P$",'r',4000.,9.2),("$\\rho$",'k',4000.,12.5),("$V_S$",'b',5500.,4.5)]:
+    for para,color,xloc,yloc in [("$\eta$",colors['yellow'],1500.,2.),("$V_S$",colors['blue'],1500.,7.8),("$V_P$",colors['red'],1500.,13.5),("$\\rho$",colors['black'],1500.,4.5),("$V_P$",colors['red'],4000.,9.2),("$\\rho$",colors['black'],4000.,12.5),("$V_S$",colors['blue'],5500.,4.5)]:
         ax01.annotate(para,color=color,
         xy=(3, 1), xycoords='data',
         xytext=(xloc/constants.R.to('km').magnitude, yloc/14.), textcoords='axes fraction',
@@ -1534,27 +1535,27 @@ def plotreference1d(ref1d,
 
     ax11=plt.subplot(gs[1])
     depthselect=np.intersect1d(np.where( depthkmarr >= zoomdepth[0]),np.where( depthkmarr <= zoomdepth[1]))
-    ax11.plot(depthkmarr[depthselect],rho[depthselect],'k')
+    ax11.plot(depthkmarr[depthselect],rho[depthselect],color=colors['black'])
     if isotropic:
-        ax11.plot(depthkmarr[depthselect],vs[depthselect],'b')
+        ax11.plot(depthkmarr[depthselect],vs[depthselect],color=colors['blue'])
     else:
-        ax11.plot(depthkmarr[depthselect],vsv[depthselect],'b')
-        ax11.plot(depthkmarr[depthselect],vsh[depthselect],'b:')
+        ax11.plot(depthkmarr[depthselect],vsv[depthselect],color=colors['blue'])
+        ax11.plot(depthkmarr[depthselect],vsh[depthselect],':',color=colors['blue'])
     ax12 = ax11.twinx()
     if isotropic:
-        ax12.plot(depthkmarr[depthselect],vp[depthselect],'r')
+        ax12.plot(depthkmarr[depthselect],vp[depthselect],color=colors['red'])
     else:
-        ax12.plot(depthkmarr[depthselect],vpv[depthselect],'r')
-        ax12.plot(depthkmarr[depthselect],vph[depthselect],'r:')
+        ax12.plot(depthkmarr[depthselect],vpv[depthselect],color=colors['red'])
+        ax12.plot(depthkmarr[depthselect],vph[depthselect],':',color=colors['red'])
 
-    ax11.plot(depthkmarr[depthselect],eta[depthselect],'g')
+    ax11.plot(depthkmarr[depthselect],eta[depthselect],color=colors['yellow'])
     ax11.set_xlim(zoomdepth)
     ax11.set_ylim([0, 7])
     ax12.set_xlim(zoomdepth)
     ax12.set_ylim([-2, 12])
     ax11.set_ylabel('Shear velocity (km/sec), density (g/cm'+'$^3$'+') or '+'$\eta$')
     ax12.set_ylabel('Compressional velocity (km/sec)')
-    for para,color,xloc,yloc in [("$\eta$",'g',150.,1.),("$V_{S}$",'b',150.,4.3),("$V_{P}$",'r',120.,5.5),("$\\rho$",'k',150.,3.8)]:
+    for para,color,xloc,yloc in [("$\eta$",colors['yellow'],150.,1.),("$V_{S}$",colors['blue'],150.,4.3),("$V_{P}$",colors['red'],120.,5.5),("$\\rho$",colors['black'],150.,3.8)]:
         ax11.annotate(para,color=color,
         xy=(3, 1), xycoords='data',
         xytext=(xloc/1000., yloc/7.), textcoords='axes fraction',
@@ -1570,8 +1571,8 @@ def plotreference1d(ref1d,
 
 
     ax21=plt.subplot(gs[2], sharex=ax11)
-    ax21.plot(depthkmarr[depthselect],anisoVs[depthselect],'b')
-    ax21.plot(depthkmarr[depthselect],anisoVp[depthselect],'r')
+    ax21.plot(depthkmarr[depthselect],anisoVs[depthselect],color=colors['blue'])
+    ax21.plot(depthkmarr[depthselect],anisoVp[depthselect],color=colors['red'])
     ax21.set_ylim([0, 5])
     ax21.set_xlim(zoomdepth)
     majorLocator = MultipleLocator(1)
@@ -1581,7 +1582,7 @@ def plotreference1d(ref1d,
     ax21.yaxis.set_major_formatter(majorFormatter)
     # for the minor ticks, use no labels; default NullFormatter
     ax21.yaxis.set_minor_locator(minorLocator)
-    for para,color,xloc,yloc in [('Q'+'$_{\mu}$','k',400.,2.5),("$a_{S}$",'b',150.,3.7),("$a_{P}$",'r',50.,3.5)]:
+    for para,color,xloc,yloc in [('Q'+'$_{\mu}$',colors['black'],400.,2.5),("$a_{S}$",colors['blue'],150.,3.7),("$a_{P}$",colors['red'],50.,3.5)]:
         ax21.annotate(para,color=color,
         xy=(3, 1), xycoords='data',
         xytext=(xloc/1000., yloc/4.), textcoords='axes fraction',
@@ -1589,7 +1590,7 @@ def plotreference1d(ref1d,
 
 
     ax22 = ax21.twinx()
-    ax22.plot(depthkmarr[depthselect],qmu[depthselect],'k')
+    ax22.plot(depthkmarr[depthselect],qmu[depthselect],color=colors['black'])
     ax21.set_xlabel('Depth (km)')
     ax21.set_ylabel("$V_P$"+' or '+"$V_S$"+' anisotropy (%)')
     ax22.set_ylabel('Shear attenuation Q'+'$_{\mu}$')

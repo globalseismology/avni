@@ -41,6 +41,16 @@ attributes = 'attributes.ini'
 ureg = None # this is initialized to MKS units in _init_.py
 customunits = 'units.ini'
 
+# custome colors for color-blindness
+# use these instead of RGB, also prints well in B/Warning
+colors = {
+'black':'#231F20',
+'yellow':'#FFBB00',
+'red':'#FB6542',
+'blue':'#375E97'
+}
+
+
 #Color scales
 colorscale = {
 'avni': {'name': 'avni','description': \

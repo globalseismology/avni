@@ -26,6 +26,7 @@ import contextlib
 import warnings
 import os
 import pdb
+import typing as tp
 
 if sys.version_info[0] >= 3: unicode = str
 
@@ -564,8 +565,9 @@ class Reference1D(object):
 
         # Add metadata
         for field in ['a','c','n','l','f','vp','vs','vphi','xi','phi','Zp', 'Zs','kappa','mu','as','ap']:
-            self.metadata['parameters'].append(field)
-            self.metadata['units'].append(str(self.data[field].pint.units))
+            if field not in self.metadata['parameters']:
+                self.metadata['parameters'].append(field)
+                self.metadata['units'].append(str(self.data[field].pint.units))
 
     def get_mineralogical(self):
         '''
@@ -612,14 +614,16 @@ class Reference1D(object):
 
             # Add metadata
             for field in ['gravity','Brunt-Vaisala','Bullen','pressure']:
-                self.metadata['parameters'].append(field)
-                self.metadata['units'].append(str(self.data[field].pint.units))
+                if field not in self.metadata['parameters']:
+                    self.metadata['parameters'].append(field)
+                    self.metadata['units'].append(str(self.data[field].pint.units))
 
             # Poisson ratio
             vsbyvp1d = self.data['vs'].div(self.data['vp'])
-            self.data['poisson2'] = np.divide((1.-(2.*vsbyvp1d*vsbyvp1d)),(2.-(2.*vsbyvp1d*vsbyvp1d)))
-            self.metadata['parameters'].append('poisson')
-            self.metadata['units'].append('dimensionless')
+            self.data['poisson'] = np.divide((1.-(2.*vsbyvp1d*vsbyvp1d)),(2.-(2.*vsbyvp1d*vsbyvp1d)))
+            if 'poisson' not in self.metadata['parameters']:
+                self.metadata['parameters'].append('poisson')
+                self.metadata['units'].append('dimensionless')
 
             # delete a file
             with contextlib.suppress(FileNotFoundError): os.remove(file)
@@ -717,6 +721,81 @@ class Reference1D(object):
         itopmantle = min(np.where(vp < 7.5)[0])
         if itopmantle >0: disc['itopmantle'] = itopmantle-1
         self.metadata['discontinuities'] = disc
+
+    def get_dispersion(self,
+                       period: tp.Union[int,float,np.int64]):
+        '''
+        Computes the dispersion correction factors and updates the elastic parameters
+        to those valid at the requested period.
+        '''
+        import pint_pandas
+
+        ref_period = self.metadata['ref_period']
+        if ref_period != 1: raise NotImplementedError('Dispersion cannot be implemented when reference period does not equal 1 second for the reported parameters.')
+
+        if self.data is None or self._nlayers == 0:
+            warnings.warn('reference1D data arrays are not allocated. Trying to apply coefficients_to_cards from within get_dispersion')
+            self.coefficients_to_cards()
+
+        for param in ['a','c','n','l','f']:
+            if param not in self.data.keys():
+                warnings.warn('Love parameter '+param+' is not allocated. Trying to apply get_Love_elastic from within get_dispersion')
+                self.get_Love_elastic()
+
+        A = self.data['a'].pint.to_base_units().values.quantity.magnitude
+        C = self.data['c'].pint.to_base_units().values.quantity.magnitude
+        N = self.data['n'].pint.to_base_units().values.quantity.magnitude
+        L = self.data['l'].pint.to_base_units().values.quantity.magnitude
+        F = self.data['f'].pint.to_base_units().values.quantity.magnitude
+        rho = self.data['rho'].pint.to_base_units().values.quantity.magnitude
+        qka = ((1/self.data['qkappa']).replace(np.inf, 0)).values.quantity.magnitude
+        qmu = ((1/self.data['qmu']).replace(np.inf, 0)).values.quantity.magnitude
+
+        # correction factors
+        E = (4/3*(A+C-2*F+5*N+6*L)/(8*A+3*C+4*F+8*L))
+        xac = 1 - 2*np.log(period)/np.pi*((1-E)*qka+E*qmu)
+        xnl = 1 - 2*np.log(period)/np.pi*qmu
+        xf = 1 - 2*np.log(period)/np.pi*(((1-E)*qka-E/2*qmu)/(1-3/2*E))
+        xvp = 1 - np.log(period)/np.pi*((1-E)*qka+E*qmu)
+        xvs = 1 - np.log(period)/np.pi*qmu
+
+        # Apply the correction
+        A *= xac
+        C *= xac
+        N *= xnl
+        L *= xnl
+        F *= xf
+
+        # Updte data fields
+        PA_ = pint_pandas.PintArray; temp_dict = {}
+        temp_dict['vph'] = PA_(np.sqrt(A/rho),dtype="pint[m/s]")
+        temp_dict['vpv'] = PA_(np.sqrt(C/rho),dtype="pint[m/s]")
+        temp_dict['vsh'] = PA_(np.sqrt(N/rho),dtype="pint[m/s]")
+        temp_dict['vsv'] = PA_(np.sqrt(L/rho),dtype="pint[m/s]")
+        temp_dict['eta'] = PA_(F/(A-2*L),dtype="pint[dimensionless]")
+        temp_dict['E'] = PA_(E,dtype="pint[dimensionless]")
+        temp_dict['xac'] = PA_(xac,dtype="pint[dimensionless]")
+        temp_dict['xnl'] = PA_(xnl,dtype="pint[dimensionless]")
+        temp_dict['xf'] = PA_(xf,dtype="pint[dimensionless]")
+        temp_dict['xvp'] = PA_(xvp,dtype="pint[dimensionless]")
+        temp_dict['xvs'] = PA_(xvs,dtype="pint[dimensionless]")
+
+        modelarr = pd.DataFrame(temp_dict)
+        self.data.drop(columns=['vph','vpv','vsh','vsv','eta'],inplace=True)
+        for field in ['E','xac','xnl','xf','xvp','xvs']:
+            if field in self.data.columns: self.data.drop(columns=[field],inplace=True)
+        self.data = pd.concat([self.data,modelarr],axis=1)
+        self.metadata['ref_period'] = period
+
+        # redo calculations
+        self.get_Love_elastic()
+        self.get_discontinuity()
+        getmineral = False
+        for field in ['gravity','Brunt-Vaisala','Bullen','pressure','poisson']:
+            if field in self.data.columns:
+                self.data.drop(columns=[field])
+                getmineral = True
+        if getmineral: self.get_mineralogical()
 
     def get_custom_parameter(self,parameters):
         '''
